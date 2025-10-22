@@ -226,20 +226,45 @@ export const startTranscription = async (req, res) => {
         console.log('✅ [Transcription] Step 7: Real-time transcription started successfully');
         console.log(`🎙️ Started transcription for meeting ${actualMeetingId}, transcript ID: ${transcriptId}`);
 
-        console.log('🆔🆔🆔 [RESPONSE-TO-FRONTEND] CRITICAL ID TRACKING:', {
-          transcriptIdBeingReturned: transcriptId,
-          sessionId: session.sessionId,
-          thisIdWillBeUsedByFrontend: true,
-          mustMatchDatabaseRecord: transcriptId
-        });
-
-        res.json({
+        const responsePayload = {
           success: true,
           transcript_id: transcriptId, // This must be the actual database ID
           session_id: session.sessionId,
           status: 'started',
           message: 'Transcription started successfully'
+        };
+
+        console.log('🆔🆔🆔 [RESPONSE-TO-FRONTEND] CRITICAL ID TRACKING:', {
+          transcriptIdBeingReturned: transcriptId,
+          sessionId: session.sessionId,
+          thisIdWillBeUsedByFrontend: true,
+          mustMatchDatabaseRecord: transcriptId,
+          responsePayload
         });
+
+        // CRITICAL VERIFICATION: Ensure we're returning the database transcript ID
+        const dbVerifyResult = await client.query(
+          'SELECT id FROM meeting_transcripts WHERE id = $1',
+          [transcriptId]
+        );
+        
+        console.log('🔍 [START-RESPONSE] Database verification:', {
+          searchingForId: transcriptId,
+          foundInDb: dbVerifyResult.rows.length > 0,
+          actualDbId: dbVerifyResult.rows[0]?.id
+        });
+        
+        if (dbVerifyResult.rows.length === 0) {
+          console.error('🚨 [START-RESPONSE] CRITICAL: Trying to return transcript ID that does not exist in database!', {
+            transcriptId,
+            thisWillCauseStopToFail: true
+          });
+        }
+
+        console.log('🎯 [START-RESPONSE] Returning transcript ID to frontend:', transcriptId);
+        console.log('🎯 [START-RESPONSE] Full response payload:', responsePayload);
+
+        res.json(responsePayload);
       } catch (transcriptionError) {
         console.error('❌ [Transcription] Step 7 FAILED: Real-time transcription error:', transcriptionError.message);
         console.error('❌ [Transcription] Error stack:', transcriptionError.stack);
