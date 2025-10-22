@@ -475,6 +475,28 @@ class TranscriptionService {
     
     const client = await getClient();
     try {
+      // VERIFY THE TRANSCRIPT EXISTS FIRST (catch ghost transcript issue)
+      console.log('[AI-ANALYSIS] 🔍 Verifying transcript exists in database...');
+      const transcriptCheck = await client.query(
+        'SELECT id, meeting_id, status FROM meeting_transcripts WHERE id = $1',
+        [transcriptId]
+      );
+      
+      if (transcriptCheck.rows.length === 0) {
+        console.error('[AI-ANALYSIS] ❌ CRITICAL: Transcript does not exist in database!', {
+          transcriptId,
+          thisIsTheProblem: 'AI is being triggered with a transcript ID that was never saved',
+          possibleCause: 'Duplicate transcript creation or ghost ID generation'
+        });
+        throw new Error(`Transcript ${transcriptId} not found in database - this is the ghost transcript bug!`);
+      }
+      
+      console.log('[AI-ANALYSIS] ✅ Transcript exists in database:', {
+        transcriptId,
+        meetingId: transcriptCheck.rows[0].meeting_id,
+        status: transcriptCheck.rows[0].status
+      });
+      
       console.log(`🤖 [TranscriptionService] Starting AI analysis for ${transcriptId}`);
       
       // Get transcript details for meetingId and organizationId
