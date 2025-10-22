@@ -3,13 +3,14 @@ import emailService from '../services/emailService.js';
 import { recordMeetingConclusion } from '../services/todoReminderService.js';
 import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 import transcriptionService from '../services/transcriptionService.js';
+import logger from '../utils/logger.js';
 
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
   try {
-    console.log('Request params:', req.params);
-    console.log('Request URL:', req.url);
-    console.log('Request baseUrl:', req.baseUrl);
+    logger.debug('Request params:', req.params);
+    logger.debug('Request URL:', req.url);
+    logger.debug('Request baseUrl:', req.baseUrl);
     
     const { 
       meetingType,
@@ -86,9 +87,9 @@ export const concludeMeeting = async (req, res) => {
       });
     }
 
-    console.log('Concluding meeting with VALIDATED teamId:', { meetingType, duration, rating, organizationId, teamId });
+    logger.debug('Concluding meeting with VALIDATED teamId:', { meetingType, duration, rating, organizationId, teamId });
 
-    console.log('🏁 [Conclude] Starting conclude process for meeting');
+    logger.info('🏁 Starting meeting conclusion process');
     
     // 1. Update meeting status to completed - target specific meeting or latest in-progress
     const { specificMeetingId } = req.body; // New: allow specific meeting targeting
@@ -140,7 +141,7 @@ export const concludeMeeting = async (req, res) => {
         WHERE id = $1 AND organization_id = $2 AND team_id = $3
         RETURNING id
       `, [specificMeetingId, organizationId, teamId]);
-      console.log('🎯 [Conclude] Targeted specific meeting:', specificMeetingId);
+      logger.info('🎯 Targeted specific meeting:', specificMeetingId);
     } else {
       // Fallback: Target latest in-progress meeting for the team (legacy behavior)
       meetingUpdateResult = await db.query(`
@@ -161,13 +162,13 @@ export const concludeMeeting = async (req, res) => {
         )
         RETURNING id
       `, [organizationId, teamId]);
-      console.log('🎯 [Conclude] Targeted latest in-progress meeting for team');
+      logger.info('🎯 Targeted latest in-progress meeting for team');
     }
     
-    console.log('✅ [Conclude] Meeting marked as completed');
+    logger.info('✅ Meeting marked as completed');
 
     // 2. Check if AI recording is active or recently completed
-    console.log('[Meeting] Checking for active or recent AI recordings...');
+    logger.debug('Checking for active or recent AI recordings...');
     const transcriptCheck = await db.query(
       `SELECT mt.id, mt.status, mt.meeting_id, mt.created_at, mt.updated_at
        FROM meeting_transcripts mt
@@ -188,32 +189,32 @@ export const concludeMeeting = async (req, res) => {
     let aiSummary = null;
     if (transcriptCheck.rows.length > 0) {
       const transcript = transcriptCheck.rows[0];
-      console.log('🎤 [Conclude] AI recording found:', transcript.id, 'Status:', transcript.status);
+      logger.info('🎤 AI recording found:', transcript.id, 'Status:', transcript.status);
       
       if (transcript.status === 'completed') {
-        console.log('[Meeting] Recording already completed, checking for AI summary...');
+        logger.info('Recording already completed, checking for AI summary...');
         // Skip stopping, go straight to waiting for AI summary
         aiSummary = await waitForAISummary(transcript.id, 2); // Shorter wait for completed recordings
       } else {
-        console.log('[Meeting] Active recording detected, stopping transcription');
+        logger.info('Active recording detected, stopping transcription');
         
         try {
           // Stop the recording
           await transcriptionService.stopRealtimeTranscription(transcript.id);
-          console.log('[Meeting] ✅ Recording stopped successfully');
+          logger.info('✅ Recording stopped successfully');
           
-          console.log('⏳ [Conclude] Waiting up to 10 minutes for AI summary...');
+          logger.info('⏳ Waiting up to 10 minutes for AI summary...');
           
           // Wait for AI summary (up to 10 minutes)
           aiSummary = await waitForAISummary(transcript.id, 10);
           
         } catch (stopError) {
-          console.error('[Meeting] ⚠️ Error stopping recording:', stopError);
+          logger.error('⚠️ Error stopping recording:', stopError);
           // Continue with conclude anyway - don't block meeting conclusion
         }
       }
     } else {
-      console.log('[Meeting] No active or recent recording found');
+      logger.debug('No active or recent recording found');
     }
 
     // Get organization details
@@ -240,7 +241,7 @@ export const concludeMeeting = async (req, res) => {
     const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
 
     // Get team members' emails
-    console.log('Getting team members for teamId:', teamId);
+    logger.debug('Getting team members for teamId:', teamId);
     
     let attendeeEmails = [];
     let teamMembersCount = 0;
@@ -250,7 +251,7 @@ export const concludeMeeting = async (req, res) => {
       `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
       [teamId]
     );
-    console.log('Team members count:', teamCheckResult.rows[0].count);
+    logger.debug('Team members count:', teamCheckResult.rows[0].count);
     teamMembersCount = parseInt(teamCheckResult.rows[0].count);
     
     // If no team_members entries, DO NOT send to entire organization!
@@ -295,10 +296,10 @@ export const concludeMeeting = async (req, res) => {
         [teamId]
       );
       attendeeEmails = teamMembersResult.rows.map(row => row.email);
-      console.log('Team member emails:', attendeeEmails);
+      logger.debug('Team member emails:', attendeeEmails);
     }
 
-    console.log('Sending meeting summary to:', attendeeEmails);
+    logger.info('📧 Sending meeting summary to:', attendeeEmails.length, 'recipients');
 
     // Format the email data
     const meetingDate = new Date();

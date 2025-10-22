@@ -6,6 +6,7 @@ import {
   previewImport, 
   bulkImport 
 } from '../controllers/bulkImportController.js';
+import { getActiveMeetings } from '../controllers/adminController.js';
 
 const router = express.Router();
 
@@ -33,6 +34,9 @@ const upload = multer({
 // All admin routes require authentication and admin role
 router.use(authenticate);
 router.use(authorize('admin'));
+
+// Active meetings dashboard
+router.get('/active-meetings', getActiveMeetings);
 
 // Bulk user import routes
 router.get('/users/bulk-import/template', downloadTemplate);

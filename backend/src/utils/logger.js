@@ -1,20 +1,37 @@
-// Simple logger utility
+// Production-ready logger utility with log levels
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
+
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3
+};
+
+const currentLevel = levels[LOG_LEVEL] || levels.info;
+
 const logger = {
-  info: (message, ...args) => {
-    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, ...args);
+  error: (...args) => {
+    if (currentLevel >= levels.error) {
+      console.error('[ERROR]', ...args);
+    }
   },
   
-  error: (message, ...args) => {
-    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, ...args);
+  warn: (...args) => {
+    if (currentLevel >= levels.warn) {
+      console.warn('[WARN]', ...args);
+    }
   },
   
-  warn: (message, ...args) => {
-    console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, ...args);
+  info: (...args) => {
+    if (currentLevel >= levels.info) {
+      console.log('[INFO]', ...args);
+    }
   },
   
-  debug: (message, ...args) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`, ...args);
+  debug: (...args) => {
+    if (currentLevel >= levels.debug) {
+      console.log('[DEBUG]', ...args);
     }
   }
 };

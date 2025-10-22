@@ -2,6 +2,7 @@ import { AssemblyAI } from 'assemblyai';
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import { getClient } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 let assemblyAI;
 let openai;
@@ -30,7 +31,7 @@ class AITranscriptionService {
     const client = await getClient();
     
     // Log connection details
-    console.log('🔍 DATABASE CONNECTION:', {
+    logger.debug('DATABASE CONNECTION:', {
       database: client.database,
       host: client.host,
       port: client.port,
@@ -41,9 +42,9 @@ class AITranscriptionService {
       await client.query('BEGIN');
       
       const transcriptId = uuidv4();
-      console.log('[createTranscriptRecord] 🆔 Generated transcript ID:', transcriptId);
-      console.log('[createTranscriptRecord] 🔗 Meeting ID:', meetingId);
-      console.log('[createTranscriptRecord] 🏢 Organization ID:', organizationId);
+      logger.debug('Generated transcript ID:', transcriptId);
+      logger.debug('Meeting ID:', meetingId);
+      logger.debug('Organization ID:', organizationId);
       
       // Use RETURNING to verify INSERT succeeded
       const result = await client.query(`
@@ -68,7 +69,7 @@ class AITranscriptionService {
       }
       
       const insertedId = result.rows[0].id;
-      console.log('[createTranscriptRecord] ✅ Inserted ID:', insertedId);
+      logger.info('✅ Transcript record created:', insertedId);
       
       if (insertedId !== transcriptId) {
         throw new Error(`ID mismatch: expected ${transcriptId}, got ${insertedId}`);
@@ -80,7 +81,7 @@ class AITranscriptionService {
         [insertedId]
       );
       
-      console.log('🔍 [createTranscriptRecord] Final pre-commit verification:', {
+      logger.debug('Final pre-commit verification:', {
         insertedId,
         found: finalVerify.rows.length > 0,
         data: finalVerify.rows[0] || null
@@ -91,7 +92,7 @@ class AITranscriptionService {
       }
       
       await client.query('COMMIT');
-      console.log('✅ [createTranscriptRecord] Transaction committed with ID:', insertedId);
+      logger.info('✅ Transcript transaction committed:', insertedId);
       
       // Post-commit verification
       const postCommitVerify = await client.query(
@@ -99,7 +100,7 @@ class AITranscriptionService {
         [insertedId]
       );
       
-      console.log('🔍 [createTranscriptRecord] Post-commit verification:', {
+      logger.debug('Post-commit verification:', {
         insertedId,
         found: postCommitVerify.rows.length > 0,
         data: postCommitVerify.rows[0] || null,
@@ -129,7 +130,7 @@ class AITranscriptionService {
 
   // Get existing transcript or create new one (prevents dual creation)
   async getOrCreateTranscript(meetingId, organizationId, consentUserIds = []) {
-    console.log('🔍 [getOrCreateTranscript] Checking for existing transcript...', {
+    logger.debug('Checking for existing transcript...', {
       meetingId,
       organizationId,
       lookingFor: 'status=processing AND created_at>2hrs AND not deleted'

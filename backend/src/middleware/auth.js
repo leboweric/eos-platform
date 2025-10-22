@@ -1,22 +1,22 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    console.log('Auth header received:', authHeader ? 'Bearer token present' : 'No auth header');
-    console.log('Request URL:', req.url);
-    
     const token = authHeader?.replace('Bearer ', '');
     
-    // Log first 20 chars of token for debugging (safe to log partial token)
+    // Debug logging for troubleshooting
+    logger.debug('Auth header received:', authHeader ? 'Bearer token present' : 'No auth header');
+    logger.debug('Request URL:', req.url);
     if (token) {
-      console.log('Token preview:', token.substring(0, 20) + '...');
-      console.log('Token length:', token.length);
+      logger.debug('Token preview:', token.substring(0, 20) + '...');
+      logger.debug('Token length:', token.length);
     }
 
     if (!token) {
-      console.log('Authentication failed: No token provided');
+      logger.debug('Authentication failed: No token provided');
       return res.status(401).json({
         success: false,
         error: 'Access denied. No token provided.'
@@ -26,7 +26,7 @@ export const authenticate = async (req, res, next) => {
     let decoded;
     try {
       if (!process.env.JWT_SECRET) {
-        console.error('JWT_SECRET is not defined in environment variables!');
+        logger.error('JWT_SECRET is not defined in environment variables!');
         return res.status(500).json({
           success: false,
           error: 'Server configuration error.'
@@ -35,10 +35,10 @@ export const authenticate = async (req, res, next) => {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
       // OAuth tokens use 'id' field, not 'userId'
       const userId = decoded.id || decoded.userId;
-      console.log('Token verified successfully for user:', userId);
-      console.log('Decoded token fields:', Object.keys(decoded));
+      logger.debug('Token verified successfully for user:', userId);
+      logger.debug('Decoded token fields:', Object.keys(decoded));
     } catch (jwtError) {
-      console.error('JWT verification error:', jwtError.message);
+      logger.error('JWT verification error:', jwtError.message);
       return res.status(401).json({
         success: false,
         error: 'Invalid token.'
@@ -66,7 +66,7 @@ export const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     res.status(401).json({
       success: false,
       error: 'Invalid token.'
@@ -129,7 +129,7 @@ export const checkOrganizationAccess = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Organization access check error:', error);
+    logger.error('Organization access check error:', error);
     res.status(500).json({
       success: false,
       error: 'Server error during authorization check.'
@@ -173,7 +173,7 @@ export const checkTeamAccess = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Team access check error:', error);
+    logger.error('Team access check error:', error);
     res.status(500).json({
       success: false,
       error: 'Server error during team authorization check.'

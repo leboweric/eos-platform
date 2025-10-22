@@ -7,7 +7,8 @@ export default function ActiveMeetingsStatus() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [error, setError] = useState(null);
-  const { token } = useAuthStore();
+  // Get token from localStorage instead of auth store
+  const getToken = () => localStorage.getItem('accessToken');
 
   useEffect(() => {
     fetchActiveMeetings();
@@ -21,6 +22,7 @@ export default function ActiveMeetingsStatus() {
   }, []);
 
   const fetchActiveMeetings = async () => {
+    const token = getToken();
     if (!token) {
       setError('Authentication token not found');
       setLoading(false);

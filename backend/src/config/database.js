@@ -1,5 +1,6 @@
 import pkg from 'pg';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -47,16 +48,16 @@ const pool = new Pool(dbConfig);
 
 // Test database connection
 pool.on('connect', () => {
-  console.log('📊 Connected to PostgreSQL database');
+  logger.info('📊 Connected to PostgreSQL database');
 });
 
 pool.on('error', (err, client) => {
-  console.error('❌ Database connection error:', err);
+  logger.error('❌ Database connection error:', err);
   // Don't exit on connection errors - let the pool handle reconnection
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('🔄 Database connection lost, pool will reconnect automatically');
+    logger.warn('🔄 Database connection lost, pool will reconnect automatically');
   } else if (err.code === 'ECONNREFUSED') {
-    console.error('❌ Database connection refused - check if database is running');
+    logger.error('❌ Database connection refused - check if database is running');
   }
 });
 
@@ -68,10 +69,17 @@ export const query = async (text, params, retries = 2) => {
     try {
       const res = await pool.query(text, params);
       const duration = Date.now() - start;
-      console.log('📊 Executed query', { text, duration, rows: res.rowCount });
+      
+      // Only log slow queries (> 1000ms) in production
+      if (duration > 1000) {
+        logger.warn('⚠️ Slow query detected:', { duration: `${duration}ms`, text: text.substring(0, 100), rows: res.rowCount });
+      } else {
+        logger.debug('Query executed:', { duration: `${duration}ms`, text: text.substring(0, 50), rows: res.rowCount });
+      }
+      
       return res;
     } catch (error) {
-      console.error(`❌ Query error (attempt ${attempt + 1}/${retries + 1}):`, error.message);
+      logger.error(`❌ Query error (attempt ${attempt + 1}/${retries + 1}):`, error.message);
       
       // Check if it's a connection error and we have retries left
       if (attempt < retries && 
@@ -79,7 +87,7 @@ export const query = async (text, params, retries = 2) => {
            error.code === 'EPIPE' || 
            error.message.includes('Connection terminated') ||
            error.message.includes('terminating connection'))) {
-        console.log(`🔄 Retrying query in ${(attempt + 1) * 1000}ms...`);
+        logger.warn(`🔄 Retrying query in ${(attempt + 1) * 1000}ms...`);
         await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1000));
         continue;
       }
