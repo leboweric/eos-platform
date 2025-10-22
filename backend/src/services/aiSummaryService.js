@@ -68,7 +68,7 @@ class AISummaryService {
     try {
       const result = await client.query(`
         SELECT 
-          m.meeting_date,
+          m.scheduled_date,
           t.name as team_name,
           o.name as organization_name,
           mt.meeting_id, mt.organization_id
@@ -131,7 +131,7 @@ MEETING CONTEXT:
 - Meeting Type: Weekly EOS Meeting
 - Team: ${context.team_name || 'Unknown'}
 - Organization: ${context.organization_name || 'Unknown'}
-- Date: ${context.meeting_date || 'Unknown'}
+- Date: ${context.scheduled_date || 'Unknown'}
 
 MEETING TRANSCRIPT:
 ${transcript}

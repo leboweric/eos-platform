@@ -405,8 +405,8 @@ export const searchTranscripts = async (req, res) => {
       results_count: results.length,
       results: results.map(result => ({
         meeting_id: result.meeting_id,
-        meeting_date: result.meeting_date,
-        meeting_type: result.meeting_type,
+        scheduled_date: result.scheduled_date,
+        meeting_type: 'Weekly EOS Meeting', // Static since meeting_type column doesn't exist
         team_name: result.team_name,
         summary: result.executive_summary?.substring(0, 200) + '...',
         transcript_excerpt: result.raw_transcript?.substring(0, 300) + '...',
@@ -458,7 +458,7 @@ export const downloadTranscript = async (req, res) => {
     let meetingInfo;
     try {
       const meetingResult = await client.query(`
-        SELECT m.meeting_date, m.meeting_type, t.name as team_name
+        SELECT m.scheduled_date, t.name as team_name
         FROM meetings m
         INNER JOIN teams t ON m.team_id = t.id
         WHERE m.id = $1
@@ -468,8 +468,8 @@ export const downloadTranscript = async (req, res) => {
       client.release();
     }
 
-    const date = new Date(meetingInfo.meeting_date).toISOString().split('T')[0];
-    const filename = `${meetingInfo.team_name}_${meetingInfo.meeting_type}_${date}_transcript.${format}`;
+    const date = new Date(meetingInfo.scheduled_date).toISOString().split('T')[0];
+    const filename = `${meetingInfo.team_name}_Weekly_EOS_Meeting_${date}_transcript.${format}`;
 
     // Set appropriate headers
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

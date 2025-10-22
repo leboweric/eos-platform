@@ -617,13 +617,13 @@ Focus on:
 
       if (filters.startDate) {
         paramCount++;
-        whereClause += ` AND m.meeting_date >= $${paramCount}`;
+        whereClause += ` AND m.scheduled_date >= $${paramCount}`;
         params.push(filters.startDate);
       }
 
       if (filters.endDate) {
         paramCount++;
-        whereClause += ` AND m.meeting_date <= $${paramCount}`;
+        whereClause += ` AND m.scheduled_date <= $${paramCount}`;
         params.push(filters.endDate);
       }
 
@@ -631,7 +631,7 @@ Focus on:
         SELECT 
           mt.id as transcript_id,
           mt.meeting_id,
-          m.meeting_date,
+          m.scheduled_date,
           t.name as team_name,
           mt.raw_transcript,
           mas.executive_summary,
@@ -642,7 +642,7 @@ Focus on:
         INNER JOIN teams t ON m.team_id = t.id
         LEFT JOIN meeting_ai_summaries mas ON mt.id = mas.transcript_id
         WHERE ${whereClause}
-        ORDER BY m.meeting_date DESC
+        ORDER BY m.scheduled_date DESC
         LIMIT 50
       `, params);
       
