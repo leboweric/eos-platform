@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import db from '../config/database.js';
+import { getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 class AISummaryService {
@@ -64,7 +64,7 @@ class AISummaryService {
    * Get meeting context to enhance AI summary
    */
   async getMeetingContext(transcriptId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const result = await client.query(`
         SELECT 
@@ -261,7 +261,7 @@ Be thorough but concise. If information is not available in the transcript, mark
    * Save AI summary to database
    */
   async saveAISummary(transcriptId, aiSummary, processingTime, estimatedCost) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       // Get transcript info
       const transcriptResult = await client.query(
@@ -324,7 +324,7 @@ Be thorough but concise. If information is not available in the transcript, mark
    * Create todos from AI-extracted action items
    */
   async createTodosFromActionItems(transcriptId, actionItemIds, userId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
 
@@ -397,7 +397,7 @@ Be thorough but concise. If information is not available in the transcript, mark
    * Create issues from AI-detected issues
    */
   async createIssuesFromAI(transcriptId, issueIds, userId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
 
@@ -457,7 +457,7 @@ Be thorough but concise. If information is not available in the transcript, mark
    * Update transcript status
    */
   async updateTranscriptStatus(transcriptId, status, metadata = {}) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const updateFields = ['status = $2'];
       const values = [transcriptId, status];
