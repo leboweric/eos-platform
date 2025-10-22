@@ -561,7 +561,7 @@ Focus on:
           mas.next_steps,
           mas.action_items,
           mas.issues_discussed,
-          mas.rocks_mentioned,
+          mas.rocks_priorities,
           mas.discussion_topics,
           mas.notable_quotes,
           mas.meeting_sentiment,
@@ -575,11 +575,13 @@ Focus on:
           mas.conclude_duration_minutes,
           mas.summary_quality_score,
           mas.action_item_confidence_avg,
+          mas.rocks_mentioned,
           mas.ai_model,
           mas.ai_prompt_version,
           mas.ai_processing_time_seconds,
           mas.ai_cost_usd,
-          mas.created_at as ai_summary_created_at
+          mas.created_at as ai_summary_created_at,
+          mas.updated_at as ai_summary_updated_at
         FROM meeting_transcripts mt
         LEFT JOIN meeting_ai_summaries mas ON mt.id = mas.transcript_id
         WHERE mt.meeting_id = $1 AND mt.organization_id = $2 AND mt.deleted_at IS NULL
