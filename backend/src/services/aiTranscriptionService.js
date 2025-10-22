@@ -1,5 +1,6 @@
 import { AssemblyAI } from 'assemblyai';
 import OpenAI from 'openai';
+import { v4 as uuidv4 } from 'uuid';
 import db from '../config/database.js';
 
 let assemblyAI;
@@ -30,28 +31,55 @@ class AITranscriptionService {
     try {
       await client.query('BEGIN');
       
+      const transcriptId = uuidv4();
+      console.log('[createTranscriptRecord] 🆔 Generated transcript ID:', transcriptId);
+      console.log('[createTranscriptRecord] 🔗 Meeting ID:', meetingId);
+      console.log('[createTranscriptRecord] 🏢 Organization ID:', organizationId);
+      
+      // Use RETURNING to verify INSERT succeeded
       const result = await client.query(`
         INSERT INTO meeting_transcripts (
+          id,
           meeting_id, 
           organization_id, 
           status, 
           consent_obtained, 
           consent_obtained_from,
           transcription_service,
-          processing_started_at
+          processing_started_at,
+          created_at,
+          updated_at
         )
-        VALUES ($1, $2, 'processing', $3, $4, 'assemblyai', NOW())
-        RETURNING *
-      `, [meetingId, organizationId, consentUserIds.length > 0, consentUserIds]);
+        VALUES ($1, $2, $3, 'processing', $4, $5, 'assemblyai', NOW(), NOW(), NOW())
+        RETURNING id
+      `, [transcriptId, meetingId, organizationId, consentUserIds.length > 0, consentUserIds]);
+      
+      if (result.rows.length === 0) {
+        throw new Error('INSERT returned no rows - failed silently');
+      }
+      
+      const insertedId = result.rows[0].id;
+      console.log('[createTranscriptRecord] ✅ Inserted ID:', insertedId);
+      
+      if (insertedId !== transcriptId) {
+        throw new Error(`ID mismatch: expected ${transcriptId}, got ${insertedId}`);
+      }
       
       await client.query('COMMIT');
-      console.log('✅ Transcript record transaction committed');
+      console.log('✅ [createTranscriptRecord] Transaction committed with ID:', insertedId);
       
-      return result.rows[0];
+      return { id: insertedId, meeting_id: meetingId, organization_id: organizationId, status: 'processing' };
+      
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('❌ Transcript record transaction rolled back:', error.message);
-      throw error;
+      console.error('❌ [createTranscriptRecord] Failed:', {
+        error: error.message,
+        code: error.code,
+        detail: error.detail,
+        meetingId,
+        organizationId
+      });
+      throw error; // DON'T suppress this error!
     } finally {
       client.release();
     }
@@ -304,7 +332,7 @@ Focus on:
 
       const { meeting_id, organization_id } = transcriptResult.rows[0];
 
-      await client.query(`
+      const result = await client.query(`
         INSERT INTO meeting_ai_summaries (
           meeting_id,
           transcript_id, 
@@ -324,6 +352,7 @@ Focus on:
           ai_cost_usd
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING id
       `, [
         meeting_id,
         transcriptId,
@@ -342,6 +371,13 @@ Focus on:
         processingTime,
         estimatedCost
       ]);
+      
+      if (result.rows.length === 0) {
+        throw new Error('AI summary INSERT returned no rows - failed silently');
+      }
+      
+      const summaryId = result.rows[0].id;
+      console.log('[storeAISummary] ✅ Inserted AI summary with ID:', summaryId);
       
       await client.query('COMMIT');
       console.log('✅ AI summary transaction committed successfully');
