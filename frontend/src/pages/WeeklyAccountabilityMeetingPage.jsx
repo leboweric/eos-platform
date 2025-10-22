@@ -6063,14 +6063,19 @@ const WeeklyAccountabilityMeetingPage = () => {
 
                 {/* Conclude Meeting Button - Only for Facilitator */}
                 <div className="flex justify-center">
-                  {console.log('🔍 Conclude button check:', {
+                  {console.log('🔍 [DEBUG] Conclude button render check:', {
                     meetingCode,
                     isLeader,
                     currentLeader,
                     userId: user?.id,
                     shouldShowButton: !meetingCode || isLeader,
                     participants,
-                    isRecording: aiRecordingState.isRecording  // Add this for debugging
+                    // DETAILED AI RECORDING DEBUG
+                    aiRecordingState_FULL: aiRecordingState,
+                    isRecording: aiRecordingState.isRecording,
+                    isRecording_type: typeof aiRecordingState.isRecording,
+                    aiRecordingState_keys: Object.keys(aiRecordingState),
+                    timestamp: new Date().toISOString()
                   })}
                   {/* Show button if: no collaborative meeting OR user is the leader */}
                   {!meetingCode || (meetingCode && isLeader) ? (
@@ -6422,7 +6427,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                 setTranscriptionCompleted(true);
                 // Don't auto-open modal - let user click button when ready
               }}
-              onRecordingStateChange={setAiRecordingState}
+              onRecordingStateChange={(newState) => {
+                console.log('🎙️ [DEBUG] AI Recording state changed:', {
+                  previousState: aiRecordingState,
+                  newState: newState,
+                  isRecording_changed_to: newState.isRecording,
+                  timestamp: new Date().toISOString()
+                });
+                setAiRecordingState(newState);
+              }}
             />
           </div>
         )}
