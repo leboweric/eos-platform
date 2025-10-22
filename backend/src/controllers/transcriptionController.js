@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getClient } from '../config/database.js';
 import transcriptionService from '../services/transcriptionService.js';
 import aiSummaryService from '../services/aiSummaryService.js';
+import AITranscriptionService from '../services/aiTranscriptionService.js';
 
 export const healthCheck = async (req, res) => {
   try {
@@ -199,68 +200,23 @@ export const startTranscription = async (req, res) => {
 
       console.log('✅ [Transcription] Step 5: No existing transcription found');
 
-      // Create new transcript record
+      // Create new transcript record using proper service
       console.log('🔍 [Transcription] Step 6: Creating transcript record...');
-      const transcriptId = uuidv4();
-      console.log('[START] 🆔 Created transcript ID:', transcriptId);
-      console.log('[START] 🆔 Context:', {
-        transcriptId,
-        meetingId: actualMeetingId,
-        organizationId,
-        timestamp: new Date().toISOString()
-      });
       
-      try {
-        await client.query('BEGIN');
-        
-        await client.query(`
-          INSERT INTO meeting_transcripts (
-            id, meeting_id, organization_id, status, 
-            transcription_service, processing_started_at, created_at
-          )
-          VALUES ($1, $2, $3, 'processing', 'assemblyai', NOW(), NOW())
-        `, [transcriptId, actualMeetingId, organizationId]);
-        
-        await client.query('COMMIT');
-        console.log('[START] ✅ Transcript creation transaction committed');
-        
-      } catch (insertError) {
-        await client.query('ROLLBACK');
-        console.error('[START] ❌ INSERT INTO meeting_transcripts failed:', {
-          error: insertError.message,
-          code: insertError.code,
-          detail: insertError.detail,
-          transcriptId,
-          actualMeetingId,
-          organizationId
-        });
-        throw new Error(`Failed to create transcript record: ${insertError.message}`);
-      }
-
-      // VERIFY IT WAS ACTUALLY CREATED (catch silent INSERT failures)
-      console.log('[START] 🔍 Verifying transcript was actually saved...');
-      const verify = await client.query(
-        'SELECT id, meeting_id, status FROM meeting_transcripts WHERE id = $1',
-        [transcriptId]
-      );
-
-      if (verify.rows.length === 0) {
-        console.error('[START] ❌ CRITICAL: INSERT claimed success but record not found!', {
-          transcriptId,
-          actualMeetingId,
-          organizationId,
-          thisIsTheProblem: 'INSERT statement failed silently or was rolled back'
-        });
-        throw new Error('Failed to create transcript record - INSERT did not persist');
-      }
-
-      console.log('[START] ✅ Verified transcript exists in database:', {
-        transcriptId,
-        meetingId: verify.rows[0].meeting_id,
-        status: verify.rows[0].status
+      const aiTranscriptionService = new AITranscriptionService();
+      const transcriptResult = await aiTranscriptionService.createTranscriptRecord(actualMeetingId, organizationId);
+      const transcriptId = transcriptResult.id;
+      
+      console.log('🆔🆔🆔 [START-ENDPOINT] CRITICAL ID TRACKING:', {
+        createdTranscriptId: transcriptId,
+        actualMeetingId,
+        organizationId,
+        willBeUsedFor: 'WebSocket connection and AI analysis',
+        mustMatchDatabaseRecord: true,
+        transcriptResult
       });
 
-      console.log('✅ [Transcription] Step 6: Transcript record created');
+      console.log('✅ [Transcription] Step 6: Transcript record created via proper service');
 
       // Start real-time transcription with AssemblyAI
       console.log('🔍 [Transcription] Step 7: Starting real-time transcription...');
@@ -271,9 +227,16 @@ export const startTranscription = async (req, res) => {
         console.log('✅ [Transcription] Step 7: Real-time transcription started successfully');
         console.log(`🎙️ Started transcription for meeting ${actualMeetingId}, transcript ID: ${transcriptId}`);
 
+        console.log('🆔🆔🆔 [RESPONSE-TO-FRONTEND] CRITICAL ID TRACKING:', {
+          transcriptIdBeingReturned: transcriptId,
+          sessionId: session.sessionId,
+          thisIdWillBeUsedByFrontend: true,
+          mustMatchDatabaseRecord: transcriptId
+        });
+
         res.json({
           success: true,
-          transcript_id: transcriptId,
+          transcript_id: transcriptId, // This must be the actual database ID
           session_id: session.sessionId,
           status: 'started',
           message: 'Transcription started successfully'

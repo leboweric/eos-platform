@@ -74,8 +74,41 @@ class AITranscriptionService {
         throw new Error(`ID mismatch: expected ${transcriptId}, got ${insertedId}`);
       }
       
+      // Final verification before commit
+      const finalVerify = await client.query(
+        'SELECT id, meeting_id, organization_id, status FROM meeting_transcripts WHERE id = $1',
+        [insertedId]
+      );
+      
+      console.log('🔍 [createTranscriptRecord] Final pre-commit verification:', {
+        insertedId,
+        found: finalVerify.rows.length > 0,
+        data: finalVerify.rows[0] || null
+      });
+      
+      if (finalVerify.rows.length === 0) {
+        throw new Error(`Transcript INSERT succeeded but record not found before commit - ID: ${insertedId}`);
+      }
+      
       await client.query('COMMIT');
       console.log('✅ [createTranscriptRecord] Transaction committed with ID:', insertedId);
+      
+      // Post-commit verification
+      const postCommitVerify = await client.query(
+        'SELECT id, meeting_id, organization_id, status FROM meeting_transcripts WHERE id = $1',
+        [insertedId]
+      );
+      
+      console.log('🔍 [createTranscriptRecord] Post-commit verification:', {
+        insertedId,
+        found: postCommitVerify.rows.length > 0,
+        data: postCommitVerify.rows[0] || null,
+        this_should_match_database: true
+      });
+      
+      if (postCommitVerify.rows.length === 0) {
+        throw new Error(`CRITICAL: Transcript committed but not found after commit - ID: ${insertedId}`);
+      }
       
       return { id: insertedId, meeting_id: meetingId, organization_id: organizationId, status: 'processing' };
       
@@ -325,21 +358,40 @@ Focus on:
 
   // Store AI summary
   async storeAISummary(transcriptId, aiSummary, processingTime, estimatedCost) {
+    console.log('🆔🆔🆔 [AI-ANALYSIS] CRITICAL ID TRACKING:', {
+      receivedTranscriptId: transcriptId,
+      willLookupMeetingInfo: true,
+      willInsertAISummary: true,
+      mustExistInDatabase: true
+    });
+    
     const client = await getClient();
     try {
       await client.query('BEGIN');
       
-      // Get meeting and organization info
-      const transcriptResult = await client.query(
-        'SELECT meeting_id, organization_id FROM meeting_transcripts WHERE id = $1',
+      // VERIFY transcript exists BEFORE trying to insert summary
+      const transcriptCheck = await client.query(
+        'SELECT id, meeting_id, organization_id FROM meeting_transcripts WHERE id = $1',
         [transcriptId]
       );
       
-      if (transcriptResult.rows.length === 0) {
-        throw new Error('Transcript not found');
+      console.log('🔍 [STORE-AI-SUMMARY] Pre-insert transcript check:', {
+        transcriptId,
+        existsInDb: transcriptCheck.rows.length > 0,
+        transcriptData: transcriptCheck.rows[0] || null
+      });
+      
+      if (transcriptCheck.rows.length === 0) {
+        throw new Error(`Cannot create AI summary - transcript ${transcriptId} does not exist (FK would fail)`);
       }
 
-      const { meeting_id, organization_id } = transcriptResult.rows[0];
+      const { meeting_id, organization_id } = transcriptCheck.rows[0];
+      
+      console.log('🔍 [STORE-AI-SUMMARY] Will use for INSERT:', {
+        transcriptId,
+        meeting_id,
+        organization_id
+      });
 
       const result = await client.query(`
         INSERT INTO meeting_ai_summaries (
@@ -386,14 +438,39 @@ Focus on:
       }
       
       const summaryId = result.rows[0].id;
-      console.log('[storeAISummary] ✅ Inserted AI summary with ID:', summaryId);
+      console.log('🔍 [STORE-AI-SUMMARY] INSERT succeeded, returned:', result.rows[0]);
+      
+      // Verify it's actually there
+      const verifyResult = await client.query(
+        'SELECT id, transcript_id, meeting_id, organization_id FROM meeting_ai_summaries WHERE id = $1',
+        [summaryId]
+      );
+      
+      console.log('🔍 [STORE-AI-SUMMARY] Post-insert verification:', {
+        summaryId,
+        found: verifyResult.rows.length > 0,
+        data: verifyResult.rows[0] || null
+      });
+      
+      if (verifyResult.rows.length === 0) {
+        throw new Error(`AI summary INSERT succeeded but record not found - ID: ${summaryId}`);
+      }
       
       await client.query('COMMIT');
-      console.log('✅ AI summary transaction committed successfully');
+      console.log('✅ [STORE-AI-SUMMARY] Transaction committed successfully');
       
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('❌ AI summary transaction rolled back:', error.message);
+      console.error('❌ [STORE-AI-SUMMARY] ERROR:', {
+        message: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        table: error.table,
+        column: error.column,
+        transcriptId,
+        stack: error.stack
+      });
       throw error;
     } finally {
       client.release();
