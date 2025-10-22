@@ -3,75 +3,83 @@ import logger from '../utils/logger.js';
 
 export const getActiveMeetings = async (req, res) => {
   try {
-    logger.debug('Fetching active meetings for admin dashboard');
+    logger.debug('Fetching active meeting sessions for admin dashboard');
     
-    // Debug query - let's see ALL recent meetings to understand the data
+    // Debug query - check recent meeting_sessions
     const debugResult = await db.query(`
       SELECT 
-        m.id,
-        m.status,
-        m.created_at,
-        m.team_id,
-        m.organization_id,
+        ms.id,
+        ms.is_active,
+        ms.start_time,
+        ms.team_id,
+        ms.organization_id,
+        ms.meeting_type,
         COALESCE(o.name, 'Unknown Organization') as organization_name,
         COALESCE(t.name, 'Unknown Team') as team_name
-      FROM meetings m
-      LEFT JOIN organizations o ON m.organization_id = o.id
-      LEFT JOIN teams t ON m.team_id = t.id
-      WHERE m.created_at > NOW() - INTERVAL '1 hour'
-      ORDER BY m.created_at DESC
+      FROM meeting_sessions ms
+      LEFT JOIN organizations o ON ms.organization_id = o.id
+      LEFT JOIN teams t ON ms.team_id = t.id
+      WHERE ms.start_time > NOW() - INTERVAL '1 hour'
+      ORDER BY ms.start_time DESC
       LIMIT 10
     `);
     
-    logger.info('🔍 Recent meetings (last hour):', debugResult.rows);
+    logger.info('🔍 Recent meeting sessions (last hour):', debugResult.rows);
     
-    // Main query - look for active meetings 
-    // ALSO include recent "completed" meetings (data inconsistency detection)
+    // CORRECTED: Query meeting_sessions table (not meetings table!)
     const result = await db.query(`
       SELECT 
-        m.id,
-        m.status,
-        m.created_at as started_at,
-        m.organization_id,
-        m.team_id,
+        ms.id,
+        ms.is_active as status,
+        ms.start_time as started_at,
+        ms.organization_id,
+        ms.team_id,
+        ms.meeting_type,
         COALESCE(o.name, 'Unknown Organization') as organization_name,
         COALESCE(t.name, 'Unknown Team') as team_name,
         false as has_active_recording,
-        CASE 
-          WHEN m.status = 'completed' AND m.created_at > NOW() - INTERVAL '2 hours'
-          THEN true 
-          ELSE false 
-        END as possibly_incorrect_status
-      FROM meetings m
-      LEFT JOIN organizations o ON m.organization_id = o.id
-      LEFT JOIN teams t ON m.team_id = t.id
-      WHERE m.status IN ('in-progress', 'active', 'started', 'ongoing')
-         OR (m.status = 'completed' AND m.created_at > NOW() - INTERVAL '2 hours')
-      ORDER BY m.created_at DESC
+        false as possibly_incorrect_status,
+        calculate_active_duration(ms.id) as duration_seconds
+      FROM meeting_sessions ms
+      LEFT JOIN organizations o ON ms.organization_id = o.id
+      LEFT JOIN teams t ON ms.team_id = t.id
+      WHERE ms.is_active = true
+        AND ms.expires_at > NOW()
+      ORDER BY ms.start_time DESC
     `);
 
     const activeMeetings = result.rows;
-    const activeRecordings = 0; // No active recordings for now
     
-    logger.info(`Admin dashboard: ${activeMeetings.length} active meetings found`);
+    // Check for active AI transcription sessions
+    const transcriptionResult = await db.query(`
+      SELECT COUNT(*) as active_count
+      FROM meeting_transcripts 
+      WHERE status = 'processing' 
+        AND deleted_at IS NULL
+    `);
+    
+    const activeRecordings = parseInt(transcriptionResult.rows[0]?.active_count || 0);
+    
+    logger.info(`Admin dashboard: ${activeMeetings.length} active meeting sessions found`);
 
     res.json({
       success: true,
       meetings: activeMeetings,
       count: activeMeetings.length,
       activeRecordingsCount: activeRecordings,
-      safeToDeploy: activeMeetings.length === 0,
+      safeToDeploy: activeMeetings.length === 0 && activeRecordings === 0,
       timestamp: new Date().toISOString(),
       debug: {
-        recentMeetingsLastHour: debugResult.rows,
-        statusFilter: ['in-progress', 'active', 'started', 'ongoing']
+        recentSessionsLastHour: debugResult.rows,
+        queryTable: 'meeting_sessions',
+        activeFilter: 'is_active = true AND expires_at > NOW()'
       }
     });
   } catch (error) {
-    logger.error('Error fetching active meetings:', error);
+    logger.error('Error fetching active meeting sessions:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch active meetings',
+      error: 'Failed to fetch active meeting sessions',
       details: error.message
     });
   }
