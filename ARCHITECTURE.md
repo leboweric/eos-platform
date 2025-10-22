@@ -49,8 +49,9 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Email**: @sendgrid/mail v8.1
 - **File Processing**: multer v1.4.5, sharp v0.33
 - **Payments**: stripe v16.12
-- **AI**: openai v4.72 for meeting summarization
+- **AI**: openai v4.72 for meeting summarization and transcript analysis
 - **Audio Processing**: Native MediaRecorder API, WebSocket streaming
+- **Transcription**: AssemblyAI real-time API for speech-to-text
 - **Security**: helmet v8.0, cors v2.8, express-rate-limit v7.4
 - **Monitoring**: @sentry/node v8.40 for error tracking
 
@@ -96,6 +97,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Apollo.io**: Website visitor tracking and lead enrichment
 - **Google Drive**: Enterprise document storage
 - **OneDrive/SharePoint**: Microsoft ecosystem storage
+- **AssemblyAI**: Real-time speech-to-text transcription
 
 ## 3. System Architecture
 
@@ -303,25 +305,46 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Dependencies**: Terminology mappings, UI adaptations
 - **Status**: In development - foundation complete
 
-### AI Meeting Assistant (October 2025)
-- **Purpose**: Real-time transcription, AI summarization, and automated action item extraction
-- **Key Files**:
-  - `frontend/src/services/aiMeetingService.js` - API service layer
-  - `frontend/src/hooks/useAudioRecording.js` - Audio capture and WebSocket management
-  - `frontend/src/components/MeetingAIRecordingControls.jsx` - Recording controls UI
-  - `frontend/src/components/MeetingAISummaryPanel.jsx` - AI summary display
-  - `frontend/src/pages/WeeklyAccountabilityMeetingPage.jsx` - Integrated AI controls
-- **Dependencies**: WebRTC API, WebSocket connections, OpenAI GPT-4, AssemblyAI
-- **Features**:
-  - Real-time audio recording with MediaRecorder API
-  - Live transcription with speaker identification
-  - WebSocket streaming for real-time transcript updates
-  - AI-powered meeting summarization with GPT-4
-  - Automatic action item and issue extraction
-  - Meeting history attachment with searchable transcripts
-  - Consent management and microphone permissions
-  - Multi-format transcript downloads
-- **Status**: Frontend complete, backend API layer ready for integration
+### AI Meeting Transcription System (October 2025)
+- **Purpose**: Complete real-time transcription, AI analysis, and automated action item extraction
+- **Backend Services**:
+  - `backend/src/services/transcriptionService.js` - AssemblyAI real-time transcription with EOS vocabulary
+  - `backend/src/services/aiSummaryService.js` - GPT-4 powered meeting analysis with comprehensive EOS prompts
+  - `backend/src/controllers/transcriptionController.js` - API endpoint handlers with full CRUD operations
+  - `backend/src/routes/transcription.js` - RESTful API routes for transcription management
+  - `backend/src/services/meetingSocketService.js` - Enhanced with audio streaming capabilities
+- **Frontend Components**:
+  - `frontend/src/components/MeetingAIRecordingControls.jsx` - Recording controls with microphone permission handling
+  - `frontend/src/components/MeetingAISummaryPanel.jsx` - AI summary display and action item management
+  - `frontend/src/services/aiMeetingService.js` - Legacy service (replaced by direct API calls)
+- **API Endpoints**:
+  - `GET /api/v1/transcription/health` - Health check for service monitoring
+  - `POST /api/v1/transcription/start` - Start AI transcription with AssemblyAI
+  - `POST /api/v1/transcription/stop` - Stop transcription & trigger AI summary
+  - `GET /api/v1/transcription/:meetingId/status` - Get transcription status
+  - `GET /api/v1/transcription/:meetingId` - Get transcript & AI summary
+  - `GET /api/v1/transcription/:transcriptId/ai-summary` - Get detailed AI analysis
+  - `POST /api/v1/transcription/:transcriptId/create-todos` - Create todos from AI insights
+  - `POST /api/v1/transcription/:transcriptId/create-issues` - Create issues from AI detection
+- **Database Tables**:
+  - `meeting_transcripts` - Raw transcripts and metadata
+  - `meeting_ai_summaries` - Comprehensive AI analysis results
+  - `transcript_access_log` - Audit trail for compliance
+- **Real-time Features**:
+  - WebSocket audio streaming to AssemblyAI
+  - Live transcript broadcasting to meeting participants
+  - Real-time AI summary completion notifications
+  - Dynamic audio level visualization
+- **EOS-Optimized Features**:
+  - Custom vocabulary for EOS terminology (Rocks, VTO, L10, IDS, etc.)
+  - Comprehensive GPT-4 prompts for business meeting analysis
+  - Automatic extraction of action items, decisions, issues, Rock updates
+  - Team dynamics and meeting effectiveness scoring
+  - One-click todo/issue creation from AI insights
+- **Environment Variables Required**:
+  - `ASSEMBLYAI_API_KEY` - Required for transcription
+  - `OPENAI_API_KEY` - Required for AI summaries
+- **Status**: Complete backend infrastructure, production-ready
 
 ## 6. Current State
 
@@ -347,6 +370,10 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **Configurable Scorecard Periods** - Organizations choose 13-week rolling, current quarter, or 4-week views
 ✅ **Configurable Rock Display** - Groups by Company/Individual or by Owner preference
 ✅ **Adaptive Meeting Buttons** - Single button adapts to start or join meetings based on state
+✅ **AI Meeting Transcription** - Complete real-time transcription with AssemblyAI and GPT-4 analysis
+✅ **EOS-Optimized AI Prompts** - Custom vocabulary and business-focused meeting analysis
+✅ **Real-time Audio Streaming** - WebSocket-based audio transmission for live transcription
+✅ **Automated Action Item Extraction** - AI-powered detection and one-click todo/issue creation
 ✅ **AI Meeting Assistant** - Real-time transcription, AI summarization, and automated action item extraction  
 
 ### Production Metrics

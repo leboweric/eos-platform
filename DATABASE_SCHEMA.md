@@ -299,54 +299,142 @@ Pre-defined agenda items for meetings.
 | notes | TEXT | | |
 
 ### meeting_transcripts
-AI-powered meeting transcription records.
+AI-powered meeting transcription records with real-time processing capabilities.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | |
+| id | UUID | PRIMARY KEY | Unique transcript identifier |
 | meeting_id | UUID | FOREIGN KEY | References meetings(id) |
 | organization_id | UUID | FOREIGN KEY | References organizations(id) |
-| transcription_status | VARCHAR(50) | DEFAULT 'not_started' | 'not_started', 'recording', 'processing', 'completed', 'failed' |
-| transcript_text | TEXT | | Full meeting transcript |
-| structured_transcript | JSONB | | Structured transcript with speakers and timestamps |
+| status | VARCHAR(50) | DEFAULT 'processing' | 'processing', 'processing_ai', 'completed', 'failed' |
+| transcription_service | VARCHAR(50) | DEFAULT 'assemblyai' | Service used for transcription |
+| raw_transcript | TEXT | | Full meeting transcript text |
+| transcript_json | JSONB | | Structured transcript with speakers, timestamps, confidence |
+| word_count | INTEGER | | Total word count |
 | audio_duration_seconds | INTEGER | | Total recording duration |
-| processing_started_at | TIMESTAMP WITH TIME ZONE | | When AI processing began |
+| processing_started_at | TIMESTAMP WITH TIME ZONE | | When transcription began |
 | processing_completed_at | TIMESTAMP WITH TIME ZONE | | When AI processing finished |
-| ai_summary | TEXT | | AI-generated meeting summary |
-| ai_action_items | JSONB | | Extracted action items array |
-| ai_issues_identified | JSONB | | Identified issues array |
-| ai_key_decisions | JSONB | | Key decisions made array |
-| consent_user_ids | JSONB | | Array of user IDs who consented to recording |
+| error_message | TEXT | | Error details if processing failed |
+| consent_obtained | BOOLEAN | DEFAULT false | Recording consent status |
+| consent_obtained_from | JSONB | | Array of user IDs who consented |
+| transcript_service_id | VARCHAR(255) | | External service session ID |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
-| deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete |
+| deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete timestamp |
 
-### meeting_transcript_chunks
-Real-time transcript chunks for streaming display.
+### meeting_ai_summaries
+Comprehensive AI analysis results with GPT-4 powered insights.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Unique summary identifier |
+| meeting_id | UUID | FOREIGN KEY | References meetings(id) |
+| transcript_id | UUID | FOREIGN KEY | References meeting_transcripts(id) |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| executive_summary | TEXT | | 2-3 paragraph meeting overview |
+| key_decisions | JSONB | | Array of decisions with rationale, impact, decision maker |
+| discussion_topics | JSONB | | Topics with duration, sentiment, energy level |
+| action_items | JSONB | | Extracted action items with assignee, due date, priority, category |
+| issues_discussed | JSONB | | Issues with status, solution, impact level, timeline |
+| rocks_mentioned | JSONB | | Rock/priority updates with status, progress, obstacles |
+| scorecard_metrics | JSONB | | Metrics discussed with current/target values, trends |
+| notable_quotes | JSONB | | Significant quotes with speaker and context |
+| team_dynamics | JSONB | | Participation, collaboration quality, conflict resolution |
+| eos_adherence | JSONB | | Level 10 structure compliance, time management, focus |
+| next_meeting_preparation | JSONB | | Items to prepare with owners and deadlines |
+| meeting_sentiment | VARCHAR(20) | | 'positive', 'neutral', 'negative', 'mixed' |
+| meeting_energy_score | INTEGER | | Energy level 1-10 |
+| productivity_score | INTEGER | | Productivity assessment 1-10 |
+| effectiveness_rating | JSONB | | Score with rationale |
+| improvement_suggestions | JSONB | | Array of specific improvement recommendations |
+| ai_model | VARCHAR(100) | | AI model used (e.g., 'gpt-4-turbo-preview') |
+| ai_prompt_version | VARCHAR(20) | | Prompt version for tracking improvements |
+| ai_processing_time_seconds | DECIMAL(10,3) | | Time taken for AI analysis |
+| ai_cost_usd | DECIMAL(10,4) | | Estimated cost of AI processing |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+### transcript_access_log
+Audit trail for transcript access and modifications (compliance).
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PRIMARY KEY | |
 | transcript_id | UUID | FOREIGN KEY | References meeting_transcripts(id) |
-| speaker | VARCHAR(255) | | Speaker identification |
-| text | TEXT | NOT NULL | Transcript chunk text |
-| timestamp | TIMESTAMP WITH TIME ZONE | | When spoken |
-| confidence | DECIMAL(3,2) | | AI confidence score (0.00-1.00) |
-| sequence_number | INTEGER | | Order in transcript |
-| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| user_id | UUID | FOREIGN KEY | References users(id) |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| access_type | VARCHAR(50) | NOT NULL | 'start_transcription', 'stop_transcription', 'view', 'view_summary', 'download', 'create_todos', 'create_issues', 'soft_delete', 'hard_delete' |
+| ip_address | INET | | User's IP address |
+| user_agent | TEXT | | Browser/client information |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | Access timestamp |
 
-## AI Meeting Assistant
+## AI Meeting Transcription System
 
-The AI Meeting Assistant provides real-time transcription, AI-powered summarization, and automated extraction of action items and issues from meeting conversations. This system captures everything discussed in meetings with proper consent management and speaker identification.
+The AI Meeting Transcription System provides enterprise-grade real-time transcription, AI-powered analysis, and automated extraction of business insights from meetings. Built specifically for EOS methodology with comprehensive business intelligence features.
 
-**Key Features:**
-- Real-time audio recording and transcription
-- WebSocket streaming for live transcript updates  
-- AI-powered meeting summaries with GPT-4
-- Automatic action item and issue extraction
-- Speaker identification and structured transcript
-- Consent management for recording compliance
-- Searchable meeting history and transcript archive
+### Architecture Overview
+- **Real-time Transcription**: AssemblyAI integration with custom EOS vocabulary
+- **AI Analysis Engine**: GPT-4 powered meeting analysis with comprehensive business prompts
+- **WebSocket Streaming**: Live audio transmission and transcript broadcasting
+- **Compliance Features**: Consent management, audit logging, data retention controls
+
+### Key Capabilities
+
+**Real-time Processing:**
+- Live audio capture with MediaRecorder API
+- WebSocket streaming to AssemblyAI for real-time speech-to-text
+- Custom vocabulary optimization for EOS terminology (Rocks, VTO, L10, IDS, etc.)
+- Speaker identification and confidence scoring
+- Live transcript broadcasting to all meeting participants
+
+**AI-Powered Analysis:**
+- Comprehensive GPT-4 prompts optimized for business meetings
+- Automatic extraction of action items with assignees and deadlines
+- Issue identification with impact assessment and solutions
+- Rock/priority progress tracking and obstacle identification
+- Team dynamics analysis and meeting effectiveness scoring
+- EOS methodology adherence assessment
+
+**Business Intelligence:**
+- Meeting sentiment and energy level analysis
+- Productivity and effectiveness scoring with improvement suggestions
+- Key decision tracking with rationale and impact assessment
+- Scorecard metric discussions with trend analysis
+- Notable quotes capture with context and significance
+
+**Integration Features:**
+- One-click todo creation from AI-extracted action items
+- Automatic issue creation from AI-detected problems
+- Meeting history attachment with searchable transcripts
+- Multi-format transcript downloads (TXT, JSON)
+- Real-time notifications for AI summary completion
+
+**Compliance & Security:**
+- Comprehensive consent management system
+- Detailed audit logging for all transcript access
+- Soft delete protection with recovery capabilities
+- GDPR-compliant data handling and retention
+- Secure API endpoints with authentication
+
+### Technical Implementation
+
+**Backend Services:**
+- `transcriptionService.js` - AssemblyAI real-time integration
+- `aiSummaryService.js` - GPT-4 analysis engine
+- `transcriptionController.js` - RESTful API endpoints
+- Enhanced `meetingSocketService.js` - Audio streaming capabilities
+
+**API Endpoints:**
+- Health monitoring and service status
+- Transcription lifecycle management (start/stop)
+- AI summary retrieval and analysis
+- Action item and issue creation
+- Transcript access and download
+
+**Database Schema:**
+- Three-table architecture for optimal performance
+- JSONB storage for flexible AI analysis results
+- Comprehensive audit trail for compliance
+- Soft delete protection for data recovery
 
 ## Task & Issue Management
 
