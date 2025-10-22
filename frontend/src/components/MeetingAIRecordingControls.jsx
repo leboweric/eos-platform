@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, Square, Loader2, AlertCircle } from 'lucide-react';
-import aiMeetingService from '../services/aiMeetingService';
+import api from '../services/axiosConfig';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -56,10 +56,21 @@ export const MeetingAIRecordingControls = ({
    */
   const handleStartRecording = async () => {
     console.log('🎙️ [AI Recording] Button clicked - requesting microphone access...');
+    console.log('🔍 [AI Recording] Using organizationId:', organizationId);
+    console.log('🔍 [AI Recording] Using meetingId:', meetingId);
     
     try {
       setError(null);
       setIsProcessing(true);
+
+      // Validate required parameters
+      if (!organizationId) {
+        throw new Error('Organization ID is required for AI recording');
+      }
+      
+      if (!meetingId) {
+        throw new Error('Meeting ID is required for AI recording');
+      }
 
       // Request microphone access - this will show the browser permission popup
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -72,8 +83,15 @@ export const MeetingAIRecordingControls = ({
       // Store the stream
       setAudioStream(stream);
 
-      // Start backend transcription
-      await aiMeetingService.startTranscription(meetingId);
+      // Start backend transcription using the new API endpoint
+      console.log('📡 [AI Recording] Starting transcription via API...');
+      const transcriptionResponse = await api.post('/transcription/start', {
+        meetingId,
+        organizationId
+      });
+
+      console.log('✅ [AI Recording] Transcription started:', transcriptionResponse.data);
+      
       setTranscriptionStatus('recording');
       setIsRecording(true);
       setRecordingTime(0);
@@ -126,7 +144,14 @@ export const MeetingAIRecordingControls = ({
       }
 
       // Stop backend transcription and trigger AI summary
-      await aiMeetingService.stopTranscription(meetingId);
+      console.log('📡 [AI Recording] Stopping transcription via API...');
+      const stopResponse = await api.post('/transcription/stop', {
+        meetingId,
+        organizationId
+      });
+
+      console.log('✅ [AI Recording] Transcription stopped:', stopResponse.data);
+      
       setTranscriptionStatus('processing');
       setIsRecording(false);
 
@@ -148,7 +173,8 @@ export const MeetingAIRecordingControls = ({
     if (transcriptionStatus === 'processing') {
       const interval = setInterval(async () => {
         try {
-          const status = await aiMeetingService.getTranscriptionStatus(meetingId);
+          const response = await api.get(`/transcription/${meetingId}/status?organizationId=${organizationId}`);
+          const status = response.data;
           
           if (status.status === 'completed') {
             setTranscriptionStatus('completed');
@@ -165,7 +191,7 @@ export const MeetingAIRecordingControls = ({
 
       return () => clearInterval(interval);
     }
-  }, [transcriptionStatus, meetingId]);
+  }, [transcriptionStatus, meetingId, organizationId]);
 
   if (!aiEnabled) {
     return null;
