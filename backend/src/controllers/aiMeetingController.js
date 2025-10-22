@@ -1,11 +1,42 @@
 import aiTranscriptionService from '../services/aiTranscriptionService.js';
 import db from '../config/database.js';
 
+// Helper function to parse meeting ID - handles composite IDs like {teamId}-{timestamp}
+function parseMeetingId(meetingId) {
+  if (!meetingId || typeof meetingId !== 'string') {
+    throw new Error('Invalid meeting ID provided');
+  }
+
+  // Check if it's a UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  
+  if (uuidRegex.test(meetingId)) {
+    // Already a proper UUID
+    return meetingId;
+  }
+
+  // Handle composite format: {teamId}-{timestamp}
+  const parts = meetingId.split('-');
+  if (parts.length >= 5) {
+    // Try to reconstruct UUID from first 5 parts (standard UUID format)
+    const potentialUuid = parts.slice(0, 5).join('-');
+    if (uuidRegex.test(potentialUuid)) {
+      return potentialUuid;
+    }
+  }
+
+  // If we can't parse it, throw an error rather than fail silently
+  throw new Error(`Invalid meeting ID format: ${meetingId}`);
+}
+
 export const startTranscription = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { consent_user_ids = [] } = req.body;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Verify user has access to this meeting
     const client = await db.getClient();
@@ -99,9 +130,12 @@ export const startTranscription = async (req, res) => {
 
 export const stopTranscription = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { final_transcript, structured_transcript } = req.body;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get the active transcript
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
@@ -146,8 +180,11 @@ export const stopTranscription = async (req, res) => {
 
 export const getTranscript = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get transcript
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
@@ -191,8 +228,11 @@ export const getTranscript = async (req, res) => {
 
 export const getAISummary = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get transcript and AI summary
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
@@ -246,9 +286,12 @@ export const getAISummary = async (req, res) => {
 
 export const createTodosFromAI = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { action_item_ids } = req.body;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     if (!action_item_ids || !Array.isArray(action_item_ids)) {
       return res.status(400).json({ message: 'action_item_ids array is required' });
@@ -292,9 +335,12 @@ export const createTodosFromAI = async (req, res) => {
 
 export const createIssuesFromAI = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { issue_ids } = req.body;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     if (!issue_ids || !Array.isArray(issue_ids)) {
       return res.status(400).json({ message: 'issue_ids array is required' });
@@ -380,9 +426,12 @@ export const searchTranscripts = async (req, res) => {
 
 export const downloadTranscript = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { format = 'txt' } = req.query;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get transcript
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
@@ -456,9 +505,12 @@ export const downloadTranscript = async (req, res) => {
 
 export const deleteTranscript = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
     const { hard_delete = false } = req.body;
     const userId = req.user.id;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get transcript
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
@@ -510,7 +562,10 @@ export const deleteTranscript = async (req, res) => {
 
 export const getTranscriptStatus = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
+    const { orgId, meetingId: rawMeetingId } = req.params;
+
+    // Parse meeting ID to handle composite formats
+    const meetingId = parseMeetingId(rawMeetingId);
 
     // Get transcript status
     const transcript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
