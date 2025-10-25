@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { 
   Calendar,
   Download,
@@ -29,7 +29,8 @@ import {
   AlertTriangle,
   Plus,
   Target,
-  ListTodo
+  ListTodo,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -692,32 +693,41 @@ const MeetingHistoryPageClean = () => {
             setSummaryHTML('');
           }
         }}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="flex items-center justify-between">
-                <span>Meeting Summary</span>
-                <Button
-                  variant="outline"
+          <DialogContent className="w-[90vw] max-w-5xl max-h-[90vh] p-0 gap-0 flex flex-col">
+            {/* Header Bar - Fixed at top */}
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-white shrink-0">
+              <DialogTitle className="text-lg font-semibold">Meeting Summary</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => window.print()} 
+                  variant="outline" 
                   size="sm"
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2"
+                  type="button"
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className="h-4 w-4 mr-2" />
                   Save as PDF
                 </Button>
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="flex-1 overflow-auto">
+                <DialogClose asChild>
+                  <Button variant="ghost" size="sm" type="button">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogClose>
+              </div>
+            </div>
+
+            {/* Content Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white min-h-0">
               {loadingSummary ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-3 text-gray-600">Loading meeting summary...</span>
+                <div className="flex items-center justify-center h-full p-8">
+                  <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+                    <p className="text-gray-600">Loading meeting summary...</p>
+                  </div>
                 </div>
               ) : (
                 <div 
                   dangerouslySetInnerHTML={{ __html: summaryHTML }}
-                  className="meeting-summary-content pr-2"
+                  className="meeting-summary-content p-6"
                 />
               )}
             </div>
