@@ -610,34 +610,34 @@ const GroupedScorecardView = ({
             }, 0))}
           </td>
         )}
-        <td className="text-center p-2 w-12">
-          <div className="flex justify-center space-x-1">
+        <td className="text-center px-4 py-2 min-w-[140px]">
+          <div className="flex justify-center gap-2">
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-8 w-8 p-1.5"
               onClick={() => onMetricUpdate(metric)}
             >
-              <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
+              <Edit className="h-4 w-4 shrink-0" style={{ color: themeColors.primary }} />
             </Button>
             {onMetricShare && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0"
+                className="h-8 w-8 p-1.5"
                 onClick={() => onMetricShare(metric)}
                 title={metric.is_shared ? "Metric is shared" : "Share this metric"}
               >
-                <Share2 className="h-3 w-3" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
+                <Share2 className="h-4 w-4 shrink-0" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
               </Button>
             )}
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-8 w-8 p-1.5"
               onClick={() => onMetricDelete(metric.id)}
             >
-              <Trash2 className="h-3 w-3 text-red-600" />
+              <Trash2 className="h-4 w-4 shrink-0 text-red-600" />
             </Button>
           </div>
         </td>
@@ -792,7 +792,7 @@ const GroupedScorecardView = ({
             );
           })}
           {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">Total</th>}
-          <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
+          <th className="text-center px-4 py-2 font-semibold text-gray-700 w-32">Actions</th>
         </tr>
       </thead>
     );
