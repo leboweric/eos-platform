@@ -16,8 +16,24 @@ export const getMeetingHistory = async (req, res) => {
     } = req.query;
 
     // Ensure user has access to this organization
-    if (req.user.organization_id !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
+    console.log('Meeting history access check:', {
+      userOrgId: req.user.organization_id,
+      requestedOrgId: orgId,
+      userId: req.user.id
+    });
+    
+    // Allow access if user's organization matches OR if user is accessing their own org
+    // Some users might have organization_id while others have organizationId
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+    if (userOrgId !== orgId) {
+      console.log('Access denied - organization mismatch');
+      return res.status(403).json({ 
+        error: 'Access denied to this organization',
+        debug: {
+          userOrgId,
+          requestedOrgId: orgId
+        }
+      });
     }
 
     let query = `
@@ -35,7 +51,7 @@ export const getMeetingHistory = async (req, res) => {
         u.first_name || ' ' || u.last_name as facilitator_name,
         COUNT(*) OVER() as total_count
       FROM meeting_snapshots ms
-      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN teams t ON ms.team_id = t.id
       LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.organization_id = $1
     `;
@@ -86,6 +102,16 @@ export const getMeetingHistory = async (req, res) => {
     console.log('Meeting history params:', params);
 
     const result = await db.query(query, params);
+    
+    console.log(`Meeting history query returned ${result.rows.length} rows`);
+    if (result.rows.length > 0) {
+      console.log('First row sample:', {
+        id: result.rows[0].id,
+        meeting_type: result.rows[0].meeting_type,
+        team_name: result.rows[0].team_name,
+        meeting_date: result.rows[0].meeting_date
+      });
+    }
 
     res.json({
       meetings: result.rows,
@@ -96,7 +122,11 @@ export const getMeetingHistory = async (req, res) => {
 
   } catch (error) {
     console.error('Failed to get meeting history:', error);
-    res.status(500).json({ error: 'Failed to get meeting history' });
+    res.status(500).json({ 
+      error: 'Failed to get meeting history',
+      message: error.message,
+      detail: error.detail
+    });
   }
 };
 
@@ -106,8 +136,24 @@ export const getMeetingSnapshot = async (req, res) => {
     const { orgId, id } = req.params;
 
     // Ensure user has access to this organization
-    if (req.user.organization_id !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
+    console.log('Meeting history access check:', {
+      userOrgId: req.user.organization_id,
+      requestedOrgId: orgId,
+      userId: req.user.id
+    });
+    
+    // Allow access if user's organization matches OR if user is accessing their own org
+    // Some users might have organization_id while others have organizationId
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+    if (userOrgId !== orgId) {
+      console.log('Access denied - organization mismatch');
+      return res.status(403).json({ 
+        error: 'Access denied to this organization',
+        debug: {
+          userOrgId,
+          requestedOrgId: orgId
+        }
+      });
     }
 
     const query = `
@@ -143,8 +189,24 @@ export const createMeetingSnapshot = async (req, res) => {
     const { orgId, meetingId } = req.params;
 
     // Ensure user has access to this organization
-    if (req.user.organization_id !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
+    console.log('Meeting history access check:', {
+      userOrgId: req.user.organization_id,
+      requestedOrgId: orgId,
+      userId: req.user.id
+    });
+    
+    // Allow access if user's organization matches OR if user is accessing their own org
+    // Some users might have organization_id while others have organizationId
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+    if (userOrgId !== orgId) {
+      console.log('Access denied - organization mismatch');
+      return res.status(403).json({ 
+        error: 'Access denied to this organization',
+        debug: {
+          userOrgId,
+          requestedOrgId: orgId
+        }
+      });
     }
 
     await client.query('BEGIN');
@@ -356,8 +418,24 @@ export const updateMeetingNotes = async (req, res) => {
     const { notes } = req.body;
 
     // Ensure user has access to this organization
-    if (req.user.organization_id !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
+    console.log('Meeting history access check:', {
+      userOrgId: req.user.organization_id,
+      requestedOrgId: orgId,
+      userId: req.user.id
+    });
+    
+    // Allow access if user's organization matches OR if user is accessing their own org
+    // Some users might have organization_id while others have organizationId
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+    if (userOrgId !== orgId) {
+      console.log('Access denied - organization mismatch');
+      return res.status(403).json({ 
+        error: 'Access denied to this organization',
+        debug: {
+          userOrgId,
+          requestedOrgId: orgId
+        }
+      });
     }
 
     const query = `
@@ -403,8 +481,24 @@ export const exportMeetingHistoryCSV = async (req, res) => {
     } = req.query;
 
     // Ensure user has access to this organization
-    if (req.user.organization_id !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
+    console.log('Meeting history access check:', {
+      userOrgId: req.user.organization_id,
+      requestedOrgId: orgId,
+      userId: req.user.id
+    });
+    
+    // Allow access if user's organization matches OR if user is accessing their own org
+    // Some users might have organization_id while others have organizationId
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+    if (userOrgId !== orgId) {
+      console.log('Access denied - organization mismatch');
+      return res.status(403).json({ 
+        error: 'Access denied to this organization',
+        debug: {
+          userOrgId,
+          requestedOrgId: orgId
+        }
+      });
     }
 
     // Use same filtering logic as getMeetingHistory but without pagination
@@ -418,7 +512,7 @@ export const exportMeetingHistoryCSV = async (req, res) => {
         u.first_name || ' ' || u.last_name as facilitator_name,
         ms.snapshot_data
       FROM meeting_snapshots ms
-      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN teams t ON ms.team_id = t.id
       LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.organization_id = $1
     `;
