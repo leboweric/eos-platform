@@ -6,13 +6,35 @@ const getOrgId = () => {
 };
 
 export const getMeetingHistory = async (params = {}) => {
+  console.log('📡 === meetingHistoryService.getMeetingHistory CALLED ===');
+  console.log('📡 Input params:', params);
+  
   const orgId = getOrgId();
+  console.log('📡 Retrieved orgId from localStorage:', orgId);
+  
   if (!orgId) {
+    console.error('📡 ❌ NO ORGANIZATION ID FOUND');
     throw new Error('No organization selected');
   }
   
-  const response = await api.get(`/organizations/${orgId}/meeting-history`, { params });
-  return response.data;
+  const url = `/organizations/${orgId}/meeting-history`;
+  console.log('📡 Full API URL:', url);
+  console.log('📡 Request params:', params);
+  console.log('📡 Making API call NOW...');
+  
+  try {
+    const response = await api.get(url, { params });
+    console.log('📡 ✅ API call SUCCESS');
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('📡 ❌ API call FAILED');
+    console.error('📡 Error:', error);
+    console.error('📡 Error response:', error.response?.data);
+    console.error('📡 Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 export const getMeetingDetail = async (id) => {

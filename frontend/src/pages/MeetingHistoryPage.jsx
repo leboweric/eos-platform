@@ -75,8 +75,16 @@ class MeetingHistoryErrorBoundary extends Component {
 }
 
 const MeetingHistoryPageClean = () => {
+  console.log('=== 🏁 MeetingHistoryPage COMPONENT RENDERING ===');
+  
   const { user, currentOrganization } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  
+  console.log('👤 User in MeetingHistory:', user);
+  console.log('🏢 Current Organization:', currentOrganization);
+  console.log('🏢 Organization ID from user:', user?.organizationId || user?.organization_id);
+  console.log('🏢 Organization ID from currentOrganization:', currentOrganization?.id);
+  console.log('🏢 Selected Department:', selectedDepartment);
   
   // State management
   const [meetings, setMeetings] = useState([]);
@@ -99,13 +107,27 @@ const MeetingHistoryPageClean = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+  
+  console.log('📋 Initial state:', { 
+    meetingsCount: meetings.length, 
+    loading, 
+    filters,
+    page,
+    total 
+  });
 
   useEffect(() => {
+    console.log('🔄 === useEffect #1 TRIGGERED (selectedDepartment change) ===');
+    console.log('🔄 selectedDepartment:', selectedDepartment);
+    console.log('🔄 currentOrganization at effect time:', currentOrganization);
     fetchTeams();
     fetchMeetings();
   }, [selectedDepartment]);
 
   useEffect(() => {
+    console.log('🔄 === useEffect #2 TRIGGERED (filters/page change) ===');
+    console.log('🔄 filters:', filters);
+    console.log('🔄 page:', page);
     fetchMeetings();
   }, [filters, page]);
 
@@ -121,11 +143,17 @@ const MeetingHistoryPageClean = () => {
   };
 
   const fetchMeetings = async () => {
+    console.log('📞 === fetchMeetings CALLED ===');
+    console.log('📞 currentOrganization at fetch time:', currentOrganization);
+    console.log('📞 currentOrganization?.id:', currentOrganization?.id);
+    
     try {
       setLoading(true);
       setError(null);
       
       if (!currentOrganization?.id) {
+        console.error('❌ NO ORGANIZATION ID - Exiting fetchMeetings early');
+        console.error('❌ currentOrganization object:', currentOrganization);
         setLoading(false);
         return;
       }
@@ -136,6 +164,8 @@ const MeetingHistoryPageClean = () => {
         offset: (page - 1) * limit
       };
 
+      console.log('🌐 Raw params before cleanup:', params);
+
       // Remove empty filter values
       Object.keys(params).forEach(key => {
         if (params[key] === '' || params[key] === null || params[key] === undefined) {
@@ -143,17 +173,31 @@ const MeetingHistoryPageClean = () => {
         }
       });
 
+      console.log('🌐 Clean params after cleanup:', params);
+      console.log('🌐 About to call meetingHistoryService.getMeetingHistory');
+      console.log('🌐 Calling with params:', params);
+
       const response = await meetingHistoryService.getMeetingHistory(params);
+      
+      console.log('✅ === API RESPONSE RECEIVED ===');
+      console.log('✅ Full response:', response);
+      console.log('✅ Meetings array:', response.meetings);
+      console.log('✅ Number of meetings:', response.meetings?.length || 0);
+      console.log('✅ Total count:', response.total);
       
       setMeetings(response.meetings || []);
       setTotal(response.total || 0);
       
     } catch (error) {
-      console.error('Failed to fetch meeting history:', error);
+      console.error('❌ === ERROR in fetchMeetings ===');
+      console.error('❌ Error object:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error response:', error.response);
       setError('Failed to load meeting history');
       toast.error('Failed to load meeting history');
     } finally {
       setLoading(false);
+      console.log('📞 fetchMeetings completed, loading set to false');
     }
   };
 
@@ -256,12 +300,19 @@ const MeetingHistoryPageClean = () => {
   const totalPages = Math.ceil(total / limit);
 
   if (loading && meetings.length === 0) {
+    console.log('🎨 RENDERING LOADING SPINNER');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
+
+  console.log('🎨 === RENDERING MAIN UI ===');
+  console.log('🎨 Meetings count:', meetings.length);
+  console.log('🎨 Loading state:', loading);
+  console.log('🎨 Error state:', error);
+  console.log('🎨 Total from backend:', total);
 
   return (
     <div className="min-h-screen bg-white">
