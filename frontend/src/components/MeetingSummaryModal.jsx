@@ -225,7 +225,7 @@ export const MeetingSummaryModal = ({
               </div>
             </div>
           ) : (
-            <div className="max-w-[900px] mx-auto bg-white shadow-lg p-12" style={{ minHeight: '11in' }}>
+            <div className="bg-white p-12">
               {/* Document Header */}
               <div className="mb-10 pb-6 border-b-4 border-gray-900">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
