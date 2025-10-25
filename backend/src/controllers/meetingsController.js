@@ -631,6 +631,67 @@ export const concludeMeeting = async (req, res) => {
     // Record meeting conclusion for reminder scheduling
     await recordMeetingConclusion(organizationId, teamId, meetingType);
 
+    // Create meeting snapshot for history
+    try {
+      logger.info('Creating meeting snapshot for history...');
+      
+      // Get the meeting that was just concluded
+      let meetingToSnapshot;
+      if (specificMeetingId) {
+        const result = await db.query(
+          'SELECT * FROM meetings WHERE id = $1 AND organization_id = $2',
+          [specificMeetingId, organizationId]
+        );
+        meetingToSnapshot = result.rows[0];
+      } else if (meetingUpdateResult && meetingUpdateResult.rows.length > 0) {
+        meetingToSnapshot = meetingUpdateResult.rows[0];
+      }
+
+      if (meetingToSnapshot) {
+        // Calculate duration
+        const durationMinutes = meetingToSnapshot.actual_end_time && meetingToSnapshot.actual_start_time
+          ? Math.round((new Date(meetingToSnapshot.actual_end_time) - new Date(meetingToSnapshot.actual_start_time)) / 60000)
+          : duration || null;
+
+        // Build snapshot data from meeting conclusion data
+        const snapshotData = {
+          issues: issues || [],
+          todos: todos || [],
+          attendees: individualRatings || attendees || [],
+          notes: notes || meetingToSnapshot.notes || '',
+          rating: rating || meetingToSnapshot.rating,
+          metrics: metrics || [],
+          summary: summary || '',
+          cascadingMessage: cascadingMessage || '',
+          aiSummary: aiSummary || null
+        };
+
+        // Create snapshot
+        await db.query(
+          `INSERT INTO meeting_snapshots 
+           (meeting_id, organization_id, team_id, meeting_type, meeting_date, 
+            duration_minutes, average_rating, facilitator_id, snapshot_data)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (meeting_id) DO NOTHING`,
+          [
+            meetingToSnapshot.id,
+            organizationId,
+            teamId,
+            meetingType || 'Weekly Accountability',
+            meetingToSnapshot.scheduled_date || new Date(),
+            durationMinutes,
+            rating,
+            meetingToSnapshot.facilitator_id || userId,
+            JSON.stringify(snapshotData)
+          ]
+        );
+        logger.info('✅ Meeting snapshot created successfully');
+      }
+    } catch (snapshotError) {
+      logger.error('Error creating meeting snapshot:', snapshotError);
+      // Don't fail the entire conclusion if snapshot creation fails
+    }
+
     res.json({
       success: true,
       message: 'Meeting concluded successfully',
