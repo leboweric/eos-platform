@@ -103,14 +103,16 @@ export const getMeetingHistory = async (req, res) => {
 
     // Filter by start date
     if (start_date) {
-      query += ` AND ms.meeting_date >= $${paramCount}`;
+      console.log('📅 Adding start_date filter:', start_date);
+      query += ` AND ms.meeting_date::date >= $${paramCount}::date`;
       params.push(start_date);
       paramCount++;
     }
 
     // Filter by end date
     if (end_date) {
-      query += ` AND ms.meeting_date <= $${paramCount}`;
+      console.log('📅 Adding end_date filter:', end_date);
+      query += ` AND ms.meeting_date::date <= $${paramCount}::date`;
       params.push(end_date);
       paramCount++;
     }
@@ -126,12 +128,43 @@ export const getMeetingHistory = async (req, res) => {
     query += ` ORDER BY ms.meeting_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(parseInt(limit), parseInt(offset));
 
-    console.log('Meeting history query:', query);
-    console.log('Meeting history params:', params);
+    console.log('🔍 === FULL SQL QUERY ===');
+    console.log('Query string:', query);
+    console.log('Parameters:', params);
+    console.log('Parameter mapping:');
+    params.forEach((param, index) => {
+      console.log(`  $${index + 1} = '${param}'`);
+    });
+    console.log('========================');
 
     const result = await db.query(query, params);
     
     console.log(`Meeting history query returned ${result.rows.length} rows`);
+    
+    // DIAGNOSTIC: If no results, check what dates exist for this team
+    if (result.rows.length === 0 && (start_date || end_date)) {
+      console.log('🔍 DIAGNOSTIC: Checking actual dates in database for this team...');
+      const diagnosticQuery = `
+        SELECT 
+          COUNT(*) as total,
+          MIN(meeting_date) as earliest_date,
+          MAX(meeting_date) as latest_date,
+          COUNT(CASE WHEN meeting_date IS NULL THEN 1 END) as null_dates
+        FROM meeting_snapshots
+        WHERE organization_id = $1 AND team_id = $2
+      `;
+      const diagnosticResult = await db.query(diagnosticQuery, [orgId, team_id]);
+      console.log('📊 Date range in database:', diagnosticResult.rows[0]);
+      
+      // Also check without date filters
+      const withoutDatesQuery = `
+        SELECT COUNT(*) as count_without_date_filters
+        FROM meeting_snapshots
+        WHERE organization_id = $1 AND team_id = $2
+      `;
+      const withoutDatesResult = await db.query(withoutDatesQuery, [orgId, team_id]);
+      console.log('📊 Total meetings without date filters:', withoutDatesResult.rows[0].count_without_date_filters);
+    }
     if (result.rows.length > 0) {
       console.log('First row sample:', {
         id: result.rows[0].id,
