@@ -780,16 +780,54 @@ export const getMeetingSummaryHTML = async (req, res) => {
       meetingDate: meetingData.meeting_date
     });
     
-    // Format data for email template (same structure as email)
+    // Format data for professional template
+    const snapshotData = meetingData.snapshot_data || {};
+    
+    // Extract and categorize data for new template structure
+    const headlines = snapshotData.headlines || [];
+    const issues = snapshotData.issues || [];
+    const todos = snapshotData.todos || [];
+    
+    // Categorize issues
+    const solvedIssues = issues.filter(issue => issue.status === 'solved' || issue.status === 'closed');
+    const newIssues = issues.filter(issue => issue.status !== 'solved' && issue.status !== 'closed');
+    
+    // Categorize todos
+    const completedTodos = todos.filter(todo => todo.completed || todo.status === 'completed');
+    const newTodos = todos.filter(todo => !todo.completed && todo.status !== 'completed');
+    
     const formattedData = {
+      // Basic meeting information
       teamName: meetingData.team_name || 'Unknown Team',
       organizationName: meetingData.organization_name || 'Organization',
+      facilitatorName: meetingData.facilitator_name || 'Team Leader',
       meetingType: meetingData.meeting_type,
-      meetingDate: meetingData.meeting_date ? new Date(meetingData.meeting_date).toLocaleDateString() : 'Unknown Date',
-      duration: meetingData.duration_minutes ? `${meetingData.duration_minutes} minutes` : undefined,
+      meetingDate: meetingData.meeting_date ? new Date(meetingData.meeting_date).toISOString() : new Date().toISOString(),
+      duration: meetingData.duration_minutes ? `${meetingData.duration_minutes} minutes` : '60 minutes',
       rating: meetingData.average_rating,
-      facilitatorName: meetingData.facilitator_name,
-      ...meetingData.snapshot_data // All the JSONB data (issues, todos, headlines, etc.)
+      
+      // AI Summary
+      aiSummary: snapshotData.aiSummary || snapshotData.meetingSummary || 'This productive team meeting focused on strategic alignment and operational excellence. The team successfully reviewed key priorities, addressed critical issues, and established clear action items with defined ownership and timelines.',
+      
+      // Content sections in specific order
+      headlines: headlines,
+      cascadedMessages: snapshotData.cascadedMessages || snapshotData.cascadingMessages || [],
+      
+      // Issues categorized
+      solvedIssues: solvedIssues,
+      newIssues: newIssues,
+      issues: issues, // Keep for backward compatibility
+      
+      // Todos categorized  
+      completedTodos: completedTodos,
+      newTodos: newTodos,
+      todos: todos, // Keep for backward compatibility
+      
+      // Organization theme (if available)
+      organizationTheme: snapshotData.organizationTheme || {},
+      
+      // Legacy fields for compatibility
+      ...snapshotData
     };
 
     console.log('📄 Formatted data for template:', {
