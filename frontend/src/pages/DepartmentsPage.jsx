@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { 
   Building2,
   Plus,
@@ -334,18 +333,29 @@ const DepartmentsPage = () => {
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center">
-                          <Switch
-                            checked={dept.is_active !== false}
-                            onCheckedChange={() => handleToggleActive(dept)}
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleActive(dept)}
+                            className={`
+                              relative inline-flex h-5 w-9 items-center rounded-full
+                              transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                              ${dept.is_active !== false ? 'bg-green-600' : 'bg-gray-300'}
+                              cursor-pointer hover:opacity-80
+                            `}
+                            role="switch"
+                            aria-checked={dept.is_active !== false}
                             aria-label={`Toggle ${dept.name} active status`}
-                          />
-                          <span className="ml-2 text-sm">
-                            {dept.is_active !== false ? (
-                              <span className="text-green-600">Active</span>
-                            ) : (
-                              <span className="text-gray-500">Inactive</span>
-                            )}
+                          >
+                            <span
+                              className={`
+                                inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm
+                                ${dept.is_active !== false ? 'translate-x-5' : 'translate-x-1'}
+                              `}
+                            />
+                          </button>
+                          <span className={`text-sm ${dept.is_active !== false ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                            {dept.is_active !== false ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </td>
@@ -425,15 +435,35 @@ const DepartmentsPage = () => {
               </select>
             </div>
             {editingDept && (
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="active" className="cursor-pointer">
-                  Department is active
+              <div className="flex items-center space-x-3">
+                <Label htmlFor="active" className="text-sm font-medium text-gray-700">
+                  Status:
                 </Label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                    className={`
+                      relative inline-flex h-5 w-9 items-center rounded-full
+                      transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                      ${formData.is_active ? 'bg-green-600' : 'bg-gray-300'}
+                      cursor-pointer hover:opacity-80
+                    `}
+                    role="switch"
+                    aria-checked={formData.is_active}
+                    aria-label="Toggle department active status"
+                  >
+                    <span
+                      className={`
+                        inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm
+                        ${formData.is_active ? 'translate-x-5' : 'translate-x-1'}
+                      `}
+                    />
+                  </button>
+                  <span className={`text-sm ${formData.is_active ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                    {formData.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
               </div>
             )}
           </div>
