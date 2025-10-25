@@ -365,10 +365,10 @@ const MeetingHistoryPageClean = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Meeting History</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Meeting History</h1>
           <p className="text-gray-600">
             View archived meetings with detailed snapshots, attendee information, and outcomes.
           </p>
@@ -399,7 +399,7 @@ const MeetingHistoryPageClean = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Search */}
               <div className="space-y-2">
                 <Label htmlFor="search">Search</Label>
@@ -413,26 +413,6 @@ const MeetingHistoryPageClean = () => {
                     className="pl-10"
                   />
                 </div>
-              </div>
-
-              {/* Team Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="team">Team</Label>
-                <Select
-                  value={filters.team_id || undefined}
-                  onValueChange={(value) => handleFilterChange('team_id', value || '')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All teams" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Meeting Type Filter */}
@@ -490,7 +470,7 @@ const MeetingHistoryPageClean = () => {
         </Card>
 
         {/* Results Summary */}
-        <div className="mb-4">
+        <div className="mb-6">
           <p className="text-sm text-gray-600">
             Showing {meetings.length} of {total} meetings
             {page > 1 && ` (Page ${page} of ${totalPages})`}
@@ -520,7 +500,7 @@ const MeetingHistoryPageClean = () => {
             </p>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {meetings.map((meeting) => {
               const snapshotData = meeting.snapshot_data || {};
               const issues = snapshotData.issues || {};
