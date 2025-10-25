@@ -6,7 +6,6 @@ import {
   DialogClose 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   ChevronDown,
   ChevronUp,
@@ -15,14 +14,9 @@ import {
   Loader2,
   Sparkles,
   Megaphone,
-  Users,
-  Briefcase,
   CheckCircle2,
   AlertCircle,
-  ListTodo,
-  Target,
-  Calendar,
-  Clock
+  ListTodo
 } from 'lucide-react';
 
 // Collapsible Section Component
@@ -31,45 +25,33 @@ const CollapsibleSection = ({
   icon: Icon, 
   children, 
   defaultOpen = true,
-  badge = null,
   isEmpty = false 
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4 bg-white">
+    <div className="border border-gray-200 rounded-lg overflow-hidden mb-6 bg-white shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors"
         type="button"
       >
         <div className="flex items-center gap-3">
-          {Icon && (
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Icon className="h-5 w-5 text-blue-600" />
-            </div>
-          )}
+          {Icon && <Icon className="h-5 w-5 text-gray-600" />}
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          {badge && (
-            <Badge variant="secondary" className="ml-2">
-              {badge}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
           {isEmpty && (
-            <span className="text-sm text-gray-400 mr-2">(Empty)</span>
-          )}
-          {isOpen ? (
-            <ChevronUp className="h-5 w-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-gray-400" />
+            <span className="text-sm text-gray-400 ml-2">(Empty)</span>
           )}
         </div>
+        {isOpen ? (
+          <ChevronUp className="h-5 w-5 text-gray-400" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-gray-400" />
+        )}
       </button>
       
       {isOpen && (
-        <div className="p-4 pt-0 border-t border-gray-100">
+        <div className="p-6 pt-0 border-t border-gray-100">
           {children}
         </div>
       )}
@@ -79,22 +61,22 @@ const CollapsibleSection = ({
 
 // Empty State Component
 const EmptyState = ({ message }) => (
-  <div className="text-center py-8 px-4 bg-gray-50 rounded-lg">
-    <p className="text-sm text-gray-500 italic">{message}</p>
+  <div className="text-center py-12 px-4">
+    <p className="text-gray-400 italic">{message}</p>
   </div>
 );
 
 // List Item Component
 const ListItem = ({ children, completed = false }) => (
-  <div className="flex items-start gap-3 py-2 px-3 hover:bg-gray-50 rounded-md transition-colors">
-    <div className={`mt-1 ${completed ? 'text-green-600' : 'text-blue-600'}`}>
+  <div className="flex items-start gap-3 py-3 px-4 hover:bg-gray-50 rounded-md transition-colors border-b border-gray-100 last:border-0">
+    <div className={`mt-0.5 ${completed ? 'text-green-600' : 'text-gray-400'}`}>
       {completed ? (
-        <CheckCircle2 className="h-4 w-4" />
+        <CheckCircle2 className="h-5 w-5" />
       ) : (
-        <div className="h-4 w-4 rounded-full border-2 border-current" />
+        <div className="h-5 w-5 rounded-full border-2 border-current" />
       )}
     </div>
-    <div className={`flex-1 text-sm ${completed ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+    <div className={`flex-1 ${completed ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
       {children}
     </div>
   </div>
@@ -198,18 +180,29 @@ export const MeetingSummaryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-6xl max-h-[92vh] p-0 gap-0 flex flex-col">
-        {/* Enhanced Header */}
-        <div className="shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-          <div className="flex items-center justify-between px-6 py-4">
+      <DialogContent className="w-[95vw] max-w-7xl max-h-[95vh] p-0 gap-0 flex flex-col">
+        {/* Simple Header */}
+        <div className="shrink-0 border-b bg-white">
+          <div className="flex items-center justify-between px-8 py-5">
             <div className="flex-1">
-              <DialogTitle className="text-xl font-bold text-white mb-1">
-                {meetingInfo?.teamName || 'Meeting Summary'}
+              <DialogTitle className="text-2xl font-semibold text-gray-900 mb-1">
+                Meeting Summary
               </DialogTitle>
               {meetingInfo && (
-                <div className="text-sm text-blue-100">
-                  <div>{meetingInfo.meetingType}</div>
-                  <div className="text-xs mt-1">{meetingInfo.meta}</div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">{meetingInfo.teamName}</span>
+                  {meetingInfo.meetingType && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span>{meetingInfo.meetingType}</span>
+                    </>
+                  )}
+                  {meetingInfo.meta && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span>{meetingInfo.meta}</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -218,7 +211,6 @@ export const MeetingSummaryModal = ({
                 onClick={() => window.print()} 
                 variant="outline" 
                 size="sm"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 type="button"
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -228,32 +220,11 @@ export const MeetingSummaryModal = ({
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-white hover:bg-white/20"
                   type="button"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </DialogClose>
-            </div>
-          </div>
-
-          {/* Quick Stats Bar */}
-          <div className="px-6 pb-4 flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              <span>{solvedIssues.length} Issues Solved</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <span>{newIssues.length} New Issues</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ListTodo className="h-4 w-4" />
-              <span>{newTodos.length} New To-Dos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>{completedTodos.length} Completed</span>
             </div>
           </div>
         </div>
@@ -263,22 +234,24 @@ export const MeetingSummaryModal = ({
           {loading ? (
             <div className="flex items-center justify-center h-full p-8">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
-                <p className="text-gray-600 font-medium">Loading meeting summary...</p>
+                <Loader2 className="h-8 w-8 animate-spin text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-600">Loading meeting summary...</p>
               </div>
             </div>
           ) : (
-            <div className="p-6 max-w-5xl mx-auto">
+            <div className="p-8 max-w-6xl mx-auto">
               {/* AI Summary Section - ONLY SHOW IF EXISTS */}
               {aiSummary && (
                 <CollapsibleSection
-                  title="AI Meeting Summary"
+                  title="AI Executive Summary"
                   icon={Sparkles}
                   defaultOpen={true}
                   isEmpty={false}
                 >
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                  <div className="prose prose-gray max-w-none">
+                    <p className="text-gray-700 leading-relaxed text-base whitespace-pre-wrap">
+                      {aiSummary}
+                    </p>
                   </div>
                 </CollapsibleSection>
               )}
@@ -288,13 +261,12 @@ export const MeetingSummaryModal = ({
                 title="Headlines"
                 icon={Megaphone}
                 defaultOpen={true}
-                badge={headlines.length > 0 ? `${headlines.length}` : null}
                 isEmpty={headlines.length === 0}
               >
                 {headlines.length === 0 ? (
                   <EmptyState message="No headlines shared" />
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0">
                     {headlines.map((headline, idx) => (
                       <ListItem key={idx}>{headline}</ListItem>
                     ))}
@@ -307,13 +279,12 @@ export const MeetingSummaryModal = ({
                 title="Cascading Messages"
                 icon={Megaphone}
                 defaultOpen={false}
-                badge={cascadingMessages.length > 0 ? `${cascadingMessages.length}` : null}
                 isEmpty={cascadingMessages.length === 0}
               >
                 {cascadingMessages.length === 0 ? (
                   <EmptyState message="No cascading messages" />
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0">
                     {cascadingMessages.map((message, idx) => (
                       <ListItem key={idx}>{message}</ListItem>
                     ))}
@@ -321,20 +292,19 @@ export const MeetingSummaryModal = ({
                 )}
               </CollapsibleSection>
 
-              {/* Issues Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+              {/* Issues Section - Side by Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Solved Issues */}
                 <CollapsibleSection
                   title="Solved Issues"
                   icon={CheckCircle2}
                   defaultOpen={true}
-                  badge={solvedIssues.length > 0 ? `${solvedIssues.length}` : null}
                   isEmpty={solvedIssues.length === 0}
                 >
                   {solvedIssues.length === 0 ? (
                     <EmptyState message="No issues solved" />
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {solvedIssues.map((issue, idx) => (
                         <ListItem key={idx} completed={true}>{issue}</ListItem>
                       ))}
@@ -347,13 +317,12 @@ export const MeetingSummaryModal = ({
                   title="New Issues"
                   icon={AlertCircle}
                   defaultOpen={true}
-                  badge={newIssues.length > 0 ? `${newIssues.length}` : null}
                   isEmpty={newIssues.length === 0}
                 >
                   {newIssues.length === 0 ? (
                     <EmptyState message="No new issues" />
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {newIssues.map((issue, idx) => (
                         <ListItem key={idx}>{issue}</ListItem>
                       ))}
@@ -362,20 +331,19 @@ export const MeetingSummaryModal = ({
                 </CollapsibleSection>
               </div>
 
-              {/* To-Dos Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* To-Dos Section - Side by Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Completed To-Dos */}
                 <CollapsibleSection
                   title="Completed To-Dos"
                   icon={CheckCircle2}
                   defaultOpen={false}
-                  badge={completedTodos.length > 0 ? `${completedTodos.length}` : null}
                   isEmpty={completedTodos.length === 0}
                 >
                   {completedTodos.length === 0 ? (
                     <EmptyState message="No completed to-dos" />
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {completedTodos.map((todo, idx) => (
                         <ListItem key={idx} completed={true}>{todo}</ListItem>
                       ))}
@@ -388,13 +356,12 @@ export const MeetingSummaryModal = ({
                   title="New To-Dos"
                   icon={ListTodo}
                   defaultOpen={true}
-                  badge={newTodos.length > 0 ? `${newTodos.length}` : null}
                   isEmpty={newTodos.length === 0}
                 >
                   {newTodos.length === 0 ? (
                     <EmptyState message="No new to-dos" />
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {newTodos.map((todo, idx) => (
                         <ListItem key={idx}>{todo}</ListItem>
                       ))}
