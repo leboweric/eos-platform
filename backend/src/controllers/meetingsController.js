@@ -248,12 +248,14 @@ export const concludeMeeting = async (req, res) => {
       logger.debug('No active or recent recording found');
     }
 
-    // Get organization details
+    // Get organization details including theme colors
     const orgResult = await db.query(
-      'SELECT name FROM organizations WHERE id = $1',
+      'SELECT name, theme_color, primary_color FROM organizations WHERE id = $1',
       [organizationId]
     );
-    const organizationName = orgResult.rows[0]?.name || 'Your Organization';
+    const orgData = orgResult.rows[0];
+    const organizationName = orgData?.name || 'Your Organization';
+    const themeColor = orgData?.theme_color || orgData?.primary_color || '#6366f1';
 
     // Get team/department name (we know teamId is valid at this point)
     const teamResult = await db.query(
@@ -545,32 +547,40 @@ export const concludeMeeting = async (req, res) => {
                                  meetingType === 'quarterly' ? 'Quarterly Planning Meeting' : 
                                  meetingType || 'Meeting';
 
+    // Format meeting data for email template (same format as Meeting History)
     const emailData = {
-      meetingType: formattedMeetingType,
       teamName,
+      meetingType: formattedMeetingType,
       meetingDate: formattedDate,
-      duration: formatDuration(duration || 0),
+      duration: duration || 60,
       rating: typeof rating === 'number' ? rating : null,
-      individualRatings: individualRatings || [], // Array of participant ratings
+      facilitatorName: userName,
       organizationName,
-      organizationId: organizationId, // Add organization ID for AI summary lookup
-      aiSummary: aiSummary, // Include AI summary if available
-      concludedBy: userName,
-      summary: summary || '',
-      metrics: metrics || {},
-      openTodos: openTodos, // Primary focus: all open todos
-      completedItems: formattedCompletedItems,
-      newTodos: formattedNewTodos,
-      resolvedIssues: resolvedIssues, // Issues marked as solved
-      unresolvedIssues: unresolvedIssues, // Issues still open
-      cascadingMessages: cascadingMessages, // Add cascading messages
-      notes: notes || '',
-      // Additional fields requested by client
-      attendees: attendeeNames,
-      rockCompletionPercentage: rockCompletionPercentage,
-      completedRocks: completedRocks,
-      totalRocks: totalRocks,
-      headlines: req.body.headlines || {} // Pass headlines from frontend
+      themeColor: themeColor,
+      
+      // AI Summary
+      aiSummary: aiSummary,
+      
+      // Headlines in correct format
+      headlines: req.body.headlines || { customer: [], employee: [] },
+      
+      // Cascading messages
+      cascadingMessages: cascadingMessages || [],
+      
+      // Issues categorized
+      issues: {
+        solved: resolvedIssues || [],
+        new: unresolvedIssues || []
+      },
+      
+      // Todos categorized
+      todos: {
+        completed: formattedCompletedItems || [],
+        new: formattedNewTodos || []
+      },
+      
+      // Attendees
+      attendees: attendeeNames || []
     };
 
     // SAFETY CHECK: Prevent mass email accidents
@@ -599,14 +609,18 @@ export const concludeMeeting = async (req, res) => {
         try {
           console.log('Attempting to send email to', attendeeEmails.length, 'recipients');
           console.log('Recipients:', attendeeEmails);
+          console.log('Email data formatted for unified template:', {
+            teamName: emailData.teamName,
+            themeColor: emailData.themeColor,
+            hasIssues: emailData.issues.solved.length + emailData.issues.new.length,
+            hasTodos: emailData.todos.completed.length + emailData.todos.new.length
+          });
           
-          // Send to each email address
-          for (const email of attendeeEmails) {
-            await emailService.sendEmail(email, 'meetingSummary', emailData);
-          }
+          // Send using the unified template
+          await emailService.sendMeetingSummary(attendeeEmails, emailData);
           
           emailsSent = attendeeEmails.length;
-          console.log('Meeting summary emails sent successfully');
+          console.log('Meeting summary emails sent successfully using unified template');
         } catch (emailError) {
           console.error('Failed to send meeting summary email:', emailError);
           console.error('Email error details:', emailError.message, emailError.stack);
