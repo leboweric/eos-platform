@@ -216,7 +216,7 @@ export const MeetingSummaryModal = ({
         </div>
 
         {/* Document Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-0">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -225,7 +225,7 @@ export const MeetingSummaryModal = ({
               </div>
             </div>
           ) : (
-            <div className="bg-white p-12">
+            <div className="bg-white p-8 w-full">
               {/* Document Header */}
               <div className="mb-10 pb-6 border-b-4 border-gray-900">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
