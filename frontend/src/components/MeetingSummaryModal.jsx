@@ -13,45 +13,52 @@ import {
   X,
   Loader2,
   Sparkles,
-  Megaphone,
-  CheckCircle2,
-  AlertCircle,
-  ListTodo
+  CheckCircle2
 } from 'lucide-react';
 
-// Collapsible Section Component
-const CollapsibleSection = ({ 
+// Document Section Component
+const DocumentSection = ({ 
   title, 
-  icon: Icon, 
   children, 
+  collapsible = false,
   defaultOpen = true,
   isEmpty = false 
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  if (!collapsible) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-gray-300">
+          {title}
+          {isEmpty && <span className="text-sm font-normal text-gray-400 ml-3">(Empty)</span>}
+        </h2>
+        <div className="pl-1">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-6 bg-white shadow-sm">
+    <div className="mb-8">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors"
+        className="w-full text-left group"
         type="button"
       >
-        <div className="flex items-center gap-3">
-          {Icon && <Icon className="h-5 w-5 text-gray-600" />}
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          {isEmpty && (
-            <span className="text-sm text-gray-400 ml-2">(Empty)</span>
-          )}
-        </div>
-        {isOpen ? (
-          <ChevronUp className="h-5 w-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-gray-400" />
-        )}
+        <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-gray-300 flex items-center justify-between">
+          <span>
+            {title}
+            {isEmpty && <span className="text-sm font-normal text-gray-400 ml-3">(Empty)</span>}
+          </span>
+          <span className="text-gray-400 group-hover:text-gray-600">
+            {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </span>
+        </h2>
       </button>
-      
       {isOpen && (
-        <div className="p-6 pt-0 border-t border-gray-100">
+        <div className="pl-1">
           {children}
         </div>
       )}
@@ -61,22 +68,22 @@ const CollapsibleSection = ({
 
 // Empty State Component
 const EmptyState = ({ message }) => (
-  <div className="text-center py-12 px-4">
-    <p className="text-gray-400 italic">{message}</p>
+  <div className="py-8 text-center">
+    <p className="text-gray-400 italic text-base">{message}</p>
   </div>
 );
 
 // List Item Component
 const ListItem = ({ children, completed = false }) => (
-  <div className="flex items-start gap-3 py-3 px-4 hover:bg-gray-50 rounded-md transition-colors border-b border-gray-100 last:border-0">
-    <div className={`mt-0.5 ${completed ? 'text-green-600' : 'text-gray-400'}`}>
+  <div className="flex items-start gap-3 py-3 border-b border-gray-200 last:border-0">
+    <div className={`mt-1 ${completed ? 'text-green-600' : 'text-gray-600'}`}>
       {completed ? (
-        <CheckCircle2 className="h-5 w-5" />
+        <CheckCircle2 className="h-4 w-4" />
       ) : (
-        <div className="h-5 w-5 rounded-full border-2 border-current" />
+        <span className="text-lg">•</span>
       )}
     </div>
-    <div className={`flex-1 ${completed ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+    <div className={`flex-1 text-base leading-relaxed ${completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
       {children}
     </div>
   </div>
@@ -106,7 +113,7 @@ const parseHTMLSummary = (htmlString) => {
     if (!targetComment) return items;
     
     let currentNode = targetComment.nextSibling;
-    while (currentNode && currentNode.nodeType !== 8) { // 8 = Comment node
+    while (currentNode && currentNode.nodeType !== 8) {
       if (currentNode.classList && currentNode.classList.contains('section')) {
         const listItems = currentNode.querySelectorAll('.list li');
         listItems.forEach(li => {
@@ -180,195 +187,184 @@ export const MeetingSummaryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-7xl max-h-[95vh] p-0 gap-0 flex flex-col">
-        {/* Simple Header */}
-        <div className="shrink-0 border-b bg-white">
-          <div className="flex items-center justify-between px-8 py-5">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl font-semibold text-gray-900 mb-1">
-                Meeting Summary
-              </DialogTitle>
-              {meetingInfo && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">{meetingInfo.teamName}</span>
-                  {meetingInfo.meetingType && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span>{meetingInfo.meetingType}</span>
-                    </>
-                  )}
-                  {meetingInfo.meta && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span>{meetingInfo.meta}</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
+      <DialogContent className="w-[95vw] max-w-[1200px] max-h-[95vh] p-0 gap-0 flex flex-col bg-gray-100">
+        {/* Document Header Bar */}
+        <div className="shrink-0 bg-white border-b px-6 py-3 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Meeting Summary
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => window.print()} 
+              variant="outline" 
+              size="sm"
+              type="button"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Save as PDF
+            </Button>
+            <DialogClose asChild>
               <Button 
-                onClick={() => window.print()} 
-                variant="outline" 
+                variant="ghost" 
                 size="sm"
                 type="button"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Save as PDF
+                <X className="h-4 w-4" />
               </Button>
-              <DialogClose asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  type="button"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </DialogClose>
-            </div>
+            </DialogClose>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 min-h-0">
+        {/* Document Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-8">
           {loading ? (
-            <div className="flex items-center justify-center h-full p-8">
+            <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-600 mx-auto mb-3" />
                 <p className="text-gray-600">Loading meeting summary...</p>
               </div>
             </div>
           ) : (
-            <div className="p-8 max-w-6xl mx-auto">
-              {/* AI Summary Section - ONLY SHOW IF EXISTS */}
+            <div className="max-w-[900px] mx-auto bg-white shadow-lg p-12" style={{ minHeight: '11in' }}>
+              {/* Document Header */}
+              <div className="mb-10 pb-6 border-b-4 border-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {meetingInfo?.teamName || 'Meeting Summary'}
+                </h1>
+                <div className="text-base text-gray-700 space-y-1">
+                  {meetingInfo?.meetingType && (
+                    <div><strong>Type:</strong> {meetingInfo.meetingType}</div>
+                  )}
+                  {meetingInfo?.meta && (
+                    <div><strong>Details:</strong> {meetingInfo.meta}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Executive Summary */}
               {aiSummary && (
-                <CollapsibleSection
-                  title="AI Executive Summary"
-                  icon={Sparkles}
-                  defaultOpen={true}
-                  isEmpty={false}
-                >
-                  <div className="prose prose-gray max-w-none">
-                    <p className="text-gray-700 leading-relaxed text-base whitespace-pre-wrap">
+                <DocumentSection title="Executive Summary" collapsible={false}>
+                  <div className="bg-gray-50 border-l-4 border-gray-900 p-6 mb-6">
+                    <p className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap">
                       {aiSummary}
                     </p>
                   </div>
-                </CollapsibleSection>
+                </DocumentSection>
               )}
 
-              {/* Headlines Section */}
-              <CollapsibleSection
-                title="Headlines"
-                icon={Megaphone}
+              {/* Headlines */}
+              <DocumentSection 
+                title="Headlines" 
+                collapsible={true}
                 defaultOpen={true}
                 isEmpty={headlines.length === 0}
               >
                 {headlines.length === 0 ? (
                   <EmptyState message="No headlines shared" />
                 ) : (
-                  <div className="space-y-0">
+                  <div>
                     {headlines.map((headline, idx) => (
                       <ListItem key={idx}>{headline}</ListItem>
                     ))}
                   </div>
                 )}
-              </CollapsibleSection>
+              </DocumentSection>
 
               {/* Cascading Messages */}
-              <CollapsibleSection
-                title="Cascading Messages"
-                icon={Megaphone}
+              <DocumentSection 
+                title="Cascading Messages" 
+                collapsible={true}
                 defaultOpen={false}
                 isEmpty={cascadingMessages.length === 0}
               >
                 {cascadingMessages.length === 0 ? (
                   <EmptyState message="No cascading messages" />
                 ) : (
-                  <div className="space-y-0">
+                  <div>
                     {cascadingMessages.map((message, idx) => (
                       <ListItem key={idx}>{message}</ListItem>
                     ))}
                   </div>
                 )}
-              </CollapsibleSection>
+              </DocumentSection>
 
-              {/* Issues Section - Side by Side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Solved Issues */}
-                <CollapsibleSection
-                  title="Solved Issues"
-                  icon={CheckCircle2}
-                  defaultOpen={true}
-                  isEmpty={solvedIssues.length === 0}
-                >
-                  {solvedIssues.length === 0 ? (
-                    <EmptyState message="No issues solved" />
-                  ) : (
-                    <div className="space-y-0">
-                      {solvedIssues.map((issue, idx) => (
-                        <ListItem key={idx} completed={true}>{issue}</ListItem>
-                      ))}
-                    </div>
-                  )}
-                </CollapsibleSection>
+              {/* Issues */}
+              <DocumentSection title="Issues" collapsible={false}>
+                <div className="grid grid-cols-2 gap-8">
+                  {/* Solved Issues */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Solved Issues
+                      {solvedIssues.length === 0 && <span className="text-sm font-normal text-gray-400 ml-2">(Empty)</span>}
+                    </h3>
+                    {solvedIssues.length === 0 ? (
+                      <p className="text-gray-400 italic text-sm py-4">No issues solved</p>
+                    ) : (
+                      <div>
+                        {solvedIssues.map((issue, idx) => (
+                          <ListItem key={idx} completed={true}>{issue}</ListItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                {/* New Issues */}
-                <CollapsibleSection
-                  title="New Issues"
-                  icon={AlertCircle}
-                  defaultOpen={true}
-                  isEmpty={newIssues.length === 0}
-                >
-                  {newIssues.length === 0 ? (
-                    <EmptyState message="No new issues" />
-                  ) : (
-                    <div className="space-y-0">
-                      {newIssues.map((issue, idx) => (
-                        <ListItem key={idx}>{issue}</ListItem>
-                      ))}
-                    </div>
-                  )}
-                </CollapsibleSection>
-              </div>
+                  {/* New Issues */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      New Issues
+                      {newIssues.length === 0 && <span className="text-sm font-normal text-gray-400 ml-2">(Empty)</span>}
+                    </h3>
+                    {newIssues.length === 0 ? (
+                      <p className="text-gray-400 italic text-sm py-4">No new issues</p>
+                    ) : (
+                      <div>
+                        {newIssues.map((issue, idx) => (
+                          <ListItem key={idx}>{issue}</ListItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </DocumentSection>
 
-              {/* To-Dos Section - Side by Side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Completed To-Dos */}
-                <CollapsibleSection
-                  title="Completed To-Dos"
-                  icon={CheckCircle2}
-                  defaultOpen={false}
-                  isEmpty={completedTodos.length === 0}
-                >
-                  {completedTodos.length === 0 ? (
-                    <EmptyState message="No completed to-dos" />
-                  ) : (
-                    <div className="space-y-0">
-                      {completedTodos.map((todo, idx) => (
-                        <ListItem key={idx} completed={true}>{todo}</ListItem>
-                      ))}
-                    </div>
-                  )}
-                </CollapsibleSection>
+              {/* To-Dos */}
+              <DocumentSection title="To-Dos" collapsible={false}>
+                <div className="grid grid-cols-2 gap-8">
+                  {/* Completed To-Dos */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Completed
+                      {completedTodos.length === 0 && <span className="text-sm font-normal text-gray-400 ml-2">(Empty)</span>}
+                    </h3>
+                    {completedTodos.length === 0 ? (
+                      <p className="text-gray-400 italic text-sm py-4">No completed to-dos</p>
+                    ) : (
+                      <div>
+                        {completedTodos.map((todo, idx) => (
+                          <ListItem key={idx} completed={true}>{todo}</ListItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                {/* New To-Dos */}
-                <CollapsibleSection
-                  title="New To-Dos"
-                  icon={ListTodo}
-                  defaultOpen={true}
-                  isEmpty={newTodos.length === 0}
-                >
-                  {newTodos.length === 0 ? (
-                    <EmptyState message="No new to-dos" />
-                  ) : (
-                    <div className="space-y-0">
-                      {newTodos.map((todo, idx) => (
-                        <ListItem key={idx}>{todo}</ListItem>
-                      ))}
-                    </div>
-                  )}
-                </CollapsibleSection>
-              </div>
+                  {/* New To-Dos */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      New To-Dos
+                      {newTodos.length === 0 && <span className="text-sm font-normal text-gray-400 ml-2">(Empty)</span>}
+                    </h3>
+                    {newTodos.length === 0 ? (
+                      <p className="text-gray-400 italic text-sm py-4">No new to-dos</p>
+                    ) : (
+                      <div>
+                        {newTodos.map((todo, idx) => (
+                          <ListItem key={idx}>{todo}</ListItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </DocumentSection>
             </div>
           )}
         </div>
