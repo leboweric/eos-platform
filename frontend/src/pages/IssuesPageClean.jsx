@@ -879,6 +879,7 @@ const IssuesPageClean = () => {
           onSave={handleSaveIssue}
           issue={editingIssue}
           teamMembers={teamMembers}
+          teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
         />
