@@ -1232,6 +1232,13 @@ export const getArchivedPriorities = async (req, res) => {
        WHERE p.organization_id = $1::uuid 
          AND p.deleted_at IS NOT NULL
          AND (
+           -- Team-based filtering for security
+           CASE
+             WHEN $3::uuid IS NULL THEN true  -- No specific team filter
+             ELSE p.team_id = $3::uuid  -- Filter by the specific team requested
+           END
+         )
+         AND (
            -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
            CASE
              WHEN $2 = true THEN true  -- Leadership sees everything
@@ -1240,7 +1247,7 @@ export const getArchivedPriorities = async (req, res) => {
          )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.created_at`,
-      [orgId, isLeadership]
+      [orgId, isLeadership, teamId]
     );
     
     // Get latest updates for each priority
