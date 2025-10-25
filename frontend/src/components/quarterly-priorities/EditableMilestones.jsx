@@ -110,7 +110,7 @@ export const EditableMilestones = ({
                   type="date"
                   value={milestoneForm.dueDate}
                   onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
-                  className="w-32 h-7 text-sm"
+                  className="w-44 h-7 text-sm shrink-0"
                 />
                 <Button
                   size="sm"
@@ -197,7 +197,7 @@ export const EditableMilestones = ({
               type="date"
               value={newMilestone.dueDate}
               onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
-              className="w-32 h-7 text-sm"
+              className="w-44 h-7 text-sm shrink-0"
             />
             <Button
               size="sm"

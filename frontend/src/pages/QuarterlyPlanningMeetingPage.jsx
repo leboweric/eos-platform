@@ -3433,7 +3433,7 @@ function QuarterlyPlanningMeetingPage() {
                                                 type="date"
                                                 value={newMilestone.dueDate}
                                                 onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
-                                                className="w-32 h-8 text-sm"
+                                                className="w-44 h-8 text-sm shrink-0"
                                               />
                                               <Button
                                                 size="sm"
