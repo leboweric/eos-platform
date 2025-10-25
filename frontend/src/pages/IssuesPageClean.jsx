@@ -747,6 +747,7 @@ const IssuesPageClean = () => {
           }}
           onSave={handleSaveTodo}
           teamMembers={teamMembers}
+          teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           todo={todoFromIssue ? {
             title: `Follow up: ${todoFromIssue.title}`,
             description: `Related to issue: ${todoFromIssue.title}`,

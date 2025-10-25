@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
-import { getTeamId } from '../utils/teamUtils';
+import { getTeamId, getEffectiveTeamId } from '../utils/teamUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1626,6 +1626,7 @@ const DashboardClean = () => {
           onOpenChange={setShowTodoDialog}
           todo={editingTodo}
           teamMembers={dashboardData.teamMembers || []}
+          teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           onSave={async (todoData) => {
             try {
               // Add organization_id and team_id if not present

@@ -541,6 +541,7 @@ const TodosPage = () => {
           onOpenChange={setShowTodoDialog}
           todo={editingTodo}
           teamMembers={teamMembers}
+          teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           onSave={handleSaveTodo}
           onCreateIssue={handleCreateIssueFromTodo}
         />
