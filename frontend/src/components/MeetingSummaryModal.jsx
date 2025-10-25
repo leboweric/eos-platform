@@ -187,7 +187,7 @@ export const MeetingSummaryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-h-[90vh] p-0 gap-0 flex flex-col">
+      <DialogContent className="w-[85vw] max-w-[1400px] max-h-[90vh] p-0 gap-0 flex flex-col">
         {/* Document Header Bar */}
         <div className="shrink-0 bg-white border-b px-6 py-3 flex items-center justify-between">
           <div className="text-sm text-gray-600">
@@ -203,15 +203,6 @@ export const MeetingSummaryModal = ({
               <Download className="h-4 w-4 mr-2" />
               Save as PDF
             </Button>
-            <DialogClose asChild>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </div>
         </div>
 
