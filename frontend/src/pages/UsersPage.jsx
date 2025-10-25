@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+// Updated: 2025-10-25 - Fixed horizontal scrolling with sticky columns
 import {
   Card,
   CardContent,
