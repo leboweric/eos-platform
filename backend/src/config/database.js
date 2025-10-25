@@ -65,6 +65,14 @@ pool.on('error', (err, client) => {
 export const query = async (text, params, retries = 2) => {
   const start = Date.now();
   
+  // Log all meeting history queries for debugging
+  if (text.includes('meeting_snapshots')) {
+    logger.info('📋 MEETING HISTORY QUERY DEBUG:');
+    logger.info('Query text:', text);
+    logger.info('Parameters:', params);
+    logger.info('Parameter types:', params?.map(p => typeof p));
+  }
+  
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await pool.query(text, params);
@@ -80,6 +88,18 @@ export const query = async (text, params, retries = 2) => {
       return res;
     } catch (error) {
       logger.error(`❌ Query error (attempt ${attempt + 1}/${retries + 1}):`, error.message);
+      
+      // Log detailed error info for meeting queries
+      if (text.includes('meeting_snapshots')) {
+        logger.error('🔴 MEETING QUERY ERROR DETAILS:');
+        logger.error('Error code:', error.code);
+        logger.error('Error detail:', error.detail);
+        logger.error('Error hint:', error.hint);
+        logger.error('Error position:', error.position);
+        logger.error('Error where:', error.where);
+        logger.error('Full query that failed:', text);
+        logger.error('Parameters that failed:', params);
+      }
       
       // Check if it's a connection error and we have retries left
       if (attempt < retries && 
