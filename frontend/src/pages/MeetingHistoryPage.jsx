@@ -116,16 +116,28 @@ const MeetingHistoryPageClean = () => {
     total 
   });
 
+  // Trigger fetch when organization data becomes available
   useEffect(() => {
-    console.log('🔄 === useEffect #1 TRIGGERED (selectedDepartment change) ===');
+    console.log('🔄 === useEffect #1 TRIGGERED (org/user change) ===');
+    console.log('🔄 user:', user);
+    console.log('🔄 currentOrganization:', currentOrganization);
+    
+    const orgId = currentOrganization?.id || user?.organization_id || user?.organizationId;
+    if (orgId) {
+      console.log('🔄 Organization ID available, fetching data...');
+      fetchTeams();
+      fetchMeetings();
+    }
+  }, [user, currentOrganization]);
+
+  useEffect(() => {
+    console.log('🔄 === useEffect #2 TRIGGERED (selectedDepartment change) ===');
     console.log('🔄 selectedDepartment:', selectedDepartment);
-    console.log('🔄 currentOrganization at effect time:', currentOrganization);
-    fetchTeams();
     fetchMeetings();
   }, [selectedDepartment]);
 
   useEffect(() => {
-    console.log('🔄 === useEffect #2 TRIGGERED (filters/page change) ===');
+    console.log('🔄 === useEffect #3 TRIGGERED (filters/page change) ===');
     console.log('🔄 filters:', filters);
     console.log('🔄 page:', page);
     fetchMeetings();
@@ -133,9 +145,15 @@ const MeetingHistoryPageClean = () => {
 
   const fetchTeams = async () => {
     try {
-      if (!currentOrganization?.id) return;
+      // Try to get org ID from multiple sources
+      const orgId = currentOrganization?.id || user?.organization_id || user?.organizationId;
       
-      const response = await teamsService.getTeams(currentOrganization.id);
+      if (!orgId) {
+        console.log('⚠️ No organization ID available for fetching teams');
+        return;
+      }
+      
+      const response = await teamsService.getTeams(orgId);
       setTeams(response.data || []);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
@@ -145,15 +163,27 @@ const MeetingHistoryPageClean = () => {
   const fetchMeetings = async () => {
     console.log('📞 === fetchMeetings CALLED ===');
     console.log('📞 currentOrganization at fetch time:', currentOrganization);
-    console.log('📞 currentOrganization?.id:', currentOrganization?.id);
+    console.log('📞 user at fetch time:', user);
     
     try {
       setLoading(true);
       setError(null);
       
-      if (!currentOrganization?.id) {
+      // Try to get org ID from multiple sources
+      const orgId = currentOrganization?.id || user?.organization_id || user?.organizationId;
+      
+      console.log('🔑 Extracted orgId:', orgId);
+      console.log('🔑 Source breakdown:', {
+        fromCurrentOrg: currentOrganization?.id,
+        fromUserSnakeCase: user?.organization_id,
+        fromUserCamelCase: user?.organizationId,
+        finalOrgId: orgId
+      });
+      
+      if (!orgId) {
         console.error('❌ NO ORGANIZATION ID - Exiting fetchMeetings early');
         console.error('❌ currentOrganization object:', currentOrganization);
+        console.error('❌ user object:', user);
         setLoading(false);
         return;
       }
