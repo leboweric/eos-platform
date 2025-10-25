@@ -187,7 +187,7 @@ export const MeetingSummaryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[1200px] max-h-[95vh] p-0 gap-0 flex flex-col bg-gray-100">
+      <DialogContent className="w-[90vw] max-h-[90vh] p-0 gap-0 flex flex-col">
         {/* Document Header Bar */}
         <div className="shrink-0 bg-white border-b px-6 py-3 flex items-center justify-between">
           <div className="text-sm text-gray-600">
