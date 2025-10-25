@@ -57,6 +57,7 @@ import {
   Edit,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
@@ -363,6 +364,13 @@ const UsersPage = () => {
     const newStatus = !currentActiveStatus;
     const action = newStatus ? 'activate' : 'deactivate';
     
+    // Optimistic UI update
+    setUsers(prevUsers => 
+      prevUsers.map(u => 
+        u.id === userId ? { ...u, is_active: newStatus } : u
+      )
+    );
+    
     try {
       const orgId = selectedOrgId || user?.organizationId;
       const response = await fetch(`${API_URL}/organizations/${orgId}/users/${userId}`, {
@@ -377,14 +385,26 @@ const UsersPage = () => {
       });
 
       if (response.ok) {
-        setSuccessMessage(`${userEmail} has been ${action}d`);
-        fetchUsers();
+        toast.success(`${userEmail} has been ${action}d successfully`);
       } else {
+        // Revert on failure
+        setUsers(prevUsers => 
+          prevUsers.map(u => 
+            u.id === userId ? { ...u, is_active: currentActiveStatus } : u
+          )
+        );
         const data = await response.json();
-        setError(data.error || `Failed to ${action} user`);
+        toast.error(data.error || `Failed to ${action} user`);
       }
     } catch (error) {
-      setError(`Failed to ${action} user`);
+      // Revert on error
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.id === userId ? { ...u, is_active: currentActiveStatus } : u
+        )
+      );
+      console.error('Error updating user status:', error);
+      toast.error(`Failed to ${action} user`);
     }
   };
 
@@ -911,7 +931,9 @@ const UsersPage = () => {
                               checked={user.is_active !== false}
                               onCheckedChange={() => handleToggleUserActive(user.id, user.is_active !== false, user.email)}
                               aria-label={`Toggle ${user.first_name} ${user.last_name} active status`}
-                              disabled={user.id === user.id} // Prevent deactivating yourself
+                              disabled={false}
+                              className="cursor-pointer data-[state=unchecked]:cursor-pointer"
+                              style={{ cursor: 'pointer' }}
                             />
                             <span className="ml-2 text-sm">
                               {user.is_active !== false ? (
