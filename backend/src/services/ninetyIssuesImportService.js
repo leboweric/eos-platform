@@ -35,20 +35,21 @@ function parseExcelDate(value) {
 
 /**
  * Map Ninety.io status based on Completed On and Archived Date
- * Database allows: 'open', 'in_discussion', 'solved', 'archived'
+ * Database allows: 'open', 'in-progress', 'resolved', 'closed'
+ * Archived status is handled separately via archived boolean flag
  */
 function mapNinetyStatus(row) {
-  // If explicitly archived
-  if (row['Archived Date']) {
-    return 'archived';
-  }
-  
-  // If completed
+  // If completed (but could also be archived), map to resolved
   if (row['Completed On']) {
-    return 'solved';
+    return 'resolved';
   }
   
-  // Default to open (could be in discussion, but we don't have that data)
+  // If only archived (not completed), consider it closed
+  if (row['Archived Date'] && !row['Completed On']) {
+    return 'closed';
+  }
+  
+  // Default to open (could be in-progress, but we don't have that data)
   return 'open';
 }
 
@@ -234,6 +235,7 @@ class NinetyIssuesImportService {
           timeline,
           priority,
           team,
+          archived: !!row['Archived Date'], // Set archived flag if has archived date
           created_date: createdDate ? createdDate.toISOString().split('T')[0] : null,
           completed_date: completedDate ? completedDate.toISOString().split('T')[0] : null,
           archived_date: archivedDate ? archivedDate.toISOString().split('T')[0] : null,
@@ -444,8 +446,9 @@ class NinetyIssuesImportService {
                   owner_id = $2,
                   description = COALESCE($3, description),
                   priority_level = $4,
+                  archived = $5,
                   updated_at = NOW()
-              WHERE id = $5
+              WHERE id = $6
               RETURNING id
             `;
             
@@ -454,6 +457,7 @@ class NinetyIssuesImportService {
               assignedToId,
               issue.description || null,
               issue.priority || 'normal',
+              issue.archived || false,
               existing.id
             ]);
             
@@ -475,14 +479,15 @@ class NinetyIssuesImportService {
               timeline,
               priority_level,
               priority_rank,
+              archived,
               created_at,
               updated_at,
               created_via,
               external_id
             ) VALUES (
               gen_random_uuid(),
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-              NOW(), NOW(), $11, $12
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+              NOW(), NOW(), $12, $13
             )
             RETURNING id
           `;
@@ -498,8 +503,9 @@ class NinetyIssuesImportService {
             issue.timeline,           // $8
             issue.priority || 'normal', // $9 - priority_level
             0,                        // $10 - priority_rank (default)
-            'import',                 // $11 - created_via
-            issue.link || null        // $12 - external_id (Ninety.io link)
+            issue.archived || false,  // $11 - archived flag
+            'import',                 // $12 - created_via
+            issue.ninety_link || null // $13 - external_id (Ninety.io link)
           ]);
           
           console.log(`✅ Created: "${issue.title}"`);

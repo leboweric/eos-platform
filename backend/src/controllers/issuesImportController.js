@@ -67,8 +67,8 @@ export const getTemplate = async (req, res) => {
       ],
       status_mapping: {
         'Open': 'Has neither Completed On nor Archived Date',
-        'Solved': 'Has Completed On date',
-        'Archived': 'Has Archived Date'
+        'Resolved': 'Has Completed On date',
+        'Closed': 'Has Archived Date'
       },
       timeline_mapping: {
         'Short Term': 'Issues from Short Term sheet',
