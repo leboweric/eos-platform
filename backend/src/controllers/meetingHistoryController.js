@@ -800,8 +800,8 @@ export const getMeetingSummaryHTML = async (req, res) => {
       cascadingMessages: snapshotData.cascading_messages || snapshotData.cascadingMessages || [],
       
       issues: {
-        solved: (snapshotData.issues || []).filter(i => i.status === 'solved' || i.solved),
-        new: (snapshotData.issues || []).filter(i => i.status !== 'solved' && !i.solved)
+        solved: (snapshotData.issues || []).filter(i => i.status === 'closed' || i.status === 'resolved' || i.solved),
+        new: (snapshotData.issues || []).filter(i => (i.status === 'open' || i.status === 'in-progress') && !i.solved)
       },
       
       todos: {
