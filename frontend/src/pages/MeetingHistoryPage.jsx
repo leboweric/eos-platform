@@ -294,41 +294,61 @@ const MeetingHistoryPageClean = () => {
 
   const handleMeetingClick = async (meeting) => {
     console.log('📄 Opening meeting summary for:', meeting.id);
+    console.log('📄 Meeting object:', meeting);
+    
+    console.log('📄 Step 1: Setting loading state...');
     setLoadingSummary(true);
+    
+    console.log('📄 Step 2: Setting show summary...');
     setShowSummary(true);
     
     try {
-      // Get auth token from localStorage or auth store
+      console.log('📄 Step 3: Getting auth token...');
       const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
       const token = authStore?.state?.token;
+      console.log('📄 Token found:', !!token);
       
       if (!token) {
+        console.error('📄 ERROR: No token found');
         toast.error('Authentication required');
         setShowSummary(false);
         return;
       }
       
-      // Fetch HTML with auth header
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+      console.log('📄 Step 4: Building fetch URL...');
+      const url = `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`;
+      console.log('📄 Fetch URL:', url);
+      
+      console.log('📄 Step 5: Making fetch request...');
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      );
+      });
+      
+      console.log('📄 Step 6: Response received:', response.status);
       
       if (!response.ok) {
+        console.error('📄 ERROR: Response not OK:', response.status);
         throw new Error('Failed to load meeting summary');
       }
       
+      console.log('📄 Step 7: Parsing HTML...');
       const html = await response.text();
+      console.log('📄 HTML length:', html.length);
+      
+      console.log('📄 Step 8: Setting HTML state...');
       setSummaryHTML(html);
+      console.log('📄 SUCCESS: Summary loaded');
+      
     } catch (error) {
-      console.error('Error loading summary:', error);
+      console.error('📄 CATCH ERROR:', error);
+      console.error('📄 Error message:', error.message);
+      console.error('📄 Error stack:', error.stack);
       toast.error('Failed to load meeting summary');
       setShowSummary(false);
     } finally {
+      console.log('📄 Step 9: Setting loading false...');
       setLoadingSummary(false);
     }
   };
