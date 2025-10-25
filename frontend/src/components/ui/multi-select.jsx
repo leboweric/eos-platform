@@ -45,43 +45,46 @@ const MultiSelect = React.forwardRef(({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between text-left font-normal",
+            "w-full justify-start text-left font-normal h-auto min-h-[40px] py-2",
             !value.length && "text-muted-foreground",
             className
           )}
           disabled={disabled}
         >
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex-1">
             {value.length === 0 ? (
-              placeholder
+              <span>{placeholder}</span>
             ) : (
-              value.map((val) => {
-                const option = options.find(opt => opt.value === val);
-                return option ? (
-                  <Badge
-                    key={val}
-                    variant="secondary"
-                    className="mr-1"
-                  >
-                    {option.label}
-                    <button
-                      className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleRemove(val, e);
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => handleRemove(val, e)}
+              <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-2">
+                {value.map((val) => {
+                  const option = options.find(opt => opt.value === val);
+                  return option ? (
+                    <Badge
+                      key={val}
+                      variant="secondary"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 transition-colors"
                     >
-                      <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                    </button>
-                  </Badge>
-                ) : null;
-              })
+                      <span className="text-xs">{option.label}</span>
+                      <button
+                        type="button"
+                        className="ml-0.5 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 hover:bg-gray-300 p-0.5 transition-colors"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleRemove(val, e);
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onClick={(e) => handleRemove(val, e)}
+                      >
+                        <X className="h-3 w-3 text-gray-600 hover:text-gray-800" />
+                      </button>
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
             )}
           </div>
         </Button>

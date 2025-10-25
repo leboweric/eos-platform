@@ -39,7 +39,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
+// Switch component removed - using custom toggle for better cursor control
 import {
   Tooltip,
   TooltipContent,
@@ -926,21 +926,29 @@ const UsersPage = () => {
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-center">
-                          <div className="flex items-center justify-center">
-                            <Switch
-                              checked={user.is_active !== false}
-                              onCheckedChange={() => handleToggleUserActive(user.id, user.is_active !== false, user.email)}
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUserActive(user.id, user.is_active !== false, user.email)}
+                              className={`
+                                relative inline-flex h-5 w-9 items-center rounded-full
+                                transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                                ${user.is_active !== false ? 'bg-green-600' : 'bg-gray-300'}
+                                cursor-pointer hover:opacity-80
+                              `}
+                              role="switch"
+                              aria-checked={user.is_active !== false}
                               aria-label={`Toggle ${user.first_name} ${user.last_name} active status`}
-                              disabled={false}
-                              className="cursor-pointer data-[state=unchecked]:cursor-pointer"
-                              style={{ cursor: 'pointer' }}
-                            />
-                            <span className="ml-2 text-sm">
-                              {user.is_active !== false ? (
-                                <span className="text-green-600">Active</span>
-                              ) : (
-                                <span className="text-gray-500">Inactive</span>
-                              )}
+                            >
+                              <span
+                                className={`
+                                  inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm
+                                  ${user.is_active !== false ? 'translate-x-5' : 'translate-x-1'}
+                                `}
+                              />
+                            </button>
+                            <span className={`text-sm ${user.is_active !== false ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                              {user.is_active !== false ? 'Active' : 'Inactive'}
                             </span>
                           </div>
                         </TableCell>
