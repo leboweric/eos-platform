@@ -94,6 +94,11 @@ const MeetingHistoryPageClean = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [teams, setTeams] = useState([]);
   
+  // Summary modal state
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryHTML, setSummaryHTML] = useState('');
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  
   // Filter state
   const [filters, setFilters] = useState({
     team_id: '',
@@ -287,14 +292,45 @@ const MeetingHistoryPageClean = () => {
     }
   };
 
-  const handleMeetingClick = (meeting) => {
+  const handleMeetingClick = async (meeting) => {
     console.log('📄 Opening meeting summary for:', meeting.id);
+    setLoadingSummary(true);
+    setShowSummary(true);
     
-    // Open summary in new tab using the beautiful HTML template
-    const summaryUrl = `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`;
-    
-    console.log('📄 Summary URL:', summaryUrl);
-    window.open(summaryUrl, '_blank');
+    try {
+      // Get auth token from localStorage or auth store
+      const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
+      const token = authStore?.state?.token;
+      
+      if (!token) {
+        toast.error('Authentication required');
+        setShowSummary(false);
+        return;
+      }
+      
+      // Fetch HTML with auth header
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to load meeting summary');
+      }
+      
+      const html = await response.text();
+      setSummaryHTML(html);
+    } catch (error) {
+      console.error('Error loading summary:', error);
+      toast.error('Failed to load meeting summary');
+      setShowSummary(false);
+    } finally {
+      setLoadingSummary(false);
+    }
   };
 
   const handleNotesUpdate = async (meetingId, notes) => {
@@ -625,8 +661,52 @@ const MeetingHistoryPageClean = () => {
           </div>
         )}
 
-        {/* Meeting Detail Dialog */}
-        {showDetail && selectedMeeting && (
+        {/* Meeting Summary Modal - Fullscreen */}
+        {showSummary && (
+          <div className="fixed inset-0 z-50 bg-white overflow-auto">
+            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+              <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Meeting Summary</h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Save as PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowSummary(false);
+                      setSummaryHTML('');
+                    }}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="container mx-auto">
+              {loadingSummary ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <span className="ml-3">Loading meeting summary...</span>
+                </div>
+              ) : (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: summaryHTML }}
+                  className="meeting-summary-content"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Meeting Detail Dialog - DISABLED - Using new summary modal instead */}
+        {/* {showDetail && selectedMeeting && (
           <MeetingDetailDialog
             meeting={selectedMeeting}
             onClose={() => {
@@ -635,7 +715,7 @@ const MeetingHistoryPageClean = () => {
             }}
             onNotesUpdate={handleNotesUpdate}
           />
-        )}
+        )} */}
       </div>
     </div>
   );
