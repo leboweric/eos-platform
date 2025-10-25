@@ -456,7 +456,7 @@ const ScorecardTableClean = ({
                     Total
                   </th>
                 )}
-                {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
+                {!meetingMode && <th className="text-center px-4 py-2 font-semibold text-gray-700 text-xs min-w-[140px]">Actions</th>}
                 {meetingMode && onAddIssue && <th className="text-center px-2 py-2 text-sm font-medium text-gray-700">Action</th>}
               </tr>
             </thead>
@@ -578,11 +578,12 @@ const ScorecardTableClean = ({
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
                       let cellClassName = 'text-center ';
+                      const isLastColumn = index === periodDates.length - 1;
                       if (meetingMode) {
-                        cellClassName += 'px-2 py-2';
+                        cellClassName += isLastColumn ? 'px-2 pr-4 py-2' : 'px-2 py-2';
                         if (isCurrentPeriod) cellClassName += ' bg-blue-50';
                       } else {
-                        cellClassName += 'px-1';
+                        cellClassName += isLastColumn ? 'px-1 pr-3' : 'px-1';
                         if (isCurrentPeriod) cellClassName += ' bg-gray-50 border-2 border-gray-300';
                       }
                       
@@ -676,34 +677,36 @@ const ScorecardTableClean = ({
                       </td>
                     )}
                     {!meetingMode && (
-                      <td className="px-1 text-center">
-                        <div className="flex justify-center gap-0.5">
+                      <td className="px-4 py-2 text-center min-w-[140px]">
+                        <div className="flex justify-center items-center gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 w-5 p-0"
+                            className="h-8 w-8 p-1.5 hover:bg-blue-50 rounded-md transition-colors"
                             onClick={() => onMetricUpdate && onMetricUpdate(metric)}
+                            title="Edit metric"
                           >
-                            <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
+                            <Edit className="h-4 w-4 shrink-0" style={{ color: themeColors.primary }} />
                           </Button>
                           {onMetricShare && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-5 w-5 p-0"
+                              className="h-8 w-8 p-1.5 hover:bg-green-50 rounded-md transition-colors"
                               onClick={() => onMetricShare(metric)}
                               title={metric.is_shared ? "Shared metric" : "Share metric"}
                             >
-                              <Share2 className="h-3 w-3" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
+                              <Share2 className="h-4 w-4 shrink-0" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-5 w-5 p-0"
+                            className="h-8 w-8 p-1.5 hover:bg-red-50 rounded-md transition-colors"
                             onClick={() => onMetricDelete && onMetricDelete(metric.id)}
+                            title="Delete metric"
                           >
-                            <Trash2 className="h-3 w-3 text-red-600" />
+                            <Trash2 className="h-4 w-4 shrink-0 text-red-600" />
                           </Button>
                         </div>
                       </td>
