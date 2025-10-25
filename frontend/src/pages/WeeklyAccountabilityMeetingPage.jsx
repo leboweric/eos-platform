@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
+import { formatDateSafe } from '../utils/dateUtils';
 import { meetingsService } from '../services/meetingsService';
 import meetingHistoryService from '../services/meetingHistoryService';
 import { organizationService } from '../services/organizationService';
@@ -350,7 +351,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const issueData = {
         title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
-        description: `This issue was created from a ${type.toLowerCase()} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+        description: `This issue was created from a ${type.toLowerCase()} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${formatDateSafe(headline.created_at, 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
         timeline: 'short_term',
         organization_id: orgId,
         department_id: effectiveTeamId,
@@ -2513,7 +2514,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Ensure we have a valid title
       const priorityTitle = priority.title || priority.name || 'Untitled Priority';
       const ownerName = priority.owner?.name || 'Unassigned';
-      const dueDate = priority.dueDate ? format(new Date(priority.dueDate), 'MMM dd, yyyy') : 'Not set';
+      const dueDate = priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM dd, yyyy') : 'Not set';
       
       // Create discussion issue
       const issueData = {
@@ -4213,7 +4214,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 {/* Due Date */}
                                                 <div className="w-20 text-right">
                                                   <span className="text-sm text-slate-600">
-                                                    {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                                    {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                                   </span>
                                                 </div>
                                                 
@@ -4255,7 +4256,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       {milestone.title}
                                                     </span>
                                                     <span className="text-xs text-slate-500">
-                                                      {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                      {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                     </span>
                                                   </div>
                                                 ))}
@@ -4592,7 +4593,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 {/* Due Date */}
                                                 <div className="w-20 text-right">
                                                   <span className="text-sm text-slate-600">
-                                                    {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                                    {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                                   </span>
                                                 </div>
                                                 
@@ -4634,7 +4635,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       {milestone.title}
                                                     </span>
                                                     <span className="text-xs text-slate-500">
-                                                      {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                      {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                     </span>
                                                   </div>
                                                 ))}
@@ -4948,7 +4949,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       {/* Due Date */}
                                       <div className="w-20 text-right">
                                         <span className="text-sm text-slate-600">
-                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                          {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                         </span>
                                       </div>
                                       
@@ -4990,7 +4991,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 {milestone.title}
                                               </span>
                                               <span className="text-xs text-slate-500">
-                                                {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                               </span>
                                             </div>
                                           ))}
@@ -5164,7 +5165,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                style={{ borderLeftColor: themeColors.primary }}>
                             <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
                             <p className="text-xs text-slate-600 mt-2">
-                              {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                              {headline.created_by_name || 'Unknown'} • {formatDateSafe(headline.created_at, 'MMM d')}
                             </p>
                           </div>
                         ))}
@@ -5189,7 +5190,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                style={{ borderLeftColor: themeColors.secondary }}>
                             <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
                             <p className="text-xs text-slate-600 mt-2">
-                              {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                              {headline.created_by_name || 'Unknown'} • {formatDateSafe(headline.created_at, 'MMM d')}
                             </p>
                           </div>
                         ))}
@@ -5476,7 +5477,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div className="w-20 text-right">
                                         {todo.due_date && (
                                           <span className="text-sm text-slate-600">
-                                            {format(new Date(todo.due_date), 'MMM d')}
+                                            {formatDateSafe(todo.due_date, 'MMM d')}
                                           </span>
                                         )}
                                       </div>
@@ -5921,7 +5922,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
                                           'text-slate-600'
                                         }`}>
-                                          Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                                          Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
                                           {new Date(todo.due_date) < new Date() && ' (Overdue)'}
                                         </span>
                                       )}
@@ -5968,7 +5969,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
                                     'text-slate-600'
                                   }`}>
-                                    Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                                    Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
                                     {new Date(todo.due_date) < new Date() && ' (Overdue)'}
                                   </span>
                                 )}

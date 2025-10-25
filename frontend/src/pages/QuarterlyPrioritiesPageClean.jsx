@@ -1,6 +1,7 @@
 import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfQuarter, endOfQuarter, addDays } from 'date-fns';
+import { formatDateSafe } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
@@ -1923,7 +1924,7 @@ const QuarterlyPrioritiesPageClean = () => {
           : '';
         
         const dueDate = priority.dueDate || priority.due_date;
-        const formattedDueDate = dueDate ? format(new Date(dueDate), 'MMM dd, yyyy') : 'Not set';
+        const formattedDueDate = dueDate ? formatDateSafe(dueDate, 'MMM dd, yyyy') : 'Not set';
           
         const issueData = {
           title: `${priority.title}${statusSuffix}`,
@@ -1993,7 +1994,7 @@ const QuarterlyPrioritiesPageClean = () => {
                               </span>
                               {milestone.dueDate && (
                                 <span className="text-xs text-gray-500 flex-shrink-0">
-                                  {format(new Date(milestone.dueDate), 'MMM d')}
+                                  {formatDateSafe(milestone.dueDate, 'MMM d')}
                                 </span>
                               )}
                             </div>
@@ -3243,7 +3244,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                         {/* Due Date */}
                                         <div className="w-20 text-right">
                                           <span className="text-sm text-slate-600">
-                                            {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                            {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                           </span>
                                         </div>
                                         
@@ -3283,7 +3284,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   {milestone.title}
                                                 </span>
                                                 <span className="text-xs text-slate-500">
-                                                  {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                  {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                 </span>
                                               </div>
                                             ))}
@@ -3618,7 +3619,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                         {/* Due Date */}
                                         <div className="w-20 text-right">
                                           <span className="text-sm text-slate-600">
-                                            {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                            {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                           </span>
                                         </div>
                                         
@@ -3658,7 +3659,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   {milestone.title}
                                                 </span>
                                                 <span className="text-xs text-slate-500">
-                                                  {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                  {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                 </span>
                                               </div>
                                             ))}
@@ -3972,7 +3973,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                   {/* Due Date */}
                                   <div className="w-20 text-right">
                                     <span className="text-sm text-slate-600">
-                                      {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                      {priority.dueDate ? formatDateSafe(priority.dueDate, 'MMM d') : '-'}
                                     </span>
                                   </div>
                                   
@@ -4012,7 +4013,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                             {milestone.title}
                                           </span>
                                           <span className="text-xs text-slate-500">
-                                            {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                            {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                           </span>
                                         </div>
                                       ))}
@@ -4339,7 +4340,7 @@ const QuarterlyPrioritiesPageClean = () => {
                               )}
                               {milestone.dueDate && (
                                 <span>
-                                  Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                                  Due: {formatDateSafe(milestone.dueDate, 'MMM d, yyyy')}
                                 </span>
                               )}
                             </div>

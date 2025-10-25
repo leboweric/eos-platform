@@ -55,3 +55,53 @@ export const formatDateDisplay = (dateString) => {
     year: 'numeric'
   });
 };
+
+/**
+ * Timezone-safe date formatting using date-fns patterns
+ * @param {string|Date} dateString - Date string or Date object  
+ * @param {string} pattern - Format pattern (e.g., 'MMM d', 'MMM dd, yyyy')
+ * @returns {string} Formatted date string
+ */
+export const formatDateSafe = (dateString, pattern = 'MMM d, yyyy') => {
+  if (!dateString) return '';
+  
+  let datePart = dateString;
+  
+  // If it's an ISO string with time, extract just the date part
+  if (typeof dateString === 'string' && dateString.includes('T')) {
+    datePart = dateString.split('T')[0];
+  }
+  
+  // If it's already in YYYY-MM-DD format or we extracted it
+  if (typeof datePart === 'string' && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = datePart.split('-').map(Number);
+    // Create date in local timezone to avoid shifts (set to noon to avoid DST issues)
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    
+    // Map common date-fns patterns to native formatting
+    if (pattern === 'MMM d') {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (pattern === 'MMM dd, yyyy') {
+      return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    } else if (pattern === 'MMM d, yyyy') {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    
+    // Default fallback
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  
+  // Fallback for other date formats
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    // Create a local date to avoid timezone shifts
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+    return localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (error) {
+    console.error('Error formatting date:', dateString, error);
+    return 'Invalid date';
+  }
+};

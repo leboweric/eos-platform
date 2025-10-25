@@ -164,12 +164,20 @@ const ScorecardImportPage = () => {
     setError(null);
 
     try {
+      // Sanitize owner mappings - convert "no-owner" placeholder back to null
+      const sanitizedMappings = Object.fromEntries(
+        Object.entries(ownerMappings).map(([key, value]) => [
+          key, 
+          value === 'no-owner' ? null : value
+        ])
+      );
+
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('organizationId', organizationId);
       formData.append('teamId', selectedTeamId);
       formData.append('conflictStrategy', conflictStrategy);
-      formData.append('ownerMappings', JSON.stringify(ownerMappings));
+      formData.append('ownerMappings', JSON.stringify(sanitizedMappings));
 
       const response = await scorecardImportService.execute(formData);
       setImportResults(response.results);
@@ -232,7 +240,7 @@ const ScorecardImportPage = () => {
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no-teams" disabled>
                     No teams available
                   </SelectItem>
                 )}
@@ -494,14 +502,14 @@ const ScorecardImportPage = () => {
                   <div key={ownerName} className="flex items-center gap-4">
                     <span className="text-sm w-32">{ownerName}:</span>
                     <Select 
-                      value={ownerMappings[ownerName] || ''}
+                      value={ownerMappings[ownerName] || 'no-owner'}
                       onValueChange={(value) => updateOwnerMapping(ownerName, value)}
                     >
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select user" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No owner</SelectItem>
+                        <SelectItem value="no-owner">No owner</SelectItem>
                         {(previewData?.availableUsers || []).map(user => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name} ({user.email})
