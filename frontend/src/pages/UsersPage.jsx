@@ -40,6 +40,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   UserPlus,
   Mail,
   AlertCircle,
@@ -851,27 +857,43 @@ const UsersPage = () => {
                 </CardDescription>
               </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
+                    <TableHead className="sticky left-0 z-10 bg-white border-r">Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Department(s)</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     {isAdmin && <TableHead className="text-center">Status</TableHead>}
-                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                    {isAdmin && <TableHead className="sticky right-0 z-10 bg-white border-l text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="sticky left-0 z-10 bg-white border-r font-medium">
                         {user.first_name} {user.last_name}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        {user.departments || <span className="text-gray-400 italic">No department</span>}
+                      <TableCell className="max-w-[200px]">
+                        {user.departments ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="truncate cursor-help">
+                                  {user.departments}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="whitespace-normal">{user.departments}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-gray-400 italic">No department</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
@@ -901,7 +923,7 @@ const UsersPage = () => {
                         </TableCell>
                       )}
                       {isAdmin && (
-                        <TableCell className="text-right">
+                        <TableCell className="sticky right-0 z-10 bg-white border-l text-right">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -915,6 +937,7 @@ const UsersPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
