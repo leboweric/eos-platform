@@ -691,12 +691,14 @@ const MeetingHistoryPageClean = () => {
         {/* Meeting Summary Modal - Fullscreen */}
         {showSummary && (
           <div className="fixed inset-0 z-50 bg-white overflow-auto">
+            {/* Sticky Header with Controls */}
             <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
-              <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Meeting Summary</h2>
-                <div className="flex items-center gap-2">
+              <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Meeting Summary</h2>
+                <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => window.print()}
                     className="flex items-center gap-2"
                   >
@@ -704,11 +706,13 @@ const MeetingHistoryPageClean = () => {
                     Save as PDF
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setShowSummary(false);
                       setSummaryHTML('');
                     }}
+                    className="flex items-center gap-2"
                   >
                     Close
                   </Button>
@@ -716,11 +720,12 @@ const MeetingHistoryPageClean = () => {
               </div>
             </div>
             
-            <div className="container mx-auto">
+            {/* Content Area */}
+            <div className="max-w-4xl mx-auto p-0">
               {loadingSummary ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <span className="ml-3">Loading meeting summary...</span>
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-3 text-gray-600">Loading meeting summary...</span>
                 </div>
               ) : (
                 <div 

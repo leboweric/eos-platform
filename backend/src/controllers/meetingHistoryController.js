@@ -743,101 +743,84 @@ export const exportMeetingHistoryCSV = async (req, res) => {
 // Get meeting summary HTML for viewing
 export const getMeetingSummaryHTML = async (req, res) => {
   try {
-    const { orgId, meetingId } = req.params;
-    
+    const { meetingId } = req.params;
+    const orgId = req.user.organizationId;
+
     console.log('📄 Generating meeting summary HTML for:', { orgId, meetingId });
-    
-    // Ensure user has access to this organization
-    if (req.user.organizationId !== orgId) {
-      return res.status(403).json({ error: 'Access denied to this organization' });
-    }
 
-    // Fetch meeting snapshot with all data
-    const meetingQuery = `
-      SELECT 
-        ms.*,
-        t.name as team_name,
-        u.first_name || ' ' || u.last_name as facilitator_name,
-        o.name as organization_name
-      FROM meeting_snapshots ms
-      LEFT JOIN teams t ON ms.team_id = t.id
-      LEFT JOIN users u ON ms.facilitator_id = u.id
-      LEFT JOIN organizations o ON ms.organization_id = o.id
-      WHERE ms.id = $1 AND ms.organization_id = $2
-    `;
+    // Fetch meeting AND organization for theme color
+    const [meetingResult, orgResult] = await Promise.all([
+      db.query(`
+        SELECT 
+          ms.*,
+          t.name as team_name,
+          u.first_name || ' ' || u.last_name as facilitator_name
+        FROM meeting_snapshots ms
+        LEFT JOIN teams t ON ms.team_id = t.id
+        LEFT JOIN users u ON ms.facilitator_id = u.id
+        WHERE ms.id = $1 AND ms.organization_id = $2
+      `, [meetingId, orgId]),
+      
+      db.query(`
+        SELECT name, primary_color, theme_color 
+        FROM organizations 
+        WHERE id = $1
+      `, [orgId])
+    ]);
 
-    const meeting = await db.query(meetingQuery, [meetingId, orgId]);
-
-    if (meeting.rows.length === 0) {
+    if (meetingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Meeting not found' });
     }
 
-    const meetingData = meeting.rows[0];
+    const meetingData = meetingResult.rows[0];
+    const orgData = orgResult.rows[0];
+    const snapshotData = meetingData.snapshot_data || {};
+
     console.log('📄 Meeting data retrieved:', {
       id: meetingData.id,
       teamName: meetingData.team_name,
       meetingType: meetingData.meeting_type,
-      meetingDate: meetingData.meeting_date
+      meetingDate: meetingData.meeting_date,
+      themeColor: orgData?.theme_color || orgData?.primary_color
     });
-    
-    // Format data for professional template
-    const snapshotData = meetingData.snapshot_data || {};
-    
-    // Extract and categorize data for new template structure
-    const headlines = snapshotData.headlines || [];
-    const issues = snapshotData.issues || [];
-    const todos = snapshotData.todos || [];
-    
-    // Categorize issues
-    const solvedIssues = issues.filter(issue => issue.status === 'solved' || issue.status === 'closed');
-    const newIssues = issues.filter(issue => issue.status !== 'solved' && issue.status !== 'closed');
-    
-    // Categorize todos
-    const completedTodos = todos.filter(todo => todo.completed || todo.status === 'completed');
-    const newTodos = todos.filter(todo => !todo.completed && todo.status !== 'completed');
-    
+
+    // Format data for simplified template
     const formattedData = {
-      // Basic meeting information
       teamName: meetingData.team_name || 'Unknown Team',
-      organizationName: meetingData.organization_name || 'Organization',
-      facilitatorName: meetingData.facilitator_name || 'Team Leader',
-      meetingType: meetingData.meeting_type,
-      meetingDate: meetingData.meeting_date ? new Date(meetingData.meeting_date).toISOString() : new Date().toISOString(),
-      duration: meetingData.duration_minutes ? `${meetingData.duration_minutes} minutes` : '60 minutes',
+      meetingType: meetingData.meeting_type || 'Team Meeting',
+      meetingDate: meetingData.meeting_date || new Date().toISOString(),
+      duration: meetingData.duration_minutes || 60,
       rating: meetingData.average_rating,
+      facilitatorName: meetingData.facilitator_name,
+      organizationName: orgData?.name || 'Organization',
+      themeColor: orgData?.theme_color || orgData?.primary_color || '#6366f1', // Use org theme
       
-      // AI Summary
-      aiSummary: snapshotData.aiSummary || snapshotData.meetingSummary || 'This productive team meeting focused on strategic alignment and operational excellence. The team successfully reviewed key priorities, addressed critical issues, and established clear action items with defined ownership and timelines.',
+      aiSummary: snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary,
+      headlines: snapshotData.headlines || { customer: [], employee: [] },
+      cascadingMessages: snapshotData.cascading_messages || snapshotData.cascadingMessages || [],
       
-      // Content sections in specific order
-      headlines: headlines,
-      cascadedMessages: snapshotData.cascadedMessages || snapshotData.cascadingMessages || [],
+      issues: {
+        solved: (snapshotData.issues || []).filter(i => i.status === 'solved' || i.solved),
+        new: (snapshotData.issues || []).filter(i => i.status !== 'solved' && !i.solved)
+      },
       
-      // Issues categorized
-      solvedIssues: solvedIssues,
-      newIssues: newIssues,
-      issues: issues, // Keep for backward compatibility
+      todos: {
+        completed: (snapshotData.todos || []).filter(t => t.status === 'completed' || t.completed),
+        new: (snapshotData.todos || []).filter(t => t.status !== 'completed' && !t.completed)
+      },
       
-      // Todos categorized  
-      completedTodos: completedTodos,
-      newTodos: newTodos,
-      todos: todos, // Keep for backward compatibility
-      
-      // Organization theme (if available)
-      organizationTheme: snapshotData.organizationTheme || {},
-      
-      // Legacy fields for compatibility
-      ...snapshotData
+      attendees: snapshotData.attendees || []
     };
 
     console.log('📄 Formatted data for template:', {
       teamName: formattedData.teamName,
       organizationName: formattedData.organizationName,
-      meetingDate: formattedData.meetingDate,
-      hasSnapshotData: !!meetingData.snapshot_data
+      themeColor: formattedData.themeColor,
+      hasIssues: formattedData.issues.solved.length + formattedData.issues.new.length,
+      hasTodos: formattedData.todos.completed.length + formattedData.todos.new.length
     });
 
-    // Generate HTML using the same template as emails
+    // Generate HTML using simplified template
     const html = generateMeetingSummaryHTML(formattedData);
 
     // Send raw HTML (browser will render it)
