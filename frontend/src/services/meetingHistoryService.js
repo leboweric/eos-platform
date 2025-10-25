@@ -22,17 +22,16 @@ const getOrgId = () => {
   return orgId;
 };
 
-export const getMeetingHistory = async (params = {}) => {
+export const getMeetingHistory = async (orgId, params = {}) => {
   console.log('📡 === meetingHistoryService.getMeetingHistory CALLED ===');
+  console.log('📡 Input orgId:', orgId);
   console.log('📡 Input params:', params);
   
-  const orgId = getOrgId();
-  console.log('📡 Retrieved orgId from localStorage:', orgId);
-  
   if (!orgId) {
-    console.error('📡 ❌ NO ORGANIZATION ID FOUND');
-    throw new Error('No organization selected');
+    console.error('📡 ❌ No orgId provided to getMeetingHistory');
+    throw new Error('Organization ID is required');
   }
+  console.log('📡 Using provided orgId:', orgId);
   
   const url = `/organizations/${orgId}/meeting-history`;
   console.log('📡 Full API URL:', url);

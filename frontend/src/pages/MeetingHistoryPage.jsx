@@ -226,7 +226,7 @@ const MeetingHistoryPageClean = () => {
       console.log('🌐 About to call meetingHistoryService.getMeetingHistory');
       console.log('🌐 Calling with params:', params);
 
-      const response = await meetingHistoryService.getMeetingHistory(params);
+      const response = await meetingHistoryService.getMeetingHistory(orgId, params);
       
       console.log('✅ === API RESPONSE RECEIVED ===');
       console.log('✅ Full response:', response);
