@@ -164,6 +164,7 @@ const MeetingHistoryPageClean = () => {
     console.log('📞 === fetchMeetings CALLED ===');
     console.log('📞 currentOrganization at fetch time:', currentOrganization);
     console.log('📞 user at fetch time:', user);
+    console.log('📞 selectedDepartment:', selectedDepartment);
     
     try {
       setLoading(true);
@@ -187,9 +188,25 @@ const MeetingHistoryPageClean = () => {
         setLoading(false);
         return;
       }
+      
+      // CRITICAL: Get team ID for access control
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        console.warn('⚠️ No department selected - not fetching meetings for security');
+        console.warn('⚠️ User must select a department to view meeting history');
+        setMeetings([]);
+        setTotal(0);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('🔒 Filtering meetings by team:', teamId);
+      console.log('🔒 Team name:', selectedDepartment?.name);
 
       const params = {
         ...filters,
+        team_id: teamId,  // CRITICAL: Only fetch meetings for this team
         limit,
         offset: (page - 1) * limit
       };
@@ -354,6 +371,22 @@ const MeetingHistoryPageClean = () => {
             View archived meetings with detailed snapshots, attendee information, and outcomes.
           </p>
         </div>
+
+        {/* Team Indicator */}
+        {selectedDepartment ? (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              🔒 Showing meetings for: <strong>{selectedDepartment.name}</strong> team
+            </p>
+          </div>
+        ) : (
+          <Alert className="mb-4 border-amber-200 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              Please select a department from the dropdown to view meeting history
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filter Bar */}
         <Card className="mb-6">

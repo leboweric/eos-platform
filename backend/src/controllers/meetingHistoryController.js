@@ -35,6 +35,40 @@ export const getMeetingHistory = async (req, res) => {
         }
       });
     }
+    
+    // CRITICAL SECURITY: Require team_id for access control
+    if (!team_id) {
+      console.log('🔒 Access denied - team_id is required for security');
+      return res.status(400).json({
+        error: 'Team selection required',
+        message: 'You must specify a team to view meeting history'
+      });
+    }
+    
+    // CRITICAL SECURITY: Verify user has access to the requested team
+    console.log('🔒 Verifying team access for user:', req.user.id, 'team:', team_id);
+    
+    const teamAccessQuery = `
+      SELECT tm.id, t.name, t.is_leadership_team
+      FROM team_members tm
+      JOIN teams t ON tm.team_id = t.id
+      WHERE tm.team_id = $1 
+        AND tm.user_id = $2
+        AND t.organization_id = $3
+    `;
+    
+    const teamAccessResult = await db.query(teamAccessQuery, [team_id, req.user.id, orgId]);
+    
+    if (teamAccessResult.rows.length === 0) {
+      console.log('🚫 Access denied - user is not a member of team:', team_id);
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'You do not have access to view this team\'s meeting history'
+      });
+    }
+    
+    const userTeam = teamAccessResult.rows[0];
+    console.log('✅ Access granted - user is member of:', userTeam.name);
 
     let query = `
       SELECT 
@@ -54,17 +88,11 @@ export const getMeetingHistory = async (req, res) => {
       LEFT JOIN teams t ON ms.team_id = t.id
       LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.organization_id = $1
+        AND ms.team_id = $2
     `;
 
-    const params = [orgId];
-    let paramCount = 2;
-
-    // Filter by team
-    if (team_id) {
-      query += ` AND ms.team_id = $${paramCount}`;
-      params.push(team_id);
-      paramCount++;
-    }
+    const params = [orgId, team_id];
+    let paramCount = 3;
 
     // Filter by meeting type
     if (meeting_type) {
@@ -162,7 +190,7 @@ export const getMeetingSnapshot = async (req, res) => {
         t.name as team_name,
         u.first_name || ' ' || u.last_name as facilitator_name
       FROM meeting_snapshots ms
-      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN teams t ON ms.team_id = t.id
       LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.id = $1 AND ms.organization_id = $2
     `;
@@ -172,8 +200,29 @@ export const getMeetingSnapshot = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Meeting snapshot not found' });
     }
+    
+    const snapshot = result.rows[0];
+    
+    // CRITICAL SECURITY: Verify user has access to this team's meetings
+    if (snapshot.team_id) {
+      const teamAccessQuery = `
+        SELECT tm.id
+        FROM team_members tm
+        WHERE tm.team_id = $1 AND tm.user_id = $2
+      `;
+      
+      const teamAccessResult = await db.query(teamAccessQuery, [snapshot.team_id, req.user.id]);
+      
+      if (teamAccessResult.rows.length === 0) {
+        console.log('🚫 Access denied - user is not a member of team for this snapshot');
+        return res.status(403).json({
+          error: 'Access denied',
+          message: 'You do not have access to view this team\'s meeting history'
+        });
+      }
+    }
 
-    res.json(result.rows[0]);
+    res.json(snapshot);
 
   } catch (error) {
     console.error('Failed to get meeting snapshot:', error);
