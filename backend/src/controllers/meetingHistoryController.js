@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { generateMeetingSummaryHTML } from '../services/emailService.js';
 
 // Get paginated list of archived meetings
 export const getMeetingHistory = async (req, res) => {
@@ -736,5 +737,77 @@ export const exportMeetingHistoryCSV = async (req, res) => {
   } catch (error) {
     console.error('Failed to export meeting history:', error);
     res.status(500).json({ error: 'Failed to export meeting history' });
+  }
+};
+
+// Get meeting summary HTML for viewing
+export const getMeetingSummaryHTML = async (req, res) => {
+  try {
+    const { orgId, meetingId } = req.params;
+    
+    console.log('📄 Generating meeting summary HTML for:', { orgId, meetingId });
+    
+    // Ensure user has access to this organization
+    if (req.user.organizationId !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    // Fetch meeting snapshot with all data
+    const meetingQuery = `
+      SELECT 
+        ms.*,
+        t.name as team_name,
+        u.first_name || ' ' || u.last_name as facilitator_name,
+        o.name as organization_name
+      FROM meeting_snapshots ms
+      LEFT JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
+      LEFT JOIN organizations o ON ms.organization_id = o.id
+      WHERE ms.id = $1 AND ms.organization_id = $2
+    `;
+
+    const meeting = await db.query(meetingQuery, [meetingId, orgId]);
+
+    if (meeting.rows.length === 0) {
+      return res.status(404).json({ error: 'Meeting not found' });
+    }
+
+    const meetingData = meeting.rows[0];
+    console.log('📄 Meeting data retrieved:', {
+      id: meetingData.id,
+      teamName: meetingData.team_name,
+      meetingType: meetingData.meeting_type,
+      meetingDate: meetingData.meeting_date
+    });
+    
+    // Format data for email template (same structure as email)
+    const formattedData = {
+      teamName: meetingData.team_name || 'Unknown Team',
+      organizationName: meetingData.organization_name || 'Organization',
+      meetingType: meetingData.meeting_type,
+      meetingDate: meetingData.meeting_date ? new Date(meetingData.meeting_date).toLocaleDateString() : 'Unknown Date',
+      duration: meetingData.duration_minutes ? `${meetingData.duration_minutes} minutes` : undefined,
+      rating: meetingData.average_rating,
+      facilitatorName: meetingData.facilitator_name,
+      ...meetingData.snapshot_data // All the JSONB data (issues, todos, headlines, etc.)
+    };
+
+    console.log('📄 Formatted data for template:', {
+      teamName: formattedData.teamName,
+      organizationName: formattedData.organizationName,
+      meetingDate: formattedData.meetingDate,
+      hasSnapshotData: !!meetingData.snapshot_data
+    });
+
+    // Generate HTML using the same template as emails
+    const html = generateMeetingSummaryHTML(formattedData);
+
+    // Send raw HTML (browser will render it)
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+
+  } catch (error) {
+    console.error('Error generating meeting summary HTML:', error);
+    res.status(500).json({ error: 'Failed to generate summary' });
   }
 };

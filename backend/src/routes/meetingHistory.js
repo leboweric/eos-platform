@@ -5,7 +5,8 @@ import {
   getMeetingSnapshot,
   createMeetingSnapshot,
   updateMeetingNotes,
-  exportMeetingHistoryCSV
+  exportMeetingHistoryCSV,
+  getMeetingSummaryHTML
 } from '../controllers/meetingHistoryController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -32,5 +33,9 @@ router.put('/:id/notes', updateMeetingNotes);
 // Export meeting history to CSV
 // GET /api/v1/organizations/:orgId/meeting-history/export/csv
 router.get('/export/csv', exportMeetingHistoryCSV);
+
+// Get meeting summary as HTML (for viewing in browser)
+// GET /api/v1/organizations/:orgId/meeting-history/:meetingId/summary
+router.get('/:meetingId/summary', getMeetingSummaryHTML);
 
 export default router;

@@ -288,8 +288,13 @@ const MeetingHistoryPageClean = () => {
   };
 
   const handleMeetingClick = (meeting) => {
-    setSelectedMeeting(meeting);
-    setShowDetail(true);
+    console.log('📄 Opening meeting summary for:', meeting.id);
+    
+    // Open summary in new tab using the beautiful HTML template
+    const summaryUrl = `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`;
+    
+    console.log('📄 Summary URL:', summaryUrl);
+    window.open(summaryUrl, '_blank');
   };
 
   const handleNotesUpdate = async (meetingId, notes) => {
