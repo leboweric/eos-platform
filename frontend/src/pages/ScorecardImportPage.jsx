@@ -43,6 +43,7 @@ const ScorecardImportPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [dragOver, setDragOver] = useState(false);
 
   // Step 2: Preview
   const [previewData, setPreviewData] = useState(null);
@@ -89,8 +90,7 @@ const ScorecardImportPage = () => {
     }
   };
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
+  const handleFileSelect = (file) => {
     if (!file) return;
     
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -100,6 +100,33 @@ const ScorecardImportPage = () => {
     
     setSelectedFile(file);
     setError(null);
+  };
+
+  const handleFileInputChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
   };
 
   const handlePreview = async () => {
@@ -213,24 +240,58 @@ const ScorecardImportPage = () => {
             </Select>
           </div>
 
-          {/* File Upload */}
+          {/* File Upload with Drag & Drop */}
           <div className="space-y-2">
             <Label htmlFor="file">CSV File *</Label>
-            <div className="flex items-center gap-4">
-              <Input
-                id="file"
-                type="file"
-                accept=".csv"
-                onChange={handleFileSelect}
-                className="flex-1"
-              />
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragOver
+                  ? 'border-blue-400 bg-blue-50'
+                  : selectedFile
+                  ? 'border-green-300 bg-green-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              {selectedFile ? (
+                <div className="space-y-2">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+                  <p className="text-lg font-medium text-gray-900">{selectedFile.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {(selectedFile.size / 1024).toFixed(1)} KB
+                  </p>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Remove file
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">
+                      Drop your CSV file here, or{' '}
+                      <label className="text-blue-600 hover:text-blue-700 cursor-pointer">
+                        browse
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".csv"
+                          onChange={handleFileInputChange}
+                        />
+                      </label>
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Supports CSV files only (max 10MB)
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            {selectedFile && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-              </div>
-            )}
           </div>
 
           {/* Format Instructions */}
