@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TeamMemberSelect from '../components/shared/TeamMemberSelect';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -485,21 +486,14 @@ const SmartRockAssistant = () => {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
-                <Select
+                <TeamMemberSelect
+                  teamId={rockData.teamId}
                   value={rockData.owner}
                   onValueChange={(value) => setRockData({ ...rockData, owner: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select owner" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.first_name} {user.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select owner"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm"
+                  includeAllIfLeadership={true}
+                />
               </div>
 
               <div className="space-y-2">

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TeamMemberSelect from '../components/shared/TeamMemberSelect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus,
@@ -913,7 +914,8 @@ const ScorecardPageClean = () => {
               </div>
               <div>
                 <Label htmlFor="metric-owner" className="text-slate-700 font-medium">Owner</Label>
-                <Select
+                <TeamMemberSelect
+                  teamId={selectedDepartment?.id}
                   value={metricForm.ownerId}
                   onValueChange={(userId) => {
                     const selectedUser = users.find(u => u.id === userId);
@@ -923,18 +925,10 @@ const ScorecardPageClean = () => {
                       ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
                     }));
                   }}
-                >
-                  <SelectTrigger id="metric-owner" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select an owner" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.first_name} {user.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select an owner"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm"
+                  includeAllIfLeadership={true}
+                />
               </div>
               <div>
                 <Label htmlFor="metric-value-type" className="text-slate-700 font-medium">Value Type</Label>
