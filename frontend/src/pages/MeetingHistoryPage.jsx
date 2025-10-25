@@ -316,7 +316,14 @@ const MeetingHistoryPageClean = () => {
       }
       
       console.log('📄 Step 4: Building fetch URL...');
-      const url = `${import.meta.env.VITE_API_URL}/api/v1/organizations/${meeting.organization_id}/meeting-history/${meeting.id}/summary`;
+      console.log('📄 VITE_API_URL:', import.meta.env.VITE_API_URL);
+      console.log('📄 meeting.organization_id:', meeting.organization_id);
+      console.log('📄 meeting.id:', meeting.id);
+      
+      const orgId = meeting.organization_id || user?.organization_id || user?.organizationId;
+      console.log('📄 Resolved orgId:', orgId);
+      
+      const url = `${import.meta.env.VITE_API_URL}/organizations/${orgId}/meeting-history/${meeting.id}/summary`;
       console.log('📄 Fetch URL:', url);
       
       console.log('📄 Step 5: Making fetch request...');
