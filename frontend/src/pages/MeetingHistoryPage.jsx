@@ -304,9 +304,9 @@ const MeetingHistoryPageClean = () => {
     
     try {
       console.log('📄 Step 3: Getting auth token...');
-      const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
-      const token = authStore?.state?.token;
+      const token = localStorage.getItem('accessToken');
       console.log('📄 Token found:', !!token);
+      console.log('📄 Token preview:', token ? `${token.substring(0, 20)}...` : 'null');
       
       if (!token) {
         console.error('📄 ERROR: No token found');
