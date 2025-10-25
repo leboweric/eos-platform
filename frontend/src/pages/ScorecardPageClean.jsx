@@ -38,7 +38,6 @@ import {
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
-import ScorecardImport from '../components/scorecard/ScorecardImport';
 import ShareMetricDialog from '../components/shared-metrics/ShareMetricDialog';
 import SharedMetricsBrowser from '../components/shared-metrics/SharedMetricsBrowser';
 import sharedMetricsService from '../services/sharedMetricsService';
@@ -679,11 +678,6 @@ const ScorecardPageClean = () => {
                 )}
               </div>
               <div className="flex gap-2">
-                <ScorecardImport 
-                  orgId={user?.organization_id}
-                  teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
-                  onImportComplete={fetchScorecard}
-                />
                 <Button 
                   onClick={handleAddMetric} 
                   className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
