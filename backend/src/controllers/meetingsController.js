@@ -140,7 +140,7 @@ export const concludeMeeting = async (req, res) => {
           actual_end_time = NOW(),
           updated_at = NOW()
         WHERE id = $1 AND organization_id = $2 AND team_id = $3
-        RETURNING id
+        RETURNING *
       `, [specificMeetingId, organizationId, teamId]);
       logger.info('🎯 Targeted specific meeting:', specificMeetingId);
     } else {
@@ -179,7 +179,7 @@ export const concludeMeeting = async (req, res) => {
           actual_end_time = NOW(),
           updated_at = NOW()
         WHERE id = $1
-        RETURNING id
+        RETURNING *
       `, [targetMeetingId]);
     }
     
@@ -647,9 +647,11 @@ export const concludeMeeting = async (req, res) => {
         meetingToSnapshot = meetingUpdateResult.rows[0];
       }
 
-      if (meetingToSnapshot) {
+      // Create snapshot whether we have a formal meeting record or not
+      // This handles cases where meetings are concluded without being formally started
+      if (meetingToSnapshot || (organizationId && teamId)) {
         // Calculate duration
-        const durationMinutes = meetingToSnapshot.actual_end_time && meetingToSnapshot.actual_start_time
+        const durationMinutes = meetingToSnapshot?.actual_end_time && meetingToSnapshot?.actual_start_time
           ? Math.round((new Date(meetingToSnapshot.actual_end_time) - new Date(meetingToSnapshot.actual_start_time)) / 60000)
           : duration || null;
 
@@ -658,8 +660,8 @@ export const concludeMeeting = async (req, res) => {
           issues: issues || [],
           todos: todos || [],
           attendees: individualRatings || attendees || [],
-          notes: notes || meetingToSnapshot.notes || '',
-          rating: rating || meetingToSnapshot.rating,
+          notes: notes || meetingToSnapshot?.notes || '',
+          rating: rating || meetingToSnapshot?.rating,
           metrics: metrics || [],
           summary: summary || '',
           cascadingMessage: cascadingMessage || '',
@@ -674,14 +676,14 @@ export const concludeMeeting = async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            ON CONFLICT (meeting_id) DO NOTHING`,
           [
-            meetingToSnapshot.id,
+            meetingToSnapshot?.id || null,  // Can be null for informal meetings
             organizationId,
             teamId,
             meetingType || 'Weekly Accountability',
-            meetingToSnapshot.scheduled_date || new Date(),
+            meetingToSnapshot?.scheduled_date || new Date(),
             durationMinutes,
             rating,
-            meetingToSnapshot.facilitator_id || userId,
+            meetingToSnapshot?.facilitator_id || userId,
             JSON.stringify(snapshotData)
           ]
         );
