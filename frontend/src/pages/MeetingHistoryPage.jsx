@@ -4,6 +4,7 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import meetingHistoryService from '../services/meetingHistoryService';
 import api from '../services/axiosConfig';
 import { teamsService } from '../services/teamsService';
+import MeetingSummaryModal from '../components/MeetingSummaryModal';
 import MeetingDetailDialog from '../components/MeetingDetailDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -687,52 +688,17 @@ const MeetingHistoryPageClean = () => {
         )}
 
         {/* Meeting Summary Modal Dialog */}
-        <Dialog open={showSummary} onOpenChange={(open) => {
-          if (!open) {
-            setShowSummary(false);
-            setSummaryHTML('');
-          }
-        }}>
-          <DialogContent className="w-[90vw] max-w-5xl max-h-[90vh] p-0 gap-0 flex flex-col">
-            {/* Header Bar - Fixed at top */}
-            <div className="flex items-center justify-between px-6 py-4 border-b bg-white shrink-0">
-              <DialogTitle className="text-lg font-semibold">Meeting Summary</DialogTitle>
-              <div className="flex items-center gap-2">
-                <Button 
-                  onClick={() => window.print()} 
-                  variant="outline" 
-                  size="sm"
-                  type="button"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Save as PDF
-                </Button>
-                <DialogClose asChild>
-                  <Button variant="ghost" size="sm" type="button">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DialogClose>
-              </div>
-            </div>
-
-            {/* Content Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white min-h-0">
-              {loadingSummary ? (
-                <div className="flex items-center justify-center h-full p-8">
-                  <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
-                    <p className="text-gray-600">Loading meeting summary...</p>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  dangerouslySetInnerHTML={{ __html: summaryHTML }}
-                  className="meeting-summary-content p-6"
-                />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <MeetingSummaryModal
+          open={showSummary}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowSummary(false);
+              setSummaryHTML('');
+            }
+          }}
+          summaryHTML={summaryHTML}
+          loading={loadingSummary}
+        />
 
         {/* Meeting Detail Dialog - DISABLED - Using new summary modal instead */}
         {/* {showDetail && selectedMeeting && (
