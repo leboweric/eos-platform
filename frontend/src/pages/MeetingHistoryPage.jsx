@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Calendar,
   Download,
@@ -688,40 +689,30 @@ const MeetingHistoryPageClean = () => {
           </div>
         )}
 
-        {/* Meeting Summary Modal - Fullscreen */}
-        {showSummary && (
-          <div className="fixed inset-0 z-50 bg-white overflow-auto">
-            {/* Sticky Header with Controls */}
-            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
-              <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Meeting Summary</h2>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.print()}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Save as PDF
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowSummary(false);
-                      setSummaryHTML('');
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
+        {/* Meeting Summary Modal Dialog */}
+        <Dialog open={showSummary} onOpenChange={(open) => {
+          if (!open) {
+            setShowSummary(false);
+            setSummaryHTML('');
+          }
+        }}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle className="flex items-center justify-between">
+                <span>Meeting Summary</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Save as PDF
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
             
-            {/* Content Area */}
-            <div className="max-w-4xl mx-auto p-0">
+            <div className="flex-1 overflow-auto">
               {loadingSummary ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -730,12 +721,12 @@ const MeetingHistoryPageClean = () => {
               ) : (
                 <div 
                   dangerouslySetInnerHTML={{ __html: summaryHTML }}
-                  className="meeting-summary-content"
+                  className="meeting-summary-content pr-2"
                 />
               )}
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
         {/* Meeting Detail Dialog - DISABLED - Using new summary modal instead */}
         {/* {showDetail && selectedMeeting && (

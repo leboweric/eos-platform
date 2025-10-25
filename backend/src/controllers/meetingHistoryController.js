@@ -762,7 +762,7 @@ export const getMeetingSummaryHTML = async (req, res) => {
       `, [meetingId, orgId]),
       
       db.query(`
-        SELECT name, primary_color, theme_color 
+        SELECT name, theme_color 
         FROM organizations 
         WHERE id = $1
       `, [orgId])
@@ -781,7 +781,7 @@ export const getMeetingSummaryHTML = async (req, res) => {
       teamName: meetingData.team_name,
       meetingType: meetingData.meeting_type,
       meetingDate: meetingData.meeting_date,
-      themeColor: orgData?.theme_color || orgData?.primary_color
+      themeColor: orgData?.theme_color || '#6366f1'
     });
 
     // Format data for simplified template
@@ -793,7 +793,7 @@ export const getMeetingSummaryHTML = async (req, res) => {
       rating: meetingData.average_rating,
       facilitatorName: meetingData.facilitator_name,
       organizationName: orgData?.name || 'Organization',
-      themeColor: orgData?.theme_color || orgData?.primary_color || '#6366f1', // Use org theme
+      themeColor: orgData?.theme_color || '#6366f1', // Use org theme
       
       aiSummary: snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary,
       headlines: snapshotData.headlines || { customer: [], employee: [] },
