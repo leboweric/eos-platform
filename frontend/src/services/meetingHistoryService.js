@@ -2,7 +2,24 @@ import api from './axiosConfig';
 
 const getOrgId = () => {
   const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  return authStore?.state?.currentOrganization?.id;
+  const authState = authStore?.state || {};
+  
+  // Try currentOrganization first, fall back to user.organization_id
+  const orgId = authState.currentOrganization?.id || 
+                authState.user?.organization_id || 
+                authState.user?.organizationId;
+  
+  if (!orgId) {
+    console.error('❌ Cannot get org ID from:', {
+      currentOrg: authState.currentOrganization,
+      user: authState.user,
+      fullAuthStore: authStore
+    });
+  } else {
+    console.log('✅ Using organization ID:', orgId);
+  }
+  
+  return orgId;
 };
 
 export const getMeetingHistory = async (params = {}) => {
