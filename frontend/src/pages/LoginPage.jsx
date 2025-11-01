@@ -347,25 +347,6 @@ const LoginPage = () => {
               </Button>
             </div>
 
-            {/* Sign Up Section */}
-            <div className="mt-8 p-4 rounded-lg border border-slate-200">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-900 mb-2">
-                  New to the Adaptive Execution Platform?
-                </p>
-                <Link 
-                  to="/register" 
-                  className="inline-flex items-center justify-center px-4 py-2 bg-white rounded-lg text-blue-600 font-medium hover:bg-gray-50 transition-colors border border-blue-200"
-                >
-                  Start your free trial
-                  <Zap className="ml-2 h-4 w-4" />
-                </Link>
-                <p className="text-xs text-gray-600 mt-2">
-                  30-day free trial • No credit card required
-                </p>
-              </div>
-            </div>
-
           </div>
 
           {/* Footer Links */}
