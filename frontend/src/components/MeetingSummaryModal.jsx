@@ -205,6 +205,33 @@ export const MeetingSummaryModal = ({
   const parsedData = React.useMemo(() => {
     if (summaryData) {
       console.log('📊 Using direct JSON data:', summaryData);
+      
+      // Normalize headlines - can be object {customer: [], employee: []} or array
+      let headlinesArray = [];
+      if (summaryData.headlines) {
+        if (Array.isArray(summaryData.headlines)) {
+          headlinesArray = summaryData.headlines;
+        } else if (typeof summaryData.headlines === 'object') {
+          // Combine customer and employee headlines
+          const customerHeadlines = summaryData.headlines.customer || [];
+          const employeeHeadlines = summaryData.headlines.employee || [];
+          headlinesArray = [...customerHeadlines, ...employeeHeadlines];
+        }
+      }
+      
+      // Normalize cascading messages
+      let cascadingMessagesArray = [];
+      if (summaryData.cascadingMessages) {
+        if (Array.isArray(summaryData.cascadingMessages)) {
+          cascadingMessagesArray = summaryData.cascadingMessages;
+        } else if (typeof summaryData.cascadingMessages === 'object') {
+          // Combine customer and employee messages
+          const customerMessages = summaryData.cascadingMessages.customer || [];
+          const employeeMessages = summaryData.cascadingMessages.employee || [];
+          cascadingMessagesArray = [...customerMessages, ...employeeMessages];
+        }
+      }
+      
       // Transform backend JSON structure to match expected format
       return {
         meetingInfo: {
@@ -213,12 +240,12 @@ export const MeetingSummaryModal = ({
           meta: summaryData.meetingDate
         },
         aiSummary: summaryData.aiSummary,
-        headlines: summaryData.headlines || [],
-        cascadingMessages: summaryData.cascadingMessages || [],
-        solvedIssues: summaryData.issues?.solved || [],
-        newIssues: summaryData.issues?.new || [],
-        completedTodos: summaryData.todos?.completed || [],
-        newTodos: summaryData.todos?.new || []
+        headlines: headlinesArray,
+        cascadingMessages: cascadingMessagesArray,
+        solvedIssues: Array.isArray(summaryData.issues?.solved) ? summaryData.issues.solved : [],
+        newIssues: Array.isArray(summaryData.issues?.new) ? summaryData.issues.new : [],
+        completedTodos: Array.isArray(summaryData.todos?.completed) ? summaryData.todos.completed : [],
+        newTodos: Array.isArray(summaryData.todos?.new) ? summaryData.todos.new : []
       };
     }
     if (!summaryHTML) return null;
