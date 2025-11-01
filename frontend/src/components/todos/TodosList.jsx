@@ -147,7 +147,20 @@ const TodosList = ({
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return dueDate && dueDate < today && todo.status !== 'complete';
+    
+    // Debug logging
+    if (todo.due_date) {
+      console.log('TodosList isOverdue check:', {
+        title: todo.title,
+        due_date: todo.due_date,
+        parsedDueDate: dueDate,
+        today: today,
+        isOverdue: dueDate < today,
+        status: todo.status
+      });
+    }
+    
+    return dueDate && dueDate < today && todo.status !== 'complete' && todo.status !== 'completed';
   };
 
   const getDaysUntilDue = (todo) => {
