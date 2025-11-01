@@ -2058,10 +2058,16 @@ const DashboardClean = () => {
           teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           onSave={async (todoData) => {
             try {
+              console.log("--- DEBUGGING TODO UPDATE ---");
+              console.log("1. editingTodo (original data):", editingTodo);
+              console.log("2. todoData (from form):", todoData);
+              
               // Add organization_id and team_id if not present
               const orgId = user?.organizationId || user?.organization_id;
               
               const userTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+              console.log("3. userTeamId:", userTeamId);
+              console.log("4. orgId:", orgId);
               
               const todoDataWithOrgInfo = {
                 ...(editingTodo || {}), // Spread the original todo data first
@@ -2071,19 +2077,31 @@ const DashboardClean = () => {
                 department_id: userTeamId
               };
               
+              console.log("5. todoDataWithOrgInfo (final payload):", todoDataWithOrgInfo);
+              console.log("6. Has assignedToId?:", !!todoDataWithOrgInfo.assignedToId);
+              console.log("7. Has assigned_to?:", !!todoDataWithOrgInfo.assigned_to);
+              console.log("8. Has assignees?:", !!todoDataWithOrgInfo.assignees);
+              
               let savedTodo;
               if (editingTodo) {
+                console.log(`9. Calling updateTodo with id: ${editingTodo.id}`);
                 savedTodo = await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
+                console.log("10. updateTodo response:", savedTodo);
               } else {
+                console.log("11. Creating new todo");
                 const createdTodo = await todosService.createTodo(todoDataWithOrgInfo);
+                console.log("12. createTodo response:", createdTodo);
                 savedTodo = createdTodo;
               }
               await fetchDashboardData();
               setShowTodoDialog(false);
               setEditingTodo(null);
+              console.log("--- END DEBUGGING ---");
               return savedTodo; // Return the todo so attachments can be uploaded
             } catch (error) {
               console.error('Failed to save todo:', error);
+              console.error("Error details:", error.response?.data);
+              console.log("--- END DEBUGGING WITH ERROR ---");
               // Don't close the dialog on error
               throw error; // Re-throw to let TodoDialog handle it
             }
