@@ -5,8 +5,13 @@ import bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
 import failedOperationsService from '../services/failedOperationsService.js';
 
+// Check if Microsoft OAuth is configured
+const isMicrosoftOAuthConfigured = () => {
+  return process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET;
+};
+
 // Microsoft OAuth configuration
-const msalConfig = {
+const getMsalConfig = () => ({
   auth: {
     clientId: process.env.MICROSOFT_CLIENT_ID,
     authority: `https://login.microsoftonline.com/common`, // Use 'common' for multi-tenant
@@ -23,10 +28,15 @@ const msalConfig = {
       logLevel: 'Error',
     },
   },
-};
+});
 
-// Create MSAL application instance
-const msalClient = new ConfidentialClientApplication(msalConfig);
+// Create MSAL application instance only when configured
+const getMsalClient = () => {
+  if (!isMicrosoftOAuthConfigured()) {
+    throw new Error('Microsoft OAuth not configured');
+  }
+  return new ConfidentialClientApplication(getMsalConfig());
+};
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -44,6 +54,13 @@ const generateToken = (user) => {
 // Get Microsoft OAuth URL
 export const getMicrosoftAuthUrl = async (req, res) => {
   try {
+    if (!isMicrosoftOAuthConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Microsoft OAuth not configured'
+      });
+    }
+
     const state = req.query.redirect_url || req.headers.referer || 'https://axplatform.app';
     
     console.log('🔵 Generating Microsoft OAuth URL');
@@ -56,6 +73,7 @@ export const getMicrosoftAuthUrl = async (req, res) => {
       state: state
     };
 
+    const msalClient = getMsalClient();
     const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
     
     console.log('✅ Auth URL generated:', authUrl.substring(0, 100) + '...');
@@ -87,6 +105,11 @@ export const getMicrosoftAuthUrl = async (req, res) => {
 // Handle Microsoft OAuth callback
 export const handleMicrosoftCallback = async (req, res) => {
   try {
+    if (!isMicrosoftOAuthConfigured()) {
+      const redirectUrl = req.query.state || 'https://axplatform.app';
+      return res.redirect(`${redirectUrl}/login?error=oauth_not_configured`);
+    }
+
     // Get code from query params (Microsoft sends it in the URL)
     const { code, state, error, error_description } = req.query;
     
@@ -120,6 +143,7 @@ export const handleMicrosoftCallback = async (req, res) => {
       redirectUri: process.env.MICROSOFT_CALLBACK_URL,
     };
 
+    const msalClient = getMsalClient();
     const tokenResponse = await msalClient.acquireTokenByCode(tokenRequest);
     
     console.log('✅ Token acquired successfully');
@@ -289,6 +313,13 @@ export const handleMicrosoftCallback = async (req, res) => {
 // Link existing account with Microsoft
 export const linkMicrosoftAccount = async (req, res) => {
   try {
+    if (!isMicrosoftOAuthConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Microsoft OAuth not configured'
+      });
+    }
+
     // User must be authenticated to link account
     if (!req.user) {
       return res.status(401).json({ 
@@ -307,6 +338,7 @@ export const linkMicrosoftAccount = async (req, res) => {
       })
     };
 
+    const msalClient = getMsalClient();
     const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
     res.json({ authUrl });
   } catch (error) {

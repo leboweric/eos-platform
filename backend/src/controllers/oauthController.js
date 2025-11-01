@@ -4,12 +4,22 @@ import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import failedOperationsService from '../services/failedOperationsService.js';
 
-// Initialize Google OAuth client
-const googleClient = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_CALLBACK_URL
-);
+// Check if Google OAuth is configured
+const isGoogleOAuthConfigured = () => {
+  return process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+};
+
+// Initialize Google OAuth client only when configured
+const getGoogleClient = () => {
+  if (!isGoogleOAuthConfigured()) {
+    throw new Error('Google OAuth not configured');
+  }
+  return new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_CALLBACK_URL
+  );
+};
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -27,6 +37,14 @@ const generateToken = (user) => {
 // Get Google OAuth URL
 export const getGoogleAuthUrl = async (req, res) => {
   try {
+    if (!isGoogleOAuthConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Google OAuth not configured'
+      });
+    }
+
+    const googleClient = getGoogleClient();
     const authorizeUrl = googleClient.generateAuthUrl({
       access_type: 'offline',
       scope: [
@@ -63,7 +81,13 @@ export const handleGoogleCallback = async (req, res) => {
   const { code, state } = req.body;
 
   try {
+    if (!isGoogleOAuthConfigured()) {
+      const redirectUrl = state || 'https://axplatform.app';
+      return res.redirect(`${redirectUrl}/login?error=oauth_not_configured`);
+    }
+
     // Exchange code for tokens
+    const googleClient = getGoogleClient();
     const { tokens } = await googleClient.getToken(code);
     googleClient.setCredentials(tokens);
 
@@ -202,6 +226,13 @@ export const handleGoogleCallback = async (req, res) => {
 // Link existing account with Google
 export const linkGoogleAccount = async (req, res) => {
   try {
+    if (!isGoogleOAuthConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Google OAuth not configured'
+      });
+    }
+
     // User must be authenticated to link account
     if (!req.user) {
       return res.status(401).json({ 
@@ -210,6 +241,7 @@ export const linkGoogleAccount = async (req, res) => {
       });
     }
 
+    const googleClient = getGoogleClient();
     const authorizeUrl = googleClient.generateAuthUrl({
       access_type: 'offline',
       scope: [
