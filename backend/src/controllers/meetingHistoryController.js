@@ -919,13 +919,33 @@ export const getMeetingSummaryHTML = async (req, res) => {
       isBasicMeeting: !snapshotData.issues
     };
 
-    console.log('📄 Formatted data for template:', {
+    // Detailed debug logging to track data flow to template
+    console.log('📄 ===== DETAILED DEBUG: Data being sent to template =====');
+    console.log('📄 Issues data:', JSON.stringify({
+      solved: formattedData.issues.solved,
+      new: formattedData.issues.new,
+      solvedCount: formattedData.issues.solved?.length || 0,
+      newCount: formattedData.issues.new?.length || 0
+    }, null, 2));
+    
+    console.log('📄 Todos data:', JSON.stringify({
+      completed: formattedData.todos.completed,
+      new: formattedData.todos.new,
+      completedCount: formattedData.todos.completed?.length || 0,
+      newCount: formattedData.todos.new?.length || 0
+    }, null, 2));
+    
+    console.log('📄 First issue sample:', formattedData.issues.new?.[0]);
+    console.log('📄 First todo sample:', formattedData.todos.new?.[0]);
+    
+    console.log('📄 Summary data:', {
+      hasAISummary: !!formattedData.aiSummary && formattedData.aiSummary !== 'No detailed summary available for this meeting.',
+      aiSummaryLength: formattedData.aiSummary?.length,
       teamName: formattedData.teamName,
-      organizationName: formattedData.organizationName,
-      themeColor: formattedData.themeColor,
-      hasIssues: formattedData.issues.solved.length + formattedData.issues.new.length,
-      hasTodos: formattedData.todos.completed.length + formattedData.todos.new.length
+      hasIssuesSection: (formattedData.issues.solved?.length > 0 || formattedData.issues.new?.length > 0),
+      hasTodosSection: (formattedData.todos.completed?.length > 0 || formattedData.todos.new?.length > 0)
     });
+    console.log('📄 ===== END DEBUG =====');
 
     // Generate HTML using simplified template
     const html = generateMeetingSummaryHTML(formattedData);

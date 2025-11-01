@@ -74,6 +74,12 @@ async function getAISummaryForMeeting(meetingId, organizationId) {
 
 // Generate meeting summary HTML (reusable for both emails and web viewing)
 export const generateMeetingSummaryHTML = (meetingData) => {
+  // Debug logging to track what the template receives
+  console.log('📧 ===== EMAIL TEMPLATE DEBUG =====');
+  console.log('📧 Raw meetingData received:', JSON.stringify(meetingData, null, 2));
+  console.log('📧 Issues in meetingData:', meetingData.issues);
+  console.log('📧 Todos in meetingData:', meetingData.todos);
+  
   const {
     teamName,
     meetingType,
@@ -90,6 +96,20 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     todos = { completed: [], new: [] },
     attendees = []
   } = meetingData;
+  
+  console.log('📧 After destructuring - Issues:', issues);
+  console.log('📧 After destructuring - Todos:', todos);
+  console.log('📧 Issues rendering check:', {
+    solvedLength: issues.solved?.length,
+    newLength: issues.new?.length,
+    willRender: (issues.solved?.length > 0 || issues.new?.length > 0)
+  });
+  console.log('📧 Todos rendering check:', {
+    completedLength: todos.completed?.length,
+    newLength: todos.new?.length,
+    willRender: (todos.completed?.length > 0 || todos.new?.length > 0)
+  });
+  console.log('📧 ===== END EMAIL TEMPLATE DEBUG =====');
 
   return `
 <!DOCTYPE html>
