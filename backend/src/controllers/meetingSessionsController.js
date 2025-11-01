@@ -1,4 +1,4 @@
-import pool from '../config/database.js';
+import { pool } from '../config/database.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {
@@ -420,13 +420,14 @@ export const updateMeetingSession = async (req, res) => {
   const client = await pool.connect();
   try {
     const { id: sessionId } = req.params;
-    const { is_active, sendEmail } = req.body;
+    const { is_active, sendEmail, meetingData } = req.body;
     
     console.log('🏁 [Conclude] Updating meeting session:', sessionId);
     console.log('🏁 [Conclude] is_active:', is_active, 'sendEmail:', sendEmail);
+    console.log('🏁 [Conclude] Has meeting data:', !!meetingData);
     
     // Update the meeting session
-    const result = await client.query(
+    const sessionResult = await client.query(
       `UPDATE meeting_sessions 
        SET is_active = $1, updated_at = NOW() 
        WHERE id = $2 
@@ -434,19 +435,196 @@ export const updateMeetingSession = async (req, res) => {
       [is_active, sessionId]
     );
     
-    if (result.rows.length === 0) {
+    if (sessionResult.rows.length === 0) {
       console.log('❌ [Conclude] Meeting session not found:', sessionId);
       return res.status(404).json({ error: 'Meeting session not found' });
     }
     
+    const session = sessionResult.rows[0];
     console.log('✅ [Conclude] Meeting session updated successfully');
     
-    // TODO: If sendEmail is true and is_active is false, trigger email sending here
-    // For now, we'll just conclude the session
+    // If concluding the meeting (is_active = false) and we have meeting data, process it
+    if (is_active === false && meetingData) {
+      console.log('🏁 [Conclude] Processing meeting conclusion with full data');
+      
+      try {
+        // Find the associated meeting record (closest to session start time)
+        const meetingResult = await client.query(
+          `SELECT id, organization_id, team_id, facilitator_id 
+           FROM meetings 
+           WHERE team_id = $1 
+             AND title = 'AI Recording Session'
+             AND status = 'in-progress'
+             AND created_at >= ($2::timestamp - INTERVAL '5 minutes')
+             AND created_at <= ($2::timestamp + INTERVAL '5 minutes')
+           ORDER BY ABS(EXTRACT(EPOCH FROM (created_at - $2::timestamp))) ASC
+           LIMIT 1`,
+          [session.team_id, session.start_time]
+        );
+        
+        if (meetingResult.rows.length === 0) {
+          console.warn('⚠️ [Conclude] No associated meeting found for session:', sessionId);
+        } else {
+          const meeting = meetingResult.rows[0];
+          console.log('✅ [Conclude] Found associated meeting:', meeting.id);
+          
+          // Update meeting status and end time
+          await client.query(
+            `UPDATE meetings 
+             SET status = 'completed',
+                 actual_end_time = NOW(),
+                 completed_at = NOW(),
+                 rating = $1,
+                 total_duration_minutes = $2,
+                 updated_at = NOW()
+             WHERE id = $3`,
+            [meetingData.rating, meetingData.duration, meeting.id]
+          );
+          console.log('✅ [Conclude] Meeting marked as completed');
+          
+          // DEBUG: Log received meetingData structure
+          console.log('🔍 [Debug] Raw meetingData received:', JSON.stringify(meetingData, null, 2));
+          console.log('🔍 [Debug] meetingData.todos:', meetingData.todos);
+          console.log('🔍 [Debug] meetingData.issues:', meetingData.issues);
+          
+          // DEBUG: Log todos received from frontend
+          console.log('🔍 [Debug] Todos received from frontend:', {
+            completed: meetingData.todos?.completed,
+            added: meetingData.todos?.added
+          });
+          
+          // DEBUG: Log individual todo timestamps
+          if (meetingData.todos?.completed) {
+            console.log('🔍 [Debug] Completed todos with timestamps:');
+            meetingData.todos.completed.forEach((todo, index) => {
+              console.log(`  ${index + 1}. "${todo.title}" - completed_at: ${todo.completed_at} (type: ${typeof todo.completed_at})`);
+            });
+          }
+          
+          if (meetingData.todos?.added) {
+            console.log('🔍 [Debug] Added todos with timestamps:');
+            meetingData.todos.added.forEach((todo, index) => {
+              console.log(`  ${index + 1}. "${todo.title}" - created_at: ${todo.created_at} (type: ${typeof todo.created_at})`);
+            });
+          }
+          
+          // DEBUG: Log individual issue timestamps
+          if (meetingData.issues) {
+            console.log('🔍 [Debug] Issues with timestamps:');
+            meetingData.issues.forEach((issue, index) => {
+              console.log(`  ${index + 1}. "${issue.title}" - solved: ${issue.is_solved}, created_at: ${issue.created_at} (type: ${typeof issue.created_at}), resolved_at: ${issue.resolved_at} (type: ${typeof issue.resolved_at})`);
+            });
+          }
+          
+          // Get today's date at midnight for comparison
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          console.log('🔍 [Debug] Today threshold:', today.toISOString());
+
+          // Helper function to check if a date is today
+          const isToday = (dateString) => {
+            if (!dateString) return false;
+            const date = new Date(dateString);
+            const isAfterToday = date >= today;
+            console.log(`🔍 [Debug] Checking if "${dateString}" is today: ${isAfterToday} (parsed as: ${date.toISOString()})`);
+            return isAfterToday;
+          };
+
+          // Filter todos to only those completed or created TODAY
+          const completedTodosToday = (meetingData.todos?.completed || []).filter(todo => 
+            isToday(todo.completed_at)
+          );
+
+          const newTodosToday = (meetingData.todos?.added || []).filter(todo => 
+            isToday(todo.created_at)
+          );
+
+          // Filter issues to only those resolved or created TODAY
+          const solvedIssuesToday = (meetingData.issues || [])
+            .filter(issue => issue.is_solved && isToday(issue.resolved_at))
+            .map(issue => ({
+              id: issue.id,
+              title: issue.title,
+              owner_name: issue.owner_name,
+              resolved_at: issue.resolved_at
+            }));
+
+          const newIssuesToday = (meetingData.issues || [])
+            .filter(issue => !issue.is_solved && isToday(issue.created_at))
+            .map(issue => ({
+              id: issue.id,
+              title: issue.title,
+              owner_name: issue.owner_name,
+              created_at: issue.created_at
+            }));
+
+          console.log(`📊 [Filtering] Today's changes - Completed todos: ${completedTodosToday.length}, New todos: ${newTodosToday.length}, Solved issues: ${solvedIssuesToday.length}, New issues: ${newIssuesToday.length}`);
+
+          // Create snapshot with filtered data - only TODAY's changes
+          const snapshotData = {
+            title: 'AI Recording Session',
+            status: 'completed',
+            
+            // Only todos from TODAY
+            todos: {
+              completed: completedTodosToday.map(todo => ({
+                title: todo.title,
+                completed_at: todo.completed_at,
+                assigned_to_name: todo.assigned_to_name
+              })),
+              added: newTodosToday.map(todo => ({
+                title: todo.title,
+                assignee: todo.assignee || todo.assigned_to_name,
+                dueDate: todo.due_date,
+                created_at: todo.created_at
+              }))
+            },
+            
+            // Only issues from TODAY
+            issues: {
+              solved: solvedIssuesToday,
+              new: newIssuesToday
+            },
+            
+            headlines: meetingData.headlines || { customer: [], employee: [] },
+            cascadingMessages: meetingData.cascadingMessages || [],
+            rating: meetingData.rating,
+            duration: meetingData.duration,
+            participantRatings: meetingData.participantRatings || [],
+            notes: '',
+            attendees: [] // Will be populated from team members
+          };
+          
+          await client.query(
+            `INSERT INTO meeting_snapshots 
+             (meeting_id, organization_id, team_id, meeting_type, meeting_date, 
+              duration_minutes, average_rating, facilitator_id, snapshot_data)
+             VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)`,
+            [
+              meeting.id,
+              meeting.organization_id,
+              meeting.team_id,
+              session.meeting_type,
+              meetingData.duration,
+              meetingData.rating,
+              meeting.facilitator_id,
+              JSON.stringify(snapshotData)
+            ]
+          );
+          console.log('✅ [Conclude] Meeting snapshot created');
+          
+          // Note: Email will be sent by AI summary service when transcription completes
+          // The AI service will now be able to find the snapshot and include all meeting data
+        }
+      } catch (conclusionError) {
+        console.error('❌ [Conclude] Error processing meeting conclusion:', conclusionError);
+        // Don't fail the whole request - session was updated successfully
+      }
+    }
     
     res.json({ 
       success: true, 
-      data: result.rows[0],
+      data: sessionResult.rows[0],
       message: 'Meeting session concluded successfully'
     });
   } catch (error) {

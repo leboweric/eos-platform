@@ -42,7 +42,30 @@ class TranscriptionService {
     try {
       console.log(`🎙️ [TranscriptionService] Starting direct WebSocket transcription for transcript ${transcriptId}`);
       
-      // Connect to Universal Streaming API (v3) - new endpoint
+      // STEP 1: Store connection IMMEDIATELY (before WebSocket creation) to prevent race conditions
+      const connectionData = {
+        websocket: null, // Will be set after WebSocket creation
+        organizationId,
+        transcriptChunks: [],
+        latestTranscriptText: '', // Store latest transcript for v3 API partial transcripts
+        latestTurnOrder: 0,
+        startTime: new Date(),
+        status: 'connecting', // Track connection state: 'connecting' | 'active' | 'failed'
+        isActive: false, // Legacy field for backward compatibility
+        sessionId: null,
+        audioBuffer: [], // Buffer audio chunks while connecting
+        errorMessage: null
+      };
+      
+      this.activeConnections.set(transcriptId, connectionData);
+      console.log('🔑 [TranscriptionService] Connection stored BEFORE WebSocket creation:', {
+        transcriptId,
+        status: connectionData.status,
+        totalConnections: this.activeConnections.size,
+        connectionStored: this.activeConnections.has(transcriptId)
+      });
+      
+      // STEP 2: Create WebSocket connection
       const sampleRate = 16000;
       const encoding = 'pcm_s16le';
       const wsUrl = `wss://streaming.assemblyai.com/v3/ws?sample_rate=${sampleRate}&encoding=${encoding}&token=${process.env.ASSEMBLYAI_API_KEY}`;
@@ -67,30 +90,22 @@ class TranscriptionService {
         url: ws.url
       });
       
-      // Store connection details
-      const connectionData = {
-        websocket: ws,
-        organizationId,
-        transcriptChunks: [],
-        latestTranscriptText: '', // Store latest transcript for v3 API partial transcripts
-        latestTurnOrder: 0,
-        startTime: new Date(),
-        isActive: false, // Will be set to true when connected
-        sessionId: null
-      };
+      // STEP 3: Update connection with WebSocket reference
+      connectionData.websocket = ws;
       
-      this.activeConnections.set(transcriptId, connectionData);
-      console.log('🔑 [TranscriptionService] Connection stored for transcript:', {
-        transcriptId,
-        totalConnections: this.activeConnections.size,
-        connectionStored: this.activeConnections.has(transcriptId)
-      });
-      
-      // Return a Promise that resolves when connection is established
+      // STEP 4: Set up Promise with improved error handling
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
+          console.log('⏰ [WebSocket] Connection timeout after 10 seconds for transcript:', transcriptId);
           ws.close();
-          this.activeConnections.delete(transcriptId);
+          // Don't delete connection - mark as failed to allow retry
+          connectionData.status = 'failed';
+          connectionData.errorMessage = 'WebSocket connection timeout after 10 seconds';
+          console.log('❌ [TranscriptionService] Connection marked as FAILED (timeout):', {
+            transcriptId,
+            status: connectionData.status,
+            totalConnections: this.activeConnections.size
+          });
           reject(new Error('WebSocket connection timeout after 10 seconds'));
         }, 10000);
         
@@ -100,8 +115,10 @@ class TranscriptionService {
           console.log('✅ [TranscriptionService] Connected to streaming.assemblyai.com');
           
           connectionData.isActive = true;
+          connectionData.status = 'active';
           console.log('🟢 [WebSocket] Connection marked as ACTIVE:', {
             transcriptId,
+            status: connectionData.status,
             isActive: connectionData.isActive,
             connectionExists: this.activeConnections.has(transcriptId)
           });
@@ -202,7 +219,10 @@ class TranscriptionService {
             fullError: error
           });
           
+          // STEP 3: Update connection to failed status instead of just marking inactive
+          connectionData.status = 'failed';
           connectionData.isActive = false;
+          connectionData.errorMessage = error.message;
           
           this.emitTranscriptUpdate(transcriptId, {
             type: 'error',
@@ -225,6 +245,15 @@ class TranscriptionService {
             readyState: ws.readyState
           });
           
+          // STEP 3: Update connection status instead of just marking inactive
+          if (code === 1000) {
+            // Clean closure - mark as completed
+            connectionData.status = 'completed';
+          } else {
+            // Abnormal closure - mark as failed
+            connectionData.status = 'failed';
+            connectionData.errorMessage = `WebSocket closed with code ${code}: ${reason?.toString() || 'Unknown reason'}`;
+          }
           connectionData.isActive = false;
           
           if (code === 1006) {
@@ -279,7 +308,9 @@ class TranscriptionService {
     // Handle transcript chunks
     transcriber.on('transcript', (transcript) => {
       if (transcript.message_type === 'FinalTranscript') {
-        console.log(`📝 Final transcript chunk for ${transcriptId}:`, transcript.text);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log(`📝 Final transcript chunk for ${transcriptId}:`, transcript.text);
+        }
         
         connection.transcriptChunks.push({
           text: transcript.text,
@@ -302,7 +333,9 @@ class TranscriptionService {
 
     // Handle partial transcripts (real-time feedback)
     transcriber.on('partial-transcript', (partial) => {
-      console.log(`🔄 Partial transcript for ${transcriptId}:`, partial.text);
+      if (process.env.LOG_LEVEL === 'debug') {
+        console.log(`🔄 Partial transcript for ${transcriptId}:`, partial.text);
+      }
       
       // Emit partial updates for real-time display
       this.emitTranscriptUpdate(transcriptId, {
@@ -348,39 +381,85 @@ class TranscriptionService {
    * Send audio data to AssemblyAI via direct WebSocket
    */
   async sendAudioData(transcriptId, audioBuffer) {
-    console.log('🔍 [sendAudioData] Looking for connection:', {
-      transcriptId,
-      totalConnections: this.activeConnections.size,
-      allConnectionIds: Array.from(this.activeConnections.keys()),
-      hasThisConnection: this.activeConnections.has(transcriptId)
-    });
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('🔍 [sendAudioData] Looking for connection:', {
+        transcriptId,
+        totalConnections: this.activeConnections.size,
+        allConnectionIds: Array.from(this.activeConnections.keys()),
+        hasThisConnection: this.activeConnections.has(transcriptId)
+      });
+    }
     
     const connection = this.activeConnections.get(transcriptId);
     
-    if (!connection || !connection.isActive) {
-      console.warn(`⚠️ No active connection for transcript ${transcriptId}`, {
-        connectionExists: !!connection,
-        isActive: connection?.isActive,
-        allConnections: Array.from(this.activeConnections.entries()).map(([id, conn]) => ({
-          id,
-          isActive: conn.isActive,
-          hasWebSocket: !!conn.websocket
-        }))
+    if (!connection) {
+      console.warn(`⚠️ No connection found for transcript ${transcriptId}`, {
+        totalConnections: this.activeConnections.size,
+        allConnectionIds: Array.from(this.activeConnections.keys())
       });
       return false;
     }
 
-    try {
-      // Send audio data directly via WebSocket
-      if (connection.websocket && connection.websocket.readyState === WebSocket.OPEN) {
+    // STEP 4: Enhanced status checking and audio buffering
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('🔍 [sendAudioData] Connection status check:', {
+        transcriptId,
+        status: connection.status,
+        isActive: connection.isActive,
+        hasWebSocket: !!connection.websocket,
+        wsReadyState: connection.websocket?.readyState,
+        bufferSize: connection.audioBuffer?.length || 0
+      });
+    }
+
+    // Check connection status and handle accordingly
+    if (connection.status === 'failed') {
+      console.error(`❌ [sendAudioData] Connection failed for transcript ${transcriptId}: ${connection.errorMessage}`);
+      return false;
+    }
+
+    if (connection.status === 'connecting') {
+      // Buffer audio data while connecting
+      console.log(`🔄 [sendAudioData] Connection still connecting, buffering audio for ${transcriptId}`);
+      if (!connection.audioBuffer) {
+        connection.audioBuffer = [];
+      }
+      connection.audioBuffer.push(audioBuffer);
+      console.log(`📦 [sendAudioData] Buffered audio chunk, total buffered: ${connection.audioBuffer.length}`);
+      return true; // Return true to indicate audio was handled (buffered)
+    }
+
+    if (connection.status === 'active' && connection.websocket && connection.websocket.readyState === WebSocket.OPEN) {
+      try {
+        // STEP 4: Send any buffered audio first
+        if (connection.audioBuffer && connection.audioBuffer.length > 0) {
+          console.log(`📤 [sendAudioData] Sending ${connection.audioBuffer.length} buffered audio chunks for ${transcriptId}`);
+          for (const bufferedChunk of connection.audioBuffer) {
+            connection.websocket.send(bufferedChunk);
+          }
+          connection.audioBuffer = []; // Clear buffer after sending
+          console.log(`✅ [sendAudioData] Sent all buffered audio for ${transcriptId}`);
+        }
+
+        // Send current audio data
         connection.websocket.send(audioBuffer);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log(`📤 [sendAudioData] Sent real-time audio data for ${transcriptId}`);
+        }
         return true;
-      } else {
-        console.warn(`⚠️ WebSocket not ready for transcript ${transcriptId}`);
+      } catch (error) {
+        console.error(`❌ [sendAudioData] Failed to send audio data for ${transcriptId}:`, error);
+        // Mark connection as failed
+        connection.status = 'failed';
+        connection.errorMessage = error.message;
         return false;
       }
-    } catch (error) {
-      console.error(`❌ Failed to send audio data for ${transcriptId}:`, error);
+    } else {
+      console.warn(`⚠️ [sendAudioData] WebSocket not ready for transcript ${transcriptId}`, {
+        status: connection.status,
+        hasWebSocket: !!connection.websocket,
+        readyState: connection.websocket?.readyState
+      });
       return false;
     }
   }

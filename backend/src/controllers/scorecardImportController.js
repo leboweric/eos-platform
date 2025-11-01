@@ -220,7 +220,7 @@ function extractGoalValue(goalStr) {
  * CRITICAL: Supports incremental re-imports with proper deduplication
  */
 export const execute = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     if (!req.file) {

@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Megaphone, Users } from 'lucide-react';
+import { AlertCircle, Megaphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
-import { teamsService } from '../../services/teamsService';
 
-const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
+const HeadlineDialog = ({ open, onOpenChange, onSave, headline, currentTeamId }) => {
   const { user } = useAuthStore();
   const orgId = user?.organizationId || user?.organization_id;
   const savedTheme = getOrgTheme(orgId);
@@ -21,20 +20,14 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
   };
   const [headlineType, setHeadlineType] = useState('customer');
   const [headlineText, setHeadlineText] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
-  const [teams, setTeams] = useState([]);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Fetch teams when dialog opens
+  // Initialize dialog when opened
   useEffect(() => {
     if (open) {
-      fetchTeams();
       setHeadlineType(headline?.type || 'customer');
       setHeadlineText(headline?.headline || headline?.text || '');
-      // Default to user's first team
-      const userTeam = user?.teams?.[0]?.id;
-      setSelectedTeam(headline?.teamId || userTeam || '');
       setError(null);
       setSaving(false);
     } else {
@@ -42,35 +35,6 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
       setSaving(false);
     }
   }, [open, headline]);
-
-  const fetchTeams = async () => {
-    try {
-      console.log('Fetching teams...');
-      const response = await teamsService.getTeams();
-      console.log('Teams response:', response);
-      
-      // The backend returns { success: true, data: [...] } where data is the array directly
-      const teamsList = response?.data || response?.teams || [];
-      console.log('Teams list:', teamsList);
-      
-      setTeams(teamsList);
-      // Set default team if not already set
-      if (!selectedTeam && teamsList.length > 0) {
-        const userTeam = user?.teams?.[0]?.id;
-        setSelectedTeam(userTeam || teamsList[0].id);
-      }
-    } catch (error) {
-      console.error('Failed to fetch teams:', error);
-      // If the teams endpoint fails, try using the user's teams as fallback
-      if (user?.teams) {
-        console.log('Using user teams as fallback:', user.teams);
-        setTeams(user.teams);
-        if (!selectedTeam && user.teams.length > 0) {
-          setSelectedTeam(user.teams[0].id);
-        }
-      }
-    }
-  };
 
   const handleSave = async () => {
     if (!headlineText.trim()) {
@@ -85,7 +49,7 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
       await onSave({
         type: headlineType,
         text: headlineText.trim(),
-        teamId: selectedTeam
+        teamId: currentTeamId
       });
       setSaving(false);
       onOpenChange(false);
@@ -120,7 +84,7 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
             </Alert>
           )}
 
-          <div className="grid gap-3">
+          <div className="grid gap-3 pt-6">
             <Label htmlFor="headline-type" className="text-sm font-semibold text-slate-700">Headline Type</Label>
             <Select value={headlineType} onValueChange={setHeadlineType}>
               <SelectTrigger id="headline-type" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
@@ -133,29 +97,6 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
             </Select>
           </div>
 
-          <div className="grid gap-3">
-            <Label htmlFor="team" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Team
-            </Label>
-            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-              <SelectTrigger id="team" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
-                <SelectValue placeholder="Select a team" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                {teams.map(team => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                    {team.is_leadership_team && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                        Leadership
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="grid gap-3">
             <Label htmlFor="headline-text" className="text-sm font-semibold text-slate-700">

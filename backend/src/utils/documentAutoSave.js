@@ -100,7 +100,10 @@ export const autoSaveToDocuments = async (params) => {
       [uuidv4(), documentId, sourceType, sourceId]
     );
     
-    console.log(`Document auto-saved: ${documentTitle} from ${sourceType} ${sourceId}`);
+    // Only log in debug mode to reduce Railway rate limiting
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log(`Document auto-saved: ${documentTitle} from ${sourceType} ${sourceId}`);
+    }
     
     return result.rows[0];
   } catch (error) {

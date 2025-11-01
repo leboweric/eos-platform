@@ -241,3 +241,56 @@ CREATE INDEX idx_team_members_team ON team_members(team_id);
 CREATE INDEX idx_team_members_user ON team_members(user_id);
 CREATE INDEX idx_subscriptions_org ON subscriptions(organization_id);
 CREATE INDEX idx_subscriptions_customer ON subscriptions(stripe_customer_id);
+
+-- Additional tables that are referenced in the codebase but missing from tests
+
+-- User Login Tracking (for login activity tracking)
+CREATE TABLE user_login_tracking (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    login_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    login_date DATE DEFAULT CURRENT_DATE,
+    ip_address INET,
+    user_agent TEXT,
+    auth_method VARCHAR(50) DEFAULT 'password',
+    session_duration_minutes INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Meeting Transcripts (for AI transcription features)
+CREATE TABLE meeting_transcripts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    meeting_id UUID,
+    session_id VARCHAR(255),
+    transcript_text TEXT,
+    raw_transcript TEXT,
+    transcript_json JSONB,
+    status VARCHAR(50) DEFAULT 'processing',
+    processing_started_at TIMESTAMP WITH TIME ZONE,
+    processing_completed_at TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Failed Operations (for observability monitoring)
+CREATE TABLE failed_operations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    operation_type VARCHAR(100) NOT NULL,
+    error_message TEXT,
+    severity VARCHAR(20) DEFAULT 'medium',
+    context JSONB DEFAULT '{}',
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for the new tables
+CREATE INDEX idx_login_tracking_user ON user_login_tracking(user_id);
+CREATE INDEX idx_login_tracking_org ON user_login_tracking(organization_id);
+CREATE INDEX idx_meeting_transcripts_org ON meeting_transcripts(organization_id);
+CREATE INDEX idx_failed_operations_org ON failed_operations(organization_id);
+CREATE INDEX idx_failed_operations_severity ON failed_operations(severity);

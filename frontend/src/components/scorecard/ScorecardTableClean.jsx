@@ -6,7 +6,7 @@ import {
   Edit,
   BarChart3,
   GripVertical,
-  Trash2,
+  Archive,
   AlertCircle,
   MessageSquare,
   Share2
@@ -97,6 +97,8 @@ const ScorecardTableClean = ({
     }
   };
   // Get week start date for a given date
+  // Business Logic: Weeks run Monday-Sunday (Monday = week start)
+  // This ensures consistent week boundaries for scorecard grouping
   const getWeekStartDate = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -216,17 +218,40 @@ const ScorecardTableClean = ({
       const firstMetricWithData = metrics?.find(m => weeklyScores?.[m.id] && Object.keys(weeklyScores[m.id]).length > 0);
       
       if (firstMetricWithData && weeklyScores[firstMetricWithData.id]) {
-        // Use actual dates from the scores data
+        // ✅ FIX: Group actual dates by week start, don't use individual dates
+        // Business Rule: Weeks run Monday-Sunday, so Oct 20 (Sun) and Oct 21 (Mon) 
+        // should be grouped into the same week column for proper display
         const allDates = Object.keys(weeklyScores[firstMetricWithData.id]).sort();
-        const datesToShow = allDates.slice(-weeksToShow); // Get last N dates
         
-        datesToShow.forEach(dateStr => {
-          const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
-          labels.push(formatWeekLabel(date));
-          weekDates.push(dateStr);
+        // Group dates by their week start (Monday)
+        const weekGroups = new Map();
+        allDates.forEach(dateStr => {
+          const date = new Date(dateStr + 'T12:00:00');
+          const weekStart = getWeekStartDate(date);
+          const weekStartStr = weekStart.toISOString().split('T')[0];
+          
+          if (!weekGroups.has(weekStartStr)) {
+            weekGroups.set(weekStartStr, []);
+          }
+          weekGroups.get(weekStartStr).push(dateStr);
         });
         
-        console.log('Meeting mode - Using actual dates from data:', weekDates);
+        // Get the most recent weeks (by week start date)
+        const uniqueWeekStarts = Array.from(weekGroups.keys()).sort();
+        const weeksToDisplay = uniqueWeekStarts.slice(-weeksToShow);
+        
+        weeksToDisplay.forEach(weekStartStr => {
+          const weekStartDate = new Date(weekStartStr + 'T12:00:00');
+          labels.push(formatWeekLabel(weekStartDate));
+          weekDates.push(weekStartStr);
+        });
+        
+        console.log('✅ Meeting mode - Week grouping fix applied:', {
+          originalDates: allDates,
+          weekGroups: Array.from(weekGroups.entries()),
+          finalWeekStarts: weekDates,
+          issueFixed: 'Oct 20 and Oct 21 should now be grouped into same week'
+        });
       } else {
         // Fallback to generated dates if no data
         for (let i = weeksToShow - 1; i >= 0; i--) {
@@ -431,8 +456,18 @@ const ScorecardTableClean = ({
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
                     {(() => {
                       const { label } = getDateRange(scorecardTimePeriodPreference);
-                      // Shorten labels for column header
-                      return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+                      
+                      // Debug logging for scorecard label (both meeting and main scorecard)
+                      console.log('🔍 ScorecardTableClean - Label calculation:', {
+                        preference: scorecardTimePeriodPreference,
+                        originalLabel: label,
+                        finalLabel: finalLabel,
+                        meetingMode: meetingMode,
+                        context: meetingMode ? 'MEETING' : 'MAIN'
+                      });
+                      
+                      return finalLabel;
                     })()}
                   </th>
                 ) : null}
@@ -538,8 +573,50 @@ const ScorecardTableClean = ({
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
-                      // Scores are now always raw numbers
-                      const scoreValue = scores[metric.id]?.[periodDate];
+                      // ✅ FIX: For meeting mode, aggregate scores within the week
+                      let scoreValue;
+                      if (meetingMode && scores[metric.id]) {
+                        // Find all scores within this week and aggregate them
+                        const weekStartDate = new Date(periodDate + 'T12:00:00');
+                        const weekEndDate = new Date(weekStartDate);
+                        weekEndDate.setDate(weekEndDate.getDate() + 6); // End of week (6 days later)
+                        
+                        const weekScores = [];
+                        Object.entries(scores[metric.id]).forEach(([dateStr, score]) => {
+                          const scoreDate = new Date(dateStr + 'T12:00:00');
+                          if (scoreDate >= weekStartDate && scoreDate <= weekEndDate) {
+                            // Extract numeric value from score (handle both object and primitive values)
+                            const scoreVal = (typeof score === 'object' && score !== null) ? score?.value : score;
+                            if (scoreVal !== undefined && scoreVal !== null && scoreVal !== '') {
+                              weekScores.push({
+                                date: dateStr,
+                                value: scoreVal,
+                                rawScore: score
+                              });
+                            }
+                          }
+                        });
+                        
+                        // Use the most recent score in the week (sorted by date)
+                        if (weekScores.length > 0) {
+                          weekScores.sort((a, b) => a.date.localeCompare(b.date));
+                          scoreValue = weekScores[weekScores.length - 1].rawScore; // Most recent score with original format
+                          
+                          // Debug: Log week aggregation for verification
+                          if (weekScores.length > 1 && metrics.indexOf(metric) === 0) {
+                            console.log(`✅ Week aggregation working for week ${periodDate}:`, {
+                              weekStart: weekStartDate.toISOString().split('T')[0],
+                              weekEnd: weekEndDate.toISOString().split('T')[0],
+                              allScoresInWeek: weekScores.map(s => ({ date: s.date, value: s.value })),
+                              selectedScore: scoreValue,
+                              fixApplied: 'Multiple dates in same week now show as single column'
+                            });
+                          }
+                        }
+                      } else {
+                        // Normal mode: exact date match
+                        scoreValue = scores[metric.id]?.[periodDate];
+                      }
                       
                       // DEBUG: Enhanced date matching diagnostics for Level 10 Meeting
                       if (metrics.indexOf(metric) === 0) {
@@ -702,11 +779,11 @@ const ScorecardTableClean = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-1.5 hover:bg-red-50 rounded-md transition-colors"
+                            className="h-8 w-8 p-1.5 hover:bg-gray-50 rounded-md transition-colors"
                             onClick={() => onMetricDelete && onMetricDelete(metric.id)}
-                            title="Delete metric"
+                            title="Archive metric"
                           >
-                            <Trash2 className="h-4 w-4 shrink-0 text-red-600" />
+                            <Archive className="h-4 w-4 shrink-0 text-gray-600" />
                           </Button>
                         </div>
                       </td>

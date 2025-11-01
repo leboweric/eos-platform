@@ -2,6 +2,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
+import failedOperationsService from '../services/failedOperationsService.js';
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(
@@ -24,7 +25,7 @@ const generateToken = (user) => {
 };
 
 // Get Google OAuth URL
-export const getGoogleAuthUrl = (req, res) => {
+export const getGoogleAuthUrl = async (req, res) => {
   try {
     const authorizeUrl = googleClient.generateAuthUrl({
       access_type: 'offline',
@@ -39,6 +40,17 @@ export const getGoogleAuthUrl = (req, res) => {
     res.json({ authUrl: authorizeUrl });
   } catch (error) {
     console.error('Error generating Google auth URL:', error);
+    
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'google_auth_url',
+      error,
+      { 
+        provider: 'google',
+        action: 'generate_url'
+      }
+    );
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to generate authentication URL' 
@@ -147,6 +159,9 @@ export const handleGoogleCallback = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [user.id, user.organization_id, req.ip, req.get('user-agent'), 'google']
     ).catch(err => console.error('Failed to track login:', err));
+    
+    // Track successful OAuth
+    global.lastOAuthSuccess = Date.now();
 
     // Generate JWT token
     const token = generateToken(user);
@@ -162,6 +177,21 @@ export const handleGoogleCallback = async (req, res) => {
     
   } catch (error) {
     console.error('Google OAuth callback error:', error);
+    
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'google_callback',
+      error,
+      { 
+        provider: 'google',
+        action: 'callback',
+        email: googleUser?.email,
+        critical: true
+      }
+    );
+    
+    // Update global tracking
+    global.lastOAuthError = Date.now();
     
     // Redirect to login with error
     const redirectUrl = state || 'https://axplatform.app';
@@ -196,6 +226,18 @@ export const linkGoogleAccount = async (req, res) => {
     res.json({ authUrl: authorizeUrl });
   } catch (error) {
     console.error('Error linking Google account:', error);
+    
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'google_link_account',
+      error,
+      { 
+        provider: 'google',
+        action: 'link',
+        userId: req.user?.id
+      }
+    );
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to link Google account' 

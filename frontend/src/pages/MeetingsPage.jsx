@@ -6,6 +6,7 @@ import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import useMeeting from '../hooks/useMeeting';
+import MeetingFormatSelector from '../components/meetings/MeetingFormatSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,6 +63,8 @@ const MeetingsPage = () => {
   const [pendingMeetingId, setPendingMeetingId] = useState(null);
   const [teamForMeeting, setTeamForMeeting] = useState(null);
   const [meetingPermissions, setMeetingPermissions] = useState({});
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+  const [pendingMeetingTeamId, setPendingMeetingTeamId] = useState(null);
   const [checkingPermissions, setCheckingPermissions] = useState(false);
 
   const meetings = [
@@ -112,7 +115,7 @@ const MeetingsPage = () => {
         'Budget planning',
         'Strategic initiatives'
       ],
-      comingSoon: true
+      comingSoon: false
     }
   ];
 
@@ -338,6 +341,17 @@ const MeetingsPage = () => {
       toast.error('Failed to start meeting. Please try again.');
     }
   };
+
+  const handleMeetingFormatSelect = (format) => {
+    if (format === 'express') {
+      // Navigate to Express meeting
+      navigate(`/meetings/weekly-express/${pendingMeetingTeamId}`);
+    } else {
+      // Navigate to Standard meeting
+      navigate(`/meetings/weekly-accountability/${pendingMeetingTeamId}`);
+    }
+    setPendingMeetingTeamId(null);
+  };
   
   const proceedWithMeeting = (meetingId, teamId) => {
     console.log('🚀 proceedWithMeeting called with:', { meetingId, teamId });
@@ -384,6 +398,11 @@ const MeetingsPage = () => {
       } else if (meetingId === 'quarterly-planning') {
         const targetPath = `/meetings/quarterly-planning/${teamId}`;
         console.log('🧭 Navigating to quarterly meeting with path:', targetPath);
+        console.log('🆔 Team ID being passed:', teamId);
+        navigate(targetPath);
+      } else if (meetingId === 'annual-planning') {
+        const targetPath = `/meetings/annual-planning/${teamId}`;
+        console.log('🧭 Navigating to annual meeting with path:', targetPath);
         console.log('🆔 Team ID being passed:', teamId);
         navigate(targetPath);
       }
@@ -472,6 +491,8 @@ const MeetingsPage = () => {
       navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
     } else if (meetingType === 'quarterly-planning') {
       navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
+    } else if (meetingType === 'annual-planning') {
+      navigate(`/meetings/annual-planning/${selectedTeamId}`);
     }
     
     setShowJoinDialog(false);
@@ -575,7 +596,27 @@ const MeetingsPage = () => {
                     </div>
 
                     <Button 
-                      onClick={() => handleStartMeeting(meeting.id)}
+                      onClick={() => {
+                        if (meeting.id === 'weekly-accountability') {
+                          // Check if user has a saved preference
+                          const savedFormat = localStorage.getItem(`meetingFormat_${selectedTeamId}`);
+                          
+                          if (savedFormat === 'express') {
+                            // Go directly to Express
+                            navigate(`/meetings/weekly-express/${selectedTeamId}`);
+                          } else if (savedFormat === 'standard') {
+                            // Go directly to Standard
+                            handleStartMeeting(meeting.id);
+                          } else {
+                            // Show format selector
+                            setPendingMeetingTeamId(selectedTeamId);
+                            setShowFormatSelector(true);
+                          }
+                        } else {
+                          // For all other meeting types, use normal handler
+                          handleStartMeeting(meeting.id);
+                        }
+                      }}
                       disabled={
                         meeting.comingSoon || 
                         !selectedTeamId || 
@@ -904,6 +945,17 @@ const MeetingsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Meeting Format Selector Modal */}
+      <MeetingFormatSelector
+        open={showFormatSelector}
+        onClose={() => {
+          setShowFormatSelector(false);
+          setPendingMeetingTeamId(null);
+        }}
+        onSelect={handleMeetingFormatSelect}
+        teamId={pendingMeetingTeamId}
+      />
     </div>
   );
 };

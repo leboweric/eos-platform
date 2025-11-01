@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import emailService from './emailService.js';
 
 class AISummaryService {
   constructor() {
@@ -45,6 +46,25 @@ class AISummaryService {
       // Save AI summary to database
       await this.saveAISummary(transcriptId, aiSummary, processingTime, estimatedCost);
       console.log(`💾 Successfully saved AI summary for transcript ${transcriptId}`);
+
+      // Send email to meeting participants
+      try {
+        console.log(`📧 Preparing to send summary email for transcript ${transcriptId}`);
+        
+        // Get meeting data for email
+        const meetingData = await this.getMeetingDataForEmail(transcriptId, aiSummary, meetingContext);
+        
+        if (meetingData && meetingData.recipients && meetingData.recipients.length > 0) {
+          console.log(`📧 Sending summary email to ${meetingData.recipients.length} recipients`);
+          await emailService.sendMeetingSummary(meetingData.recipients, meetingData);
+          console.log(`✅ Summary email sent successfully for transcript ${transcriptId}`);
+        } else {
+          console.warn(`⚠️ No recipients found for transcript ${transcriptId}, skipping email`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Failed to send summary email for ${transcriptId}:`, emailError);
+        // Don't throw - AI summary was saved successfully, just log the email failure
+      }
 
       // Mark transcript as completed - CRITICAL: This must succeed
       try {
@@ -263,7 +283,7 @@ Be thorough but concise. If information is not available in the transcript, mark
         JSON.stringify(aiSummary.rocks_mentioned || []), // JSONB
         JSON.stringify(aiSummary.notable_quotes || []), // JSONB
         aiSummary.meeting_sentiment,
-        aiSummary.meeting_energy_score,
+        typeof aiSummary.meeting_energy_score === 'number' ? aiSummary.meeting_energy_score : null,
         aiSummary.ai_model,
         aiSummary.ai_prompt_version,
         processingTime,
@@ -271,6 +291,21 @@ Be thorough but concise. If information is not available in the transcript, mark
       ]);
 
       console.log(`💾 Saved AI summary for transcript ${transcriptId}`);
+      
+      // CRITICAL: Update the meeting snapshot with the AI summary
+      // This allows the Meeting History modal to display the AI summary
+      console.log('📝 Updating meeting snapshot with AI summary...');
+      await client.query(`
+        UPDATE meeting_snapshots 
+        SET snapshot_data = jsonb_set(
+          snapshot_data, 
+          '{aiSummary}', 
+          to_jsonb($1::text)
+        )
+        WHERE meeting_id = $2
+      `, [aiSummary.executive_summary, meeting_id]);
+      
+      console.log('✅ Meeting snapshot updated with AI summary');
     } finally {
       client.release();
     }
@@ -455,6 +490,145 @@ Be thorough but concise. If information is not available in the transcript, mark
     const outputCost = (outputTokens / 1000) * outputCostPer1k;
     
     return Number((inputCost + outputCost).toFixed(4));
+  }
+
+  /**
+   * Get meeting data formatted for email
+   */
+  async getMeetingDataForEmail(transcriptId, aiSummary, meetingContext) {
+    const client = await getClient();
+    try {
+      // Get meeting details
+      const meetingResult = await client.query(`
+        SELECT 
+          m.id as meeting_id,
+          m.scheduled_date,
+          m.actual_start_time,
+          m.actual_end_time,
+          m.rating,
+          t.id as team_id,
+          t.name as team_name,
+          o.id as organization_id,
+          o.name as organization_name,
+          o.theme_primary_color,
+          u.first_name || ' ' || u.last_name as facilitator_name
+        FROM meeting_transcripts mt
+        INNER JOIN meetings m ON mt.meeting_id = m.id
+        INNER JOIN teams t ON m.team_id = t.id
+        INNER JOIN organizations o ON mt.organization_id = o.id
+        LEFT JOIN users u ON m.facilitator_id = u.id
+        WHERE mt.id = $1
+      `, [transcriptId]);
+
+      if (meetingResult.rows.length === 0) {
+        console.error(`No meeting found for transcript ${transcriptId}`);
+        return null;
+      }
+
+      const meeting = meetingResult.rows[0];
+
+      // Get all team members as recipients (not just attendees)
+      const participantsResult = await client.query(`
+        SELECT DISTINCT u.email, u.first_name, u.last_name
+        FROM team_members tm
+        INNER JOIN users u ON tm.user_id = u.id
+        WHERE tm.team_id = $1
+          AND u.email IS NOT NULL
+          AND u.is_active = true
+      `, [meeting.team_id]);
+
+      const recipients = participantsResult.rows.map(p => p.email);
+
+      if (recipients.length === 0) {
+        console.warn(`No team members found for team ${meeting.team_id}`);
+        return null;
+      }
+
+      // Wait for snapshot with retry (up to 30 seconds)
+      // This handles the race condition where AI summary completes before snapshot is created
+      let snapshotData = null;
+      const maxRetries = 6; // 6 retries * 5 seconds = 30 seconds max
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const snapshotResult = await client.query(`
+          SELECT snapshot_data
+          FROM meeting_snapshots
+          WHERE meeting_id = $1
+          ORDER BY created_at DESC
+          LIMIT 1
+        `, [meeting.meeting_id]);
+        
+        if (snapshotResult.rows.length > 0) {
+          snapshotData = snapshotResult.rows[0].snapshot_data;
+          console.log(`✅ Found meeting snapshot with data (attempt ${attempt + 1})`);
+          break;
+        }
+        
+        if (attempt < maxRetries - 1) {
+          console.log(`⏳ Snapshot not found yet, waiting 5 seconds... (attempt ${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+        }
+      }
+
+      if (!snapshotData) {
+        console.warn('⚠️ No meeting snapshot found after 30 seconds of retrying');
+      }
+
+      // Calculate duration
+      const duration = meeting.actual_end_time && meeting.actual_start_time
+        ? Math.round((new Date(meeting.actual_end_time) - new Date(meeting.actual_start_time)) / 60000)
+        : null;
+
+      // Format meeting data for email template
+      return {
+        recipients,
+        organizationId: meeting.organization_id,
+        organizationName: meeting.organization_name,
+        teamName: meeting.team_name,
+        meetingType: 'Level 10 Meeting',
+        meetingDate: meeting.scheduled_date || meeting.actual_start_time,
+        duration: meeting.total_duration_minutes || snapshotData?.duration || duration || 90,
+        rating: meeting.rating || snapshotData?.rating,
+        facilitatorName: meeting.facilitator_name,
+        themeColor: meeting.theme_primary_color || '#6366f1',
+        aiSummary: aiSummary.executive_summary,
+        
+        // Get data from snapshot if available
+        headlines: snapshotData?.headlines || { customer: [], employee: [] },
+        cascadingMessages: snapshotData?.cascadingMessages || [],
+        
+        // Handle new structured snapshot format with separate solved/new categories
+        issues: {
+          solved: (snapshotData?.issues?.solved || []).map(issue => ({
+            title: issue.title || issue.issue || 'Untitled issue',
+            owner: issue.owner_name || issue.owner || null
+          })),
+          new: (snapshotData?.issues?.new || []).map(issue => ({
+            title: issue.title || issue.issue || 'Untitled issue', 
+            owner: issue.owner_name || issue.owner || null
+          }))
+        },
+        
+        // Handle new structured snapshot format for todos
+        todos: {
+          completed: (snapshotData?.todos?.completed || []).map(todo => 
+            todo.title || todo.todo || 'Untitled'
+          ),
+          new: (snapshotData?.todos?.added || []).map(todo => ({
+            title: todo.title || todo.todo || 'Untitled',
+            assignee: todo.assigned_to_name || todo.assignee || 'Unassigned',
+            dueDate: todo.dueDate || (todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date')
+          }))
+        },
+        
+        attendees: participantsResult.rows.map(p => ({
+          name: `${p.first_name} ${p.last_name}`,
+          email: p.email
+        }))
+      };
+    } finally {
+      client.release();
+    }
   }
 }
 

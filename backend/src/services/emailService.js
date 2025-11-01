@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import db from '../config/database.js';
+import failedOperationsService from './failedOperationsService.js';
 
 // Function to fetch AI summary for meeting emails
 async function getAISummaryForMeeting(meetingId, organizationId) {
@@ -107,14 +108,14 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #1f2937;
+      color: #374151;
       background: #ffffff;
       padding: 0;
       margin: 0;
     }
     
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       background: white;
     }
@@ -127,28 +128,28 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     }
     
     .header h1 {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 4px;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
     
     .header-subtitle {
-      font-size: 16px;
+      font-size: 18px;
       opacity: 0.95;
       margin-bottom: 12px;
     }
     
     .header-meta {
-      font-size: 14px;
+      font-size: 16px;
       opacity: 0.9;
     }
     
     .content {
-      padding: 40px;
+      padding: 48px;
     }
     
     .section {
-      margin-bottom: 36px;
+      margin-bottom: 40px;
     }
     
     .section:last-child {
@@ -156,23 +157,28 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     }
     
     .section-title {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 700;
       color: #111827;
+      margin-top: 32px;
       margin-bottom: 16px;
       padding-bottom: 8px;
-      border-bottom: 2px solid #e5e7eb;
+      border-bottom: 2px solid #d1d5db;
     }
     
     .ai-summary-box {
-      background: #f8fafc;
-      border-left: 4px solid ${themeColor};
-      padding: 20px;
+      background: #f9fafb;
+      border-left: 4px solid #111827;
+      padding: 24px;
       margin-bottom: 32px;
       border-radius: 4px;
-      color: #334155;
-      font-size: 15px;
-      line-height: 1.7;
+    }
+    
+    .ai-summary-box p {
+      color: #374151;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0;
     }
     
     .list {
@@ -181,22 +187,29 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     }
     
     .list li {
-      padding: 12px 0 12px 24px;
-      border-bottom: 1px solid #f3f4f6;
-      position: relative;
+      color: #374151;
+      font-size: 16px;
+      line-height: 1.6;
+      padding: 12px 0;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: flex-start;
     }
     
     .list li:last-child {
       border-bottom: none;
+      margin-bottom: 0;
     }
     
     .list li:before {
       content: "•";
-      position: absolute;
-      left: 8px;
-      color: ${themeColor};
+      color: #6b7280;
       font-weight: bold;
       font-size: 18px;
+      margin-right: 12px;
+      flex-shrink: 0;
+      line-height: 1.6;
     }
     
     .list-item-title {
@@ -206,14 +219,14 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     }
     
     .list-item-meta {
-      font-size: 13px;
+      font-size: 14px;
       color: #6b7280;
       margin-top: 4px;
     }
     
     .rating-display {
       font-size: 16px;
-      color: #111827;
+      color: #374151;
       padding: 12px 0;
     }
     
@@ -226,18 +239,39 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     .empty-state {
       color: #9ca3af;
       font-style: italic;
-      padding: 12px 0;
+      text-align: center;
+      padding: 32px 0;
+      font-size: 16px;
     }
     
     .subsection {
-      margin-top: 20px;
+      margin-top: 24px;
     }
     
     .subsection-title {
-      font-size: 15px;
+      font-size: 18px;
       font-weight: 600;
       color: #374151;
       margin-bottom: 12px;
+    }
+    
+    .two-column-table {
+      width: 100%;
+      margin-top: 16px;
+      table-layout: fixed;
+    }
+    
+    .two-column-table td {
+      width: 48%;
+      vertical-align: top;
+    }
+    
+    .two-column-table td:first-child {
+      padding-right: 2%;
+    }
+    
+    .two-column-table td:last-child {
+      padding-left: 2%;
     }
     
     @media print {
@@ -268,11 +302,11 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     </div>
 
     <div class="content">
-      <!-- AI SUMMARY -->
+      <!-- AI SUMMARY - FIRST SECTION -->
       ${aiSummary ? `
         <div class="ai-summary-box">
-          <strong style="display: block; margin-bottom: 8px; color: #111827;">AI Meeting Summary</strong>
-          ${aiSummary}
+          <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 12px;">Executive Summary</h2>
+          <p>${aiSummary}</p>
         </div>
       ` : ''}
 
@@ -326,67 +360,89 @@ export const generateMeetingSummaryHTML = (meetingData) => {
         </div>
       ` : ''}
 
-      <!-- SOLVED ISSUES -->
-      ${issues.solved?.length > 0 ? `
+      <!-- ISSUES SECTION (TWO COLUMN) -->
+      ${(issues.solved?.length > 0 || issues.new?.length > 0) ? `
         <div class="section">
-          <h2 class="section-title">Solved Issues</h2>
-          <ul class="list">
-            ${issues.solved.map(issue => `
-              <li>
-                <div class="list-item-title">${issue.title || issue.description || issue}</div>
-                ${issue.owner ? `<div class="list-item-meta">Owner: ${issue.owner}</div>` : ''}
-              </li>
-            `).join('')}
-          </ul>
+          <h2 class="section-title">Issues</h2>
+          <table class="two-column-table">
+            <tr>
+              <td>
+                <div class="subsection-title">Solved Issues</div>
+                ${issues.solved?.length > 0 ? `
+                  <ul class="list">
+                    ${issues.solved.map(issue => `
+                      <li>
+                        <div class="list-item-title">${issue.title || issue.description || issue}</div>
+                        ${issue.owner ? `<div class="list-item-meta">Owner: ${issue.owner}</div>` : ''}
+                      </li>
+                    `).join('')}
+                  </ul>
+                ` : `
+                  <div class="empty-state">No issues solved</div>
+                `}
+              </td>
+              <td>
+                <div class="subsection-title">New Issues</div>
+                ${issues.new?.length > 0 ? `
+                  <ul class="list">
+                    ${issues.new.map(issue => `
+                      <li>
+                        <div class="list-item-title">${issue.title || issue.description || issue}</div>
+                        ${issue.owner ? `<div class="list-item-meta">Owner: ${issue.owner}</div>` : ''}
+                      </li>
+                    `).join('')}
+                  </ul>
+                ` : `
+                  <div class="empty-state">No new issues</div>
+                `}
+              </td>
+            </tr>
+          </table>
         </div>
       ` : ''}
 
-      <!-- NEW ISSUES -->
-      ${issues.new?.length > 0 ? `
+      <!-- TO-DOS SECTION (TWO COLUMN) -->
+      ${(todos.completed?.length > 0 || todos.new?.length > 0) ? `
         <div class="section">
-          <h2 class="section-title">New Issues</h2>
-          <ul class="list">
-            ${issues.new.map(issue => `
-              <li>
-                <div class="list-item-title">${issue.title || issue.description || issue}</div>
-                ${issue.owner ? `<div class="list-item-meta">Owner: ${issue.owner}</div>` : ''}
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      <!-- COMPLETED TODOS -->
-      ${todos.completed?.length > 0 ? `
-        <div class="section">
-          <h2 class="section-title">Completed To-Dos</h2>
-          <ul class="list">
-            ${todos.completed.map(todo => `
-              <li>
-                <div class="list-item-title">${todo.title || todo.description || todo}</div>
-                ${todo.assignee ? `<div class="list-item-meta">Completed by: ${todo.assignee}</div>` : ''}
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      <!-- NEW TODOS -->
-      ${todos.new?.length > 0 ? `
-        <div class="section">
-          <h2 class="section-title">New To-Dos</h2>
-          <ul class="list">
-            ${todos.new.map(todo => `
-              <li>
-                <div class="list-item-title">${todo.title || todo.description || todo}</div>
-                <div class="list-item-meta">
-                  ${todo.assignee ? `Assigned to: ${todo.assignee}` : ''}
-                  ${todo.assignee && todo.dueDate ? ' • ' : ''}
-                  ${todo.dueDate ? `Due: ${new Date(todo.dueDate).toLocaleDateString()}` : ''}
-                </div>
-              </li>
-            `).join('')}
-          </ul>
+          <h2 class="section-title">To-Dos</h2>
+          <table class="two-column-table">
+            <tr>
+              <td>
+                <div class="subsection-title">Completed To-Dos</div>
+                ${todos.completed?.length > 0 ? `
+                  <ul class="list">
+                    ${todos.completed.map(todo => `
+                      <li>
+                        <div class="list-item-title">${todo.title || todo.description || todo}</div>
+                        ${todo.assignee ? `<div class="list-item-meta">Completed by: ${todo.assignee}</div>` : ''}
+                      </li>
+                    `).join('')}
+                  </ul>
+                ` : `
+                  <div class="empty-state">No completed to-dos</div>
+                `}
+              </td>
+              <td>
+                <div class="subsection-title">New To-Dos</div>
+                ${todos.new?.length > 0 ? `
+                  <ul class="list">
+                    ${todos.new.map(todo => `
+                      <li>
+                        <div class="list-item-title">${todo.title || todo.description || todo}</div>
+                        <div class="list-item-meta">
+                          ${todo.assignee ? `Assigned to: ${todo.assignee}` : ''}
+                          ${todo.assignee && todo.dueDate ? ' • ' : ''}
+                          ${todo.dueDate ? `Due: ${new Date(todo.dueDate).toLocaleDateString()}` : ''}
+                        </div>
+                      </li>
+                    `).join('')}
+                  </ul>
+                ` : `
+                  <div class="empty-state">No new to-dos</div>
+                `}
+              </td>
+            </tr>
+          </table>
         </div>
       ` : ''}
 
@@ -715,8 +771,27 @@ export const sendEmail = async (to, templateName, data) => {
 
     await sgMail.send(msg);
     console.log(`Email sent successfully to ${to}`);
+    
+    // Track successful email send for monitoring
+    global.lastEmailSend = Date.now();
   } catch (error) {
     console.error('Error sending email:', error);
+    
+    // Track failed email send for monitoring
+    global.lastEmailError = Date.now();
+    
+    // Log failure to database
+    await failedOperationsService.logEmailFailure(
+      to,
+      templateName,
+      error,
+      {
+        organizationId: data?.organizationId,
+        userId: data?.userId,
+        subject: emailContent?.subject
+      }
+    );
+    
     throw error;
   }
 };
@@ -747,9 +822,28 @@ export const sendMeetingSummary = async (recipients, meetingData) => {
     await sgMail.send(msg);
     console.log(`Meeting summary email sent to ${recipients.length} recipients`);
     
+    // Track successful email send
+    global.lastEmailSend = Date.now();
+    
     return { success: true };
   } catch (error) {
     console.error('Error sending meeting summary email:', error);
+    
+    // Track failed email send
+    global.lastEmailError = Date.now();
+    
+    // Log failure to database
+    await failedOperationsService.logEmailFailure(
+      Array.isArray(recipients) ? recipients.join(', ') : recipients,
+      'meeting_summary',
+      error,
+      {
+        organizationId: meetingData?.organizationId,
+        teamName: meetingData?.teamName,
+        meetingType: meetingData?.meetingType
+      }
+    );
+    
     throw error;
   }
 };

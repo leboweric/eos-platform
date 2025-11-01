@@ -3,8 +3,8 @@
 ## Overview
 The AXP platform uses PostgreSQL 16+ as its primary database with a multi-tenant architecture. This document provides comprehensive documentation of all database tables, their relationships, and usage patterns.
 
-**Last Updated**: October 2025  
-**Total Tables**: 50+  
+**Last Updated**: October 28, 2025  
+**Total Tables**: 60+ (added headlines, cascading messages, completion tracking, organizational chart tables)  
 **Database Size**: ~147 MB (production)  
 **Primary Key Strategy**: UUID for all tables  
 **Timestamp Convention**: created_at, updated_at on all tables  
@@ -19,9 +19,13 @@ The AXP platform uses PostgreSQL 16+ as its primary database with a multi-tenant
 6. [AI Meeting Assistant](#ai-meeting-assistant)
 7. [Task & Issue Management](#task--issue-management)
 8. [Document Management](#document-management)
-9. [Audit & Tracking](#audit--tracking)
-10. [Relationships & Constraints](#relationships--constraints)
-11. [Migration History](#migration-history)
+9. [Headlines & Communication](#headlines--communication)
+10. [Completion Tracking](#completion-tracking)
+11. [Organizational Structure](#organizational-structure)
+12. [Audit & Tracking](#audit--tracking)
+13. [Observability & Monitoring](#observability--monitoring)
+14. [Relationships & Constraints](#relationships--constraints)
+15. [Migration History](#migration-history)
 
 ## Core Tables
 
@@ -285,6 +289,33 @@ Real-time tracking of meeting attendees.
 | is_presenter | BOOLEAN | DEFAULT false | |
 | is_active | BOOLEAN | DEFAULT true | |
 
+### meeting_snapshots
+Historical record of meeting outcomes and decisions.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| meeting_id | UUID | FOREIGN KEY | References meetings(id) |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| team_id | UUID | FOREIGN KEY | References teams(id) |
+| facilitator_id | UUID | FOREIGN KEY | References users(id) |
+| meeting_type | VARCHAR(50) | | Type of meeting |
+| meeting_date | TIMESTAMP WITH TIME ZONE | | When meeting occurred |
+| duration_minutes | INTEGER | | Meeting length |
+| average_rating | DECIMAL(3,1) | | Meeting rating (1-10) |
+| snapshot_data | JSONB | | Full meeting data snapshot |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**snapshot_data JSONB structure**:
+- `attendees`: Array of participant info
+- `ai_summary`: AI-generated meeting summary
+- `headlines`: {customer: [], employee: []}
+- `cascading_messages`: Array of messages to cascade
+- `issues`: Array with status field ('open', 'in-progress', 'resolved', 'closed')
+- `todos`: Array with status field ('incomplete', 'complete', 'cancelled')
+- `notes`: Meeting notes text
+
 ### meeting_agenda_items
 Pre-defined agenda items for meetings.
 
@@ -485,7 +516,7 @@ IDS (Identify, Discuss, Solve) issue tracking.
 | created_by | UUID | FOREIGN KEY | References users(id) |
 | assigned_to | UUID | FOREIGN KEY | References users(id) |
 | priority | VARCHAR(20) | DEFAULT 'medium' | 'low', 'medium', 'high', 'critical' |
-| status | VARCHAR(50) | DEFAULT 'open' | 'open', 'in_discussion', 'solved', 'archived' |
+| status | VARCHAR(20) | DEFAULT 'open' | 'open', 'in-progress', 'resolved', 'closed' |
 | upvotes | INTEGER | DEFAULT 0 | Voting count |
 | display_order | INTEGER | | Manual sort order |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
@@ -517,8 +548,8 @@ Task management system.
 | assigned_to | UUID | FOREIGN KEY | References users(id) |
 | created_by | UUID | FOREIGN KEY | References users(id) |
 | due_date | DATE | | Target completion |
-| status | VARCHAR(50) | DEFAULT 'pending' | 'pending', 'in_progress', 'completed' |
-| completed | BOOLEAN | DEFAULT false | |
+| status | VARCHAR(20) | DEFAULT 'incomplete' | 'incomplete', 'complete', 'cancelled' |
+| completed | BOOLEAN | DEFAULT false | Legacy field - use status instead |
 | completed_at | TIMESTAMP WITH TIME ZONE | | |
 | priority | VARCHAR(20) | DEFAULT 'medium' | |
 | category | VARCHAR(50) | | Task category |
@@ -587,6 +618,111 @@ Core process and procedure documents.
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete |
 
+## Headlines & Communication
+
+### headlines
+Good news/bad news sharing for L10 meetings organized by team.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Unique headline identifier |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| team_id | UUID | FOREIGN KEY | References teams(id) |
+| title | VARCHAR(255) | NOT NULL | Headline title |
+| content | TEXT | | Detailed headline content |
+| type | VARCHAR(20) | DEFAULT 'good' | 'good', 'bad' - category |
+| created_by | UUID | FOREIGN KEY | References users(id) |
+| archived | BOOLEAN | DEFAULT false | Archive status for hiding |
+| archived_at | TIMESTAMP WITH TIME ZONE | | Archive timestamp |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+### cascading_messages
+Message system for communicating between teams and departments.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | Unique message identifier |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| source_team_id | UUID | FOREIGN KEY | References teams(id) - sending team |
+| message | TEXT | NOT NULL | Message content |
+| created_by | UUID | FOREIGN KEY | References users(id) |
+| all_teams | BOOLEAN | DEFAULT false | Broadcast to all teams |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+### cascading_message_recipients
+Junction table tracking which teams receive each cascading message.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| message_id | UUID | FOREIGN KEY | References cascading_messages(id) |
+| recipient_team_id | UUID | FOREIGN KEY | References teams(id) |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+## Completion Tracking
+
+### three_year_completions
+Track completion states for individual items in 3-year pictures.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| three_year_picture_id | UUID | FOREIGN KEY | References three_year_pictures(id) |
+| item_index | INTEGER | NOT NULL | Index of the item in the picture |
+| is_completed | BOOLEAN | DEFAULT false | Completion status |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Unique Constraint**: (three_year_picture_id, item_index)
+
+### one_year_goal_completions
+Track completion states for individual goals in 1-year plans.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| one_year_plan_id | UUID | FOREIGN KEY | References one_year_plans(id) |
+| goal_index | INTEGER | NOT NULL | Index of the goal in the plan |
+| is_completed | BOOLEAN | DEFAULT false | Completion status |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Unique Constraint**: (one_year_plan_id, goal_index)
+
+## Organizational Structure
+
+### organizational_charts
+Visual organizational structure with accountability mapping.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| name | VARCHAR(255) | NOT NULL | Chart name |
+| description | TEXT | | Chart description |
+| chart_data | JSONB | | Complete chart structure and positioning |
+| is_active | BOOLEAN | DEFAULT true | Active status |
+| created_by | UUID | FOREIGN KEY | References users(id) |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+### chart_positions
+Individual positions within organizational charts.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| chart_id | UUID | FOREIGN KEY | References organizational_charts(id) |
+| title | VARCHAR(255) | NOT NULL | Position title |
+| description | TEXT | | Position description |
+| user_id | UUID | FOREIGN KEY | References users(id) - person in position |
+| parent_position_id | UUID | FOREIGN KEY | Self-reference for hierarchy |
+| position_data | JSONB | | Position metadata and coordinates |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
 ## Audit & Tracking
 
 ### audit_logs
@@ -621,6 +757,106 @@ In-app notification system.
 | is_read | BOOLEAN | DEFAULT false | |
 | read_at | TIMESTAMP WITH TIME ZONE | | |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+## Observability & Monitoring
+
+### failed_operations
+Tracking system for silent failures and operations that need recovery.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| user_id | UUID | FOREIGN KEY | References users(id) |
+| operation_type | VARCHAR(50) | NOT NULL | Type of operation that failed |
+| operation_name | VARCHAR(100) | NOT NULL | Specific operation name |
+| error_message | TEXT | NOT NULL | Error description |
+| error_stack | TEXT | | Full stack trace |
+| context | JSONB | | Additional context for debugging |
+| severity | VARCHAR(20) | DEFAULT 'error' | 'critical', 'error', 'warning', 'info' |
+| resolved_at | TIMESTAMP WITH TIME ZONE | | When issue was resolved |
+| resolved_by | UUID | FOREIGN KEY | References users(id) |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Indexes**: organization_id, severity, resolved_at, created_at
+
+### user_activity
+Comprehensive user activity tracking for analytics and feature adoption.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| user_id | UUID | FOREIGN KEY | References users(id) |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| action_type | VARCHAR(50) | NOT NULL | Type of action performed |
+| feature_name | VARCHAR(100) | NOT NULL | Feature being used |
+| page_path | VARCHAR(255) | | URL path accessed |
+| metadata | JSONB | | Additional action context |
+| ip_address | INET | | Client IP address |
+| user_agent | TEXT | | Browser/client info |
+| session_id | UUID | | Session identifier |
+| duration_ms | INTEGER | | Action duration in milliseconds |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Indexes**: user_id, organization_id, action_type, feature_name, created_at, session_id
+**Composite Index**: (organization_id, created_at DESC) for time-range queries
+
+### data_isolation_violations
+Multi-tenant data isolation violation tracking for security monitoring.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| violation_type | VARCHAR(50) | NOT NULL | 'orphaned_record', 'missing_org_filter', 'cross_tenant_access' |
+| table_name | VARCHAR(100) | NOT NULL | Table where violation occurred |
+| record_id | UUID | | ID of affected record |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| severity | VARCHAR(20) | DEFAULT 'medium' | 'critical', 'high', 'medium', 'low' |
+| description | TEXT | NOT NULL | Violation description |
+| query_info | JSONB | | Query context that caused violation |
+| detected_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| resolved | BOOLEAN | DEFAULT FALSE | |
+| resolved_at | TIMESTAMP WITH TIME ZONE | | |
+| resolved_by | UUID | FOREIGN KEY | References users(id) |
+| resolution_notes | TEXT | | How violation was resolved |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Unique Constraint**: (table_name, record_id, violation_type)
+**Indexes**: violation_type, severity, resolved, table_name, organization_id, detected_at
+
+### isolation_check_log
+Audit log for data isolation security checks performed.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| check_type | VARCHAR(50) | NOT NULL | 'orphaned_records', 'missing_filters', 'full_scan' |
+| table_name | VARCHAR(100) | | NULL means all tables |
+| records_checked | INTEGER | DEFAULT 0 | Number of records examined |
+| violations_found | INTEGER | DEFAULT 0 | Number of violations detected |
+| check_duration_ms | INTEGER | | Time taken for check |
+| performed_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| performed_by | UUID | FOREIGN KEY | References users(id) |
+| metadata | JSONB | | Additional check details |
+
+**Indexes**: check_type, performed_at DESC, table_name
+
+### Views
+
+**isolation_health_status**
+```sql
+-- Provides quick overview of data isolation health
+CREATE VIEW isolation_health_status AS
+SELECT 
+    COUNT(*) FILTER (WHERE resolved = false) as active_violations,
+    COUNT(*) FILTER (WHERE severity = 'critical' AND resolved = false) as critical_count,
+    COUNT(*) FILTER (WHERE severity = 'high' AND resolved = false) as high_count,
+    COUNT(*) FILTER (WHERE detected_at >= NOW() - INTERVAL '24 hours') as violations_24h,
+    COUNT(*) FILTER (WHERE detected_at >= NOW() - INTERVAL '7 days') as violations_7d,
+    MAX(detected_at) as last_violation_detected,
+    (SELECT performed_at FROM isolation_check_log ORDER BY performed_at DESC LIMIT 1) as last_check_performed
+FROM data_isolation_violations;
+```
 
 ## Relationships & Constraints
 
@@ -881,8 +1117,30 @@ ORDER BY ss.week_date;
 - **Date Range Logic**: Expands from current quarter to include imported dates
 - **Cell Width**: Group View requires w-28 (112px) minimum for 7-digit numbers
 
+### Meeting Summary Updates (October 26, 2025)
+
+#### Schema Corrections
+- **Issues Table**: Corrected status enum values documentation
+  - Actual values: 'open', 'in-progress', 'resolved', 'closed'
+  - Previously documented incorrectly as including 'solved' and 'archived'
+- **Todos Table**: Corrected status enum values documentation  
+  - Actual values: 'incomplete', 'complete', 'cancelled'
+  - Previously documented as 'pending', 'in_progress', 'completed'
+
+#### Meeting Snapshots Table
+- Added missing `meeting_snapshots` table documentation
+- Stores historical meeting data in JSONB format
+- Contains issues/todos with proper status values for categorization
+- Used for generating meeting summaries and email reports
+
+#### Data Integrity Lessons
+- **Enum Validation**: Critical to verify actual database constraints match documentation
+- **Status Filtering**: Meeting summary logic must use correct enum values
+- **JSONB Flexibility**: snapshot_data allows schema evolution without migrations
+- **Legacy Fields**: `completed` boolean on todos is legacy - use status field
+
 ---
 
-**Last Updated**: October 22, 2025
+**Last Updated**: October 28, 2025
 
-*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality, AI Meeting Assistant transcription tables, critical schema debugging and corrections, and exact column name alignment with production database. Documentation now accurately matches the production schema after extensive debugging and testing.*
+*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality, AI Meeting Assistant transcription tables, critical schema debugging and corrections, exact column name alignment with production database, meeting snapshot system documentation, headlines and cascading messages for communication, completion tracking for strategic plans, organizational chart structure, and comprehensive observability monitoring. All enum values have been verified against actual database constraints.*

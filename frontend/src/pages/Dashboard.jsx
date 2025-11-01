@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
-import { getTeamId } from '../utils/teamUtils';
+import { getTeamId, getEffectiveTeamId } from '../utils/teamUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,7 @@ const DashboardClean = () => {
       totalShortTermIssues: 0
     }
   });
+  const [currentDepartmentId, setCurrentDepartmentId] = useState(null);
   
   useEffect(() => {
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
@@ -130,56 +131,6 @@ const DashboardClean = () => {
     return dueDate < today;
   };
 
-  // Automatically create issues for overdue todos
-  const createIssuesForOverdueTodos = async (todos, userDepartmentId) => {
-    try {
-      // Get todos that are overdue
-      const overdueTodos = todos.filter(todo => 
-        isOverdue(todo) && 
-        todo.status !== 'complete' &&
-        todo.status !== 'cancelled'
-      );
-
-      if (overdueTodos.length === 0) return;
-
-      for (const todo of overdueTodos) {
-        try {
-          const dueDate = new Date(todo.due_date).toLocaleDateString();
-          const assigneeName = todo.assigned_to 
-            ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
-            : 'Unassigned';
-          
-          // Calculate how many days overdue
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const dueDateObj = new Date(todo.due_date);
-          dueDateObj.setHours(0, 0, 0, 0);
-          const daysOverdue = Math.floor((today - dueDateObj) / (1000 * 60 * 60 * 24));
-
-          const issueData = {
-            title: `Overdue: ${todo.title}`,
-            description: `This to-do is ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue and needs immediate attention.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
-            timeline: 'short_term',
-            ownerId: todo.assigned_to?.id || null,
-            department_id: userDepartmentId || todo.team_id,
-            priority_level: 'high',
-            related_todo_id: todo.id
-          };
-          
-          await issuesService.createIssue(issueData);
-        } catch (error) {
-          // If it's a duplicate error (unique constraint violation), that's okay - just skip
-          if (error.response?.status === 409 || error.response?.data?.message?.includes('duplicate') || error.response?.data?.message?.includes('unique')) {
-            console.log(`Issue already exists for todo: ${todo.title}`);
-          } else {
-            console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to create issues for overdue todos:', error);
-    }
-  };
 
   const fetchDashboardData = async () => {
     try {
@@ -197,6 +148,7 @@ const DashboardClean = () => {
           userDepartmentId = user.teams[0].id;
         }
       }
+      setCurrentDepartmentId(userDepartmentId);
       
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
@@ -281,8 +233,6 @@ const DashboardClean = () => {
       // Process todos
       const allTodos = todosResponse.data.todos || [];
       
-      // Automatically create issues for overdue todos
-      await createIssuesForOverdueTodos(allTodos, userDepartmentId);
       
       const userTodos = allTodos.filter(todo => {
         const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
@@ -800,6 +750,7 @@ const DashboardClean = () => {
           onClose={() => setShowIssueDialog(false)}
           issue={editingIssue}
           teamMembers={dashboardData.teamMembers || []}
+          teamId={currentDepartmentId}
           onSave={async (issueData) => {
             try {
               const orgId = user?.organizationId || user?.organization_id;

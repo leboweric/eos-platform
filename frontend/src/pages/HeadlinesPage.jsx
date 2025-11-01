@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, AlertCircle, Loader2, Edit2, Trash2, Check, X } from 'lucide-react';
+import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { headlinesService } from '../services/headlinesService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
+import HeadlineItem from '../components/headlines/HeadlineItem';
 import CascadingMessageDialog from '../components/cascadingMessages/CascadingMessageDialog';
 import { issuesService } from '../services/issuesService';
 import { format } from 'date-fns';
+import ConfirmationDialog, { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { toast } from 'sonner';
 
 const HeadlinesPage = () => {
   const { user } = useAuthStore();
@@ -20,7 +23,6 @@ const HeadlinesPage = () => {
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
   const [cascadedMessages, setCascadedMessages] = useState([]);
   const [sentMessages, setSentMessages] = useState([]);
-  const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingHeadlineId, setEditingHeadlineId] = useState(null);
   const [editingText, setEditingText] = useState('');
@@ -28,6 +30,10 @@ const HeadlinesPage = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageText, setEditingMessageText] = useState('');
   const [deletingMessageId, setDeletingMessageId] = useState(null);
+  
+  // Confirmation dialogs
+  const archiveConfirmation = useConfirmationDialog();
+  const deleteConfirmation = useConfirmationDialog();
 
   // Get theme colors
   const orgId = user?.organizationId || user?.organization_id;
@@ -95,35 +101,6 @@ const HeadlinesPage = () => {
     }
   };
 
-  // Function to create issue from headline
-  const createIssueFromHeadline = async (headline, type) => {
-    try {
-      setCreatingIssueFromHeadline(headline.id);
-      
-      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
-      
-      const issueData = {
-        title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
-        description: `This issue was created from a ${type} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-        teamId: teamId,
-        relatedHeadlineId: headline.id
-      };
-
-      await issuesService.createIssue(issueData);
-      
-      setSuccess(`Issue created from ${type} headline`);
-      setTimeout(() => setSuccess(null), 3000);
-      
-      // Refresh headlines to update the has_related_issue flag
-      fetchHeadlines();
-    } catch (error) {
-      console.error('Failed to create issue from headline:', error);
-      setError('Failed to create issue from headline');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setCreatingIssueFromHeadline(null);
-    }
-  };
 
   const handleCreateHeadline = async (headlineData) => {
     try {
@@ -157,23 +134,26 @@ const HeadlinesPage = () => {
     }
   };
 
-  const handleDeleteHeadline = async (headlineId) => {
-    if (!window.confirm('Are you sure you want to delete this headline?')) {
-      return;
-    }
-    
-    try {
-      setDeletingHeadlineId(headlineId);
-      await headlinesService.deleteHeadline(headlineId);
-      setSuccess('Headline deleted successfully!');
-      fetchHeadlines();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError('Failed to delete headline');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setDeletingHeadlineId(null);
-    }
+  const handleArchiveHeadline = async (headline) => {
+    archiveConfirmation.showConfirmation({
+      type: 'archive',
+      title: 'Archive Headline',
+      message: `Are you sure you want to archive "${headline.text.length > 50 ? headline.text.substring(0, 50) + '...' : headline.text}"?`,
+      actionLabel: 'Archive',
+      onConfirm: async () => {
+        try {
+          setDeletingHeadlineId(headline.id);
+          await headlinesService.archiveHeadline(headline.id);
+          toast.success('Headline archived successfully!');
+          fetchHeadlines();
+        } catch (err) {
+          toast.error('Failed to archive headline');
+          throw err; // Re-throw to keep dialog open on error
+        } finally {
+          setDeletingHeadlineId(null);
+        }
+      }
+    });
   };
 
   const handleUpdateMessage = async (messageId) => {
@@ -196,28 +176,31 @@ const HeadlinesPage = () => {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm('Are you sure you want to delete this message?')) {
-      return;
-    }
-    
-    try {
-      setDeletingMessageId(messageId);
-      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
-      await cascadingMessagesService.deleteCascadingMessage(
-        orgId,
-        teamId,
-        messageId
-      );
-      setSuccess('Message deleted successfully!');
-      fetchCascadedMessages();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError('Failed to delete message');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setDeletingMessageId(null);
-    }
+  const handleDeleteMessage = async (messageId, messageText) => {
+    deleteConfirmation.showConfirmation({
+      type: 'delete',
+      title: 'Delete Message',
+      message: `Are you sure you want to delete \"${messageText?.length > 50 ? messageText.substring(0, 50) + '...' : messageText}\"?`,
+      actionLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          setDeletingMessageId(messageId);
+          const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
+          await cascadingMessagesService.deleteCascadingMessage(
+            orgId,
+            teamId,
+            messageId
+          );
+          toast.success('Message deleted successfully!');
+          fetchCascadedMessages();
+        } catch (err) {
+          toast.error('Failed to delete message');
+          throw err; // Re-throw to keep dialog open on error
+        } finally {
+          setDeletingMessageId(null);
+        }
+      }
+    });
   };
 
   const handleCreateCascadingMessage = async (messageData) => {
@@ -357,114 +340,35 @@ const HeadlinesPage = () => {
             ) : headlines.customer.length > 0 ? (
               <div className="space-y-3">
                 {headlines.customer.map(headline => (
-                  <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                       style={{ borderLeftColor: themeColors.primary }}>
-                    {editingHeadlineId === headline.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2"
-                          style={{ focusBorderColor: themeColors.primary }}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleUpdateHeadline(headline.id);
-                            } else if (e.key === 'Escape') {
-                              setEditingHeadlineId(null);
-                              setEditingText('');
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleUpdateHeadline(headline.id)}
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingHeadlineId(null);
-                            setEditingText('');
-                          }}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p 
-                          className="text-sm font-medium text-slate-900 leading-relaxed pr-20 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 -mx-2 -my-1"
-                          onClick={() => {
-                            // Only allow editing if user created it or is admin
-                            if (headline.created_by === user?.id || user?.role === 'admin') {
-                              setEditingHeadlineId(headline.id);
-                              setEditingText(headline.text);
-                            }
-                          }}
-                          title={headline.created_by === user?.id || user?.role === 'admin' ? "Click to edit" : ""}
-                        >
-                          {headline.text}
-                        </p>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
-                          <span>•</span>
-                          <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Action buttons appear on hover */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {/* Edit button - only show if user can edit */}
-                      {(headline.created_by === user?.id || user?.role === 'admin') && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-gray-100"
-                          onClick={() => {
-                            setEditingHeadlineId(headline.id);
-                            setEditingText(headline.text);
-                          }}
-                          title="Edit headline"
-                        >
-                          <Edit2 className="h-3.5 w-3.5 text-gray-600" />
-                        </button>
-                      )}
-                      
-                      {/* Create issue button */}
-                      {!headline.has_related_issue && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                          onClick={() => createIssueFromHeadline(headline, 'Customer')}
-                          disabled={creatingIssueFromHeadline === headline.id}
-                          title="Create issue from headline"
-                        >
-                          {creatingIssueFromHeadline === headline.id ? (
-                            <Loader2 className="h-3.5 w-3.5 text-gray-600 animate-spin" />
-                          ) : (
-                            <AlertCircle className="h-3.5 w-3.5 text-gray-600" />
-                          )}
-                        </button>
-                      )}
-                      
-                      {/* Delete button - only show if user can delete */}
-                      {(headline.created_by === user?.id || user?.role === 'admin') && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50"
-                          onClick={() => handleDeleteHeadline(headline.id)}
-                          disabled={deletingHeadlineId === headline.id}
-                          title="Delete headline"
-                        >
-                          {deletingHeadlineId === headline.id ? (
-                            <Loader2 className="h-3.5 w-3.5 text-red-600 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <HeadlineItem
+                    key={headline.id}
+                    headline={headline}
+                    teamId={selectedDepartment?.id || user?.teams?.[0]?.id}
+                    orgId={orgId}
+                    onIssueCreated={fetchHeadlines}
+                    themeColors={themeColors}
+                    type="Customer"
+                    showEditDelete={true}
+                    onEdit={(headline) => {
+                      setEditingHeadlineId(headline.id);
+                      setEditingText(headline.text);
+                    }}
+                    onArchive={handleArchiveHeadline}
+                    onUpdate={handleUpdateHeadline}
+                    user={user}
+                    isEditing={editingHeadlineId === headline.id}
+                    editingText={editingText}
+                    onStartEdit={(headline) => {
+                      setEditingHeadlineId(headline.id);
+                      setEditingText(headline.text);
+                    }}
+                    onSaveEdit={() => handleUpdateHeadline(headline.id)}
+                    onCancelEdit={() => {
+                      setEditingHeadlineId(null);
+                      setEditingText('');
+                    }}
+                    onEditTextChange={setEditingText}
+                  />
                 ))}
               </div>
             ) : (
@@ -485,114 +389,35 @@ const HeadlinesPage = () => {
             ) : headlines.employee.length > 0 ? (
               <div className="space-y-3">
                 {headlines.employee.map(headline => (
-                  <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                       style={{ borderLeftColor: themeColors.secondary }}>
-                    {editingHeadlineId === headline.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2"
-                          style={{ focusBorderColor: themeColors.secondary }}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleUpdateHeadline(headline.id);
-                            } else if (e.key === 'Escape') {
-                              setEditingHeadlineId(null);
-                              setEditingText('');
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleUpdateHeadline(headline.id)}
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingHeadlineId(null);
-                            setEditingText('');
-                          }}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p 
-                          className="text-sm font-medium text-slate-900 leading-relaxed pr-20 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 -mx-2 -my-1"
-                          onClick={() => {
-                            // Only allow editing if user created it or is admin
-                            if (headline.created_by === user?.id || user?.role === 'admin') {
-                              setEditingHeadlineId(headline.id);
-                              setEditingText(headline.text);
-                            }
-                          }}
-                          title={headline.created_by === user?.id || user?.role === 'admin' ? "Click to edit" : ""}
-                        >
-                          {headline.text}
-                        </p>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
-                          <span>•</span>
-                          <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Action buttons appear on hover */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {/* Edit button - only show if user can edit */}
-                      {(headline.created_by === user?.id || user?.role === 'admin') && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-gray-100"
-                          onClick={() => {
-                            setEditingHeadlineId(headline.id);
-                            setEditingText(headline.text);
-                          }}
-                          title="Edit headline"
-                        >
-                          <Edit2 className="h-3.5 w-3.5 text-gray-600" />
-                        </button>
-                      )}
-                      
-                      {/* Create issue button */}
-                      {!headline.has_related_issue && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                          onClick={() => createIssueFromHeadline(headline, 'Employee')}
-                          disabled={creatingIssueFromHeadline === headline.id}
-                          title="Create issue from headline"
-                        >
-                          {creatingIssueFromHeadline === headline.id ? (
-                            <Loader2 className="h-3.5 w-3.5 text-gray-600 animate-spin" />
-                          ) : (
-                            <AlertCircle className="h-3.5 w-3.5 text-gray-600" />
-                          )}
-                        </button>
-                      )}
-                      
-                      {/* Delete button - only show if user can delete */}
-                      {(headline.created_by === user?.id || user?.role === 'admin') && editingHeadlineId !== headline.id && (
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50"
-                          onClick={() => handleDeleteHeadline(headline.id)}
-                          disabled={deletingHeadlineId === headline.id}
-                          title="Delete headline"
-                        >
-                          {deletingHeadlineId === headline.id ? (
-                            <Loader2 className="h-3.5 w-3.5 text-red-600 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <HeadlineItem
+                    key={headline.id}
+                    headline={headline}
+                    teamId={selectedDepartment?.id || user?.teams?.[0]?.id}
+                    orgId={orgId}
+                    onIssueCreated={fetchHeadlines}
+                    themeColors={themeColors}
+                    type="Employee"
+                    showEditDelete={true}
+                    onEdit={(headline) => {
+                      setEditingHeadlineId(headline.id);
+                      setEditingText(headline.text);
+                    }}
+                    onArchive={handleArchiveHeadline}
+                    onUpdate={handleUpdateHeadline}
+                    user={user}
+                    isEditing={editingHeadlineId === headline.id}
+                    editingText={editingText}
+                    onStartEdit={(headline) => {
+                      setEditingHeadlineId(headline.id);
+                      setEditingText(headline.text);
+                    }}
+                    onSaveEdit={() => handleUpdateHeadline(headline.id)}
+                    onCancelEdit={() => {
+                      setEditingHeadlineId(null);
+                      setEditingText('');
+                    }}
+                    onEditTextChange={setEditingText}
+                  />
                 ))}
               </div>
             ) : (
@@ -683,7 +508,7 @@ const HeadlinesPage = () => {
                         
                         <button
                           className="p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50"
-                          onClick={() => handleDeleteMessage(message.id)}
+                          onClick={() => handleDeleteMessage(message.id, message.text)}
                           disabled={deletingMessageId === message.id}
                           title="Delete message"
                         >
@@ -719,6 +544,10 @@ const HeadlinesPage = () => {
           onSave={handleCreateCascadingMessage}
         />
       )}
+      
+      {/* Confirmation dialogs */}
+      <archiveConfirmation.ConfirmationDialog />
+      <deleteConfirmation.ConfirmationDialog />
     </div>
   );
 };

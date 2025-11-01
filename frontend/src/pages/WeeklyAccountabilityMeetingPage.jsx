@@ -9,6 +9,7 @@ import meetingHistoryService from '../services/meetingHistoryService';
 import { organizationService } from '../services/organizationService';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
+import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { MeetingAIRecordingControls } from '../components/MeetingAIRecordingControls';
 import { MeetingAISummaryPanel } from '../components/MeetingAISummaryPanel';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
@@ -70,6 +71,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+// import { MovePriorityDialog } from '../components/priorities/MovePriorityDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
@@ -81,6 +83,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
+import HeadlineItem from '../components/headlines/HeadlineItem';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
@@ -98,11 +101,27 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
+// Helper function to determine if a To-Do is overdue
+const isOverdue = (dueDate) => {
+  if (!dueDate) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  
+  return due < today; // True if past due date
+};
+
 const WeeklyAccountabilityMeetingPage = () => {
   console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED - DEPLOYMENT TEST 123 🔥🔥🔥');
   const { user, currentOrganization } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
+  
+  // Enable background token refresh during meetings to prevent session expiration
+  useTokenRefresh(true, 10); // Refresh every 10 minutes during meetings
   
   // Team validation - redirect to meetings page if no valid team selected
   useEffect(() => {
@@ -246,6 +265,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [longTermIssues, setLongTermIssues] = useState([]);
   const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
+  const [moveIssueDialogOpen, setMoveIssueDialogOpen] = useState(false);
+  const [issueToMove, setIssueToMove] = useState(null);
+  // const [movePriorityDialogOpen, setMovePriorityDialogOpen] = useState(false);
+  // const [priorityToMove, setPriorityToMove] = useState(null);
   const [todos, setTodos] = useState([]);
   const { selectedTodoIds } = useSelectedTodos();
   const [teamMembers, setTeamMembers] = useState([]);
@@ -339,6 +362,28 @@ const WeeklyAccountabilityMeetingPage = () => {
       [priorityId]: !prev[priorityId]
     }));
   };
+
+  // Toggle expansion for individual person sections  
+  const toggleIndividualPriorities = (ownerId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      individualPriorities: {
+        ...prev.individualPriorities,
+        [ownerId]: !prev.individualPriorities[ownerId]
+      }
+    }));
+  };
+
+  // Toggle expansion for todo assignee sections
+  const toggleTodoAssignees = (assigneeId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      todoAssignees: {
+        ...prev.todoAssignees,
+        [assigneeId]: !prev.todoAssignees[assigneeId]
+      }
+    }));
+  };
   
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
@@ -353,6 +398,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
         description: `This issue was created from a ${type.toLowerCase()} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${formatDateSafe(headline.created_at, 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
         timeline: 'short_term',
+        priority_level: 'normal',
         organization_id: orgId,
         department_id: effectiveTeamId,
         related_headline_id: headline.id
@@ -389,7 +435,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
-    individualPriorities: {} // Will be populated with owners on load
+    individualPriorities: {}, // Will be populated with owners on load
+    todoAssignees: {} // Will be populated with assignees on load
   });
   
   
@@ -625,6 +672,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const notesTimeoutRef = useRef(null);
   const [meetingRating, setMeetingRating] = useState(null);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [participantRatings, setParticipantRatings] = useState([]); // Store ratings by participant
   const [ratingAverage, setRatingAverage] = useState(0);
   const [showSendSummaryTimeout, setShowSendSummaryTimeout] = useState(false);
@@ -666,6 +714,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
   const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
+
+  // Debug scorecard preference changes
+  useEffect(() => {
+    console.log('🔍 WeeklyMeeting - Scorecard preference state changed:', scorecardTimePeriodPreference);
+  }, [scorecardTimePeriodPreference]);
 
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
@@ -735,6 +788,21 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   const agendaItems = getAgendaItems();
   
+  // Helper function to auto-start the first section after session creation
+  const autoStartFirstSection = async (sessionId, orgId, effectiveTeamId, logContext = '') => {
+    const firstSection = agendaItems[0];
+    if (firstSection && sessionId) {
+      try {
+        console.log(`🎬 Auto-starting first section '${firstSection.id}' ${logContext}`);
+        await meetingSessionsService.startSection(orgId, effectiveTeamId, sessionId, firstSection.id);
+        console.log(`✅ First section '${firstSection.id}' auto-started successfully ${logContext}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to auto-start first section '${firstSection.id}' ${logContext}:`, error);
+        // Don't throw - this is a non-critical enhancement
+      }
+    }
+  };
+  
   // Get framework-specific meeting description
   const getMeetingDescription = () => {
     const isEOS = labels.priorities_label === 'Rocks';
@@ -773,6 +841,30 @@ const WeeklyAccountabilityMeetingPage = () => {
       const fetchedTodos = response.data?.todos || [];
       console.log('✅ SETTING TODOS:', fetchedTodos.length, 'todos');
       setTodos(fetchedTodos);
+
+      // Auto-expand all todo assignee sections with consistent ID logic
+      const expandedAssignees = {};
+      fetchedTodos.forEach(todo => {
+        if (todo.assignees && todo.assignees.length > 0) {
+          todo.assignees.forEach(assignee => {
+            const assigneeId = assignee.user_id || assignee.id;
+            if (assigneeId) {
+              expandedAssignees[assigneeId] = true;
+            }
+          });
+        } else {
+          // Handle single assignee todos (backward compatibility)
+          const assigneeId = todo.assigned_to?.id || 'unassigned';
+          if (assigneeId) {
+            expandedAssignees[assigneeId] = true;
+          }
+        }
+      });
+      
+      setExpandedSections(prev => ({
+        ...prev,
+        todoAssignees: expandedAssignees
+      }));
     } catch (error) {
       console.error('❌ Failed to fetch todos:', error);
       // Ensure empty state if fetch fails - prevents stale data
@@ -972,12 +1064,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         setTeamMembers(response.teamMembers);
       }
       
-      // Auto-expand all individual owner sections
-      const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
-      const uniqueOwnerIds = [...new Set(individualPriorities.map(p => p.owner?.id || 'unassigned'))];
+      // Auto-expand all individual owner sections with consistent ID logic
       const expandedOwners = {};
-      uniqueOwnerIds.forEach(ownerId => {
-        expandedOwners[ownerId] = true;
+      allPriorities.forEach(priority => {
+        const ownerId = priority.owner?.id || priority.owner_id || priority.assignee_id || 'unassigned';
+        if (ownerId) {
+          expandedOwners[ownerId] = true;
+        }
       });
       
       setExpandedSections(prev => ({
@@ -1021,7 +1114,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchPrioritiesData();
       fetchHeadlines();
     }
-  }, [teamId, user]);
+  }, [teamId]); // FIXED: Removed 'user' from dependencies to prevent infinite re-renders
 
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
@@ -1042,8 +1135,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Include organization ID in meeting code to prevent cross-org collisions
       // CRITICAL: Must match the orgId logic used throughout the rest of the file
       const orgId = user?.organizationId || user?.organization_id;
+      
+      // Use consistent format with session service
       const meetingRoom = `${orgId}-${teamId}-weekly-accountability`;
-      console.log('📝 Meeting room:', meetingRoom, 'OrgId:', orgId);
+      console.log('📝 Meeting room:', meetingRoom, 'OrgId:', orgId, 'Format:', orgId ? 'new (orgId-teamId)' : 'legacy (teamId only)');
       
       // Wait a bit for active meetings to load if we haven't checked yet
       if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
@@ -1130,6 +1225,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setTotalPausedTime(result.session.total_paused_duration || 0);
                     }
                     console.log('📊 New meeting session started:', result.session.id);
+                    
+                    // Auto-start the first section for new sessions
+                    await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 1)');
                   }
                 } catch (err) {
                   console.error('Failed to start/resume meeting session:', err);
@@ -1242,6 +1340,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                   setTotalPausedTime(result.session.total_paused_duration || 0);
                 }
                 console.log('📊 New meeting session started:', result.session.id);
+                
+                // Auto-start the first section for new sessions
+                await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 2)');
               }
             } catch (err) {
               console.error('Failed to start/resume meeting session (immediate):', err);
@@ -1346,7 +1447,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchOrganizationTheme = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      console.log('🔍 WeeklyMeeting - Fetching organization data...');
       const orgData = await organizationService.getOrganization();
+      
+      console.log('🔍 WeeklyMeeting - Organization data received:', {
+        ...orgData,
+        scorecard_time_period_preference: orgData?.scorecard_time_period_preference,
+        hasPreference: !!orgData?.scorecard_time_period_preference
+      });
       
       if (orgData) {
         const theme = {
@@ -1358,7 +1466,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         saveOrgTheme(orgId, theme);
         
         // Set scorecard time period preference
-        setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
+        const preference = orgData.scorecard_time_period_preference || '13_week_rolling';
+        console.log('🔍 WeeklyMeeting - Setting scorecard preference:', {
+          fromDB: orgData.scorecard_time_period_preference,
+          final: preference
+        });
+        setScorecardTimePeriodPreference(preference);
         
         // Set rock display preference
         setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
@@ -1486,6 +1599,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                 setIsPaused(true);
                 setTotalPausedTime(result.session.total_paused_duration || 0);
               }
+              
+              // Auto-start the first section for new sessions
+              await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 3)');
             }
           } catch (err) {
             console.error('Failed to initialize session (fallback):', err);
@@ -1646,7 +1762,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
-      const response = await todosService.getTodaysTodos(effectiveTeamId);
+      const response = await todosService.getTodos('incomplete', null, false, effectiveTeamId);
       setTodaysTodos(response.todos || []);
     } catch (error) {
       console.error('Failed to fetch today\'s todos:', error);
@@ -1697,6 +1813,9 @@ const WeeklyAccountabilityMeetingPage = () => {
               const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
               console.log('📊 Session created for leader:', result.session.id);
               setSessionId(result.session.id);
+              
+              // Auto-start the first section for new sessions
+              await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 4 - leader)');
             } catch (err) {
               console.error('Failed to create session for leader:', err);
               setError(err.message || 'Failed to start meeting session');
@@ -1777,6 +1896,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         title: `${status}: ${metric.name}`,
         description: `Metric "${metric.name}" is ${status.toLowerCase()} and requires attention.\n\nGoal: ${formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}\nOwner: ${metric.ownerName || metric.owner || 'Unassigned'}\n\nData Source: ${metric.description || 'No data source specified'}`,
         timeline: 'short_term',
+        priority_level: isOffTrack ? 'high' : 'normal',
         ownerId: metric.ownerId || null,
         department_id: effectiveTeamId,
         teamId: effectiveTeamId  // Add both fields to ensure compatibility
@@ -2093,6 +2213,60 @@ const WeeklyAccountabilityMeetingPage = () => {
     );
   };
 
+  const handleCreateLinkedIssue = async (todo) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      // Check if an issue already exists for this todo
+      const issuesResponse = await issuesService.getIssues();
+      const existingIssues = issuesResponse.data?.issues || issuesResponse.issues || issuesResponse;
+      const linkedIssue = existingIssues.find(issue => issue.related_todo_id === todo.id);
+      
+      if (linkedIssue) {
+        toast.error('An issue already exists for this to-do');
+        return;
+      }
+      
+      // Calculate if the todo is overdue
+      const isOverdue = todo.due_date && new Date(todo.due_date) < new Date();
+      const daysOverdue = isOverdue ? 
+        Math.floor((new Date() - new Date(todo.due_date)) / (1000 * 60 * 60 * 24)) : 0;
+      
+      // Create issue data
+      const issueData = {
+        title: isOverdue ? `Overdue: ${todo.title}` : `Issue: ${todo.title}`,
+        description: isOverdue ? 
+          `This to-do is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.\n\nOriginal due date: ${new Date(todo.due_date).toLocaleDateString()}\n\n${todo.description || ''}` :
+          `Created from to-do: ${todo.title}\n\n${todo.description || ''}`,
+        timeline: 'short_term',
+        priority_level: isOverdue && daysOverdue > 7 ? 'high' : 'normal',
+        teamId: effectiveTeamId,
+        related_todo_id: todo.id
+      };
+      
+      // Create the issue
+      await issuesService.createIssue(issueData);
+      
+      // Refresh issues data
+      await fetchIssuesData();
+      
+      toast.success('Linked issue created successfully');
+      
+      // Broadcast issue creation to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'create',
+          message: 'Issue created from to-do'
+        });
+      }
+      
+    } catch (error) {
+      console.error('Failed to create linked issue:', error);
+      toast.error('Failed to create linked issue');
+    }
+  };
+
   const handleToggleTodoComplete = async (todo) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -2361,6 +2535,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         title: priority.title,
         description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
         timeline: 'short_term',
+        priority_level: 'normal',
         teamId: effectiveTeamId,
         department_id: effectiveTeamId
       });
@@ -2383,6 +2558,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       await issuesService.createIssue({
         title: `Issue from To-Do: ${todo.title}`,
         description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+        timeline: 'short_term',
+        priority_level: 'normal',
         ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
         teamId: effectiveTeamId,
         related_todo_id: todo.id // Link back to the todo
@@ -2448,6 +2625,54 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to send cascading message');
     }
   };
+
+  // Move Issue to Another Team
+  const handleMoveIssueToAnotherTeam = (issue) => {
+    console.log('Opening move issue dialog for:', issue);
+    setIssueToMove(issue);
+    setMoveIssueDialogOpen(true);
+  };
+
+  // Handle successful issue move
+  const handleIssueMovedSuccess = async (message) => {
+    setSuccess(message || 'Issue moved to another team successfully');
+    setMoveIssueDialogOpen(false);
+    setIssueToMove(null);
+    
+    // Refresh issues to remove the moved issue from current team's list
+    await fetchIssuesData();
+    
+    // Broadcast the update to other participants if in collaborative meeting
+    if (meetingCode && broadcastIssueListUpdate) {
+      broadcastIssueListUpdate({
+        action: 'refresh'
+      });
+    }
+  };
+
+  // Move Priority to Another Team
+  // const handleMovePriorityToAnotherTeam = (priority) => {
+  //   console.log('Opening move priority dialog for:', priority);
+  //   setPriorityToMove(priority);
+  //   setMovePriorityDialogOpen(true);
+  // };
+
+  // Handle successful priority move
+  // const handlePriorityMovedSuccess = async (message) => {
+  //   setSuccess(message || 'Priority moved to another team successfully');
+  //   setMovePriorityDialogOpen(false);
+  //   setPriorityToMove(null);
+  //   
+  //   // Refresh priorities to remove the moved priority from current team's list
+  //   await fetchPrioritiesData();
+  //   
+  //   // Broadcast the update to other participants if in collaborative meeting
+  //   if (meetingCode && broadcastPriorityUpdate) {
+  //     broadcastPriorityUpdate({
+  //       action: 'refresh'
+  //     });
+  //   }
+  // };
 
   // Priority handlers
 
@@ -2658,6 +2883,151 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleCreateLinkedTodoFromRock = async (rock) => {
+    // Immediate feedback to show function is called
+    toast.loading('Creating to-do from Rock...', { id: 'create-todo-loading' });
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      // Default due date: end of quarter
+      const today = new Date();
+      const quarterEnd = new Date(today.getFullYear(), Math.ceil((today.getMonth() + 1) / 3) * 3, 0);
+      
+      // Create to-do data from rock
+      const todoData = {
+        title: rock.title || rock.name,
+        description: `Action item from Rock: ${rock.title || rock.name}\n\n${rock.description || ''}`,
+        due_date: quarterEnd.toISOString().split('T')[0],
+        priority: 'high',
+        related_priority_id: rock.id, // Link back to rock
+        team_id: effectiveTeamId,
+        assigned_to: rock.owner_id || user.id
+      };
+      
+      // Create the to-do
+      await todosService.createTodo(todoData);
+      
+      // Dismiss loading toast and show success
+      toast.dismiss('create-todo-loading');
+      toast.success('To-Do created successfully and linked to Rock');
+      
+      // Refresh todos list if needed
+      await fetchTodosData();
+      
+      // Broadcast todo creation to other participants
+      if (meetingCode && broadcastTodoUpdate) {
+        broadcastTodoUpdate({
+          action: 'create',
+          message: 'To-Do created from Rock'
+        });
+      }
+      
+    } catch (error) {
+      console.error('Failed to create linked to-do:', error);
+      console.error('❌ [CreateLinkedTodo] Error details:', error?.response?.data);
+      console.error('❌ [CreateLinkedTodo] Error status:', error?.response?.status);
+      
+      // Enhanced error messages based on specific error types
+      let errorMessage = 'Failed to create to-do. Please try again.';
+      
+      if (error?.response?.status === 400) {
+        errorMessage = `Failed to create to-do: ${error?.response?.data?.message || 'Invalid data provided'}`;
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Failed to create to-do: Authentication required. Please refresh and try again.';
+      } else if (error?.response?.status === 403) {
+        errorMessage = 'Failed to create to-do: You do not have permission to create to-dos.';
+      } else if (error?.response?.status === 500) {
+        errorMessage = 'Failed to create to-do: Server error. Please try again later.';
+      } else if (error?.message) {
+        errorMessage = `Failed to create to-do: ${error.message}`;
+      }
+      
+      // Dismiss loading toast and show error
+      toast.dismiss('create-todo-loading');
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleCreateLinkedIssueFromRock = async (rock) => {
+    console.log('🔴 CREATE ISSUE CLICKED', rock);
+    console.log('🔍 [CreateLinkedIssue] Starting...', { rock });
+    
+    // Immediate feedback to show function is called
+    toast.loading('Creating issue from Rock...', { id: 'create-issue-loading' });
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      console.log('🔍 [CreateLinkedIssue] Variables:', { orgId, teamId, cleanTeamId, effectiveTeamId, user });
+      
+      // Create issue data from rock
+      const issueData = {
+        title: `Issue: ${rock.title || rock.name}`,
+        description: `Issue from Rock: ${rock.title || rock.name}\n\n${rock.description || ''}\n\nOwner: ${rock.owner_name || 'Unassigned'}`,
+        timeline: 'short_term', // Meeting issues are typically short-term
+        ownerId: rock.owner_id || rock.ownerId || user?.id, // Required field for issues
+        related_priority_id: rock.id, // Link back to rock
+        department_id: effectiveTeamId // Use department_id as per other successful calls
+      };
+      
+      console.log('🔍 [CreateLinkedIssue] Issue data:', issueData);
+      console.log('🔴 CALLING API', { orgId, teamId, issueData });
+      console.log('🔍 [CreateLinkedIssue] Calling issuesService.createIssue...');
+      
+      // Create the issue
+      const result = await issuesService.createIssue(issueData);
+      
+      console.log('✅ [CreateLinkedIssue] Success! Result:', result);
+      console.log('🔴 SUCCESS');
+      
+      // Dismiss loading toast and show success
+      toast.dismiss('create-issue-loading');
+      toast.success('Issue created successfully and linked to Rock');
+      
+      // Refresh issues list
+      console.log('🔄 [CreateLinkedIssue] Refreshing issues list...');
+      await fetchIssuesData();
+      
+      // Broadcast issue creation to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        console.log('📡 [CreateLinkedIssue] Broadcasting update...');
+        broadcastIssueListUpdate({
+          action: 'create',
+          message: 'Issue created from Rock'
+        });
+      }
+      
+    } catch (error) {
+      console.error('🔴 ERROR', error);
+      console.error('❌ [CreateLinkedIssue] Error:', error);
+      console.error('❌ [CreateLinkedIssue] Error details:', error?.response?.data);
+      console.error('❌ [CreateLinkedIssue] Error status:', error?.response?.status);
+      
+      // Enhanced error messages based on specific error types
+      let errorMessage = 'Failed to create issue. Please try again.';
+      
+      if (error?.response?.status === 400) {
+        errorMessage = `Failed to create issue: ${error?.response?.data?.message || 'Invalid data provided'}`;
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Failed to create issue: Authentication required. Please refresh and try again.';
+      } else if (error?.response?.status === 403) {
+        errorMessage = 'Failed to create issue: You do not have permission to create issues.';
+      } else if (error?.response?.status === 500) {
+        errorMessage = 'Failed to create issue: Server error. Please try again later.';
+      } else if (error?.message) {
+        errorMessage = `Failed to create issue: ${error.message}`;
+      }
+      
+      // Dismiss loading toast and show error
+      toast.dismiss('create-issue-loading');
+      toast.error(errorMessage);
+    }
+  };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
@@ -3078,6 +3448,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStartTime(null);
       setElapsedTime(0);
       setMeetingRating(null);
+      setRatingSubmitted(false);
       setActiveSection('good-news');
       setCompletedSections(new Set());
       
@@ -3560,6 +3931,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setMeetingStartTime(null);
         setElapsedTime(0);
         setMeetingRating(null);
+        setRatingSubmitted(false);
         setActiveSection('good-news');
         setCompletedSections(new Set());
         
@@ -4053,6 +4425,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             onAddMilestone={handleContextMenuAddMilestone}
                                             onArchive={handleContextMenuArchive}
                                             onDuplicate={handleContextMenuDuplicate}
+                                            onCreateLinkedTodo={handleCreateLinkedTodoFromRock}
+                                            onCreateLinkedIssue={handleCreateLinkedIssueFromRock}
                                           >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                                 {/* Expand Arrow */}
@@ -4392,7 +4766,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                             return owners.map(owner => (
                               <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                                 <CardHeader className="pb-3">
-                                  <div className="flex items-center justify-between">
+                                  <div 
+                                    className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                                    onClick={() => toggleIndividualPriorities(owner.id)}
+                                  >
                                     <div className="flex items-center gap-3">
                                       <Avatar className="h-10 w-10 border-2 border-slate-100">
                                         <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
@@ -4404,9 +4781,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
                                       </div>
                                     </div>
-                                    <ChevronDown className="h-5 w-5 text-slate-400" />
+                                    <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                                      expandedSections.individualPriorities[owner.id] ? 'rotate-180' : ''
+                                    }`} />
                                   </div>
                                 </CardHeader>
+                                {expandedSections.individualPriorities[owner.id] && (
                                 <CardContent className="pt-0">
                                   <div className="space-y-1">
                                     {/* Header Row */}
@@ -4437,6 +4817,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             onAddMilestone={handleContextMenuAddMilestone}
                                             onArchive={handleContextMenuArchive}
                                             onDuplicate={handleContextMenuDuplicate}
+                                            onCreateLinkedTodo={handleCreateLinkedTodoFromRock}
+                                            onCreateLinkedIssue={handleCreateLinkedIssueFromRock}
                                           >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                                 {/* Expand Arrow */}
@@ -4731,6 +5113,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     })}
                                   </div>
                                 </CardContent>
+                                )}
                               </Card>
                             ));
                           })()}
@@ -4744,7 +5127,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         }).map(owner => (
                           <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
+                              <div 
+                                className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                                onClick={() => toggleIndividualPriorities(owner.id)}
+                              >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-10 w-10 border-2 border-slate-100">
                                     <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
@@ -4756,9 +5142,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                                   </div>
                                 </div>
-                                <ChevronDown className="h-5 w-5 text-slate-400" />
+                                <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                                  expandedSections.individualPriorities[owner.id] ? 'rotate-180' : ''
+                                }`} />
                               </div>
                             </CardHeader>
+                            {expandedSections.individualPriorities[owner.id] && (
                             <CardContent className="pt-0">
                               <div className="space-y-1">
                                 {/* Header Row */}
@@ -4790,6 +5179,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       onArchive={handleContextMenuArchive}
                                       onDelete={handleContextMenuDelete}
                                       onDuplicate={handleContextMenuDuplicate}
+                                      onCreateLinkedTodo={handleCreateLinkedTodoFromRock}
+                                      onCreateLinkedIssue={handleCreateLinkedIssueFromRock}
                                     >
                                         <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                       {/* Expand Arrow - Only show if there are milestones */}
@@ -5087,6 +5478,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               })}
                             </div>
                           </CardContent>
+                          )}
                         </Card>
                         ))
                       )}
@@ -5099,6 +5491,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         );
 
       case 'headlines':
+        const orgId = user?.organizationId || user?.organization_id;
         return (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
@@ -5161,13 +5554,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {headlines.customer.length > 0 ? (
                       <div className="space-y-2">
                         {headlines.customer.map(headline => (
-                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                               style={{ borderLeftColor: themeColors.primary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
-                            <p className="text-xs text-slate-600 mt-2">
-                              {headline.created_by_name || 'Unknown'} • {formatDateSafe(headline.created_at, 'MMM d')}
-                            </p>
-                          </div>
+                          <HeadlineItem
+                            key={headline.id}
+                            headline={headline}
+                            teamId={teamId}
+                            orgId={orgId}
+                            onIssueCreated={fetchIssuesData}
+                            themeColors={themeColors}
+                            type="Customer"
+                            showEditDelete={false}
+                            user={user}
+                          />
                         ))}
                       </div>
                     ) : (
@@ -5186,13 +5583,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {headlines.employee.length > 0 ? (
                       <div className="space-y-2">
                         {headlines.employee.map(headline => (
-                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                               style={{ borderLeftColor: themeColors.secondary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
-                            <p className="text-xs text-slate-600 mt-2">
-                              {headline.created_by_name || 'Unknown'} • {formatDateSafe(headline.created_at, 'MMM d')}
-                            </p>
-                          </div>
+                          <HeadlineItem
+                            key={headline.id}
+                            headline={headline}
+                            teamId={teamId}
+                            orgId={orgId}
+                            onIssueCreated={fetchIssuesData}
+                            themeColors={themeColors}
+                            type="Employee"
+                            showEditDelete={false}
+                            user={user}
+                          />
                         ))}
                       </div>
                     ) : (
@@ -5372,7 +5773,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {assignees.map(assignee => (
                       <Card key={assignee.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                         <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
+                          <div 
+                            className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                            onClick={() => toggleTodoAssignees(assignee.id)}
+                          >
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10 border-2 border-slate-100">
                                 <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
@@ -5384,9 +5788,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 <p className="text-sm text-slate-500">{assignee.todos.length} To-Do{assignee.todos.length !== 1 ? 's' : ''}</p>
                               </div>
                             </div>
-                            <ChevronDown className="h-5 w-5 text-slate-400" />
+                            <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                              expandedSections.todoAssignees[assignee.id] ? 'rotate-180' : ''
+                            }`} />
                           </div>
                         </CardHeader>
+                        {expandedSections.todoAssignees[assignee.id] && (
                         <CardContent className="pt-0">
                           <div className="space-y-1">
                             {/* Header Row */}
@@ -5413,6 +5820,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   onChangeDueDate={handleChangeTodoDueDate}
                                   onChangePriority={handleChangeTodoPriority}
                                   onDuplicate={handleDuplicateTodo}
+                                  onCreateLinkedIssue={handleCreateLinkedIssue}
                                   hidePriorityOptions={true}
                                   hideDeleteOption={true}
                                 >
@@ -5424,10 +5832,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <div 
                                           className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                                           style={{
-                                            backgroundColor: isComplete ? '#10B981' : 
+                                            backgroundColor: isComplete ? themeColors.primary + '20' : 
                                                            todo.status === 'in-progress' ? themeColors.primary : 
                                                            'transparent',
-                                            border: isComplete ? 'none' : '2px solid #E2E8F0' // Light border for incomplete
+                                            border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
                                           }}
                                           onClick={async () => {
                                             try {
@@ -5440,7 +5848,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           }}
                                         >
                                           {isComplete ? (
-                                            <Check className="h-4 w-4 text-white" />
+                                            <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
                                           ) : (
                                             <div className="w-4 h-4" /> /* Empty space - just the circle border */
                                           )}
@@ -5501,6 +5909,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             })}
                           </div>
                         </CardContent>
+                        )}
                       </Card>
                     ))}
                   </div>
@@ -5659,6 +6068,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 onVote={handleVoteOnIssue}
                                 onMoveToLongTerm={issueTimeline === 'short_term' ? handleMoveIssueToLongTerm : undefined}
                                 onMoveToShortTerm={issueTimeline === 'long_term' ? handleMoveIssueToShortTerm : undefined}
+                                onMoveToAnotherTeam={handleMoveIssueToAnotherTeam}
                                 onArchive={handleArchiveIssue}
                                 currentUserId={user?.id}
                               >
@@ -5687,8 +6097,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div 
                                         className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                                         style={{
-                                          backgroundColor: isSolved ? '#10B981' : 'transparent',
-                                          border: isSolved ? 'none' : '2px solid #E2E8F0'
+                                          backgroundColor: isSolved ? themeColors.primary + '20' : 'transparent',
+                                          border: `2px solid ${isSolved ? themeColors.primary : '#E2E8F0'}`
                                         }}
                                         onClick={async () => {
                                           try {
@@ -5700,7 +6110,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         }}
                                       >
                                         {isSolved ? (
-                                          <Check className="h-4 w-4 text-white" />
+                                          <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
                                         ) : null}
                                       </div>
                                     </div>
@@ -5918,12 +6328,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div className="flex items-center gap-3 mt-1">
                                       {todo.due_date && (
                                         <span className={`text-xs font-medium ${
-                                          new Date(todo.due_date) < new Date() ? 'text-red-600' :
-                                          new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
-                                          'text-slate-600'
+                                          isOverdue(todo.due_date) ? 'text-red-600' : 'text-blue-600'
                                         }`}>
                                           Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
-                                          {new Date(todo.due_date) < new Date() && ' (Overdue)'}
                                         </span>
                                       )}
                                     </div>
@@ -5965,12 +6372,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 )}
                                 {todo.due_date && (
                                   <span className={`text-xs font-medium ${
-                                    new Date(todo.due_date) < new Date() ? 'text-red-600' :
-                                    new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
-                                    'text-slate-600'
+                                    isOverdue(todo.due_date) ? 'text-red-600' : 'text-blue-600'
                                   }`}>
                                     Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
-                                    {new Date(todo.due_date) < new Date() && ' (Overdue)'}
                                   </span>
                                 )}
                               </div>
@@ -5986,37 +6390,97 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                   <h4 className="font-medium mb-2 text-slate-900">Rate this meeting</h4>
                   <p className="text-sm text-slate-600 mb-3">How productive was this meeting?</p>
-                  <div className="flex gap-2 justify-center mb-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
+                  {/* Large Value Display */}
+                  <div className="text-center mb-4">
+                    <div className="text-3xl font-bold text-slate-800 mb-1">
+                      {meetingRating ? meetingRating.toFixed(1) : "5.0"}
+                    </div>
+                    <div className="text-sm text-slate-600">out of 10</div>
+                  </div>
+
+                  {/* Decimal Slider */}
+                  <div className="mb-4 px-4">
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="0.1"
+                        value={meetingRating || 5.0}
+                        onChange={(e) => {
+                          const rating = parseFloat(e.target.value);
+                          console.log('📊 Rating slider changed:', rating);
+                          setMeetingRating(rating);
+                        }}
+                        className="w-full h-3 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, 
+                            #ef4444 0%, 
+                            #f59e0b 35%, 
+                            #84cc16 65%, 
+                            #22c55e 100%)`,
+                          WebkitAppearance: 'none',
+                          outline: 'none'
+                        }}
+                        disabled={ratingSubmitted && meetingCode}
+                      />
+                      {/* Custom thumb styling via CSS */}
+                      <style jsx>{`
+                        input[type="range"]::-webkit-slider-thumb {
+                          appearance: none;
+                          height: 24px;
+                          width: 24px;
+                          border-radius: 50%;
+                          background: white;
+                          border: 3px solid ${themeColors.primary};
+                          cursor: pointer;
+                          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                        }
+                        input[type="range"]::-moz-range-thumb {
+                          height: 24px;
+                          width: 24px;
+                          border-radius: 50%;
+                          background: white;
+                          border: 3px solid ${themeColors.primary};
+                          cursor: pointer;
+                          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                        }
+                      `}</style>
+                    </div>
+
+                    {/* Scale Labels */}
+                    <div className="flex justify-between text-xs text-slate-500 mt-2 px-1">
+                      <span>Poor</span>
+                      <span>Average</span>
+                      <span>Good</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  {meetingRating !== null && !ratingSubmitted && (
+                    <div className="text-center mb-4">
                       <button
-                        key={rating}
                         onClick={() => {
-                          console.log('📊 Rating button clicked:', {
-                            rating,
+                          console.log('📊 Rating submitted:', {
+                            rating: meetingRating,
                             userId: user?.id,
                             userName: `${user?.firstName} ${user?.lastName}`,
-                            meetingCode,
-                            hasBroadcastFunction: !!broadcastRating,
-                            isLeader,
-                            participantRatings
+                            meetingCode
                           });
                           
-                          setMeetingRating(rating);
+                          setRatingSubmitted(true);
+                          
                           // Broadcast rating if in collaborative meeting
                           if (meetingCode && broadcastRating) {
                             const ratingData = {
                               userId: user?.id,
                               userName: `${user?.firstName} ${user?.lastName}`,
-                              rating: rating
+                              rating: meetingRating
                             };
                             console.log('🎯 Submitting rating via socket:', {
                               meetingCode,
-                              ratingData,
-                              userInfo: {
-                                id: user?.id,
-                                firstName: user?.firstName,
-                                lastName: user?.lastName
-                              }
+                              ratingData
                             });
                             broadcastRating(ratingData);
                             
@@ -6027,27 +6491,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                               }, 120000); // 2 minutes
                               setRatingTimeoutTimer(timer);
                             }
-                          } else {
-                            console.warn('⚠️ Cannot broadcast rating:', {
-                              hasMeetingCode: !!meetingCode,
-                              hasBroadcastFunction: !!broadcastRating
-                            });
                           }
                         }}
-                        className={`px-3 py-2 rounded-lg font-medium transition-all ${
-                          meetingRating === rating
-                            ? 'text-white shadow-md'
-                            : 'bg-white text-slate-600 hover:bg-slate-100'
-                        }`}
-                        style={meetingRating === rating ? {
+                        className="px-6 py-2 rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all"
+                        style={{
                           background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                        } : {}}
-                        disabled={meetingRating !== null}
+                        }}
                       >
-                        {rating}
+                        Submit Rating
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Submission Status */}
+                  {ratingSubmitted && (
+                    <div className="text-center text-sm text-green-600 flex items-center justify-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Rating submitted</span>
+                    </div>
+                  )}
                   
                   {/* Participant Rating Status - Show to everyone in collaborative meeting */}
                   {meetingCode && participants.length > 0 && (
@@ -6058,7 +6520,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </h5>
                         {isLeader && ratingAverage > 0 && (
                           <span className="text-sm font-medium text-blue-600">
-                            Average: {ratingAverage}
+                            Average: {ratingAverage.toFixed(1)}
                           </span>
                         )}
                       </div>
@@ -6098,7 +6560,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 </span>
                               </div>
                               {isLeader && hasRated && (
-                                <span className="text-sm font-medium text-slate-700">{rating}/10</span>
+                                <span className="text-sm font-medium text-slate-700">{rating.toFixed(1)}/10</span>
                               )}
                             </div>
                           );
@@ -6237,7 +6699,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             Recording is still active
                           </div>
                           <p className="text-yellow-700 text-sm">
-                            Please click "Stop Recording" first to generate the AI summary and include it in your meeting recap.
+                            Please click "Stop Note Taking" first to generate the AI summary and include it in your meeting recap.
                           </p>
                         </div>
                       )}
@@ -6271,7 +6733,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             <svg className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
-                            Stop Recording First
+                            Stop Note Taking First
                           </>
                         ) : (
                           <>
@@ -6383,17 +6845,87 @@ const WeeklyAccountabilityMeetingPage = () => {
                             };
                           }) : [];
                         
+                        // Collect all meeting data for AI summary integration
+                        const meetingData = {
+                          // Todos data - with timestamp fields for backend filtering
+                          // Include ALL todos since there's no selection UI - backend will filter by date
+                          todos: {
+                            completed: todos.filter(todo => 
+                              todo.status === 'complete' || todo.status === 'completed' || todo.completed
+                            ).map(todo => ({
+                              title: todo.title || todo.todo,
+                              id: todo.id,
+                              assigned_to_name: todo.assigned_to_name || 
+                                                todo.assignee || 
+                                                (todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null) ||
+                                                (todo.assignees && todo.assignees.length > 0 ? todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ') : null),
+                              created_at: todo.created_at,
+                              completed_at: todo.completed_at || todo.updated_at
+                            })),
+                            added: todos.filter(todo => 
+                              todo.status !== 'complete' && todo.status !== 'completed' && !todo.completed
+                            ).map(todo => ({
+                              title: todo.title || todo.todo,
+                              id: todo.id,
+                              assigned_to_name: todo.assigned_to_name || 
+                                                todo.assignee || 
+                                                (todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null) ||
+                                                (todo.assignees && todo.assignees.length > 0 ? todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ') : null),
+                              created_at: todo.created_at,
+                              due_date: todo.due_date
+                            }))
+                          },
+                          
+                          // Issues data - with timestamp fields for backend filtering  
+                          // Include ALL issues since there's no selection UI - backend will filter by date
+                          issues: [...(shortTermIssues || []), ...(longTermIssues || [])].map(issue => ({
+                            title: issue.title || issue.issue,
+                            id: issue.id,
+                            is_solved: issue.status === 'closed' || issue.status === 'resolved' || issue.status === 'solved' || issue.status === 'completed',
+                            owner_name: issue.owner_name || issue.owner,
+                            timeline: issue.timeline,
+                            created_at: issue.created_at,
+                            resolved_at: issue.resolved_at || issue.updated_at
+                          })),
+                          
+                          // Headlines data
+                          headlines: {
+                            customer: headlines.customer || [],
+                            employee: headlines.employee || []
+                          },
+                          
+                          // Cascading messages (if any were created during meeting)
+                          cascadingMessages: cascadedMessages || [],
+                          
+                          // Meeting rating
+                          rating: meetingRating,
+                          
+                          // Meeting duration
+                          duration: durationMinutes,
+                          
+                          // Participant ratings
+                          participantRatings: allParticipantRatings
+                        };
+
+                        // DEBUG: Log todos being sent to backend
+                        console.log('🔍 [Debug] Todos being sent:', {
+                          completed: meetingData.todos?.completed,
+                          added: meetingData.todos?.added
+                        });
+                        console.log('🔍 [Debug] Issues being sent:', meetingData.issues);
+
                         // ALWAYS conclude the meeting session in database
                         let emailResult = null;
                         try {
                           console.log('🔍 [Frontend] Calling meetingsService.concludeMeeting...');
                           console.log('🔍 [Frontend] sessionId:', sessionId, 'sendSummaryEmail:', sendSummaryEmail);
+                          console.log('🔍 [Frontend] meetingData:', meetingData);
                           
                           if (!sessionId) {
                             throw new Error('No active session ID found - cannot conclude meeting');
                           }
                           
-                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail);
+                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail, meetingData);
                           console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
                         } catch (emailError) {
                           console.error('❌ [Frontend] Failed to conclude meeting:', emailError);
@@ -6430,6 +6962,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setSelectedTeams([]);
                         setCascadeToAll(false);
                         setMeetingRating(null);
+                        setRatingSubmitted(false);
                         
                         // Broadcast meeting end to all participants BEFORE leaving
                         if (meetingCode && broadcastIssueListUpdate) {
@@ -6937,18 +7470,29 @@ const WeeklyAccountabilityMeetingPage = () => {
           />
         )}
         
-        {showMoveDialog && movingIssue && (
+        {moveIssueDialogOpen && issueToMove && (
           <MoveIssueDialog
-            open={showMoveDialog}
+            isOpen={moveIssueDialogOpen}
             onClose={() => {
-              setShowMoveDialog(false);
-              setMovingIssue(null);
+              setMoveIssueDialogOpen(false);
+              setIssueToMove(null);
             }}
-            issue={movingIssue}
-            currentTeamId={teamId}
-            onMove={handleMoveToTeam}
+            issue={issueToMove}
+            onSuccess={handleIssueMovedSuccess}
           />
         )}
+
+        {/* {movePriorityDialogOpen && priorityToMove && (
+          <MovePriorityDialog
+            isOpen={movePriorityDialogOpen}
+            onClose={() => {
+              setMovePriorityDialogOpen(false);
+              setPriorityToMove(null);
+            }}
+            priority={priorityToMove}
+            onSuccess={handlePriorityMovedSuccess}
+          />
+        )} */}
         
         {/* Metric Trend Chart Modal */}
         <MetricTrendChart

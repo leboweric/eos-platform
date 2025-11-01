@@ -777,13 +777,21 @@ export const createMilestone = async (req, res) => {
 // Update milestone
 export const updateMilestone = async (req, res) => {
   try {
-    const { orgId, teamId, priorityId, milestoneId } = req.params;
+    const { organizationId, teamId, priorityId, milestoneId } = req.params;
     const { title, dueDate, completed, ownerId, status } = req.body;
     
-    console.log('===========================================');
+    // Validate due date only if it's being updated
+    if (dueDate !== undefined && (!dueDate || dueDate.trim() === '')) {
+      return res.status(400).json({ 
+        error: 'Due date is required',
+        field: 'dueDate'
+      });
+    }
+    
+    // Debug separator removed for production
     console.log('[MILESTONE UPDATE] START');
-    console.log('===========================================');
-    console.log('[MILESTONE UPDATE] Params:', JSON.stringify({ orgId, teamId, priorityId, milestoneId }, null, 2));
+    // Debug separator removed for production
+    console.log('[MILESTONE UPDATE] Params:', JSON.stringify({ organizationId, teamId, priorityId, milestoneId }, null, 2));
     console.log('[MILESTONE UPDATE] Body:', JSON.stringify(req.body, null, 2));
     console.log('[MILESTONE UPDATE] ownerId type:', typeof ownerId);
     console.log('[MILESTONE UPDATE] ownerId value:', ownerId);
@@ -882,9 +890,9 @@ export const updateMilestone = async (req, res) => {
     
     console.log('[MILESTONE UPDATE] Database returned:', JSON.stringify(result.rows[0], null, 2));
     console.log('[MILESTONE UPDATE] owner_id in DB after update:', result.rows[0].owner_id);
-    console.log('===========================================');
+    // Debug separator removed for production
     console.log('[MILESTONE UPDATE] END - SUCCESS');
-    console.log('===========================================');
+    // Debug separator removed for production
     
     // Update priority progress based on milestones
     await updatePriorityProgress(result.rows[0].priority_id);
@@ -895,7 +903,7 @@ export const updateMilestone = async (req, res) => {
     });
   } catch (error) {
     console.error('Update milestone error:', error);
-    console.error('Params:', { orgId, teamId, priorityId, milestoneId });
+    console.error('Params:', { organizationId, teamId, priorityId, milestoneId });
     res.status(500).json({ 
       error: 'Failed to update milestone',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -906,7 +914,7 @@ export const updateMilestone = async (req, res) => {
 // Delete milestone
 export const deleteMilestone = async (req, res) => {
   try {
-    const { orgId, teamId, priorityId, milestoneId } = req.params;
+    const { organizationId, teamId, priorityId, milestoneId } = req.params;
     
     // First, check if milestone exists
     const existingMilestone = await query(
@@ -1078,9 +1086,9 @@ export const editPriorityUpdate = async (req, res) => {
 
 // Helper function to get team members based on team context
 async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
-  console.log('===========================================');
+  // Debug separator removed for production
   console.log('[TEAM MEMBERS] getTeamMembers CALLED');
-  console.log('===========================================');
+  // Debug separator removed for production
   console.log('[TEAM MEMBERS] orgId:', orgId);
   console.log('[TEAM MEMBERS] teamId:', teamId);
   console.log('[TEAM MEMBERS] isLeadershipTeam:', isLeadershipTeam);
@@ -1137,9 +1145,9 @@ async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
       name: m.name
     })));
   }
-  console.log('===========================================');
+  // Debug separator removed for production
   console.log('[TEAM MEMBERS] getTeamMembers COMPLETE');  
-  console.log('===========================================');
+  // Debug separator removed for production
   
   return result.rows;
 }
@@ -1370,7 +1378,9 @@ export const getArchivedPriorities = async (req, res) => {
 
 // Get current priorities (simplified - no quarter logic)
 export const getCurrentPriorities = async (req, res) => {
-  const { orgId, teamId } = req.params;
+  const { orgId, teamId: rawTeamId } = req.params;
+  // Convert string "null" to actual null for database queries
+  const teamId = rawTeamId === 'null' || rawTeamId === 'undefined' ? null : rawTeamId;
   
   try {
     console.log('Fetching current priorities for:', { orgId, teamId });

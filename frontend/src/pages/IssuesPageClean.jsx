@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
-import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
@@ -39,6 +38,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import ConfirmationDialog, { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { toast } from 'sonner';
 
 // Error Boundary Component
 class IssuesErrorBoundary extends Component {
@@ -103,6 +104,9 @@ const IssuesPageClean = () => {
   const [archivedIssues, setArchivedIssues] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   
+  // Confirmation dialog for archive
+  const archiveConfirmation = useConfirmationDialog();
+  
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
@@ -165,12 +169,15 @@ const IssuesPageClean = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch all types of issues
-      console.log('Issues Page - Fetching issues for department:', selectedDepartment?.id || 'all');
+      // Get effective team ID (like Level 10 Meeting does)
+      const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+      console.log('Issues Page - Fetching issues for effective team:', effectiveTeamId, 'selected department:', selectedDepartment?.id);
+      
+      // Fetch all types of issues for the specific team
       const [shortTermResponse, longTermResponse, archivedResponse] = await Promise.all([
-        issuesService.getIssues('short_term', false, selectedDepartment?.id),
-        issuesService.getIssues('long_term', false, selectedDepartment?.id),
-        issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
+        issuesService.getIssues('short_term', false, effectiveTeamId),
+        issuesService.getIssues('long_term', false, effectiveTeamId),
+        issuesService.getIssues(null, true, effectiveTeamId) // Get all archived issues
       ]);
       
       console.log('📊 Fetch Results:');
@@ -380,15 +387,41 @@ const IssuesPageClean = () => {
         return;
       }
       
-      if (!window.confirm(`Archive ${closedIssues.length} closed issue${closedIssues.length > 1 ? 's' : ''}?`)) {
-        return;
-      }
-      
-      // Archive all closed issues
-      await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
-      
-      setSuccess(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
-      await fetchIssues();
+      archiveConfirmation.showConfirmation({
+        type: 'archive',
+        title: 'Archive Solved Issues',
+        message: `Archive ${closedIssues.length} closed issue${closedIssues.length > 1 ? 's' : ''}?`,
+        actionLabel: 'Archive',
+        themeColor: themeColors.primary,
+        onConfirm: async () => {
+          console.log('🗃️ Archive onConfirm started');
+          try {
+            // Archive all closed issues
+            await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
+            console.log('✅ Archive operations completed successfully');
+            
+            toast.success(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
+            
+            // Refresh the issues list
+            console.log('🔄 Starting fetchIssues...');
+            await fetchIssues();
+            console.log('✅ fetchIssues completed successfully');
+            console.log('🗃️ Archive onConfirm finished - modal should close now');
+            
+            // ✅ CRITICAL FIX: Explicitly close the modal (backup safety measure)
+            archiveConfirmation.hideConfirmation();
+            
+          } catch (error) {
+            console.error('❌ Error in archive onConfirm:', error);
+            
+            // ✅ CRITICAL FIX: Close modal even on error to prevent stuck state
+            archiveConfirmation.hideConfirmation();
+            
+            // Show error to user
+            toast.error('Failed to archive issues. Please try again.');
+          }
+        }
+      });
     } catch (error) {
       console.error('Failed to archive issues:', error);
       setError('Failed to archive issues');
@@ -691,34 +724,28 @@ const IssuesPageClean = () => {
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6">
-                  {activeTab === 'archived' ? (
-                    <ArchivedIssuesList
-                      issues={currentIssues}
-                      onUnarchive={handleUnarchive}
-                      getStatusColor={getStatusColor}
-                      getStatusIcon={getStatusIcon}
-                    />
-                  ) : (
-                    <IssuesListClean
-                      issues={currentIssues}
-                      onEdit={handleEditIssue}
-                      onSave={handleSaveIssue}
-                      teamMembers={teamMembers}
-                      onStatusChange={handleStatusChange}
-                      onTimelineChange={handleTimelineChange}
-                      onArchive={handleArchive}
-                      onVote={handleVote}
-                      onMoveToTeam={handleMoveToTeam}
-                      onCreateTodo={handleCreateTodoFromIssue}
-                      onCreateHeadline={handleCreateHeadlineFromIssue}
-                      onSendCascadingMessage={handleSendCascadingMessage}
-                      onMarkSolved={handleMarkIssueSolved}
-                      getStatusColor={getStatusColor}
-                      getStatusIcon={getStatusIcon}
-                      showVoting={false} // Will be enabled during Weekly Accountability Meetings
-                      compactGrid={false} // Allow toggle between grid and list views
-                    />
-                  )}
+                  <IssuesListClean
+                    issues={currentIssues}
+                    onEdit={handleEditIssue}
+                    onSave={handleSaveIssue}
+                    teamMembers={teamMembers}
+                    onStatusChange={handleStatusChange}
+                    onTimelineChange={handleTimelineChange}
+                    onArchive={handleArchive}
+                    onUnarchive={handleUnarchive}
+                    onVote={handleVote}
+                    onMoveToTeam={handleMoveToTeam}
+                    onCreateTodo={handleCreateTodoFromIssue}
+                    onCreateHeadline={handleCreateHeadlineFromIssue}
+                    onSendCascadingMessage={handleSendCascadingMessage}
+                    onMarkSolved={handleMarkIssueSolved}
+                    getStatusColor={getStatusColor}
+                    getStatusIcon={getStatusIcon}
+                    showVoting={false}
+                    compactGrid={false}
+                    tableView={true}
+                    showingArchived={activeTab === 'archived'}
+                  />
                 </div>
               )}
             </TabsContent>
@@ -883,6 +910,9 @@ const IssuesPageClean = () => {
           timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
         />
+        
+        {/* Archive confirmation dialog */}
+        <archiveConfirmation.ConfirmationDialog />
       </div>
     </div>
   );

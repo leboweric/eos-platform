@@ -112,7 +112,7 @@ const getSeat = async (req, res) => {
 
 // Create new seat
 const createSeat = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     
@@ -213,7 +213,7 @@ const updateSeat = async (req, res) => {
 
 // Delete seat
 const deleteSeat = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     
@@ -256,7 +256,7 @@ const deleteSeat = async (req, res) => {
 
 // Update seat responsibilities
 const updateResponsibilities = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     
@@ -309,7 +309,7 @@ const updateResponsibilities = async (req, res) => {
 
 // Assign user to seat
 const assignUser = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     

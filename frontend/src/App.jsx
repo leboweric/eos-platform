@@ -10,6 +10,7 @@ import { DarkModeProvider } from './contexts/DarkModeContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 import { useApolloTracking } from './hooks/useApolloTracking';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'react-hot-toast';
 
 // Critical components (loaded immediately)
 import Layout from './components/Layout';
@@ -52,8 +53,10 @@ const OrganizationSettings = lazy(() => import('./pages/OrganizationSettings'));
 const UserSettings = lazy(() => import('./pages/UserSettings'));
 const OrganizationalChartPage = lazy(() => import('./pages/OrganizationalChartPage'));
 const WeeklyAccountabilityMeetingPage = lazy(() => import('./pages/WeeklyAccountabilityMeetingPage'));
+const WeeklyAccountabilityExpressMeetingPage = lazy(() => import('./pages/WeeklyAccountabilityExpressMeetingPage'));
 const WeeklyAccountabilityMeetingPageOriginal = lazy(() => import('./pages/WeeklyAccountabilityMeetingPageOriginal'));
 const QuarterlyPlanningMeetingPage = lazy(() => import('./pages/QuarterlyPlanningMeetingPage'));
+const AnnualPlanningMeetingPage = lazy(() => import('./pages/AnnualPlanningMeetingPage'));
 const DocumentRepositoryPage = lazy(() => import('./pages/DocumentRepositoryPage'));
 const HeadlinesPage = lazy(() => import('./pages/HeadlinesPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -70,6 +73,10 @@ const IssuesImportPage = lazy(() => import('./pages/IssuesImportPage'));
 const ImportTodosPage = lazy(() => import('./pages/ImportTodosPage'));
 const MeetingHistoryPage = lazy(() => import('./pages/MeetingHistoryPage'));
 const ActiveMeetingsStatus = lazy(() => import('./pages/ActiveMeetingsStatus'));
+const SystemHealthDashboard = lazy(() => import('./pages/admin/SystemHealthDashboard'));
+const FailedOperationsPage = lazy(() => import('./pages/admin/FailedOperationsPage'));
+const UserActivityPage = lazy(() => import('./pages/admin/UserActivityPage'));
+const DataIsolationDashboard = lazy(() => import('./pages/admin/DataIsolationDashboard'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -223,8 +230,10 @@ function App() {
           <Route path="/scorecard-debug" element={user ? <Layout><ScorecardDebug /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/meetings/weekly-express/:teamId" element={user ? <Layout><WeeklyAccountabilityExpressMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability-original/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/meetings/annual-planning/:teamId" element={user ? <Layout><AnnualPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meeting-history" element={user ? <Layout><MeetingHistoryPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/headlines" element={user ? <Layout><HeadlinesPage /></Layout> : <Navigate to="/login" />} />
@@ -248,6 +257,10 @@ function App() {
           <Route path="/admin/bulk-import" element={user && user.role === 'admin' ? <Layout><BulkUserImport /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/tools" element={user && user.role === 'admin' ? <Layout><AdminToolsPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/active-meetings" element={user && user.role === 'admin' ? <Layout><ActiveMeetingsStatus /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/system-health" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><SystemHealthDashboard /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/failed-operations" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><FailedOperationsPage /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/user-activity" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><UserActivityPage /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/data-isolation" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><DataIsolationDashboard /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-scorecard" element={user && user.role === 'admin' ? <Layout><ScorecardImportPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-todos" element={user && user.role === 'admin' ? <Layout><ImportTodosPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
@@ -273,6 +286,7 @@ function App() {
           </TerminologyProvider>
         </DarkModeProvider>
       </ErrorBoundary>
+      <Toaster />
     </Router>
   );
 }

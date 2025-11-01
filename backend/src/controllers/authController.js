@@ -376,6 +376,23 @@ export const refreshToken = async (req, res) => {
       });
     }
 
+    const user = result.rows[0];
+    
+    // Set req.user for activity tracking middleware
+    req.user = {
+      id: user.id,
+      organization_id: user.organization_id
+    };
+    
+    // Token refresh activity tracking debug - removed for production performance
+    
+    // Track token refresh for activity monitoring  
+    await query(
+      `INSERT INTO user_login_tracking (user_id, organization_id, ip_address, user_agent, auth_method)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, user.organization_id, req.ip, req.get('user-agent'), 'refresh_token']
+    ).catch(err => console.error('Failed to track token refresh:', err));
+
     // Generate new tokens
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
 

@@ -311,6 +311,14 @@ export const isUserOnLeadershipTeam = async (userId, organizationId) => {
 export const getTeamMembers = async (req, res) => {
   const { orgId, teamId } = req.params;
 
+  // Validate teamId parameter
+  if (!teamId || teamId === 'null' || teamId === 'undefined') {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid team ID'
+    });
+  }
+
   try {
     // Verify the team belongs to the organization
     const teamQuery = `
@@ -364,6 +372,14 @@ export const getTeamMembers = async (req, res) => {
 export const addTeamMember = async (req, res) => {
   const { orgId, teamId } = req.params;
   const { user_id, role = 'member' } = req.body;
+
+  // Validate teamId parameter
+  if (!teamId || teamId === 'null' || teamId === 'undefined') {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid team ID'
+    });
+  }
 
   try {
     // Verify the team belongs to the organization
@@ -457,6 +473,14 @@ export const addTeamMember = async (req, res) => {
 // @access  Private
 export const removeTeamMember = async (req, res) => {
   const { orgId, teamId, userId } = req.params;
+
+  // Validate teamId parameter
+  if (!teamId || teamId === 'null' || teamId === 'undefined') {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid team ID'
+    });
+  }
 
   try {
     // Verify the team belongs to the organization

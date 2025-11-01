@@ -7,6 +7,10 @@ import {
   bulkImport 
 } from '../controllers/bulkImportController.js';
 import { getActiveMeetings } from '../controllers/adminController.js';
+import systemHealthController from '../controllers/systemHealthController.js';
+import failedOperationsController from '../controllers/failedOperationsController.js';
+import userActivityController from '../controllers/userActivityController.js';
+import dataIsolationController from '../controllers/dataIsolationController.js';
 
 const router = express.Router();
 
@@ -34,6 +38,37 @@ const upload = multer({
 // All admin routes require authentication and admin role
 router.use(authenticate);
 router.use(authorize('admin'));
+
+// System health monitoring - also allow 'owner' role
+router.get('/system-health', systemHealthController.getSystemHealth);
+
+// Failed operations monitoring
+router.get('/failed-operations', failedOperationsController.getFailedOperations);
+router.get('/failed-operations/statistics', failedOperationsController.getFailureStatistics);
+router.get('/failed-operations/critical', failedOperationsController.getCriticalFailures);
+router.get('/failed-operations/recent', failedOperationsController.getRecentFailures);
+router.post('/failed-operations/:id/resolve', failedOperationsController.resolveFailure);
+router.post('/failed-operations/bulk-resolve', failedOperationsController.bulkResolveFailures);
+
+// User Activity monitoring
+router.get('/activity/stats', userActivityController.getActivityStats);
+router.get('/activity/top-users', userActivityController.getTopActiveUsers);
+router.get('/activity/recent', userActivityController.getRecentActivity);
+router.get('/activity/user/:userId', userActivityController.getUserActivity);
+router.post('/activity/track', userActivityController.trackActivity);
+
+// Data Isolation monitoring
+router.get('/isolation/health', dataIsolationController.getIsolationHealth);
+router.post('/isolation/check', dataIsolationController.runIsolationChecks);
+router.get('/isolation/check/orphaned', dataIsolationController.checkOrphanedRecords);
+router.get('/isolation/check/missing-org', dataIsolationController.checkMissingOrgIds);
+router.get('/isolation/distribution', dataIsolationController.getDataDistribution);
+router.get('/isolation/violations', dataIsolationController.getRecentViolations);
+router.get('/isolation/violations/by-table', dataIsolationController.getViolationsByTable);
+router.get('/isolation/violations/by-org', dataIsolationController.getViolationsByOrganization);
+router.get('/isolation/history', dataIsolationController.getCheckHistory);
+router.post('/isolation/violations/:id/resolve', dataIsolationController.resolveViolation);
+router.get('/isolation/tables', dataIsolationController.getMultiTenantTables);
 
 // Active meetings dashboard
 router.get('/active-meetings', getActiveMeetings);

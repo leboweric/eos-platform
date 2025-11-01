@@ -38,7 +38,15 @@ const useMeeting = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     // Remove /api/v1 from the URL for socket connection
     const socketUrl = apiUrl.replace('/api/v1', '');
-    console.log('🔌 Connecting to socket server:', socketUrl);
+    
+    // Before connecting to WebSocket
+    console.log('🔌 Attempting WebSocket connection:', {
+      socketUrl,
+      path: '/meeting-socket',
+      meetingType: 'weekly-express',
+      transports: ['websocket', 'polling']
+    });
+    
     const newSocket = io(socketUrl, {
       path: '/meeting-socket',
       reconnection: true,
@@ -48,17 +56,23 @@ const useMeeting = () => {
     });
 
     newSocket.on('connect', () => {
+      console.log('✅ WebSocket connected successfully');
       console.log('📡 Connected to meeting server');
       console.log('📡 Socket ID:', newSocket.id);
       setIsConnected(true);
     });
 
     newSocket.on('disconnect', (reason) => {
+      console.error('📡 WebSocket disconnected:', reason);
+      console.error('📡 Room:', meetingCode || 'No room joined');
       console.log('📡 Disconnected from meeting server:', reason);
       setIsConnected(false);
     });
 
     newSocket.on('connect_error', (error) => {
+      console.error('❌ WebSocket connection error:', error);
+      console.error('❌ Room:', meetingCode || 'No room joined');
+      console.error('❌ Error details:', error.message, error.description);
       console.error('📡 Socket connection error:', error.message);
       console.error('📡 Error type:', error.type);
     });
@@ -70,8 +84,13 @@ const useMeeting = () => {
       setCurrentLeader(data.meeting.leader);
       setParticipants(data.participants);
       
-      // Navigate to current location if following
+      // Navigate to current location if following (but not if we're on annual planning)
       if (isFollowing && data.meeting.currentRoute && data.meeting.currentRoute !== location.pathname) {
+        // Prevent automatic redirect away from annual planning meetings
+        if (location.pathname.includes('/annual-planning/')) {
+          console.log('🚫 Preventing auto-navigation away from annual planning meeting');
+          return;
+        }
         navigationLock.current = true;
         navigate(data.meeting.currentRoute);
       }
@@ -116,6 +135,11 @@ const useMeeting = () => {
           // Defensive check: Don't navigate to routes with null parameters
           if (data.route.includes('/null') || data.route.includes('/undefined')) {
             console.warn('🚫 Refusing to navigate to route with invalid parameter:', data.route);
+            return;
+          }
+          // Prevent automatic redirect away from annual planning meetings
+          if (window.location.pathname.includes('/annual-planning/')) {
+            console.log('🚫 Preventing follower auto-navigation away from annual planning meeting');
             return;
           }
           console.log('📍 Navigating to new route:', data.route);
@@ -305,6 +329,17 @@ const useMeeting = () => {
       console.error('❌ Cannot join meeting: User not authenticated');
       return;
     }
+
+    // Extract meeting details from room code for logging
+    const [orgId, teamId, meetingType] = code.split('-');
+    
+    // Before connecting to WebSocket
+    console.log('🔌 Attempting WebSocket connection:', {
+      room: code,
+      meetingType: meetingType || 'weekly-express',
+      orgId,
+      teamId
+    });
 
     console.log('🚀 Joining meeting:', code, 'as', asLeader ? 'leader' : 'participant');
     console.log('🚀 User info:', { id: user.id, name: `${user.firstName} ${user.lastName}` });

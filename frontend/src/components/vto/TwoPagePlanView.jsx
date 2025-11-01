@@ -176,6 +176,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       }
       
       // Transform API data to component state
+      console.log('TwoPagePlanView - threeYearPicture revenueStreams:', data.threeYearPicture?.revenueStreams);
+      console.log('TwoPagePlanView - oneYearPlan revenueStreams:', data.oneYearPlan?.revenueStreams);
       setBlueprintData({
         coreValues: data.coreValues || [],
         coreFocus: {
@@ -455,13 +457,23 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.revenue_target || 'Not set'}
+                    {(() => {
+                      // First check if there's a "Total Revenue" stream
+                      const totalRevenueStream = blueprintData.threeYearPicture?.revenueStreams?.find(
+                        stream => stream.name === 'Total Revenue'
+                      );
+                      if (totalRevenueStream?.revenue_target) {
+                        return totalRevenueStream.revenue_target;
+                      }
+                      // Fall back to direct revenue fields
+                      return blueprintData.threeYearPicture?.revenue || blueprintData.threeYearPicture?.revenue_target || 'Not set';
+                    })()}
                   </p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit || 'Not set'}
+                    {blueprintData.threeYearPicture?.profit_target || blueprintData.threeYearPicture?.profit || 'Not set'}
                   </p>
                 </div>
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
@@ -528,13 +540,23 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.revenue_target || 'Not set'}
+                    {(() => {
+                      // First check if there's a "Total Revenue" stream
+                      const totalRevenueStream = blueprintData.oneYearPlan?.revenueStreams?.find(
+                        stream => stream.name === 'Total Revenue'
+                      );
+                      if (totalRevenueStream?.revenue_target) {
+                        return totalRevenueStream.revenue_target;
+                      }
+                      // Fall back to direct revenue fields
+                      return blueprintData.oneYearPlan?.revenue || blueprintData.oneYearPlan?.revenue_target || 'Not set';
+                    })()}
                   </p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit || 'Not set'}
+                    {blueprintData.oneYearPlan?.profit_percentage || blueprintData.oneYearPlan?.profit || 'Not set'}
                   </p>
                 </div>
                 {blueprintData.oneYearPlan?.measurables?.length > 0 && (

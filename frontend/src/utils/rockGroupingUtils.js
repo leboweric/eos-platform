@@ -87,6 +87,7 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
       
       if (!acc[ownerId]) {
         acc[ownerId] = {
+          id: ownerId,  // Add missing id property for state management
           name: ownerName,
           rocks: [],
           companyRockCount: 0,

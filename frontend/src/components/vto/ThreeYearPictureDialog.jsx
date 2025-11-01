@@ -73,7 +73,15 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       }
       
       setFormData({
-        revenue: data.revenue_target || data.revenue || '',
+        revenue: (() => {
+          // First check if there's a "Total Revenue" stream
+          const totalRevenueStream = data.revenueStreams?.find(s => s.name === 'Total Revenue');
+          if (totalRevenueStream?.revenue_target) {
+            return totalRevenueStream.revenue_target;
+          }
+          // Fall back to direct revenue fields
+          return data.revenue_target || data.revenue || '';
+        })(),
         profit: data.profit_target || data.profit || '',
         revenueStreams: data.revenueStreams && data.revenueStreams.length > 0 
           ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
@@ -141,10 +149,23 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setFormData({
-                    ...formData,
-                    revenueStreams: [...formData.revenueStreams, { name: '', revenue_target: '' }]
-                  })}
+                  onClick={() => {
+                    const newStreams = [...formData.revenueStreams];
+                    
+                    // If this is the first stream being added and there's a revenue value,
+                    // convert the single revenue field into a "Total Revenue" stream first
+                    if (newStreams.length === 0 && formData.revenue) {
+                      newStreams.push({ name: 'Total Revenue', revenue_target: formData.revenue });
+                    }
+                    
+                    // Add the new empty stream
+                    newStreams.push({ name: '', revenue_target: '' });
+                    
+                    setFormData({
+                      ...formData,
+                      revenueStreams: newStreams
+                    });
+                  }}
                   className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                 >
                   <Plus className="h-4 w-4 mr-1" />

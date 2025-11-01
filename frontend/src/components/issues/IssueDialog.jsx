@@ -106,11 +106,12 @@ const IssueDialog = ({
       fetchAttachments(issue.id);
       fetchUpdates(issue.id);
     } else {
+      // Default to current user for new issues
       setFormData({
         title: '',
         description: '',
-        ownerId: '',
-        ownerName: '',
+        ownerId: user?.id || '',
+        ownerName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
         status: 'open'
       });
       setExistingAttachments([]);
@@ -124,11 +125,12 @@ const IssueDialog = ({
   // Clear form when dialog opens without an issue
   useEffect(() => {
     if (open && !issue) {
+      // Default to current user for new issues
       setFormData({
         title: '',
         description: '',
-        ownerId: '',
-        ownerName: '',
+        ownerId: user?.id || '',
+        ownerName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
         status: 'open'
       });
       setNewAttachments([]);
@@ -138,7 +140,7 @@ const IssueDialog = ({
       setShowAddUpdate(false);
       setError(null);
     }
-  }, [open, issue]);
+  }, [open, issue, user]);
 
   const fetchAttachments = async (issueId) => {
     try {
@@ -338,7 +340,7 @@ const IssueDialog = ({
             )}
 
             {/* First row: Title takes 2/3, Owner takes 1/3 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
               <div className="space-y-3 md:col-span-2">
                 <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Issue Title <span className="text-red-500">*</span>
@@ -355,7 +357,7 @@ const IssueDialog = ({
                     }, 0);
                   }}
                   placeholder="Brief description of the issue"
-                  className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                  className="ml-1.5 px-3 py-2 bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
 

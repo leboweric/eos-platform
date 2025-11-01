@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
 import MeetingBar from '../components/meeting/MeetingBar';
+import FloatingTimer from '../components/meetings/FloatingTimer';
 import useMeeting from '../hooks/useMeeting';
+import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -45,6 +47,7 @@ import {
   Edit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import meetingSessionsService from '../services/meetingSessionsService';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 // TEMPORARILY DISABLED: import RockSidePanel from '../components/priorities/RockSidePanel';
@@ -75,6 +78,9 @@ function QuarterlyPlanningMeetingPage() {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
+  
+  // Enable background token refresh during meetings to prevent session expiration
+  useTokenRefresh(true, 10); // Refresh every 10 minutes during meetings
   
   // Debug mount/unmount
   useEffect(() => {
@@ -156,12 +162,25 @@ function QuarterlyPlanningMeetingPage() {
   });
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingStartTime, setMeetingStartTime] = useState(null);
+  const [completedSections, setCompletedSections] = useState(new Set()); // Track completed sections
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
+  
+  // Timer state for FloatingTimer
+  const [sectionTimings, setSectionTimings] = useState({});
+  const [currentSectionStartTime, setCurrentSectionStartTime] = useState(null);
+  const [sectionElapsedTime, setSectionElapsedTime] = useState(0);
+  const [sectionCumulativeTimes, setSectionCumulativeTimes] = useState({}); // Track cumulative time per section
+  const [meetingPace, setMeetingPace] = useState('on-track');
+  const [isPaused, setIsPaused] = useState(false);
+  const [totalPausedTime, setTotalPausedTime] = useState(0);
+  const [showFloatingTimer, setShowFloatingTimer] = useState(true);
+  const [sectionConfig, setSectionConfig] = useState(null);
   const [reviewConfirmDialog, setReviewConfirmDialog] = useState(false);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   const [quarterGrade, setQuarterGrade] = useState('');
   const [quarterFeedback, setQuarterFeedback] = useState('');
+  const [sessionId, setSessionId] = useState(null); // Store meeting session ID
   
   // Cascading message states
   const [showCascadeDialog, setShowCascadeDialog] = useState(false);
@@ -319,7 +338,7 @@ function QuarterlyPlanningMeetingPage() {
     }
   };
   
-  const agendaItems = getQuarterlyAgendaItems();
+  const agendaItems = useMemo(() => getQuarterlyAgendaItems(), []);
 
   // Fetch organization theme
   useEffect(() => {
@@ -443,6 +462,34 @@ function QuarterlyPlanningMeetingPage() {
           
           hasJoinedRef.current = true;
           joinMeeting(meetingRoom, !hasParticipants);
+          
+          // Create database session if we're joining as leader, or get existing session if joining as follower
+          if (!hasParticipants) {
+            (async () => {
+              try {
+                console.log('📝 Creating database session for Quarterly Planning meeting');
+                const result = await meetingSessionsService.startSession(orgId, teamId, 'quarterly');
+                setSessionId(result.session.id);
+                console.log('✅ Database session created successfully:', result.session.id);
+              } catch (error) {
+                console.error('❌ Failed to create database session:', error);
+              }
+            })();
+          } else {
+            // Check for existing active session as a follower
+            (async () => {
+              try {
+                console.log('📋 Checking for existing database session for Quarterly Planning meeting');
+                const activeSession = await meetingSessionsService.getActiveSession(orgId, teamId, 'quarterly');
+                if (activeSession) {
+                  setSessionId(activeSession.id);
+                  console.log('✅ Found existing database session:', activeSession.id);
+                }
+              } catch (error) {
+                console.error('❌ Failed to get existing database session:', error);
+              }
+            })();
+          }
         }
       }, 500);
     } else if (activeMeetings && Object.keys(activeMeetings).length > 0) {
@@ -457,6 +504,34 @@ function QuarterlyPlanningMeetingPage() {
       
       hasJoinedRef.current = true;
       joinMeeting(meetingRoom, !hasParticipants);
+      
+      // Create database session if we're joining as leader, or get existing session if joining as follower
+      if (!hasParticipants) {
+        (async () => {
+          try {
+            console.log('📝 Creating database session for Quarterly Planning meeting');
+            const result = await meetingSessionsService.startSession(orgId, teamId, 'quarterly');
+            setSessionId(result.session.id);
+            console.log('✅ Database session created successfully:', result.session.id);
+          } catch (error) {
+            console.error('❌ Failed to create database session:', error);
+          }
+        })();
+      } else {
+        // Check for existing active session as a follower
+        (async () => {
+          try {
+            console.log('📋 Checking for existing database session for Quarterly Planning meeting');
+            const activeSession = await meetingSessionsService.getActiveSession(orgId, teamId, 'quarterly');
+            if (activeSession) {
+              setSessionId(activeSession.id);
+              console.log('✅ Found existing database session:', activeSession.id);
+            }
+          } catch (error) {
+            console.error('❌ Failed to get existing database session:', error);
+          }
+        })();
+      }
     }
   }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
   
@@ -581,6 +656,69 @@ function QuarterlyPlanningMeetingPage() {
     };
   }, [user?.id]);
 
+  // Timer effect for meeting duration and section timing (Phase 2)
+  useEffect(() => {
+    let timer;
+    if (meetingStarted && meetingStartTime && !isPaused) {
+      timer = setInterval(() => {
+        const now = Date.now();
+        const totalElapsed = Math.floor((now - meetingStartTime) / 1000);
+        // Subtract total paused time to get active duration
+        const activeElapsed = totalElapsed - totalPausedTime;
+        setElapsedTime(activeElapsed);
+        
+        // Update section elapsed time (Phase 2) - Add to cumulative time
+        if (currentSectionStartTime) {
+          const sessionTime = Math.floor((now - currentSectionStartTime) / 1000);
+          const cumulativeTime = (sectionCumulativeTimes[activeSection] || 0) + sessionTime;
+          setSectionElapsedTime(cumulativeTime);
+          
+          // Calculate meeting pace based on accumulated timing
+          const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+          if (currentSectionConfig) {
+            // Calculate expected vs actual progress
+            const sectionIndex = agendaItems.findIndex(item => item.id === activeSection);
+            const expectedTimeByNow = agendaItems
+              .slice(0, sectionIndex + 1)
+              .reduce((sum, item) => sum + (item.duration * 60), 0);
+            
+            const actualTimeSpent = activeElapsed;
+            const deviation = actualTimeSpent - expectedTimeByNow;
+            const totalMeetingTime = agendaItems.reduce((sum, item) => sum + (item.duration * 60), 0);
+            const deviationPercentage = (Math.abs(deviation) / totalMeetingTime) * 100;
+            
+            if (deviation > 0) {
+              // Running behind
+              if (deviationPercentage > 20) {
+                setMeetingPace('critical');
+              } else if (deviationPercentage > 10) {
+                setMeetingPace('behind');
+              } else {
+                setMeetingPace('on-track');
+              }
+            } else {
+              // Running ahead or on time
+              if (deviationPercentage > 5) {
+                setMeetingPace('ahead');
+              } else {
+                setMeetingPace('on-track');
+              }
+            }
+          }
+        }
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime, currentSectionStartTime, activeSection, sectionCumulativeTimes, agendaItems]);
+
+  // Update section config for floating timer
+  useEffect(() => {
+    const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+    setSectionConfig(currentSectionConfig);
+  }, [activeSection, agendaItems]);
+
   function formatTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -591,7 +729,96 @@ function QuarterlyPlanningMeetingPage() {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Pause/Resume handlers
+  const handlePauseResume = async () => {
+    if (!sessionId) {
+      setError('Meeting session not found. Please refresh the page.');
+      return;
+    }
+    
+    if (sessionLoading) {
+      return;
+    }
+    
+    const orgId = user?.organizationId || user?.organization_id;
+    const effectiveTeamId = getEffectiveTeamId(teamId, user);
+    
+    setLoading(true);
+    
+    try {
+      if (isPaused) {
+        // Resume the session
+        const result = await meetingSessionsService.resumeSession(orgId, effectiveTeamId, sessionId);
+        
+        setIsPaused(false);
+        setTotalPausedTime(result.session.total_paused_duration || 0);
+        
+        // Update elapsed time to the backend's calculated active duration
+        if (result.session.active_duration_seconds !== undefined) {
+          setElapsedTime(result.session.active_duration_seconds);
+        }
+        
+        // Reset the section start time to NOW so section timer calculates correctly from resume point
+        setCurrentSectionStartTime(Date.now());
+        
+        // Broadcast resume to all participants
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'timer-resumed',
+            resumedBy: user?.full_name || user?.email,
+            timestamp: Date.now()
+          });
+        }
+        
+        setSuccess('Meeting resumed');
+        setLoading(false);
+      } else {
+        // Save current section's session time to cumulative before pausing
+        if (currentSectionStartTime && activeSection) {
+          const sessionTime = Math.floor((Date.now() - currentSectionStartTime) / 1000);
+          const previousCumulative = sectionCumulativeTimes[activeSection] || 0;
+          const newCumulative = previousCumulative + sessionTime;
+          
+          setSectionCumulativeTimes(prev => ({
+            ...prev,
+            [activeSection]: newCumulative
+          }));
+          
+          // Set start time to null during pause to stop section timer calculation
+          setCurrentSectionStartTime(null);
+          setSectionElapsedTime(newCumulative);
+        }
+        
+        // Pause the session
+        const result = await meetingSessionsService.pauseSession(orgId, effectiveTeamId, sessionId);
+        
+        setIsPaused(true);
+        
+        // Broadcast pause to all participants
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'timer-paused',
+            pausedBy: user?.full_name || user?.email,
+            timestamp: Date.now()
+          });
+        }
+        
+        setSuccess('Meeting paused');
+        setLoading(false);
+      }
+    } catch (error) {
+      setError('Failed to ' + (isPaused ? 'resume' : 'pause') + ' meeting');
+      setLoading(false);
+    }
+  };
+
   const concludeMeeting = async () => {
+    // Check if sessionId exists
+    if (!sessionId) {
+      setError('Meeting session not found. Please refresh the page.');
+      return;
+    }
+    
     // Calculate average rating from all participant ratings
     const ratings = Object.values(participantRatings);
     if (ratings.length === 0 || !ratings.every(r => r.rating > 0)) {
@@ -604,18 +831,9 @@ function QuarterlyPlanningMeetingPage() {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-      const duration = Math.floor((Date.now() - meetingStartTime) / 60000); // in minutes
       
-      await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-        meetingType: 'quarterly_planning',
-        duration,
-        rating: Math.round(averageRating), // Use average rating
-        individualRatings: participantRatings, // Include individual ratings
-        summary: {
-          priorities: priorities.length,
-          completed: priorities.filter(p => p.status === 'complete').length
-        }
-      });
+      // End the meeting session using meetingSessionsService
+      await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId);
       
       setSuccess('Meeting concluded and summary sent to team!');
       setTimeout(() => {
@@ -772,7 +990,7 @@ function QuarterlyPlanningMeetingPage() {
         setSelectedPriority(updatedPriority);
       }
     }
-  }, [priorities]);
+  }, [priorities, selectedPriority]);
 
   async function fetchPrioritiesData() {
     try {
@@ -881,6 +1099,18 @@ function QuarterlyPlanningMeetingPage() {
       setError('Failed to update priority status');
       setTimeout(() => setError(null), 3000);
     }
+  };
+
+  const handleSectionComplete = (sectionId) => {
+    setCompletedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
   };
 
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
@@ -1149,7 +1379,7 @@ function QuarterlyPlanningMeetingPage() {
       const todoData = {
         title: issue.title,
         description: issue.description,
-        priority: issue.priority_level || 'medium',
+        priority: issue.priority_level || 'normal',
         assigned_to_id: issue.owner_id,
         due_date: null,
         status: 'pending'
@@ -3829,22 +4059,29 @@ function QuarterlyPlanningMeetingPage() {
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
+              const isCompleted = completedSections.has(item.id);
               return (
                 <button
                   key={item.id}
                   onClick={() => handleSectionChange(item.id)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap relative
                     ${isActive 
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md' 
+                      : isCompleted
+                      ? 'bg-green-50 text-green-700 border border-green-200'
                       : 'text-slate-600 hover:bg-slate-100'
                     }
                   `}
                 >
-                  <Icon className="h-4 w-4" />
+                  {isCompleted && !isActive ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
+                  )}
                   <span>{item.label}</span>
                   {item.duration && (
-                    <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
+                    <span className={`text-xs ${isActive ? 'text-white/80' : isCompleted ? 'text-green-600' : 'text-slate-400'}`}>
                       {item.duration}m
                     </span>
                   )}
@@ -3857,6 +4094,26 @@ function QuarterlyPlanningMeetingPage() {
         {/* Main Content */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
           {renderContent()}
+          
+          {/* Section Completion Button */}
+          <div className="p-6 border-t border-gray-200">
+            <div className="flex justify-end">
+              <Button
+                onClick={() => handleSectionComplete(activeSection)}
+                variant={completedSections.has(activeSection) ? "outline" : "default"}
+                className="flex items-center gap-2"
+              >
+                {completedSections.has(activeSection) ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Section Completed
+                  </>
+                ) : (
+                  'Mark Section Complete'
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Edit Priority Dialog */}
@@ -4548,6 +4805,26 @@ function QuarterlyPlanningMeetingPage() {
         }}
         themeColors={themeColors}
       /> */}
+
+      {/* Floating Timer */}
+      {meetingStarted && showFloatingTimer && (
+        <FloatingTimer
+          elapsed={elapsedTime}
+          sectionElapsed={sectionElapsedTime}
+          isPaused={isPaused}
+          section={activeSection}
+          sectionConfig={sectionConfig}
+          meetingPace={meetingPace}
+          isLeader={isLeader}
+          onPauseResume={handlePauseResume}
+          onClose={() => setShowFloatingTimer(false)}
+          onSectionClick={(sectionId) => {
+            handleSectionChange(sectionId);
+            // Scroll to the section
+            document.getElementById(`section-${sectionId}`)?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      )}
     </div>
   );
 };

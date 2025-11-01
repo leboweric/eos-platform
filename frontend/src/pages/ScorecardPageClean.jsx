@@ -18,7 +18,7 @@ import TeamMemberSelect from '../components/shared/TeamMemberSelect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus,
-  Trash2,
+  Archive,
   Loader2,
   AlertCircle,
   Edit,
@@ -56,6 +56,11 @@ const ScorecardPageClean = () => {
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
   
+  // Debug scorecard preference changes
+  useEffect(() => {
+    console.log('🔍 MAIN Scorecard - Scorecard preference state changed:', scorecardTimePeriodPreference);
+  }, [scorecardTimePeriodPreference]);
+  
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
   const [weeklyScores, setWeeklyScores] = useState({});
@@ -79,7 +84,7 @@ const ScorecardPageClean = () => {
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const savedRTL = localStorage.getItem('scorecardRTL');
-    return savedRTL === 'true';
+    return savedRTL === 'false' ? false : true; // Default to Right to Left (RTL)
   }); // Add RTL state
   
   // Shared metrics state
@@ -201,7 +206,14 @@ const ScorecardPageClean = () => {
       }
       
       // Fetch from API
+      console.log('🔍 MAIN Scorecard - Fetching organization data...');
       const orgData = await organizationService.getOrganization();
+      
+      console.log('🔍 MAIN Scorecard - Organization data received:', {
+        ...orgData,
+        scorecard_time_period_preference: orgData?.scorecard_time_period_preference,
+        hasPreference: !!orgData?.scorecard_time_period_preference
+      });
       
       if (orgData) {
         const theme = {
@@ -213,7 +225,12 @@ const ScorecardPageClean = () => {
         saveOrgTheme(orgId, theme);
         
         // Set scorecard time period preference
-        setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
+        const preference = orgData.scorecard_time_period_preference || '13_week_rolling';
+        console.log('🔍 MAIN Scorecard - Setting scorecard preference:', {
+          fromDB: orgData.scorecard_time_period_preference,
+          final: preference
+        });
+        setScorecardTimePeriodPreference(preference);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
@@ -335,8 +352,8 @@ const ScorecardPageClean = () => {
     }
   };
 
-  const handleDeleteMetric = async (metricId) => {
-    if (!confirm('Are you sure you want to delete this metric?')) return;
+  const handleArchiveMetric = async (metricId) => {
+    if (!confirm('Are you sure you want to archive this metric? It will be hidden from view but can be restored later.')) return;
     
     try {
       setSaving(true);
@@ -355,9 +372,9 @@ const ScorecardPageClean = () => {
       
       await scorecardService.deleteMetric(orgId, teamId, metricId);
       setMetrics(prev => prev.filter(m => m.id !== metricId));
-      setSuccess('Metric deleted successfully');
+      setSuccess('Metric archived successfully');
     } catch {
-      setError('Failed to delete metric');
+      setError('Failed to archive metric');
     } finally {
       setSaving(false);
     }
@@ -761,7 +778,7 @@ const ScorecardPageClean = () => {
                 themeColors={themeColors}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'weekly')}
-                onMetricDelete={handleDeleteMetric}
+                onMetricDelete={handleArchiveMetric}
                 onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
@@ -772,6 +789,7 @@ const ScorecardPageClean = () => {
                 monthOptionsOriginal={[]}
                 selectedWeeks={weekDates.map(date => ({ value: date, label: date }))}
                 selectedMonths={[]}
+                scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             ) : (
               <ScorecardTableClean
@@ -784,14 +802,18 @@ const ScorecardPageClean = () => {
                 readOnly={false}
                 isRTL={isRTL}
                 showTotal={false}
+                showAverage={true}
                 themeColors={themeColors}
                 departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onIssueCreated={null}
                 onScoreEdit={(metric, weekDate) => handleScoreEdit(metric, weekDate, 'weekly')}
                 onChartOpen={handleChartOpen}
                 onMetricUpdate={handleEditMetric}
-                onMetricDelete={handleDeleteMetric}
+                onMetricDelete={handleArchiveMetric}
                 onMetricShare={handleMetricShare}
+                noWrapper={false}
+                maxPeriods={10}
+                meetingMode={false}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             )}
@@ -815,7 +837,7 @@ const ScorecardPageClean = () => {
                 themeColors={themeColors}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'monthly')}
-                onMetricDelete={handleDeleteMetric}
+                onMetricDelete={handleArchiveMetric}
                 onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
@@ -826,6 +848,7 @@ const ScorecardPageClean = () => {
                 monthOptionsOriginal={monthDates.map((date, index) => ({ value: date, label: monthLabels[index] }))}
                 selectedWeeks={[]}
                 selectedMonths={monthDates.map(date => ({ value: date, label: date }))}
+                scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             ) : (
               <ScorecardTableClean
@@ -838,13 +861,17 @@ const ScorecardPageClean = () => {
                 readOnly={false}
                 isRTL={isRTL}
                 showTotal={false}
+                showAverage={true}
                 departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onIssueCreated={null}
                 onScoreEdit={(metric, monthDate) => handleScoreEdit(metric, monthDate, 'monthly')}
                 onChartOpen={handleChartOpen}
                 onMetricUpdate={handleEditMetric}
-                onMetricDelete={handleDeleteMetric}
+                onMetricDelete={handleArchiveMetric}
                 onMetricShare={handleMetricShare}
+                noWrapper={false}
+                maxPeriods={10}
+                meetingMode={false}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             )}
@@ -864,7 +891,7 @@ const ScorecardPageClean = () => {
 
         {/* Metric Dialog */}
         <Dialog open={showMetricDialog} onOpenChange={setShowMetricDialog}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl sm:max-w-[600px]">
             <DialogHeader className="pb-4">
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 {editingMetric ? 'Edit Metric' : 'Add New Metric'}
@@ -1046,7 +1073,7 @@ const ScorecardPageClean = () => {
 
         {/* Score Entry Dialog */}
         <Dialog open={showScoreDialog} onOpenChange={setShowScoreDialog}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl sm:max-w-[500px]">
             <DialogHeader className="pb-4">
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Update Score</DialogTitle>
               <DialogDescription className="text-slate-600 font-medium">
@@ -1054,7 +1081,7 @@ const ScorecardPageClean = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="score-input" className="text-slate-700 font-medium">Score</Label>
                 <Input
                   id="score-input"
@@ -1067,7 +1094,7 @@ const ScorecardPageClean = () => {
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="score-notes" className="text-slate-700 font-medium">Notes (optional)</Label>
                 <textarea
                   id="score-notes"

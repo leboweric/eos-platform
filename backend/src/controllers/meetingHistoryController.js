@@ -465,17 +465,30 @@ export const createMeetingSnapshot = async (req, res) => {
       startTime, now, meeting.team_id, orgId
     ]);
 
-    // Build snapshot data
+    // Fetch AI summary if available
+    const aiSummaryQuery = `
+      SELECT mas.executive_summary
+      FROM meeting_ai_summaries mas
+      JOIN meeting_transcripts mt ON mas.transcript_id = mt.id
+      WHERE mt.meeting_id = $1
+      ORDER BY mas.created_at DESC
+      LIMIT 1
+    `;
+    const aiSummaryResult = await client.query(aiSummaryQuery, [meetingId]);
+    const aiSummary = aiSummaryResult.rows[0]?.executive_summary || null;
+
+    // Build snapshot data with correct field names
     const snapshotData = {
       attendees: attendeesResult.rows,
       notes: meeting.notes || '',
+      aiSummary: aiSummary,  // Add AI summary
       issues: {
-        created: issuesCreated.rows,
+        new: issuesCreated.rows,      // Renamed from 'created' to match template
         discussed: issuesDiscussed.rows,
         solved: issuesSolved.rows
       },
       todos: {
-        created: todosCreated.rows,
+        added: todosCreated.rows,     // Renamed from 'created' to match template
         completed: todosCompleted.rows
       },
       conclusions: {
@@ -744,12 +757,12 @@ export const exportMeetingHistoryCSV = async (req, res) => {
 export const getMeetingSummaryHTML = async (req, res) => {
   try {
     const { meetingId } = req.params;
-    const orgId = req.user.organizationId;
+    const orgId = req.user.organization_id || req.user.organizationId;
 
     console.log('📄 Generating meeting summary HTML for:', { orgId, meetingId });
 
-    // Fetch meeting AND organization for theme color
-    const [meetingResult, orgResult] = await Promise.all([
+    // First try to fetch snapshot, if not found, fall back to basic meeting record
+    const [snapshotResult, orgResult] = await Promise.all([
       db.query(`
         SELECT 
           ms.*,
@@ -758,58 +771,90 @@ export const getMeetingSummaryHTML = async (req, res) => {
         FROM meeting_snapshots ms
         LEFT JOIN teams t ON ms.team_id = t.id
         LEFT JOIN users u ON ms.facilitator_id = u.id
-        WHERE ms.id = $1 AND ms.organization_id = $2
+        WHERE ms.meeting_id = $1 AND ms.organization_id = $2
       `, [meetingId, orgId]),
       
       db.query(`
-        SELECT name, theme_color 
+        SELECT name, theme_primary_color, theme_secondary_color, theme_accent_color 
         FROM organizations 
         WHERE id = $1
       `, [orgId])
     ]);
 
-    if (meetingResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Meeting not found' });
+    let meetingData;
+    let snapshotData = {};
+
+    if (snapshotResult.rows.length === 0) {
+      console.log('📄 No snapshot found, checking for basic meeting record...');
+      
+      // Try to get basic meeting information
+      const basicMeetingResult = await db.query(`
+        SELECT 
+          m.*,
+          t.name as team_name,
+          u.first_name || ' ' || u.last_name as facilitator_name
+        FROM meetings m
+        LEFT JOIN teams t ON m.team_id = t.id
+        LEFT JOIN users u ON m.facilitator_id = u.id
+        WHERE m.id = $1 AND m.organization_id = $2
+      `, [meetingId, orgId]);
+
+      if (basicMeetingResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Meeting not found' });
+      }
+
+      meetingData = basicMeetingResult.rows[0];
+      snapshotData = {}; // No snapshot data available
+      
+      console.log('📄 Using basic meeting record without snapshot');
+    } else {
+      meetingData = snapshotResult.rows[0];
+      snapshotData = meetingData.snapshot_data || {};
+      console.log('📄 Using meeting snapshot data');
     }
 
-    const meetingData = meetingResult.rows[0];
     const orgData = orgResult.rows[0];
-    const snapshotData = meetingData.snapshot_data || {};
 
     console.log('📄 Meeting data retrieved:', {
       id: meetingData.id,
       teamName: meetingData.team_name,
       meetingType: meetingData.meeting_type,
-      meetingDate: meetingData.meeting_date,
-      themeColor: orgData?.theme_color || '#6366f1'
+      meetingDate: meetingData.meeting_date || meetingData.started_at,
+      themeColor: orgData?.theme_primary_color || '#6366f1',
+      hasSnapshot: !!snapshotData.issues
     });
 
     // Format data for simplified template
     const formattedData = {
       teamName: meetingData.team_name || 'Unknown Team',
       meetingType: meetingData.meeting_type || 'Team Meeting',
-      meetingDate: meetingData.meeting_date || new Date().toISOString(),
-      duration: meetingData.duration_minutes || 60,
+      meetingDate: meetingData.meeting_date || meetingData.started_at || new Date().toISOString(),
+      duration: meetingData.duration_minutes || (meetingData.started_at && meetingData.completed_at ? 
+        Math.round((new Date(meetingData.completed_at) - new Date(meetingData.started_at)) / (1000 * 60)) : 60),
       rating: meetingData.average_rating,
       facilitatorName: meetingData.facilitator_name,
       organizationName: orgData?.name || 'Organization',
-      themeColor: orgData?.theme_color || '#6366f1', // Use org theme
+      themeColor: orgData?.theme_primary_color || '#6366f1', // Use org theme
       
-      aiSummary: snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary,
+      aiSummary: snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary || 
+                 'No detailed summary available for this meeting.',
       headlines: snapshotData.headlines || { customer: [], employee: [] },
       cascadingMessages: snapshotData.cascading_messages || snapshotData.cascadingMessages || [],
       
       issues: {
-        solved: (snapshotData.issues || []).filter(i => i.status === 'solved' || i.solved),
-        new: (snapshotData.issues || []).filter(i => i.status !== 'solved' && !i.solved)
+        solved: snapshotData.issues?.solved || [],
+        new: snapshotData.issues?.new || snapshotData.issues?.created || []  // Support both field names
       },
       
       todos: {
-        completed: (snapshotData.todos || []).filter(t => t.status === 'completed' || t.completed),
-        new: (snapshotData.todos || []).filter(t => t.status !== 'completed' && !t.completed)
+        completed: snapshotData.todos?.completed || [],
+        new: snapshotData.todos?.added || snapshotData.todos?.created || []  // Support both field names
       },
       
-      attendees: snapshotData.attendees || []
+      attendees: snapshotData.attendees || [],
+      
+      // Add flag to indicate if this is a basic meeting without snapshot
+      isBasicMeeting: !snapshotData.issues
     };
 
     console.log('📄 Formatted data for template:', {

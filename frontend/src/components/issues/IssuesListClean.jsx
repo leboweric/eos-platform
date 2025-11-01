@@ -4,9 +4,9 @@ import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 import { debugTheme } from '../../utils/debugTheme';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Edit,
   User,
@@ -28,10 +28,13 @@ import {
   ArrowDown,
   List,
   GripVertical,
-  Newspaper
+  Newspaper,
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { IssueContextMenu } from '../IssueContextMenu';
 import { issuesService } from '../../services/issuesService';
 import IssueDialog from './IssueDialog';
 
@@ -49,6 +52,7 @@ const IssuesListClean = ({
   onMarkSolved,  // New prop for marking issues as solved
   onReorder,  // New prop for handling reordering
   onSave,  // Callback for saving issue changes
+  tableView = false,  // New prop to control table vs card view
   teamMembers = [],  // Team members for assignment
   getStatusColor, 
   getStatusIcon, 
@@ -456,11 +460,6 @@ const IssuesListClean = ({
                   <GripVertical className="h-4 w-4 text-gray-400" />
                 </div>
               )}
-              <span className="text-xs font-bold" style={{
-                color: '#6B7280'
-              }}>
-                #{index + 1}
-              </span>
               {showVoting && (
                 <Button
                   variant="ghost"
@@ -481,22 +480,19 @@ const IssuesListClean = ({
                 </Button>
               )}
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <div className="relative">
-                <Checkbox
-                  checked={issue.status === 'closed'}
-                  onCheckedChange={(checked) => {
-                    onStatusChange(issue.id, checked ? 'closed' : 'open');
-                  }}
-                  className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
-                    issue.status === 'closed' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
-                  }`}
-                  style={{
-                    borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
-                    backgroundColor: issue.status === 'closed' ? themeColors.primary : 'transparent'
-                  }}
-                />
-              </div>
+            <div className="relative">
+              <input 
+                type="checkbox" 
+                checked={issue.status === 'closed'}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  onStatusChange(issue.id, e.target.checked ? 'closed' : 'open');
+                }}
+                className="w-6 h-6 rounded border-2"
+                style={{
+                  accentColor: themeColors.primary
+                }}
+              />
             </div>
           </div>
           
@@ -586,33 +582,146 @@ const IssuesListClean = ({
           )}
           </div>
           
-          {/* List view toggle - only show if not in compactGrid mode */}
-          {!compactGrid && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const newMode = !showListView;
-                setShowListView(newMode);
-                localStorage.setItem('issuesViewMode', newMode ? 'list' : 'grid');
-              }}
-              className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
-              title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
-            >
-              <List className="h-3 w-3 mr-1" />
-              {showListView ? "Grid View" : "List View"}
-            </Button>
-          )}
         </div>
       </div>
       
-      {/* Render compact grid or regular list based on prop */}
+      {/* Render based on view type */}
       {compactGrid ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {sortedIssues.map((issue, index) => (
             <CompactIssueCard key={issue.id} issue={issue} index={index} />
           ))}
         </div>
+      ) : tableView ? (
+        // Table view - EXACT COPY from Level 10 Meeting WeeklyAccountabilityMeetingPage.jsx lines 5883-5885
+        <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+          <CardContent className="p-0">
+            <div className="space-y-1">
+            {/* Header Row - EXACT ORDER: Status, #, Issue, Owner, Created */}
+            <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+              <div className="w-10">Status</div>
+              <div className="w-8 ml-2">#</div>
+              <div className="flex-1 ml-3">Issue</div>
+              <div className="w-32 text-center">Owner</div>
+              <div className="w-24 text-center">Created</div>
+            </div>
+            
+            {/* Issue Rows - COPIED from Level 10 Meeting */}
+            {sortedIssues.map((issue, index) => {
+              const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
+              const isExpanded = selectedIssue?.id === issue.id;
+              
+              return (
+                <IssueContextMenu 
+                  key={issue.id}
+                  issue={issue}
+                  onEdit={onEdit}
+                  onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
+                  onCreateTodo={onCreateTodo}
+                  onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+                  onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+                  onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+                  onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+                  currentUserId={user?.id}
+                >
+                  <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                      {/* Main Issue Row - COPIED from Level 10 Meeting */}
+                      <div className="flex items-center px-3 py-3 group">
+                        
+                        {/* Status Checkbox - EXACT COPY from Level 10 Meeting */}
+                        <div className="w-10 flex items-center relative">
+                          <div 
+                            className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                            style={{
+                              backgroundColor: isSolved ? themeColors.primary + '20' : 'transparent',
+                              border: `2px solid ${isSolved ? themeColors.primary : '#E2E8F0'}`
+                            }}
+                            onClick={async () => {
+                              try {
+                                const newStatus = isSolved ? 'open' : 'closed';
+                                await onStatusChange(issue.id, newStatus);
+                              } catch (error) {
+                                console.error('Failed to update issue status:', error);
+                              }
+                            }}
+                          >
+                            {isSolved && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
+                          </div>
+                        </div>
+                        
+                        {/* Issue Number */}
+                        <div className="w-8 ml-2 text-sm font-medium text-slate-600">
+                          {index + 1}.
+                        </div>
+                        
+                        {/* Issue Title - COPIED from Level 10 Meeting */}
+                        <div className="flex-1 ml-3">
+                          <div className="flex items-center">
+                            <div 
+                              className={`flex-1 font-semibold text-slate-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors ${
+                                isSolved ? 'line-through opacity-75' : ''
+                              }`}
+                              onClick={() => onEdit && onEdit(issue)}
+                            >
+                              {issue.title}
+                              {issue.attachments && issue.attachments.length > 0 && (
+                                <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                              )}
+                            </div>
+                            {issue.description && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedIssue(selectedIssue?.id === issue.id ? null : issue);
+                                }}
+                                className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors"
+                              >
+                                <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${selectedIssue?.id === issue.id ? 'rotate-90' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Owner - COPIED from Level 10 Meeting */}
+                        <div className="w-32 text-center">
+                          <span className="text-sm text-slate-600">
+                            {issue.owner_name || issue.assignee_name || issue.assigned_to_name || 'Unassigned'}
+                          </span>
+                        </div>
+                        
+                        {/* Created Date - ADDED for Main Issues Page */}
+                        <div className="w-24 text-center">
+                          <span className="text-xs text-slate-500">
+                            {format(new Date(issue.created_at), 'MMM d')}
+                          </span>
+                        </div>
+                        
+                        {/* Actions - COPIED from Level 10 Meeting */}
+                        <div className="w-8 flex items-center justify-center">
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                            onClick={() => onEdit && onEdit(issue)}
+                          >
+                            <Edit className="h-3 w-3 text-slate-600" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Expanded Details - COPIED from Level 10 Meeting */}
+                      {selectedIssue?.id === issue.id && issue.description && (
+                        <div className="px-16 pb-3">
+                          <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border-l-4" style={{ borderLeftColor: themeColors.primary }}>
+                            {issue.description}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                </IssueContextMenu>
+              );
+            })}
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         // Default view - List or Grid based on showListView
         (() => {
@@ -644,16 +753,13 @@ const IssuesListClean = ({
                           <ContextMenuTrigger>
                             <div
                               className={`
-                                group relative flex items-center gap-3 backdrop-blur-sm rounded-xl border pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
+                                issue-card group relative flex items-center gap-3 bg-white border border-gray-200 rounded-lg pl-4 pr-4 py-4 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5
                                 ${issue.status === 'closed' ? 'opacity-60' : ''}
                                 ${isDragOver ? 'ring-2 ring-blue-400' : ''}
                                 ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
                                 ${isTopThree ? 'shadow-lg' : ''}
                               `}
-                              style={{
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                borderColor: 'rgba(255, 255, 255, 0.5)'
-                              }}
+                              style={{ borderLeftColor: themeColors.primary, borderLeftWidth: '3px' }}
                               onDragOver={handleDragOver}
                               onDragEnter={(e) => handleDragEnter(e, globalIndex)}
                               onDragLeave={handleDragLeave}
@@ -665,13 +771,6 @@ const IssuesListClean = ({
                                 }
                               }}
                             >
-                {/* Enhanced status indicator */}
-                <div 
-                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
-                  style={{ 
-                    background: issue.status === 'open' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
-                  }}
-                />
                 
                 {/* Drag handle */}
                 {enableDragDrop && !readOnly && (
@@ -688,53 +787,43 @@ const IssuesListClean = ({
                 )}
                 
                 {/* Enhanced checkbox */}
-                <div onClick={(e) => e.stopPropagation()}>
-                  <div className="relative">
-                    <Checkbox
-                      checked={issue.status === 'closed'}
-                      onCheckedChange={(checked) => {
-                        onStatusChange(issue.id, checked ? 'closed' : 'open');
-                      }}
-                      className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
-                        issue.status === 'closed' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
-                      }`}
-                      style={{
-                        borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
-                        backgroundColor: issue.status === 'closed' ? themeColors.primary : 'transparent'
-                      }}
-                    />
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    checked={issue.status === 'closed'}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      onStatusChange(issue.id, e.target.checked ? 'closed' : 'open');
+                    }}
+                    className="w-6 h-6 rounded border-2"
+                    style={{
+                      accentColor: themeColors.primary
+                    }}
+                  />
+                </div>
+                
+                {/* Title and metadata */}
+                <div className="flex-1">
+                  <h4 className={`
+                    text-base font-semibold text-gray-900 mb-1
+                    ${issue.status === 'closed' ? 'text-gray-400 line-through' : ''}
+                  `}>
+                    {issue.title}
+                  </h4>
+                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      {issue.owner_name || 'Unassigned'}
+                    </span>
+                    {issue.created_at && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {format(new Date(issue.created_at), 'MMM d')}
+                      </span>
+                    )}
                   </div>
                 </div>
                 
-                {/* Issue number with priority colors */}
-                <span className="text-sm font-semibold min-w-[2rem] text-gray-500">
-                  {globalIndex + 1}.
-                </span>
-                
-                {/* Removed medal emojis for cleaner look */}
-                
-                {/* Title */}
-                <h3 className={`
-                  flex-1 text-sm font-medium
-                  ${issue.status === 'closed' ? 'text-gray-400 line-through' : 'text-gray-900'}
-                `}>
-                  {issue.title}
-                </h3>
-                
-                {/* Attachment indicator */}
-                {issue.attachment_count > 0 && (
-                  <div className="flex items-center text-gray-400" title={`${issue.attachment_count} attachment${issue.attachment_count > 1 ? 's' : ''}`}>
-                    <Paperclip className="h-3 w-3" />
-                    {issue.attachment_count > 1 && (
-                      <span className="text-xs ml-0.5">{issue.attachment_count}</span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Owner */}
-                <span className="text-sm text-gray-500">
-                  {issue.owner_name || 'Unassigned'}
-                </span>
                 
                 {/* Votes (if voting enabled) */}
                 {showVoting && (

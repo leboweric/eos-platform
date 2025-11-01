@@ -258,7 +258,7 @@ export const preview = async (req, res) => {
  * Execute the actual import
  */
 export const execute = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     if (!req.file) {

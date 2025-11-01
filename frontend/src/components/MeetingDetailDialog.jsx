@@ -113,7 +113,7 @@ const MeetingDetailDialog = ({ meeting, onClose, onNotesUpdate }) => {
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-medium">
-                      {meeting.average_rating.toFixed(1)}/10
+                      {typeof meeting.average_rating === 'number' ? meeting.average_rating.toFixed(1) : 'N/A'}/10
                     </span>
                   </div>
                 )}
@@ -257,7 +257,7 @@ const MeetingDetailDialog = ({ meeting, onClose, onNotesUpdate }) => {
                     <Star className="h-4 w-4 text-gray-400" />
                     <span className="text-sm text-gray-600">Average Rating:</span>
                     <span className="font-medium">
-                      {meeting.average_rating?.toFixed(1)}/10 ({ratingsCount} ratings)
+                      {typeof meeting.average_rating === 'number' ? meeting.average_rating.toFixed(1) : 'N/A'}/10 ({ratingsCount} ratings)
                     </span>
                   </div>
                 )}

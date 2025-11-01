@@ -127,6 +127,12 @@ export const teamsService = {
       actualTeamId = teamId;
     }
     
+    // Validate teamId before making API call
+    if (!actualTeamId || actualTeamId === 'null' || actualTeamId === 'undefined') {
+      console.error('Cannot fetch members: invalid team ID:', actualTeamId);
+      throw new Error('Invalid team ID');
+    }
+    
     try {
       const response = await axios.get(`/organizations/${orgId}/teams/${actualTeamId}/members`);
       return response.data;

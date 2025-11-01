@@ -131,6 +131,34 @@ router.delete('/:todoId/updates/:updateId', [
   param('updateId').isUUID()
 ], deleteTodoUpdate);
 
+// Manual trigger endpoint for overdue todos conversion
+router.post('/convert-overdue', authenticate, async (req, res) => {
+  try {
+    console.log('🔄 [MANUAL TRIGGER] Overdue todos conversion requested by user:', req.user.id);
+    
+    // Import and call the conversion logic
+    const { convertOverdueTodos } = await import('../jobs/overdueTodosCron.js');
+    const results = await convertOverdueTodos();
+    
+    res.json({
+      success: true,
+      message: 'Overdue todos conversion completed',
+      results: {
+        totalProcessed: results.totalProcessed,
+        successCount: results.successCount,
+        errorCount: results.errorCount
+      }
+    });
+  } catch (error) {
+    console.error('Manual overdue todos conversion failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to convert overdue todos',
+      error: error.message
+    });
+  }
+});
+
 // Note: Import routes are now handled by the separate todos-import.js router
 
 export default router;

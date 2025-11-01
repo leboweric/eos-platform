@@ -29,13 +29,14 @@ router.use(authenticate);
 
 // Start AI transcription for a meeting
 router.post('/start', (req, res, next) => {
-  console.log('🎙️ [TranscriptionRoutes] POST /start route hit');
-  console.log('🔍 [TranscriptionRoutes] Request method:', req.method);
-  console.log('🔍 [TranscriptionRoutes] Request path:', req.path);
-  console.log('🔍 [TranscriptionRoutes] Request body preview:', { 
-    meetingId: req.body?.meetingId, 
-    organizationId: req.body?.organizationId 
-  });
+  // Only log in debug mode to reduce Railway rate limiting
+  if (process.env.LOG_LEVEL === 'debug') {
+    console.log('🎙️ [TranscriptionRoutes] POST /start route hit');
+    console.log('🔍 [TranscriptionRoutes] Request body preview:', { 
+      meetingId: req.body?.meetingId, 
+      organizationId: req.body?.organizationId 
+    });
+  }
   startTranscription(req, res, next);
 });
 

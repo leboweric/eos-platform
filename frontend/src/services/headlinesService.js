@@ -54,6 +54,16 @@ export const headlinesService = {
     return response.data;
   },
 
+  // Archive a single headline
+  archiveHeadline: async (headlineId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.put(
+      `/organizations/${orgId}/headlines/${headlineId}/archive`
+    );
+    return response.data;
+  },
+
   // Archive headlines (after meeting conclusion)
   archiveHeadlines: async (teamId = null) => {
     const orgId = getOrgId();

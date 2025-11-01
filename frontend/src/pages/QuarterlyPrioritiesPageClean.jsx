@@ -148,6 +148,7 @@ const QuarterlyPrioritiesPageClean = () => {
     individualPriorities: {} // Will be populated with team members on load
   });
   
+  
   // Editing states
   const [editingPriority, setEditingPriority] = useState(null);
   const [editingMilestone, setEditingMilestone] = useState(null);
@@ -288,11 +289,21 @@ const QuarterlyPrioritiesPageClean = () => {
         setTeamMemberPriorities(data.teamMemberPriorities || {});
         setTeamMembers(data.teamMembers || []);
         
-        // Automatically expand individual sections for all team members
+        // Automatically expand individual sections for all rock owners
         const expandedIndividuals = {};
-        (data.teamMembers || []).forEach(member => {
-          expandedIndividuals[member.id] = true;
+        // Get all unique owner IDs from rocks to ensure consistency with render logic
+        const allRocks = [
+          ...(data.companyPriorities || []),
+          ...Object.values(data.teamMemberPriorities || {}).flatMap(member => member?.priorities || [])
+        ];
+        
+        allRocks.forEach(rock => {
+          const ownerId = rock.owner_id || rock.assignee_id || 'unassigned';
+          if (ownerId) {
+            expandedIndividuals[ownerId] = true;
+          }
         });
+        
         setExpandedSections(prev => ({
           ...prev,
           individualPriorities: expandedIndividuals
@@ -1604,11 +1615,19 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const expandAll = () => {
     const allIndividuals = {};
-    teamMembers.forEach(member => {
-      if (teamMemberPriorities[member.id]?.priorities?.length > 0) {
-        allIndividuals[member.id] = true;
+    // Use consistent ID logic: get owner IDs from actual rocks
+    const allRocks = [
+      ...companyPriorities,
+      ...Object.values(teamMemberPriorities).flatMap(member => member?.priorities || [])
+    ];
+    
+    allRocks.forEach(rock => {
+      const ownerId = rock.owner_id || rock.assignee_id || 'unassigned';
+      if (ownerId) {
+        allIndividuals[ownerId] = true;
       }
     });
+    
     setExpandedSections({
       companyPriorities: true,
       individualPriorities: allIndividuals
@@ -3038,7 +3057,10 @@ const QuarterlyPrioritiesPageClean = () => {
                         return (
                           <Card key="company-rocks" className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
+                              <div 
+                                className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                                onClick={toggleCompanyPriorities}
+                              >
                                 <div className="flex items-center gap-3">
                                   <div className="h-10 w-10 border-2 border-slate-100 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
                                     <span className="text-slate-700 font-semibold text-sm">🏢</span>
@@ -3048,9 +3070,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                     <p className="text-sm text-slate-500">{companyRocks.rocks.length} {labels?.priority_singular || 'Rock'}{companyRocks.rocks.length !== 1 ? 's' : ''}</p>
                                   </div>
                                 </div>
-                                <ChevronDown className="h-5 w-5 text-slate-400" />
+                                <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                                  expandedSections.companyPriorities ? 'rotate-180' : ''
+                                }`} />
                               </div>
                             </CardHeader>
+                            {expandedSections.companyPriorities && (
                             <CardContent className="pt-0">
                               <div className="space-y-1">
                                 {/* Header Row */}
@@ -3379,6 +3404,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                 })}
                               </div>
                             </CardContent>
+                            )}
                           </Card>
                         );
                       })()}
@@ -3413,12 +3439,14 @@ const QuarterlyPrioritiesPageClean = () => {
                         return Object.values(grouped).sort((a, b) => {
                           const aName = String(a.name || '');
                           const bName = String(b.name || '');
-                          console.log('🔍 Sorting owners:', aName, 'vs', bName);
                           return aName.localeCompare(bName);
                         }).map(owner => (
                           <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
+                              <div 
+                                className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                                onClick={() => toggleIndividualPriorities(owner.id)}
+                              >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-10 w-10 border-2 border-slate-100">
                                     <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
@@ -3430,9 +3458,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                     <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                                   </div>
                                 </div>
-                                <ChevronDown className="h-5 w-5 text-slate-400" />
+                                <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                                  expandedSections.individualPriorities[owner.id] ? 'rotate-180' : ''
+                                }`} />
                               </div>
                             </CardHeader>
+                            {expandedSections.individualPriorities[owner.id] && (
                             <CardContent className="pt-0">
                               <div className="space-y-1">
                                 {/* Header Row */}
@@ -3754,8 +3785,9 @@ const QuarterlyPrioritiesPageClean = () => {
                                 })}
                               </div>
                             </CardContent>
+                            )}
                           </Card>
-                        ));
+                        ))
                       })()}
                     </div>
                 ) : (
@@ -3763,12 +3795,14 @@ const QuarterlyPrioritiesPageClean = () => {
                   Object.values(groupedRocks.byOwner || {}).sort((a, b) => {
                     const aName = String(a.name || '');
                     const bName = String(b.name || '');
-                    console.log('🔍 Sorting byOwner:', aName, 'vs', bName);
                     return aName.localeCompare(bName);
                   }).map(owner => (
                     <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                          onClick={() => toggleIndividualPriorities(owner.id)}
+                        >
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 border-2 border-slate-100">
                               <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
@@ -3780,9 +3814,12 @@ const QuarterlyPrioritiesPageClean = () => {
                               <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                             </div>
                           </div>
-                          <ChevronDown className="h-5 w-5 text-slate-400" />
+                          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                            expandedSections.individualPriorities[owner.id] ? 'rotate-180' : ''
+                          }`} />
                         </div>
                       </CardHeader>
+                      {expandedSections.individualPriorities[owner.id] && (
                       <CardContent className="pt-0">
                         <div className="space-y-1">
                           {/* Header Row */}
@@ -4109,6 +4146,7 @@ const QuarterlyPrioritiesPageClean = () => {
                           })}
                         </div>
                       </CardContent>
+                      )}
                     </Card>
                   ))
                   );

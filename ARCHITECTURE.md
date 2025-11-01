@@ -86,6 +86,15 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Uptime Monitoring**: Better Stack for service availability tracking
 - **Health Checks**: Railway metrics + custom health endpoints
 
+### Observability Stack (October 2025)
+- **System Health Dashboard**: Real-time monitoring of API performance, database health, and external services
+- **Failed Operations Log**: Tracking and recovery system for silent failures
+- **User Activity Monitor**: Comprehensive usage analytics and feature adoption tracking
+- **Data Isolation Monitor**: Multi-tenant security monitoring and violation detection
+- **Request Metrics**: Middleware tracking response times, error rates, and throughput
+- **Query Performance**: Database query wrapper with timing and slow query detection
+- **Activity Tracking**: Automatic user action tracking with feature categorization
+
 ### Third-party Services
 - **Stripe**: Payment processing and subscription management
 - **SendGrid**: Transactional email delivery
@@ -305,6 +314,36 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Dependencies**: Terminology mappings, UI adaptations
 - **Status**: In development - foundation complete
 
+### Observability & Monitoring System (October 2025)
+- **Purpose**: Comprehensive system monitoring, failure tracking, and security auditing
+- **Key Components**:
+  
+#### System Health Dashboard
+- **Backend**: `backend/src/controllers/systemHealthController.js`, `backend/src/services/observabilityService.js`
+- **Frontend**: `frontend/src/pages/admin/SystemHealthDashboard.jsx`
+- **Features**: Real-time API metrics, database health, external service monitoring
+- **Metrics**: Response times, error rates, throughput, memory usage
+
+#### Failed Operations Log (Tool #2)
+- **Backend**: `backend/src/services/failedOperationsService.js`, `backend/src/controllers/failedOperationsController.js`
+- **Frontend**: `frontend/src/pages/admin/FailedOperationsPage.jsx`
+- **Database**: `failed_operations` table with JSONB context storage
+- **Features**: Silent failure detection, bulk resolution, severity classification
+
+#### User Activity Monitor (Tool #3)
+- **Backend**: `backend/src/services/activityTrackingService.js`, `backend/src/middleware/activityTracking.js`
+- **Frontend**: `frontend/src/pages/admin/UserActivityPage.jsx`
+- **Database**: `user_activity` table with comprehensive tracking
+- **Features**: DAU/WAU/MAU metrics, feature adoption tracking, session duration analysis
+
+#### Data Isolation Monitor (Tool #4)
+- **Backend**: `backend/src/services/dataIsolationService.js`, `backend/src/controllers/dataIsolationController.js`
+- **Frontend**: `frontend/src/pages/admin/DataIsolationDashboard.jsx`
+- **Database**: `data_isolation_violations` and `isolation_check_log` tables
+- **Features**: Multi-tenant violation detection, orphaned record scanning, security auditing
+
+- **Status**: Complete and production-ready
+
 ### AI Meeting Transcription System (October 2025)
 - **Purpose**: Complete real-time transcription, AI analysis, and automated action item extraction
 - **Backend Services**:
@@ -404,6 +443,61 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
   - `OPENAI_API_KEY` - Required for AI summaries
 - **Status**: Complete backend infrastructure, production-ready
 
+### Headlines Management (October 2025)
+- **Purpose**: Good news/bad news sharing for L10 meetings with team organization
+- **Key Files**:
+  - `backend/src/controllers/headlinesController.js` - API for headline CRUD operations
+  - `frontend/src/pages/HeadlinesPage.jsx` - Main headlines management interface
+  - `frontend/src/components/headlines/HeadlineDialog.jsx` - Create/edit headline dialog
+- **Dependencies**: Team context, user authentication
+- **Status**: Complete with archiving and team-based filtering
+
+### Cascading Messages System (October 2025)
+- **Purpose**: Message system for communicating between teams and departments
+- **Key Files**:
+  - `backend/src/controllers/cascadingMessagesController.js` - Message management API
+  - `backend/src/routes/cascadingMessages.js` - API routes
+  - `frontend/src/services/cascadingMessagesService.js` - Frontend service layer
+  - `frontend/src/components/cascadingMessages/CascadingMessageDialog.jsx` - Message creation
+- **Dependencies**: Team hierarchy, organization structure
+- **Status**: Complete with graceful degradation when table not available
+
+### Completion Tracking System (October 2025)
+- **Purpose**: Track completion states for 3-year pictures and 1-year plans
+- **Key Files**:
+  - `backend/src/controllers/completionTrackingController.js` - Completion state management
+  - `frontend/src/services/completionTrackingService.js` - Frontend service
+- **Dependencies**: Business blueprints, VTO structure
+- **Status**: Complete with item-level tracking
+
+### Organizational Chart Feature (October 2025)
+- **Purpose**: Visual organizational structure with accountability mapping
+- **Key Files**:
+  - `backend/src/controllers/organizationalChartController.js` - Chart data management
+  - `frontend/src/pages/OrganizationalChartPage.jsx` - Main chart visualization
+  - `frontend/src/components/organizationalChart/ChartEditor.jsx` - Chart editing interface
+  - `frontend/src/components/organizationalChart/VisualOrgChart.jsx` - Chart rendering
+  - `frontend/src/services/organizationalChartService.js` - API service layer
+- **Dependencies**: Team structure, user management
+- **Status**: Complete with visual editing and accountability tracking
+
+### Export Functionality (October 2025)
+- **Purpose**: Excel export of organization data for reporting and backup
+- **Key Files**:
+  - `backend/src/controllers/exportController.js` - Export data generation
+  - `backend/src/services/exportService.js` - Excel file creation service
+- **Dependencies**: Organization data access, permissions
+- **Status**: Complete with Excel format output
+
+### Enhanced Meeting Features (October 2025)
+- **Purpose**: Improved meeting experience with better timing and navigation
+- **Key Files**:
+  - `frontend/src/components/meetings/FloatingTimer.jsx` - Persistent meeting timer
+  - `frontend/src/components/meetings/SectionTimer.jsx` - Section-specific timing
+  - `frontend/src/components/meeting/MeetingBar.jsx` - Meeting navigation bar
+- **Dependencies**: Meeting socket service, real-time collaboration
+- **Status**: Complete with floating timer and section management
+
 ## 6. Current State
 
 ### Implemented Features
@@ -432,7 +526,18 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **EOS-Optimized AI Prompts** - Custom vocabulary and business-focused meeting analysis
 ✅ **Real-time Audio Streaming** - WebSocket-based audio transmission for live transcription
 ✅ **Automated Action Item Extraction** - AI-powered detection and one-click todo/issue creation
-✅ **AI Meeting Assistant** - Real-time transcription, AI summarization, and automated action item extraction  
+✅ **AI Meeting Assistant** - Real-time transcription, AI summarization, and automated action item extraction
+✅ **System Health Dashboard** - Real-time monitoring of all system components and external services
+✅ **Failed Operations Tracking** - Comprehensive logging and recovery system for silent failures
+✅ **User Activity Monitoring** - Feature adoption tracking with DAU/WAU/MAU metrics
+✅ **Data Isolation Security** - Multi-tenant violation detection and prevention system
+✅ **Headlines Management** - Good news/bad news sharing for L10 meetings with team organization
+✅ **Cascading Messages** - Inter-team communication system with graceful degradation
+✅ **Completion Tracking** - Track completion states for 3-year pictures and 1-year plans
+✅ **Organizational Chart** - Visual org structure with accountability mapping and editing
+✅ **Export Functionality** - Excel export of organization data for reporting and backup
+✅ **Enhanced Meeting Experience** - Floating timers, section management, improved navigation
+✅ **UI/UX Improvements** - Expanded cards by default, mobile responsiveness, theme integration  
 
 ### Production Metrics
 - **Uptime**: 99.9% (August - October 2024)
@@ -458,6 +563,14 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 11. **Ninety.io Priorities Import** - Complete Excel import system with dual-sheet processing
 12. **Meeting Permission System** - Pre-flight permission checks prevent leadership team members from starting department meetings they're not explicitly members of
 13. **AI Meeting Assistant** - Real-time transcription, AI summarization, and action item extraction for meetings
+14. **Observability Implementation** - Complete monitoring stack with health dashboards, failure tracking, activity monitoring, and security scanning
+15. **Headlines Feature** - Good news/bad news sharing for L10 meetings with team-based organization
+16. **Cascading Messages** - Message system for communicating between teams and departments
+17. **Completion Tracking System** - Track completion states for 3-year pictures and 1-year plans
+18. **Organizational Chart Feature** - Visual organizational structure with accountability mapping
+19. **Export Functionality** - Excel export of organization data for reporting and backup
+20. **Enhanced Meeting Features** - Floating timer, section timers, improved meeting navigation
+21. **UI/UX Improvements** - Expanded To-Do cards by default, improved mobile responsiveness, theme color integration
 
 ## 7. File/Directory Structure
 
@@ -867,6 +980,10 @@ if (showHistoricalData && sortedDates.length > 0) {
 - **Frontend Bundle**: Maintained under 750KB gzipped
 - **Import Processing**: Efficient batch operations with progress tracking
 - **Date Range Queries**: Optimized to handle historical data without performance impact
+- **Query Monitoring**: Database query wrapper tracks execution times and identifies slow queries
+- **Request Metrics**: Middleware tracks response times for all API endpoints
+- **Circular Buffer Cache**: Memory-efficient caching for performance metrics
+- **Connection Pool Wrapper**: Non-invasive monitoring preserves all pool methods
 
 ### Fixed Issues & Solutions
 
@@ -921,8 +1038,35 @@ if (showHistoricalData && sortedDates.length > 0) {
 - **Large Number Display**: Monitor for other UI areas needing width adjustments
 - **Import Validation**: Enhanced pre-import validation for better UX
 
+### Meeting Summary System Updates (October 26, 2025)
+
+#### Modal Implementation
+- **Component**: Created `MeetingSummaryModal.jsx` with document-style design
+- **Architecture**: Evolved from colorful, complex design to professional document-style
+- **Layout**: Fixed modal width constraints (85vw, max 1400px) with proper flexbox scrolling
+- **Critical Fix**: Added `min-h-0` class for flexbox scrolling to work correctly
+
+#### Email Template Alignment
+- **Design Consistency**: Updated `generateMeetingSummaryHTML` in `emailService.js` to match modal design
+- **Typography**: Standardized to 16px body text, 20px headers
+- **Layout**: Implemented two-column table layout for Issues and To-Dos sections
+- **Color Scheme**: Neutral grays (#111827, #374151, #9ca3af) for professional appearance
+
+#### Data Structure Bugs Fixed
+- **Issue Status Mismatch**: Fixed filter checking for non-existent 'solved' status
+  - Database uses: 'open', 'in-progress', 'resolved', 'closed'
+  - Filter was checking: `status === 'solved'` (incorrect)
+  - Fixed to: `status === 'closed' || status === 'resolved'`
+- **Impact**: Solved issues now correctly appear in "Solved Issues" section
+
+#### Lessons Learned
+- **Schema Validation**: Always verify filter conditions match actual database enum values
+- **Modal Width Issues**: Default Dialog components often have restrictive max-width constraints
+- **Flexbox Scrolling**: Requires `min-h-0` on scrollable container for proper overflow
+- **Email Compatibility**: Use table layouts instead of flexbox/grid for email HTML
+
 ---
 
-**Last Updated**: October 22, 2025
+**Last Updated**: October 28, 2025
 
-*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, AI Meeting Assistant implementation, critical production debugging and fixes, database schema alignment, frontend polling robustness, and comprehensive error handling improvements.*
+*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, AI Meeting Assistant implementation, critical production debugging and fixes, database schema alignment, frontend polling robustness, comprehensive error handling improvements, meeting summary system refinements, headlines management, cascading messages, completion tracking, organizational chart features, export functionality, and enhanced meeting experiences.*

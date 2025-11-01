@@ -40,7 +40,7 @@ export const getIssues = async (req, res) => {
     
     // Get user's team context
     const userTeam = await getUserTeamContext(userId, orgId);
-    console.log('User team context for issues:', userTeam);
+    // User team context debug - removed for production performance
     
     let query = `
       SELECT 
@@ -156,7 +156,7 @@ async function checkTimelineColumn() {
 export const createIssue = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, priority_level } = req.body;
+    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level } = req.body;
     const createdById = req.user.id;
     
     // Check if timeline column exists
@@ -220,6 +220,13 @@ export const createIssue = async (req, res) => {
         'UPDATE headlines SET has_related_issue = true WHERE id = $1',
         [related_headline_id]
       );
+    }
+    
+    // Add related_priority_id if provided
+    if (related_priority_id) {
+      columns.push('related_priority_id');
+      values.push(related_priority_id);
+      placeholders.push(`$${values.length}`);
     }
     
     const result = await db.query(

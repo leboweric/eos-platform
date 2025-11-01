@@ -213,7 +213,7 @@ export const MeetingAIRecordingControls = ({
     } catch (error) {
       console.error('❌ [AI Recording] Failed to start recording:', error);
       
-      let errorMessage = 'Could not start AI recording';
+      let errorMessage = 'Could not start AI note taking';
       
       if (error.name === 'NotAllowedError') {
         errorMessage = 'Microphone access denied. Please click "Allow" when prompted.';
@@ -222,7 +222,7 @@ export const MeetingAIRecordingControls = ({
       } else if (error.name === 'NotReadableError') {
         errorMessage = 'Microphone is in use by another application.';
       } else {
-        errorMessage = `Recording error: ${error.message}`;
+        errorMessage = `Note taking error: ${error.message}`;
       }
       
       setError(errorMessage);
@@ -292,7 +292,7 @@ export const MeetingAIRecordingControls = ({
       }
 
       // Show simple toast - no blocking modal
-      toast.success("Recording stopped", {
+      toast.success("Note taking stopped", {
         description: "AI summary will be generated when you conclude the meeting",
         duration: 4000
       });
@@ -305,8 +305,8 @@ export const MeetingAIRecordingControls = ({
       setIsProcessing(false);
       
       // Show error toast
-      toast.error("Error stopping recording", {
-        description: err.message || 'Failed to stop recording',
+      toast.error("Error stopping note taking", {
+        description: err.message || 'Failed to stop note taking',
         duration: 4000
       });
     }
@@ -379,10 +379,7 @@ export const MeetingAIRecordingControls = ({
               ) : (
                 <Mic className="h-4 w-4" />
               )}
-              Start AI Recording
-              <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">
-                Beta
-              </span>
+              Start AI Note Taking
             </Button>
           )}
 
@@ -392,39 +389,24 @@ export const MeetingAIRecordingControls = ({
                 {/* Recording indicator */}
                 <div className="flex items-center gap-2 text-sm text-green-600 animate-pulse">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  <span>Recording in progress...</span>
+                  <span>AI taking notes...</span>
                 </div>
 
                 {/* Recording time */}
                 <span className="text-sm text-gray-600 font-mono">{formatTime(recordingTime)}</span>
-
-                {/* Audio level indicator */}
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 bg-green-500 rounded-full transition-all"
-                      style={{
-                        height: `${Math.random() * 20 + 10}px`,
-                        animation: 'pulse 0.5s ease-in-out infinite'
-                      }}
-                    />
-                  ))}
-                </div>
               </div>
 
               <Button
                 onClick={handleStopRecording}
                 disabled={isProcessing}
-                variant="destructive"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Square className="h-4 w-4" />
                 )}
-                Stop Recording
+                Stop Note Taking
               </Button>
             </>
           )}

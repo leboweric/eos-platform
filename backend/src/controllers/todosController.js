@@ -16,7 +16,7 @@ export const getTodos = async (req, res) => {
 
     // Get user's team context
     const userTeam = await getUserTeamContext(userId, orgId);
-    console.log('User team context for todos:', userTeam);
+    // User team context debug - removed for production performance
 
     // Build query conditions
     let conditions = ['t.organization_id = $1', 't.deleted_at IS NULL'];
@@ -152,7 +152,7 @@ export const getTodos = async (req, res) => {
 export const createTodo = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, assignedToId, assignedToIds, dueDate, teamId } = req.body;
+    const { title, description, assignedToId, assignedToIds, dueDate, teamId, priority, relatedPriorityId } = req.body;
     const userId = req.user.id;
 
     // Calculate default due date (7 days from now) if not provided
@@ -167,12 +167,12 @@ export const createTodo = async (req, res) => {
     const result = await query(
       `INSERT INTO todos (
         id, organization_id, team_id, owner_id, assigned_to_id, 
-        title, description, due_date, priority, status, is_multi_assignee
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        title, description, due_date, priority, status, is_multi_assignee, related_priority_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         todoId, orgId, teamId || null, userId, singleAssignee,
-        title, description, finalDueDate, 'medium', 'incomplete', isMultiAssignee
+        title, description, finalDueDate, priority || 'medium', 'incomplete', isMultiAssignee, relatedPriorityId || null
       ]
     );
     

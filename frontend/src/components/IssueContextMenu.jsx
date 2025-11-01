@@ -12,7 +12,8 @@ import {
   Plus,
   ThumbsUp,
   Clock,
-  Archive
+  Archive,
+  Send
 } from 'lucide-react';
 
 export function IssueContextMenu({ 
@@ -24,6 +25,7 @@ export function IssueContextMenu({
   onVote,
   onMoveToLongTerm,
   onMoveToShortTerm,
+  onMoveToAnotherTeam,
   onArchive,
   currentUserId,
   disabled = false 
@@ -89,6 +91,14 @@ export function IssueContextMenu({
           <ContextMenuItem onClick={() => onMoveToShortTerm(issue)}>
             <Clock className="mr-2 h-4 w-4" />
             Move to Short-Term
+          </ContextMenuItem>
+        )}
+        
+        {/* Send to Another Team */}
+        {onMoveToAnotherTeam && (
+          <ContextMenuItem onClick={() => onMoveToAnotherTeam(issue)}>
+            <Send className="mr-2 h-4 w-4" />
+            Send to Another Team
           </ContextMenuItem>
         )}
         

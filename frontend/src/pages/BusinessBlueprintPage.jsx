@@ -3,8 +3,9 @@ import { useAuthStore } from '../stores/authStore';
 import { Link, Navigate } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { organizationService } from '../services/organizationService';
+import annualPlanningGoalsService from '../services/annualPlanningGoalsService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
-import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
+import { getRevenueLabel, getRevenueLabelWithSuffix, formatCurrency } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import '../styles/print.css';
@@ -21,6 +22,7 @@ import CoreValueDialog from '../components/vto/CoreValueDialog';
 import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
 import TwoPagePlanView from '../components/vto/TwoPagePlanView';
+import DraftGoalsEditModal from '../components/vto/DraftGoalsEditModal';
 import { 
   Target, 
   Save,
@@ -228,6 +230,10 @@ const BusinessBlueprintPage = () => {
   const [showThreeYearDialog, setShowThreeYearDialog] = useState(false);
   const [showOneYearDialog, setShowOneYearDialog] = useState(false);
   
+  // Draft goals state for Annual Planning
+  const [draftGoals, setDraftGoals] = useState(null);
+  const [showDraftGoalsModal, setShowDraftGoalsModal] = useState(false);
+  
   // State for editing Core Focus
   const [editingCoreFocus, setEditingCoreFocus] = useState(false);
   const [editingBHAG, setEditingBHAG] = useState(false);
@@ -249,6 +255,7 @@ const BusinessBlueprintPage = () => {
     fetchBusinessBlueprint();
     fetchOrganization();
     fetchOrganizationTheme();
+    fetchDraftGoals();
     
     // Listen for theme changes
     const handleThemeChange = (event) => {
@@ -623,6 +630,63 @@ const BusinessBlueprintPage = () => {
       throw error;
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Draft Goals Functions
+  const fetchDraftGoals = async () => {
+    if (!selectedDepartment?.id) return;
+    
+    try {
+      const user = useAuthStore.getState().user;
+      const organizationId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment.id;
+      const nextYear = new Date().getFullYear() + 1;
+      
+      const data = await annualPlanningGoalsService.getPlanningGoals(
+        organizationId,
+        teamId,
+        nextYear
+      );
+      
+      // Only set if goals exist and are not empty
+      if (data && data.goals && data.goals.length > 0) {
+        setDraftGoals(data);
+      } else {
+        setDraftGoals(null);
+      }
+    } catch (error) {
+      console.error('Error fetching draft goals:', error);
+      setDraftGoals(null);
+    }
+  };
+
+  const handleSaveDraftGoals = async (updatedGoals) => {
+    if (!selectedDepartment?.id) return;
+    
+    try {
+      const user = useAuthStore.getState().user;
+      const organizationId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment.id;
+      const nextYear = new Date().getFullYear() + 1;
+      
+      await annualPlanningGoalsService.savePlanningGoals(
+        organizationId,
+        teamId,
+        nextYear,
+        updatedGoals
+      );
+      
+      setDraftGoals({
+        ...draftGoals,
+        goals: updatedGoals
+      });
+      
+      setShowDraftGoalsModal(false);
+      setSuccess('Draft goals saved successfully');
+    } catch (error) {
+      console.error('Error saving draft goals:', error);
+      setError('Failed to save draft goals');
     }
   };
 
@@ -1530,7 +1594,7 @@ const BusinessBlueprintPage = () => {
                                   <div key={index} className="ml-2 mb-1">
                                     <span className="text-sm text-gray-600">{stream.name}:</span>
                                     <span className="text-sm font-semibold text-gray-900 ml-2">
-                                      {stream.revenue_target || 'Not set'}
+                                      {formatCurrency(stream.revenue_target) || 'Not set'}
                                     </span>
                                   </div>
                                 ))}
@@ -1545,7 +1609,7 @@ const BusinessBlueprintPage = () => {
                                   {getRevenueLabelWithSuffix(organization, 'Target')}
                                 </p>
                                 <p className="text-lg font-semibold text-gray-900">
-                                  {blueprintData.threeYearPicture.revenue_target}
+                                  {formatCurrency(blueprintData.threeYearPicture.revenue_target)}
                                 </p>
                               </div>
                             ) : null}
@@ -1712,7 +1776,7 @@ const BusinessBlueprintPage = () => {
                                 {getRevenueLabelWithSuffix(organization, 'Target')}
                               </p>
                               <p className="text-lg font-semibold text-gray-900">
-                                {blueprintData.oneYearPlan.revenue_target}
+                                {formatCurrency(blueprintData.oneYearPlan.revenue_target)}
                               </p>
                             </div>
                           ) : null}
@@ -1813,6 +1877,64 @@ const BusinessBlueprintPage = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Draft Next Year Goals Section */}
+          {draftGoals && draftGoals.goals && draftGoals.goals.length > 0 && (
+            <Card className="mb-6 bg-blue-50/80 border-2 border-blue-200 shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl text-blue-900">
+                      {new Date().getFullYear() + 1} Goals (Draft)
+                    </CardTitle>
+                    <CardDescription className="text-blue-700">
+                      Set during Annual Planning • {draftGoals.created_at && new Date(draftGoals.created_at).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}
+                    </CardDescription>
+                  </div>
+                  <span className="px-3 py-1 bg-blue-200 text-blue-900 rounded-full text-sm font-medium">
+                    Draft
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Draft Goals List */}
+                <div className="space-y-2 mb-4">
+                  {draftGoals.goals.map((goal, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-blue-200">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      </div>
+                      <p className="flex-1 text-gray-800">{goal}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Info Banner */}
+                <Alert className="mb-4 border-blue-300 bg-blue-100">
+                  <AlertDescription className="text-blue-900 flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    These goals will automatically replace {new Date().getFullYear()} goals on January 1, {new Date().getFullYear() + 1}
+                  </AlertDescription>
+                </Alert>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setShowDraftGoalsModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Edit Draft Goals
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
         )}
@@ -1846,6 +1968,15 @@ const BusinessBlueprintPage = () => {
       />
         </>
       )}
+
+      {/* Draft Goals Edit Modal */}
+      <DraftGoalsEditModal
+        isOpen={showDraftGoalsModal}
+        onClose={() => setShowDraftGoalsModal(false)}
+        goals={draftGoals?.goals || []}
+        year={new Date().getFullYear() + 1}
+        onSave={handleSaveDraftGoals}
+      />
 
       </div>
     </div>

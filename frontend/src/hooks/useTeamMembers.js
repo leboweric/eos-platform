@@ -35,7 +35,7 @@ export function useTeamMembers(teamId, options = {}) {
         setLoading(true);
         
         // If no team context, show all org users as fallback
-        if (!teamId) {
+        if (!teamId || teamId === 'null' || teamId === 'undefined') {
           console.warn('No team context provided, showing all org users');
           const allOrgResponse = await teamsService.getAllOrganizationUsers(organizationId);
           console.log('📦 Fallback all org users API response:', allOrgResponse);

@@ -7,7 +7,7 @@ import {
   ChevronRight, 
   Plus, 
   Edit, 
-  Trash2, 
+  Archive, 
   GripVertical,
   BarChart3,
   MessageSquare,
@@ -19,6 +19,7 @@ import { scorecardGroupsService } from '../../services/scorecardGroupsService';
 import { scorecardService } from '../../services/scorecardService';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
 import { useAuthStore } from '../../stores/authStore';
 
 const GroupedScorecardView = ({ 
@@ -44,7 +45,8 @@ const GroupedScorecardView = ({
   weekOptionsOriginal,
   monthOptionsOriginal,
   selectedWeeks,
-  selectedMonths
+  selectedMonths,
+  scorecardTimePeriodPreference = '13_week_rolling'
 }) => {
   const [groups, setGroups] = useState([]);
   const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
@@ -259,8 +261,8 @@ const GroupedScorecardView = ({
     }
   };
 
-  const handleDeleteGroup = async (groupId) => {
-    if (!confirm('Are you sure you want to delete this group? Metrics will be moved to ungrouped.')) {
+  const handleArchiveGroup = async (groupId) => {
+    if (!confirm('Are you sure you want to archive this group? Metrics will be moved to ungrouped.')) {
       return;
     }
     
@@ -270,7 +272,7 @@ const GroupedScorecardView = ({
       // Reload metrics to reflect ungrouping
       window.location.reload();
     } catch (error) {
-      console.error('Failed to delete group:', error);
+      console.error('Failed to archive group:', error);
     }
   };
 
@@ -511,10 +513,16 @@ const GroupedScorecardView = ({
         <td className="text-center p-2 w-8">
           <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
         </td>
-        <td className="text-center p-2 w-16 text-sm">
-          {metric.ownerName || metric.owner || teamMembers.find(m => m.id === metric.owner)?.name || '-'}
+        <td className="text-center p-2 w-32 text-sm">
+          <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={metric.ownerName || metric.owner || teamMembers.find(m => m.id === metric.owner)?.name || '-'}>
+            {metric.ownerName || metric.owner || teamMembers.find(m => m.id === metric.owner)?.name || '-'}
+          </div>
         </td>
-        <td className="text-left p-2 font-medium w-48">{metric.name}</td>
+        <td className="text-left p-2 font-medium w-64">
+          <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={metric.name}>
+            {metric.name}
+          </div>
+        </td>
         <td className="text-center p-2 w-12">
           <Button
             onClick={() => onChartOpen(metric)}
@@ -529,10 +537,10 @@ const GroupedScorecardView = ({
         {/* Average column */}
         <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-28">
           {(() => {
-            // Include zeros in average calculation
-            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined && (v === 0 || v === '0' || v));
-            if (scoreValues.length === 0) return '-';
-            const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
+            // Calculate average using date range (same logic as ScorecardTableClean)
+            const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
+            const average = calculateAverageInRange(scores, startDate, endDate);
+            if (average === null) return '-';
             const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
             
             return (
@@ -636,8 +644,9 @@ const GroupedScorecardView = ({
               size="sm"
               className="h-8 w-8 p-1.5"
               onClick={() => onMetricDelete(metric.id)}
+              title="Archive metric"
             >
-              <Trash2 className="h-4 w-4 shrink-0 text-red-600" />
+              <Archive className="h-4 w-4 shrink-0 text-gray-600" />
             </Button>
           </div>
         </td>
@@ -769,11 +778,16 @@ const GroupedScorecardView = ({
       <thead className="bg-white border-b border-gray-200">
         <tr>
           <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
-          <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-32">Owner</th>
+          <th className="text-left p-2 font-semibold text-gray-700 w-64">Metric</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-28">Goal</th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">Average</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">
+            {(() => {
+              const { label } = getDateRange(scorecardTimePeriodPreference);
+              return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+            })()}
+          </th>
           {labels.map((label, index) => {
             // Check if this is the current period based on original order (most recent)
             const isCurrentPeriod = index === (isRTL ? 0 : labelsOriginal.length - 1);
@@ -860,10 +874,11 @@ const GroupedScorecardView = ({
                     variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteGroup(group.id);
+                      handleArchiveGroup(group.id);
                     }}
+                    title="Archive group"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Archive className="h-4 w-4 text-gray-600" />
                   </Button>
                 </div>
               </div>
@@ -928,7 +943,7 @@ const GroupedScorecardView = ({
 
       {/* Group Dialog */}
       <Dialog open={groupDialog.isOpen} onOpenChange={(open) => !open && setGroupDialog({ isOpen: false, group: null })}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{groupDialog.group ? 'Edit Group' : `Create New ${type === 'monthly' ? 'Monthly' : 'Weekly'} Group`}</DialogTitle>
             <DialogDescription>

@@ -12,9 +12,17 @@ import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
 import { getOrgTheme } from '../../utils/themeUtils';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
+import { useTeamMembers } from '../../hooks/useTeamMembers';
 
 const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, teamId, onSave, onCreateIssue }) => {
   const { user } = useAuthStore();
+  
+  // Get filtered team members for department filtering
+  const { members: filteredMembers, loading: membersLoading } = useTeamMembers(teamId, {
+    includeAllIfLeadership: true,
+    activeOnly: true,
+    sortBy: 'name'
+  });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -99,11 +107,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         loadUpdates(todo.id);
       }
     } else {
-      // Clear all fields and set default due date for new todos
+      // Clear all fields and set default due date for new todos, default to current user
       setFormData({
         title: '',
         description: '',
-        assignedToId: '',
+        assignedToId: user?.id || '',
         assignedToIds: [],
         isMultiAssignee: false,
         dueDate: getDateDaysFromNow(7),
@@ -131,11 +139,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
           linkedPriorityId: todoFromIssue.linkedPriorityId || null
         });
       } else {
-        // Clear form
+        // Clear form, default to current user
         setFormData({
           title: '',
           description: '',
-          assignedToId: '',
+          assignedToId: user?.id || '',
           assignedToIds: [],
           isMultiAssignee: false,
           dueDate: getDateDaysFromNow(7),
@@ -358,7 +366,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
               </Alert>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-3 pt-6">
               <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Title *</Label>
               <Input
                 id="title"
@@ -373,7 +381,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 }}
                 placeholder="Enter to-do title..."
                 required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                className="ml-1.5 px-3 py-2 bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -499,7 +507,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 <div className="flex items-center justify-between">
                   <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     {formData.isMultiAssignee ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                    Assigned To
+                    Owner
                   </Label>
                   <Button
                     type="button"
@@ -527,7 +535,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                     >
                       {formData.assignedToIds.length > 0 ? (
                         formData.assignedToIds.map(id => {
-                          const member = teamMembers.find(m => m.id === id);
+                          // Use filtered members if available, fallback to teamMembers for backward compatibility
+                          const membersList = filteredMembers.length > 0 ? filteredMembers : teamMembers;
+                          const member = membersList.find(m => m.id === id);
                           return member ? (
                             <div key={id} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-sm">
                               <span>{member.first_name} {member.last_name}</span>
@@ -555,28 +565,33 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                     
                     {showAssigneeDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                        {teamMembers.map(member => {
-                          const isSelected = formData.assignedToIds.includes(member.id);
-                          return (
-                            <div
-                              key={member.id}
-                              className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                              onClick={() => {
-                                setFormData({
-                                  ...formData,
-                                  assignedToIds: isSelected
-                                    ? formData.assignedToIds.filter(id => id !== member.id)
-                                    : [...formData.assignedToIds, member.id]
-                                });
-                              }}
-                            >
-                              <span className="text-sm">
-                                {member.first_name} {member.last_name}
-                              </span>
-                              {isSelected && <Check className="h-4 w-4 text-blue-600" />}
-                            </div>
-                          );
-                        })}
+                        {membersLoading ? (
+                          <div className="px-3 py-2 text-sm text-gray-500">Loading team members...</div>
+                        ) : (
+                          // Use filtered members if available, fallback to teamMembers for backward compatibility
+                          (filteredMembers.length > 0 ? filteredMembers : teamMembers).map(member => {
+                            const isSelected = formData.assignedToIds.includes(member.id);
+                            return (
+                              <div
+                                key={member.id}
+                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    assignedToIds: isSelected
+                                      ? formData.assignedToIds.filter(id => id !== member.id)
+                                      : [...formData.assignedToIds, member.id]
+                                  });
+                                }}
+                              >
+                                <span className="text-sm">
+                                  {member.first_name} {member.last_name}
+                                </span>
+                                {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     )}
                   </div>
@@ -624,7 +639,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                className="px-3 py-2 bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
               <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
             </div>

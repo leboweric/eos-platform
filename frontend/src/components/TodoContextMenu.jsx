@@ -14,7 +14,8 @@ import {
   User,
   Calendar,
   Flag,
-  Copy
+  Copy,
+  AlertCircle
 } from 'lucide-react';
 
 export function TodoContextMenu({ 
@@ -27,6 +28,7 @@ export function TodoContextMenu({
   onChangeDueDate,
   onChangePriority,
   onDuplicate,
+  onCreateLinkedIssue,
   disabled = false,
   hidePriorityOptions = false,
   hideDeleteOption = false
@@ -55,6 +57,14 @@ export function TodoContextMenu({
           <ContextMenuItem onClick={() => onDuplicate(todo)}>
             <Copy className="mr-2 h-4 w-4" />
             Duplicate To-Do
+          </ContextMenuItem>
+        )}
+        
+        {/* Create Linked Issue */}
+        {onCreateLinkedIssue && (
+          <ContextMenuItem onClick={() => onCreateLinkedIssue(todo)}>
+            <AlertCircle className="mr-2 h-4 w-4" />
+            Create a Linked Issue
           </ContextMenuItem>
         )}
         

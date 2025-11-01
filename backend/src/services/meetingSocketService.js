@@ -23,7 +23,9 @@ class MeetingSocketService {
       return;
     }
 
-    console.log('🟢 Initializing meeting WebSocket service...');
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('🟢 Initializing meeting WebSocket service...');
+    }
     
     const allowedOrigins = [
       'https://axplatform.app',              // Production domain
@@ -35,8 +37,10 @@ class MeetingSocketService {
       process.env.FRONTEND_URL               // Environment-specific URL
     ].filter(Boolean); // Remove any undefined values
     
-    console.log('🔌 Socket.IO CORS allowed origins:', allowedOrigins);
-    console.log('🔍 Environment FRONTEND_URL:', process.env.FRONTEND_URL);
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('🔌 Socket.IO CORS allowed origins:', allowedOrigins);
+      console.log('🔍 Environment FRONTEND_URL:', process.env.FRONTEND_URL);
+    }
     
     this.io = new SocketIOServer(server, {
       cors: {
@@ -53,7 +57,9 @@ class MeetingSocketService {
 
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      console.log('👤 User connected:', socket.id);
+      if (process.env.LOG_LEVEL === 'debug') {
+        console.log('👤 User connected:', socket.id);
+      }
 
       // Handle joining a meeting
       socket.on('join-meeting', (data) => {
@@ -73,10 +79,19 @@ class MeetingSocketService {
             // Format: 8-4-4-4-12-8-4-4-4-12-weekly-accountability (UUID-UUID-suffix)
             const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'weekly-accountability');
             initialRoute = `/meetings/weekly-accountability/${teamId}`;
+          } else if (meetingCode.includes('-weekly-express')) {
+            // Extract teamId from meeting code format: orgId-teamId-weekly-express
+            // Format: 8-4-4-4-12-8-4-4-4-12-weekly-express (UUID-UUID-suffix)
+            const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'weekly-express');
+            initialRoute = `/meetings/weekly-express/${teamId}`;
           } else if (meetingCode.includes('-quarterly-planning')) {
             // Extract teamId from meeting code format: orgId-teamId-quarterly-planning
             const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'quarterly-planning');
             initialRoute = `/meetings/quarterly-planning/${teamId}`;
+          } else if (meetingCode.includes('-annual-planning')) {
+            // Extract teamId from meeting code format: orgId-teamId-annual-planning
+            const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'annual-planning');
+            initialRoute = `/meetings/annual-planning/${teamId}`;
           }
           
           meetings.set(meetingCode, {
@@ -132,7 +147,9 @@ class MeetingSocketService {
         // Broadcast updated active meetings to all connected clients
         this.broadcastActiveMeetings();
 
-        console.log(`✅ ${userName} joined meeting ${meetingCode}`);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log(`✅ ${userName} joined meeting ${meetingCode}`);
+        }
       });
 
       // Handle navigation events (leader only)
@@ -161,8 +178,10 @@ class MeetingSocketService {
           scrollPosition: data.scrollPosition
         });
 
-        console.log(`📍 Leader ${userInfo.userId} navigated to route: ${data.route}, section: ${data.section || 'none'}`);
-        console.log(`📍 Broadcasting to meeting: ${userInfo.meetingCode}`);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log(`📍 Leader ${userInfo.userId} navigated to route: ${data.route}, section: ${data.section || 'none'}`);
+          console.log(`📍 Broadcasting to meeting: ${userInfo.meetingCode}`);
+        }
       });
 
       // Handle follow toggle
@@ -241,7 +260,9 @@ class MeetingSocketService {
           userHasVoted
         });
         
-        console.log('📊 Broadcasting vote update for issue:', issueId, 'to meeting:', meetingCode);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📊 Broadcasting vote update for issue:', issueId, 'to meeting:', meetingCode);
+        }
       });
       
       // Handle issue status changes
@@ -255,7 +276,9 @@ class MeetingSocketService {
         // Broadcast issue status update to all participants
         socket.to(meetingCode).emit('issue-status-update', data);
         
-        console.log('📊 Broadcasting issue status update to meeting:', meetingCode);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📊 Broadcasting issue status update to meeting:', meetingCode);
+        }
       });
       
       // Handle todo updates (completion, creation, deletion)
@@ -269,7 +292,9 @@ class MeetingSocketService {
         // Broadcast todo update to all participants
         socket.to(meetingCode).emit('todo-update', data);
         
-        console.log('✅ Broadcasting todo update to meeting:', meetingCode, 'action:', data.action);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('✅ Broadcasting todo update to meeting:', meetingCode, 'action:', data.action);
+        }
       });
       
       // Handle issue creation/deletion
@@ -283,7 +308,9 @@ class MeetingSocketService {
         // Broadcast issue list update to all participants
         socket.to(meetingCode).emit('issue-list-update', data);
         
-        console.log('📝 Broadcasting issue list update to meeting:', meetingCode, 'action:', data.action);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📝 Broadcasting issue list update to meeting:', meetingCode, 'action:', data.action);
+        }
       });
       
       // Handle meeting timer sync
@@ -311,7 +338,9 @@ class MeetingSocketService {
         // Broadcast timer state to all participants
         socket.to(meetingCode).emit('timer-update', data);
         
-        console.log('⏱️ Broadcasting timer update to meeting:', meetingCode, 'timer state:', data);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('⏱️ Broadcasting timer update to meeting:', meetingCode, 'timer state:', data);
+        }
       });
       
       // Handle meeting notes updates
@@ -332,7 +361,9 @@ class MeetingSocketService {
         // Broadcast notes update to all participants
         socket.to(meetingCode).emit('notes-update', data);
         
-        console.log('📝 Broadcasting notes update to meeting:', meetingCode, 'section:', data.section);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📝 Broadcasting notes update to meeting:', meetingCode, 'section:', data.section);
+        }
       });
       
       // Handle presenter claim
@@ -355,41 +386,50 @@ class MeetingSocketService {
           presenterName: data.presenterName
         });
         
-        console.log('👑 Presenter changed in meeting:', meetingCode, 'new presenter:', userId);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('👑 Presenter changed in meeting:', meetingCode, 'new presenter:', userId);
+        }
       });
       
       // Handle participant rating submission
       socket.on('submit-rating', (data) => {
-        console.log('🎯 RATING SUBMISSION RECEIVED:', {
-          socketId: socket.id,
-          data,
-          hasUserData: userSocketMap.has(socket.id),
-          currentSocketRooms: Array.from(socket.rooms)
-        });
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('🎯 RATING SUBMISSION RECEIVED:', {
+            socketId: socket.id,
+            data,
+            hasUserData: userSocketMap.has(socket.id),
+            currentSocketRooms: Array.from(socket.rooms)
+          });
+        }
         
         const userData = userSocketMap.get(socket.id);
         
         if (!userData) {
-          console.error('❌ No user data found for socket:', socket.id);
-          console.log('📊 Current userSocketMap:', Array.from(userSocketMap.entries()));
+          if (process.env.LOG_LEVEL === 'debug') {
+            console.error('❌ No user data found for socket:', socket.id);
+            console.log('📊 Current userSocketMap:', Array.from(userSocketMap.entries()));
+          }
           return;
         }
         
         const { meetingCode, userId: socketUserId } = userData;
-        console.log('💾 BEFORE SAVE - userData:', userData);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('💾 BEFORE SAVE - userData:', userData);
+          console.log('💾 BEFORE SAVE - meeting.ratings:', meeting?.ratings ? Array.from(meeting.ratings.entries()) : 'No ratings Map yet');
+          console.log('🔍 Meeting lookup:', {
+            meetingCode,
+            meetingExists: !!meeting,
+            participants: meeting ? Array.from(meeting.participants.values()) : [],
+            leader: meeting ? meeting.leader : null
+          });
+        }
         
         const meeting = meetings.get(meetingCode);
-        console.log('💾 BEFORE SAVE - meeting.ratings:', meeting?.ratings ? Array.from(meeting.ratings.entries()) : 'No ratings Map yet');
-        
-        console.log('🔍 Meeting lookup:', {
-          meetingCode,
-          meetingExists: !!meeting,
-          participants: meeting ? Array.from(meeting.participants.values()) : [],
-          leader: meeting ? meeting.leader : null
-        });
         
         if (!meeting) {
-          console.error('❌ No meeting found for code:', meetingCode);
+          if (process.env.LOG_LEVEL === 'debug') {
+            console.error('❌ No meeting found for code:', meetingCode);
+          }
           return;
         }
         
@@ -402,13 +442,15 @@ class MeetingSocketService {
         const ratingUserId = socketUserId || data.userId;
         const ratingUserName = userData.userName || data.userName;
         
-        console.log('💾 Storing rating:', {
-          ratingUserId,
-          ratingUserName,
-          rating: data.rating,
-          socketUserId,
-          dataUserId: data.userId
-        });
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('💾 Storing rating:', {
+            ratingUserId,
+            ratingUserName,
+            rating: data.rating,
+            socketUserId,
+            dataUserId: data.userId
+          });
+        }
         
         meeting.ratings.set(ratingUserId, {
           userId: ratingUserId,
@@ -417,12 +459,16 @@ class MeetingSocketService {
           submittedAt: new Date()
         });
         
-        console.log('💾 AFTER SAVE - meeting.ratings:', Array.from(meeting.ratings.entries()));
-        console.log('💾 AFTER SAVE - meeting.ratings.size:', meeting.ratings.size);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('💾 AFTER SAVE - meeting.ratings:', Array.from(meeting.ratings.entries()));
+          console.log('💾 AFTER SAVE - meeting.ratings.size:', meeting.ratings.size);
+        }
         
         // Calculate average rating
         const allRatings = Array.from(meeting.ratings.values());
-        console.log('📡 All ratings to broadcast:', allRatings);
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📡 All ratings to broadcast:', allRatings);
+        }
         
         const averageRating = allRatings.length > 0 
           ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length 
@@ -438,13 +484,15 @@ class MeetingSocketService {
           allRatings: allRatings
         };
         
-        console.log('📤 BROADCASTING RATING:', {
-          to: meetingCode,
-          data: broadcastData,
-          socketsInRoom: this.io.sockets.adapter.rooms.get(meetingCode) ? 
-            Array.from(this.io.sockets.adapter.rooms.get(meetingCode)) : [],
-          socketIsInRoom: socket.rooms.has(meetingCode)
-        });
+        if (process.env.LOG_LEVEL === 'debug') {
+          console.log('📤 BROADCASTING RATING:', {
+            to: meetingCode,
+            data: broadcastData,
+            socketsInRoom: this.io.sockets.adapter.rooms.get(meetingCode) ? 
+              Array.from(this.io.sockets.adapter.rooms.get(meetingCode)) : [],
+            socketIsInRoom: socket.rooms.has(meetingCode)
+          });
+        }
         
         // Ensure socket is in room before broadcasting
         if (!socket.rooms.has(meetingCode)) {
@@ -505,7 +553,9 @@ class MeetingSocketService {
             return;
           }
 
-          console.log(`🎙️ Starting AI recording for meeting ${meetingId}, transcript ${transcriptId}`);
+          if (process.env.LOG_LEVEL === 'debug') {
+            console.log(`🎙️ Starting AI recording for meeting ${meetingId}, transcript ${transcriptId}`);
+          }
 
           // Start real-time transcription with AssemblyAI
           const session = await transcriptionService.startRealtimeTranscription(transcriptId, organizationId);
@@ -749,22 +799,30 @@ class MeetingSocketService {
         return null;
       }
       
-      // Remove the suffix to get: orgId-teamId
+      // Remove the suffix to get either: teamId or orgId-teamId
       const withoutSuffix = meetingCode.slice(0, -suffix.length);
       
       // UUIDs are 36 characters long (8-4-4-4-12 format)
-      // So we need to find where the first UUID ends and second begins
-      // Expected format: orgId (36 chars) + '-' + teamId (36 chars)
-      if (withoutSuffix.length !== 73) { // 36 + 1 + 36 = 73
-        console.error('Unexpected meeting code format. Expected length 73, got:', withoutSuffix.length);
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      let teamId;
+      
+      if (withoutSuffix.length === 36) {
+        // Legacy format: just teamId-meetingType (36 characters)
+        teamId = withoutSuffix;
+        console.log(`✅ Using legacy meeting code format (teamId only): ${teamId}`);
+      } else if (withoutSuffix.length === 73) {
+        // New format: orgId-teamId-meetingType (73 characters: 36 + 1 + 36)
+        teamId = withoutSuffix.slice(-36); // Extract teamId (last 36 characters)
+        console.log(`✅ Using new meeting code format (orgId-teamId): ${teamId}`);
+      } else {
+        console.error(`Unexpected meeting code format. Expected length 36 (legacy) or 73 (new), got: ${withoutSuffix.length}`);
+        console.error(`Full meeting code: ${meetingCode}`);
+        console.error(`Without suffix: ${withoutSuffix}`);
         return null;
       }
       
-      // Extract teamId (last 36 characters)
-      const teamId = withoutSuffix.slice(-36);
-      
-      // Validate it looks like a UUID (basic check)
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // Validate the extracted teamId looks like a UUID
       if (!uuidPattern.test(teamId)) {
         console.error('Extracted teamId does not match UUID pattern:', teamId);
         return null;

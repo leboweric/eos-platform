@@ -46,10 +46,12 @@ export const todosService = {
     const mappedData = {
       title: todoData.title,
       description: todoData.description,
-      assignedToId: todoData.assignedToId,
+      assignedToId: todoData.assigned_to || todoData.assignedToId,
       assignedToIds: todoData.assignedToIds, // For multi-assignee support
-      dueDate: todoData.dueDate,
-      teamId: todoData.department_id || todoData.teamId || null
+      dueDate: todoData.due_date || todoData.dueDate,
+      priority: todoData.priority,
+      teamId: todoData.team_id || todoData.department_id || todoData.teamId || null,
+      relatedPriorityId: todoData.related_priority_id
     };
     
     const response = await axios.post(

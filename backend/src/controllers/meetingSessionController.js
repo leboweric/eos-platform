@@ -31,7 +31,7 @@ export const startMeetingSession = async (req, res) => {
         organization_id, team_id, meeting_type, 
         facilitator_id, current_section, section_timings
       )
-      VALUES ($1, $2, $3, $4, 'segue', '{}')
+      VALUES ($1, $2, $3, $4, 'segue', '{}'::jsonb)
       RETURNING *`,
       [organizationId, teamId, meetingType, userId]
     );
@@ -52,8 +52,41 @@ export const startMeetingSession = async (req, res) => {
 // Start tracking a specific section
 export const startSection = async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    const { sectionId } = req.body;
+    const { id: sessionId } = req.params;
+    // Accept both snake_case and camelCase parameter names
+    const sectionId = req.body.sectionId || req.body.section_id;
+    
+    // Map frontend section IDs to backend IDs
+    const sectionIdMap = {
+      // Frontend ID → Backend ID
+      'good-news': 'segue',
+      'good_news': 'segue',
+      'priorities': 'rock_review',
+      'priority': 'rock_review',
+      'rocks': 'rock_review',
+      'rock': 'rock_review',
+      'todo-list': 'todos',
+      'todo_list': 'todos',
+      'todo': 'todos',
+      'issues': 'ids',
+      'issue': 'ids',
+      'problems': 'ids',
+      'problem': 'ids'
+    };
+    const mappedSectionId = sectionIdMap[sectionId] || sectionId;
+    
+    console.log('🔄 [Section Mapping]', {
+      received: sectionId,
+      mapped: mappedSectionId,
+      mapUsed: sectionIdMap
+    });
+    
+    console.log('🔍 [startSection] Request details:', {
+      sessionId,
+      sectionId,
+      body: req.body,
+      params: req.params
+    });
 
     // Get section configuration
     const configResult = await query(
@@ -68,12 +101,30 @@ export const startSection = async (req, res) => {
     );
 
     const sections = configResult.rows[0]?.sections || DEFAULT_LEVEL_10_SECTIONS;
-    const sectionConfig = sections.find(s => s.id === sectionId);
+    
+    console.log('📋 [Available Sections]', {
+      allAvailableIds: sections.map(s => s.id),
+      lookingFor: mappedSectionId,
+      configSource: configResult.rows[0] ? 'database' : 'default'
+    });
+    
+    const sectionConfig = sections.find(s => s.id === mappedSectionId);
     
     if (!sectionConfig) {
+      console.error('❌ [startSection] Invalid section ID:', {
+        originalSectionId: sectionId,
+        mappedSectionId,
+        availableSections: sections.map(s => ({ id: s.id, name: s.name })),
+        configFound: !!configResult.rows[0]
+      });
       return res.status(400).json({
         success: false,
-        error: 'Invalid section ID'
+        error: 'Invalid section ID',
+        details: {
+          originalSectionId: sectionId,
+          mappedSectionId,
+          availableSections: sections.map(s => s.id)
+        }
       });
     }
 
@@ -86,10 +137,28 @@ export const startSection = async (req, res) => {
     );
 
     const currentSession = currentResult.rows[0];
-    const sectionTimings = currentSession.section_timings || {};
+    
+    // Defensive parsing: handle both string and object cases
+    let sectionTimings = currentSession.section_timings;
+    if (typeof sectionTimings === 'string') {
+      try {
+        sectionTimings = JSON.parse(sectionTimings);
+      } catch (e) {
+        console.warn('⚠️ [startSection] Failed to parse section_timings string:', sectionTimings);
+        sectionTimings = {};
+      }
+    }
+    sectionTimings = sectionTimings || {};
+    
+    console.log('🔧 [Section Timings Debug]', {
+      originalType: typeof currentSession.section_timings,
+      originalValue: currentSession.section_timings,
+      parsedValue: sectionTimings,
+      hasData: Object.keys(sectionTimings).length > 0
+    });
 
     // If there's a current section that's different, end it
-    if (currentSession.current_section && currentSession.current_section !== sectionId) {
+    if (currentSession.current_section && currentSession.current_section !== mappedSectionId) {
       const currentSectionData = sectionTimings[currentSession.current_section] || {};
       if (currentSectionData.started_at && !currentSectionData.ended_at) {
         currentSectionData.ended_at = new Date().toISOString();
@@ -104,7 +173,7 @@ export const startSection = async (req, res) => {
     }
 
     // Start new section
-    sectionTimings[sectionId] = {
+    sectionTimings[mappedSectionId] = {
       allocated: sectionConfig.duration * 60, // Convert minutes to seconds
       started_at: new Date().toISOString(),
       ended_at: null,
@@ -123,7 +192,7 @@ export const startSection = async (req, res) => {
            )
        WHERE id = $4
        RETURNING *`,
-      [sectionId, JSON.stringify(sectionTimings), sectionId, sessionId]
+      [mappedSectionId, JSON.stringify(sectionTimings), mappedSectionId, sessionId]
     );
 
     res.json({
@@ -145,8 +214,41 @@ export const startSection = async (req, res) => {
 // End current section
 export const endSection = async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    const { sectionId } = req.body;
+    const { id: sessionId } = req.params;
+    // Accept both snake_case and camelCase parameter names
+    const sectionId = req.body.sectionId || req.body.section_id;
+    
+    // Map frontend section IDs to backend IDs
+    const sectionIdMap = {
+      // Frontend ID → Backend ID
+      'good-news': 'segue',
+      'good_news': 'segue',
+      'priorities': 'rock_review',
+      'priority': 'rock_review',
+      'rocks': 'rock_review',
+      'rock': 'rock_review',
+      'todo-list': 'todos',
+      'todo_list': 'todos',
+      'todo': 'todos',
+      'issues': 'ids',
+      'issue': 'ids',
+      'problems': 'ids',
+      'problem': 'ids'
+    };
+    const mappedSectionId = sectionIdMap[sectionId] || sectionId;
+    
+    console.log('🔄 [Section Mapping]', {
+      received: sectionId,
+      mapped: mappedSectionId,
+      mapUsed: sectionIdMap
+    });
+    
+    console.log('🔍 [endSection] Request details:', {
+      sessionId,
+      sectionId,
+      body: req.body,
+      params: req.params
+    });
 
     const result = await query(
       `SELECT current_section, section_timings 
@@ -163,13 +265,46 @@ export const endSection = async (req, res) => {
       });
     }
 
-    const sectionTimings = session.section_timings || {};
-    const sectionData = sectionTimings[sectionId];
+    // Defensive parsing: handle both string and object cases
+    let sectionTimings = session.section_timings;
+    if (typeof sectionTimings === 'string') {
+      try {
+        sectionTimings = JSON.parse(sectionTimings);
+      } catch (e) {
+        console.warn('⚠️ [endSection] Failed to parse section_timings string:', sectionTimings);
+        sectionTimings = {};
+      }
+    }
+    sectionTimings = sectionTimings || {};
+    
+    console.log('🔧 [Section Timings Debug]', {
+      originalType: typeof session.section_timings,
+      originalValue: session.section_timings,
+      parsedValue: sectionTimings,
+      hasData: Object.keys(sectionTimings).length > 0
+    });
+    
+    const sectionData = sectionTimings[mappedSectionId];
 
     if (!sectionData || !sectionData.started_at) {
+      console.error('❌ [endSection] Section not started:', {
+        originalSectionId: sectionId,
+        mappedSectionId,
+        sectionData,
+        sectionTimings,
+        sessionExists: !!session,
+        availableSections: Object.keys(sectionTimings)
+      });
       return res.status(400).json({
         success: false,
-        error: 'Section not started'
+        error: 'Section not started',
+        details: {
+          originalSectionId: sectionId,
+          mappedSectionId,
+          hasSection: !!sectionData,
+          hasStartTime: !!sectionData?.started_at,
+          availableSections: Object.keys(sectionTimings)
+        }
       });
     }
 
@@ -184,7 +319,7 @@ export const endSection = async (req, res) => {
       sectionData.overrun = sectionData.actual - sectionData.allocated;
     }
 
-    sectionTimings[sectionId] = sectionData;
+    sectionTimings[mappedSectionId] = sectionData;
 
     // Update session
     const updateResult = await query(
@@ -211,7 +346,7 @@ export const endSection = async (req, res) => {
 // Get current session status with section timing
 export const getSessionStatus = async (req, res) => {
   try {
-    const { sessionId } = req.params;
+    const { id: sessionId } = req.params;
 
     const result = await query(
       `SELECT 
@@ -285,7 +420,7 @@ export const getSessionStatus = async (req, res) => {
 // Update section timing when pausing/resuming
 export const updateSectionPause = async (req, res) => {
   try {
-    const { sessionId } = req.params;
+    const { id: sessionId } = req.params;
     const { isPaused } = req.body;
 
     const result = await query(
@@ -303,7 +438,17 @@ export const updateSectionPause = async (req, res) => {
       });
     }
 
-    const sectionTimings = session.section_timings || {};
+    // Defensive parsing: handle both string and object cases  
+    let sectionTimings = session.section_timings;
+    if (typeof sectionTimings === 'string') {
+      try {
+        sectionTimings = JSON.parse(sectionTimings);
+      } catch (e) {
+        console.warn('⚠️ [updateSectionPause] Failed to parse section_timings string:', sectionTimings);
+        sectionTimings = {};
+      }
+    }
+    sectionTimings = sectionTimings || {};
 
     // Update current section's paused duration
     if (session.current_section && sectionTimings[session.current_section]) {

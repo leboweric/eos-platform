@@ -266,5 +266,6 @@ export const quarterlyPrioritiesService = {
       console.error('Error archiving completed priorities:', error);
       throw error;
     }
-  }
+  },
+
 };

@@ -82,6 +82,7 @@ const CONFIRMATION_TYPES = {
  * @param {string} cancelLabel - Custom cancel button label (defaults to 'Cancel')
  * @param {boolean} loading - Whether the action is in progress
  * @param {string} className - Additional CSS classes for DialogContent
+ * @param {string} themeColor - Custom theme color to override default colors
  */
 const ConfirmationDialog = ({
   open,
@@ -94,10 +95,21 @@ const ConfirmationDialog = ({
   actionLabel,
   cancelLabel = 'Cancel',
   loading = false,
-  className = ''
+  className = '',
+  themeColor
 }) => {
   const config = CONFIRMATION_TYPES[type] || CONFIRMATION_TYPES.confirm;
   const Icon = config.icon;
+  
+  // Use theme color if provided, otherwise fall back to default colors
+  const titleColorClass = themeColor ? '' : config.titleColor;
+  const titleStyle = themeColor ? { color: themeColor } : {};
+  const buttonStyle = themeColor ? { 
+    backgroundColor: themeColor, 
+    borderColor: themeColor,
+    color: 'white'
+  } : {};
+  const buttonClass = themeColor ? 'hover:opacity-90 text-white' : config.buttonClass;
   
   const handleCancel = () => {
     if (onCancel) {
@@ -117,8 +129,8 @@ const ConfirmationDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`sm:max-w-[425px] ${className}`}>
         <DialogHeader>
-          <DialogTitle className={`flex items-center gap-2 ${config.titleColor}`}>
-            <Icon className="h-5 w-5" />
+          <DialogTitle className={`flex items-center gap-2 ${titleColorClass}`} style={titleStyle}>
+            <Icon className="h-5 w-5" style={titleStyle} />
             {title || config.defaultTitle}
           </DialogTitle>
           {message && (
@@ -141,7 +153,8 @@ const ConfirmationDialog = ({
           </Button>
           <Button
             onClick={handleConfirm}
-            className={config.buttonClass}
+            className={buttonClass}
+            style={buttonStyle}
             disabled={loading}
           >
             {loading ? (
@@ -183,11 +196,16 @@ export const useConfirmationDialog = () => {
 
   const handleConfirm = async () => {
     if (config.onConfirm) {
+      console.log('🎯 ConfirmationDialog handleConfirm started');
       setLoading(true);
       try {
+        console.log('⏳ Calling config.onConfirm...');
         await config.onConfirm();
+        console.log('✅ config.onConfirm resolved, calling hideConfirmation');
         hideConfirmation();
+        console.log('🎯 ConfirmationDialog handleConfirm completed - modal should be closed');
       } catch (error) {
+        console.log('❌ config.onConfirm threw error:', error);
         setLoading(false);
         // Let the parent component handle the error
         throw error;

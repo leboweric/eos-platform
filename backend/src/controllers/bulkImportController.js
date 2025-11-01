@@ -159,7 +159,7 @@ export const previewImport = async (req, res) => {
 
 // Perform bulk import
 export const bulkImport = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     if (!req.file) {

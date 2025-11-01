@@ -300,7 +300,7 @@ const PriorityDialog = ({
 
           <div className="flex-1 overflow-y-auto mt-4 min-h-[400px]">
             <TabsContent value="details" className="space-y-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 pt-6">
                 <div>
                   <Label htmlFor="title">Title</Label>
                   <Input

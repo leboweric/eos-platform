@@ -1,6 +1,7 @@
 import pkg from 'pg';
 import dotenv from 'dotenv';
 import logger from '../utils/logger.js';
+import { wrapQueryWithMetrics } from '../middleware/queryMetrics.js';
 
 dotenv.config();
 
@@ -46,9 +47,16 @@ const dbConfig = useProductionDB
 // Create connection pool
 const pool = new Pool(dbConfig);
 
-// Test database connection
+// Wrap pool with query metrics tracking (preserves all pool methods)
+wrapQueryWithMetrics(pool);
+
+// Test database connection (log only once on startup, only in debug mode)
+let hasLoggedConnection = false;
 pool.on('connect', () => {
-  logger.info('📊 Connected to PostgreSQL database');
+  if (!hasLoggedConnection && process.env.LOG_LEVEL === 'debug') {
+    logger.debug('📊 Connected to PostgreSQL database');
+    hasLoggedConnection = true;
+  }
 });
 
 pool.on('error', (err, client) => {
@@ -77,6 +85,18 @@ export const query = async (text, params, retries = 2) => {
     try {
       const res = await pool.query(text, params);
       const duration = Date.now() - start;
+      
+      // Track query metrics for observability
+      if (duration > 500) {
+        const endpoint = global.currentRequestPath || 'unknown';
+        const organizationId = global.currentOrganizationId || null;
+        // Use dynamic import to avoid circular dependency
+        import('../services/observabilityService.js').then(({ default: observabilityService }) => {
+          observabilityService.trackQuery(text, duration, endpoint, organizationId);
+        }).catch(() => {
+          // Silently fail if observability service is not available
+        });
+      }
       
       // Only log slow queries (> 1000ms) in production
       if (duration > 1000) {
@@ -141,5 +161,16 @@ export const rollbackTransaction = async (client) => {
   client.release();
 };
 
-export default pool;
+// Named export for pool direct access
+export { pool };
+
+// Default export for backward compatibility
+export default {
+  query,
+  pool,
+  getClient,
+  beginTransaction,
+  commitTransaction,
+  rollbackTransaction
+};
 

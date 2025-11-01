@@ -545,6 +545,7 @@ export const concludeMeeting = async (req, res) => {
     // Format meeting type for display
     const formattedMeetingType = meetingType === 'weekly' ? 'Weekly Accountability Meeting' : 
                                  meetingType === 'quarterly' ? 'Quarterly Planning Meeting' : 
+                                 meetingType === 'annual' ? 'Annual Planning Meeting' :
                                  meetingType || 'Meeting';
 
     // Format meeting data for email template (same format as Meeting History)

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { businessBlueprintService } from '../../services/businessBlueprintService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '../../utils/revenueUtils';
 import { 
   Target, 
   Lightbulb,
@@ -265,7 +266,7 @@ const TwoPagePlanSimplified = () => {
                 )}
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
-                  <p className="text-gray-600">{blueprintData.threeYearPicture.revenue || 'Not set'}</p>
+                  <p className="text-gray-600">{blueprintData.threeYearPicture.revenue ? formatCurrency(blueprintData.threeYearPicture.revenue) : 'Not set'}</p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
@@ -309,7 +310,7 @@ const TwoPagePlanSimplified = () => {
               <div className="space-y-3">
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue</h4>
-                  <p className="text-gray-600">{blueprintData.oneYearPlan.revenue || 'Not set'}</p>
+                  <p className="text-gray-600">{blueprintData.oneYearPlan.revenue ? formatCurrency(blueprintData.oneYearPlan.revenue) : 'Not set'}</p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit</h4>

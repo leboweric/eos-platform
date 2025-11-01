@@ -9,10 +9,58 @@ const apiClient = axios.create({
   }
 });
 
-// Add auth token to requests
+// Helper function to check if token is expired or will expire soon
+const isTokenExpired = (token) => {
+  if (!token) return true;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    // Check if token expires within next 5 minutes
+    return payload.exp < (currentTime + 300);
+  } catch (error) {
+    return true;
+  }
+};
+
+// Helper function to refresh token proactively
+const refreshTokenProactively = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) return false;
+  
+  try {
+    console.log('🔄 Proactively refreshing token...');
+    const response = await axios.post(
+      `${apiClient.defaults.baseURL}/auth/refresh`,
+      { refreshToken }
+    );
+    
+    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', newRefreshToken);
+    
+    console.log('✅ Proactive token refresh successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Proactive token refresh failed:', error);
+    return false;
+  }
+};
+
+// Add auth token to requests with proactive refresh
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('accessToken');
+  async (config) => {
+    let token = localStorage.getItem('accessToken');
+    
+    // Check if token needs refresh before making request
+    if (isTokenExpired(token)) {
+      console.log('🔄 Token expired, refreshing before request...');
+      const refreshSuccess = await refreshTokenProactively();
+      if (refreshSuccess) {
+        token = localStorage.getItem('accessToken');
+      }
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,31 +89,46 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       
+      console.log('🔄 Token expired, attempting refresh...');
+      
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          // Try to refresh the token
-          const response = await axios.post(
-            `${apiClient.defaults.baseURL}/auth/refresh`,
-            { refreshToken }
-          );
-          
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
-          
-          // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return apiClient(originalRequest);
+        if (!refreshToken) {
+          console.log('❌ No refresh token available');
+          throw new Error('No refresh token available');
         }
+        
+        console.log('🔄 Calling refresh endpoint...');
+        // Try to refresh the token
+        const response = await axios.post(
+          `${apiClient.defaults.baseURL}/auth/refresh`,
+          { refreshToken }
+        );
+        
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        
+        console.log('✅ Token refresh successful, retrying original request');
+        
+        // Retry the original request with new token
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        // Refresh failed, redirect to login
+        console.error('❌ Token refresh failed:', refreshError.response?.data || refreshError.message);
+        
+        // Clear tokens and redirect to login
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        
+        // Only redirect if we're not already on auth pages
         if (!window.location.pathname.match(/^\/(login|register|consultant-register|$)/)) {
+          console.log('🔄 Redirecting to login...');
           window.location.href = '/login';
         }
+        
+        return Promise.reject(refreshError);
       }
     }
     

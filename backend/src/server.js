@@ -1,6 +1,6 @@
 // Import Sentry for middleware (initialization happens in instrument.js)
 import * as Sentry from '@sentry/node';
-// Build trigger: 2025-10-25
+// Build trigger: 2025-10-29 - Annual Planning Goals fix
 
 import express from 'express';
 import cors from 'cors';
@@ -23,6 +23,9 @@ import issueRoutes from './routes/issues.js';
 import headlinesRoutes from './routes/headlines.js';
 import departmentRoutes from './routes/departmentRoutes.js';
 import accountabilityRoutes from './routes/accountabilityRoutes.js';
+
+// Import scheduled jobs
+import './jobs/overdueTodosCron.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import subscriptionRoutesV2 from './routes/subscriptionRoutesV2.js';
 import webhookRoutes from './routes/webhookRoutes.js';
@@ -45,6 +48,9 @@ import terminologyRoutes from './routes/terminology.js';
 import oauthRoutes from './routes/oauth.js';
 import exportRoutes from './routes/export.js';
 import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
+import annualCommitmentsRoutes from './routes/annualCommitments.js';
+import swotItemsRoutes from './routes/swotItems.js';
+import annualPlanningGoalsRoutes from './routes/annualPlanningGoals.js';
 import processDocumentationRoutes from './routes/processDocumentation.js';
 import healthRoutes from './routes/healthRoutes.js';
 import todoReminderRoutes from './routes/todoReminders.js';
@@ -62,6 +68,9 @@ import transcriptionRoutes from './routes/transcription.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import { checkTrialStatus, checkTrialReminders } from './middleware/trialCheck.js';
+import { requestMetrics } from './middleware/requestMetrics.js';
+import { trackUserActivity } from './middleware/activityTracking.js';
+// import { setRequestContext } from './middleware/queryMetrics.js'; // Removed - export doesn't exist
 
 // Import jobs
 import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
@@ -154,7 +163,10 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
-console.log('🔒 CORS allowed origins:', allowedOrigins);
+// Only log CORS origins in debug mode
+if (process.env.LOG_LEVEL === 'debug') {
+  console.log('🔒 CORS allowed origins:', allowedOrigins);
+}
 
 app.use(cors({
   origin: function(origin, callback) {
@@ -182,7 +194,20 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
-app.use(morgan('combined'));
+// Only log HTTP access in debug mode to reduce Railway log rate limiting
+if (process.env.LOG_LEVEL === 'debug') {
+  app.use(morgan('combined'));
+} else {
+  // In production, only log errors (status >= 400)
+  app.use(morgan('combined', {
+    skip: function (req, res) { return res.statusCode < 400; }
+  }));
+}
+
+// Add observability middleware
+app.use(requestMetrics);
+app.use(trackUserActivity);
+// app.use(setRequestContext); // Removed - function doesn't exist
 
 // IMPORTANT: Webhook routes MUST come BEFORE body parsing middleware
 // Stripe webhooks need the raw body to verify signatures
@@ -240,9 +265,14 @@ app.use('/api/v1/organizations/:orgId/teams/:teamId/meetings', meetingRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/meeting-sessions', meetingSessionsRoutes);
 app.use('/api/v1/organizations/:orgId/meeting-history', meetingHistoryRoutes);
 app.use('/api/v1/ai', aiMeetingRoutes);
-console.log('🔍 [Server] Mounting transcription routes at /api/v1/transcription');
+// Only log route mounting in debug mode
+if (process.env.LOG_LEVEL === 'debug') {
+  console.log('🔍 [Server] Mounting transcription routes at /api/v1/transcription');
+}
 app.use('/api/v1/transcription', transcriptionRoutes);
-console.log('✅ [Server] Transcription routes mounted successfully');
+if (process.env.LOG_LEVEL === 'debug') {
+  console.log('✅ [Server] Transcription routes mounted successfully');
+}
 app.use('/api/v1/organizations/:orgId/teams/:teamId/cascading-messages', cascadingMessagesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/todos', todoRoutes);
@@ -269,16 +299,17 @@ app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
 app.use('/api/v1/todo-reminders', todoReminderRoutes);
+app.use('/api/v1', annualCommitmentsRoutes);
+app.use('/api/v1', swotItemsRoutes);
+app.use('/api/v1', annualPlanningGoalsRoutes);
 
-// TEMPORARY: Log all unmatched transcription requests to debug route issues
+// TEMPORARY: Log transcription requests only in debug mode to reduce Railway rate limiting
 app.use((req, res, next) => {
-  if (req.url.includes('transcription')) {
+  if (req.url.includes('transcription') && process.env.LOG_LEVEL === 'debug') {
     console.log('🚨 TRANSCRIPTION REQUEST RECEIVED:', {
       method: req.method,
       url: req.url,
-      originalUrl: req.originalUrl,
       path: req.path,
-      baseUrl: req.baseUrl,
       headers: {
         authorization: req.headers.authorization ? 'Bearer ***' : 'NONE',
         'content-type': req.headers['content-type']
@@ -326,7 +357,9 @@ cleanupStuckTranscriptions();
 const server = createServer(app);
 
 // Initialize WebSocket service
-meetingSocketService.initialize(server);
+const io = meetingSocketService.initialize(server);
+// Make io globally available for observability
+global.io = io;
 
 // Only start server when not in test mode
 // Tests use supertest which handles this internally

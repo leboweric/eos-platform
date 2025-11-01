@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
+import failedOperationsService from '../services/failedOperationsService.js';
 
 // Microsoft OAuth configuration
 const msalConfig = {
@@ -65,6 +66,17 @@ export const getMicrosoftAuthUrl = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error generating Microsoft auth URL:', error);
+    
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'microsoft_auth_url',
+      error,
+      { 
+        provider: 'microsoft',
+        action: 'generate_url'
+      }
+    );
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to generate authentication URL' 
@@ -200,6 +212,9 @@ export const handleMicrosoftCallback = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [user.id, user.organization_id, req.ip, req.get('user-agent'), 'microsoft']
     ).catch(err => console.error('Failed to track login:', err));
+    
+    // Track successful OAuth
+    global.lastOAuthSuccess = Date.now();
 
     // Ensure we have a valid user object
     if (!user || !user.id) {
@@ -247,6 +262,21 @@ export const handleMicrosoftCallback = async (req, res) => {
     console.error('❌ Microsoft OAuth callback error:', error);
     console.error('Stack:', error.stack);
     
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'microsoft_callback',
+      error,
+      { 
+        provider: 'microsoft',
+        action: 'callback',
+        email: req.query?.email,
+        critical: true
+      }
+    );
+    
+    // Update global tracking
+    global.lastOAuthError = Date.now();
+    
     // Redirect to login with error - use clean base URL
     let baseUrl = 'https://axplatform.app';
     if (req.query.state && req.query.state.includes('myboyum')) {
@@ -281,6 +311,18 @@ export const linkMicrosoftAccount = async (req, res) => {
     res.json({ authUrl });
   } catch (error) {
     console.error('Error linking Microsoft account:', error);
+    
+    // Log OAuth failure
+    await failedOperationsService.logOAuthFailure(
+      'microsoft_link_account',
+      error,
+      { 
+        provider: 'microsoft',
+        action: 'link',
+        userId: req.user?.id
+      }
+    );
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to link Microsoft account' 

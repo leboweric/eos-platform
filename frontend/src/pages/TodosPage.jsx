@@ -528,6 +528,90 @@ const TodosPage = () => {
                 onStatusChange={handleStatusChange}
                 onConvertToIssue={handleConvertToIssue}
                 onUnarchive={handleUnarchive}
+                onReassign={(todo) => {
+                  // EXACT COPY from Level 10 Meeting: Open edit dialog for reassignment
+                  setEditingTodo(todo);
+                  setShowTodoDialog(true);
+                }}
+                onChangeDueDate={(todo) => {
+                  // EXACT COPY from Level 10 Meeting: Open edit dialog for due date change
+                  setEditingTodo(todo);
+                  setShowTodoDialog(true);
+                }}
+                onChangePriority={async (todo, newPriority) => {
+                  // EXACT COPY from Level 10 Meeting: Update priority directly
+                  try {
+                    const orgId = user?.organizationId || user?.organization_id;
+                    const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                    
+                    await todosService.updateTodo(todo.id, {
+                      ...todo,
+                      organization_id: orgId,
+                      department_id: effectiveTeamId,
+                      priority: newPriority
+                    });
+                    
+                    setSuccess(`To-do priority updated to ${newPriority}`);
+                    await fetchTodos();
+                  } catch (error) {
+                    console.error('Failed to change priority:', error);
+                    setError('Failed to update to-do priority');
+                  }
+                }}
+                onDuplicate={async (todo) => {
+                  // EXACT COPY from Level 10 Meeting: Duplicate todo with "(Copy)" suffix
+                  try {
+                    const orgId = user?.organizationId || user?.organization_id;
+                    const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                    
+                    await todosService.createTodo({
+                      ...todo,
+                      id: undefined,
+                      title: `${todo.title} (Copy)`,
+                      organization_id: orgId,
+                      department_id: effectiveTeamId
+                    });
+                    
+                    setSuccess('To-do duplicated successfully');
+                    await fetchTodos();
+                  } catch (error) {
+                    console.error('Failed to duplicate todo:', error);
+                    setError('Failed to duplicate to-do');
+                  }
+                }}
+                onCreateLinkedIssue={async (todo) => {
+                  // EXACT COPY from Level 10 Meeting: Check for existing linked issue first
+                  try {
+                    const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                    
+                    // Check if an issue already exists for this todo
+                    const issuesResponse = await issuesService.getIssues();
+                    const existingIssues = issuesResponse.data?.issues || issuesResponse.issues || issuesResponse;
+                    const linkedIssue = existingIssues.find(issue => issue.related_todo_id === todo.id);
+                    
+                    if (linkedIssue) {
+                      setError('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                      return;
+                    }
+
+                    await issuesService.createIssue({
+                      title: `Issue from To-Do: ${todo.title}`,
+                      description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+                      ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
+                      teamId: effectiveTeamId,
+                      related_todo_id: todo.id
+                    });
+                    
+                    setSuccess('Issue created successfully from to-do');
+                  } catch (error) {
+                    console.error('Failed to create linked issue:', error);
+                    if (error.response?.status === 409) {
+                      setError('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                    } else {
+                      setError('Failed to create issue from to-do');
+                    }
+                  }
+                }}
                 showCompleted={true}
                 showingArchived={activeTab === 'archived'}
               />

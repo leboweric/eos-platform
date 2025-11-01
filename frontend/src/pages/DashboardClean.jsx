@@ -18,14 +18,20 @@ import { businessBlueprintService } from '../services/businessBlueprintService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
+import { TodoContextMenu } from '../components/TodoContextMenu';
 import IssueDialog from '../components/issues/IssueDialog';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import annualCommitmentsService from '../services/annualCommitmentsService';
+import CommitmentReminderCard from '../components/dashboard/CommitmentReminderCard';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { useDepartment } from '../contexts/DepartmentContext';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import HeadlineItem from '../components/headlines/HeadlineItem';
+import ConfirmationDialog, { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { toast } from 'sonner';
 import {
   AlertTriangle,
   AlertCircle,
@@ -100,6 +106,9 @@ const DashboardClean = () => {
     accent: '#60A5FA'
   });
   const [expandedPriorities, setExpandedPriorities] = useState({});
+  const [expandedPeople, setExpandedPeople] = useState({}); // For team view collapsible sections
+  const [userCommitment, setUserCommitment] = useState(null);
+  const [expandedRocks, setExpandedRocks] = useState(new Set()); // For individual rock expansion in Team View
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     priorities: [],
@@ -115,55 +124,13 @@ const DashboardClean = () => {
     }
   });
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
+  
+  // Confirmation dialog for delete actions
+  const deleteConfirmation = useConfirmationDialog();
   const [cascadedMessages, setCascadedMessages] = useState([]);
-  const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
   
-  // Function to create issue directly from headline
-  const createIssueFromHeadline = async (headline, type) => {
-    try {
-      setCreatingIssueFromHeadline(headline.id);
-      
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
-      
-      const issueData = {
-        title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
-        description: `This issue was created from a ${type} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-        timeline: 'short_term',
-        organization_id: orgId,
-        department_id: teamId,
-        related_headline_id: headline.id
-      };
-      
-      await issuesService.createIssue(issueData);
-      
-      // Update the headline to show it has an issue
-      setHeadlines(prev => ({
-        customer: prev.customer.map(h => 
-          h.id === headline.id ? { ...h, has_related_issue: true } : h
-        ),
-        employee: prev.employee.map(h => 
-          h.id === headline.id ? { ...h, has_related_issue: true } : h
-        )
-      }));
-      
-      // Refresh data
-      await fetchDashboardData();
-      
-      // Show success message
-      setSuccess('Issue created successfully');
-      setTimeout(() => setSuccess(null), 3000);
-      
-    } catch (error) {
-      console.error('Failed to create issue from headline:', error);
-      setError('Failed to create issue from headline');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setCreatingIssueFromHeadline(null);
-    }
-  };
   
   // Re-fetch data when view mode or department changes
   useEffect(() => {
@@ -238,6 +205,28 @@ const DashboardClean = () => {
     window.addEventListener('themeChanged', handleThemeChange);
     return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [user, navigate]);
+
+  // Fetch user's annual commitment for dashboard display
+  useEffect(() => {
+    const fetchUserCommitment = async () => {
+      try {
+        if (user?.organizationId && user?.id) {
+          const commitment = await annualCommitmentsService.getUserCurrentCommitment(
+            user.organizationId,
+            user.id
+          );
+          setUserCommitment(commitment);
+        }
+      } catch (error) {
+        console.error('Error fetching user commitment:', error);
+        // Silent fail - commitment card just won't show
+      }
+    };
+
+    if (user?.organizationId && user?.id) {
+      fetchUserCommitment();
+    }
+  }, [user?.organizationId, user?.id]);
 
   // Helper function to check if a todo is overdue
   const isOverdue = (todo) => {
@@ -424,17 +413,14 @@ const DashboardClean = () => {
       
       let displayTodos;
       if (viewMode === 'team-view') {
-        // In team view, show all active todos
-        displayTodos = allTodos.filter(todo => 
-          todo.status !== 'completed' && todo.status !== 'complete'
-        );
+        // In team view, show all todos (including completed ones)
+        displayTodos = allTodos;
       } else {
-        // In my items view, show only user's todos
+        // In my items view, show only user's todos (including completed ones)
         displayTodos = allTodos.filter(todo => {
           const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
           const isAssignedToUser = assignedToId === user.id;
-          const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
-          return isAssignedToUser && isNotCompleted;
+          return isAssignedToUser;
         });
       }
       
@@ -598,10 +584,23 @@ const DashboardClean = () => {
   const handleTodoStatusChange = async (todo, isCompleted) => {
     try {
       const newStatus = isCompleted ? 'complete' : 'incomplete';
+      
+      // Update local state immediately for smooth transitions (optimistic UI like Rocks)
+      setDashboardData(prev => ({
+        ...prev,
+        todos: prev.todos?.map(t => 
+          t.id === todo.id ? { ...t, status: newStatus, completed: isCompleted } : t
+        ) || []
+      }));
+      
+      // Sync with backend in background
       await todosService.updateTodo(todo.id, { status: newStatus });
-      await fetchDashboardData();
+      
     } catch (error) {
       console.error('Failed to update todo status:', error);
+      
+      // Revert on error by refetching data
+      await fetchDashboardData();
     }
   };
 
@@ -616,14 +615,25 @@ const DashboardClean = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user);
       
-      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
-      await fetchDashboardData();
+      // Update local state immediately for smooth transitions (copied from QuarterlyPrioritiesPageClean)
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities?.map(p => 
+          p.id === priorityId ? { ...p, ...updates } : p
+        ) || []
+      }));
+      
       // Update the selected priority if it's being edited
       if (selectedPriority?.id === priorityId) {
         setSelectedPriority(prev => ({ ...prev, ...updates }));
       }
+      
+      // Then call API
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
     } catch (error) {
       console.error('Failed to update priority:', error);
+      // On error, refresh data to ensure consistency
+      await fetchDashboardData();
     }
   };
 
@@ -637,6 +647,19 @@ const DashboardClean = () => {
     } catch (error) {
       console.error('Failed to add milestone:', error);
     }
+  };
+
+  // Rock expansion toggle for Team View
+  const toggleRockExpansion = (rockId) => {
+    setExpandedRocks(prev => {
+      const next = new Set(prev);
+      if (next.has(rockId)) {
+        next.delete(rockId);
+      } else {
+        next.add(rockId);
+      }
+      return next;
+    });
   };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
@@ -772,33 +795,45 @@ const DashboardClean = () => {
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
     try {
-      if (!window.confirm('Are you sure you want to delete this update?')) {
-        return;
-      }
-      
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
-      
-      // Fix: Call the correct method name
-      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
-      
-      // Update local state to reflect deletion immediately
-      if (selectedPriority?.id === priorityId) {
-        setSelectedPriority(prev => ({
-          ...prev,
-          updates: prev.updates?.filter(u => u.id !== updateId) || []
-        }));
-      }
-      
-      // Update the dashboardData priorities
-      setDashboardData(prev => ({
-        ...prev,
-        priorities: prev.priorities.map(p => 
-          p.id === priorityId 
-            ? { ...p, updates: p.updates?.filter(u => u.id !== updateId) || [] }
-            : p
-        )
-      }));
+      deleteConfirmation.showConfirmation({
+        type: 'delete',
+        title: 'Delete Update',
+        message: 'Are you sure you want to delete this update?',
+        actionLabel: 'Delete',
+        onConfirm: async () => {
+          try {
+            const orgId = user?.organizationId || user?.organization_id;
+            const teamId = getTeamId(user);
+            
+            // Fix: Call the correct method name
+            await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+            
+            // Update local state to reflect deletion immediately
+            if (selectedPriority?.id === priorityId) {
+              setSelectedPriority(prev => ({
+                ...prev,
+                updates: prev.updates?.filter(u => u.id !== updateId) || []
+              }));
+            }
+            
+            // Update the dashboardData priorities
+            setDashboardData(prev => ({
+              ...prev,
+              priorities: prev.priorities.map(p => 
+                p.id === priorityId 
+                  ? { ...p, updates: p.updates?.filter(u => u.id !== updateId) || [] }
+                  : p
+              )
+            }));
+            
+            toast.success('Update deleted successfully');
+          } catch (error) {
+            console.error('Failed to delete update:', error);
+            toast.error('Failed to delete update');
+            throw error; // Re-throw to keep dialog open on error
+          }
+        }
+      });
     } catch (error) {
       console.error('Failed to delete update:', error);
     }
@@ -996,7 +1031,7 @@ const DashboardClean = () => {
                 </Button>
               </div>
             ) : viewMode === 'team-view' ? (
-              // Team View: Group by owner
+              // Team View: Group by owner with modern card design
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 {(() => {
                   // Group priorities by owner
@@ -1009,82 +1044,191 @@ const DashboardClean = () => {
                     return groups;
                   }, {});
                   
-                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
-                    <Card key={ownerName} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border-2 border-slate-100">
-                              <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
-                                {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900">{ownerName}</h3>
-                              <p className="text-sm text-slate-500">{priorities.length} {labels?.priority_singular || 'Rock'}{priorities.length !== 1 ? 's' : ''}</p>
-                            </div>
-                          </div>
-                          <ChevronDown className="h-5 w-5 text-slate-400" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                      <div className="space-y-2">
-                      {priorities.map((priority) => {
-                        const isComplete = priority.status === 'complete' || 
-                                         priority.status === 'completed' || 
-                                         priority.progress === 100;
-                        const overdueCount = countOverdueMilestones(priority);
-                        const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
-                        const totalMilestones = (priority.milestones || []).length;
-                        return (
+                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => {
+                    const isExpanded = expandedPeople[ownerName] !== false; // Default to expanded
+                    
+                    return (
+                      <Card key={ownerName} className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-3">
                           <div 
-                            key={priority.id} 
-                            className="group p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                            className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
                             onClick={() => {
-                              setSelectedPriority(priority);
-                              setShowPriorityDialog(true);
+                              setExpandedPeople(prev => ({
+                                ...prev,
+                                [ownerName]: !isExpanded
+                              }));
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${
-                                isComplete ? 'bg-green-500' : 
-                                priority.status === 'off-track' ? 'bg-red-500' : 'bg-slate-400'
-                              }`} />
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-medium truncate ${
-                                  isComplete ? 'line-through text-slate-400' : 'text-slate-900'
-                                }`}>
-                                  {priority.title}
-                                </p>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                  {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                {totalMilestones > 0 ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-20 bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                      <div 
-                                        className="h-full bg-green-500 rounded-full transition-all"
-                                        style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-xs text-slate-600">
-                                      {completedMilestones}/{totalMilestones}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-slate-400">No milestones</span>
-                                )}
+                              <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                  {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="text-lg font-bold text-slate-900">{ownerName}</h3>
+                                <p className="text-sm text-slate-500">{priorities.length} {labels?.priority_singular || 'Rock'}{priorities.length !== 1 ? 's' : ''}</p>
                               </div>
                             </div>
+                            <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`} />
                           </div>
-                        );
-                      })}
-                      </div>
-                      </CardContent>
-                    </Card>
-                  ));
+                        </CardHeader>
+                        
+                        {isExpanded && (
+                          <CardContent className="pt-0">
+                            <div className="space-y-1">
+                              {/* Priority Rows with My Items styling and collapsible milestones */}
+                              {priorities.map((priority) => {
+                                const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                const isOnTrack = priority.status === 'on-track';
+                                const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                const totalMilestones = (priority.milestones || []).length;
+                                const isRockExpanded = expandedRocks.has(priority.id);
+                                
+                                return (
+                                  <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                    {/* Main Priority Row */}
+                                    <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                      {/* Expand Arrow - Only show if there are milestones */}
+                                      <div className="w-8 flex items-center justify-center">
+                                        {totalMilestones > 0 ? (
+                                          <div 
+                                            className="cursor-pointer"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleRockExpansion(priority.id);
+                                            }}
+                                          >
+                                            <ChevronRight 
+                                              className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                                isRockExpanded ? 'rotate-90' : ''
+                                              }`} 
+                                            />
+                                          </div>
+                                        ) : (
+                                          <div className="w-4 h-4"></div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Status Indicator - Match My Items styling */}
+                                      <div className="w-10 ml-2 flex items-center">
+                                        <div 
+                                          className="flex items-center justify-center w-7 h-7 rounded-full"
+                                          style={{
+                                            backgroundColor: 
+                                              priority.status === 'cancelled' ? '#6B728020' :
+                                              isComplete ? themeColors.primary + '20' : 
+                                              (isOnTrack ? '#10B98120' : '#EF444420'),
+                                            border: `2px solid ${
+                                              priority.status === 'cancelled' ? '#6B7280' :
+                                              isComplete ? themeColors.primary : 
+                                              (isOnTrack ? '#10B981' : '#EF4444')
+                                            }`
+                                          }}
+                                        >
+                                          {priority.status === 'cancelled' ? (
+                                            <X className="h-4 w-4 text-gray-500" />
+                                          ) : isComplete ? (
+                                            <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                          ) : isOnTrack ? (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                          ) : (
+                                            <X className="h-4 w-4 text-red-600" />
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Title */}
+                                      <div 
+                                        className="flex-1 ml-3 cursor-pointer"
+                                        onClick={() => {
+                                          setSelectedPriority(priority);
+                                          setShowPriorityDialog(true);
+                                        }}
+                                      >
+                                        <span className={`font-medium ${
+                                          isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                                        }`}>
+                                          {priority.title}
+                                        </span>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                        </p>
+                                      </div>
+                                      
+                                      {/* Milestone Progress - Match My Items styling */}
+                                      <div className="w-40 flex items-center justify-center px-2">
+                                        {totalMilestones > 0 ? (
+                                          <div className="flex items-center gap-2 w-full">
+                                            <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                              <div 
+                                                className="h-full bg-green-500 rounded-full transition-all"
+                                                style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                              {completedMilestones}/{totalMilestones}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-sm text-slate-400">-</span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Actions */}
+                                      <div className="w-8 flex items-center justify-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={() => {
+                                            setSelectedPriority(priority);
+                                            setShowPriorityDialog(true);
+                                          }}
+                                        >
+                                          <Edit className="h-4 w-4 text-slate-400" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Expanded Milestones Section */}
+                                    {isRockExpanded && priority.milestones && priority.milestones.length > 0 && (
+                                      <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
+                                        <div className="space-y-2">
+                                          {priority.milestones.map(milestone => (
+                                            <div key={milestone.id} className="flex items-center gap-3">
+                                              <input
+                                                type="checkbox"
+                                                checked={milestone.completed}
+                                                onChange={async () => {
+                                                  await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
+                                                }}
+                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                              />
+                                              <span className={`text-sm flex-1 ${
+                                                milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'
+                                              }`}>
+                                                {milestone.title}
+                                              </span>
+                                              <span className="text-xs text-slate-500">
+                                                {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        )}
+                      </Card>
+                    );
+                  });
                 })()}
               </div>
             ) : (
@@ -1131,7 +1275,7 @@ const DashboardClean = () => {
                               />
                             </div>
                           ) : (
-                            <div className="w-4 h-4" /> /* Empty space to maintain alignment */
+                            <div className="w-4 h-4"></div>
                           )}
                         </div>
                         
@@ -1392,49 +1536,327 @@ const DashboardClean = () => {
                           <p className="text-xs text-slate-500">{todos.length} {labels?.todo_singular || 'To-Do'}{todos.length !== 1 ? 's' : ''}</p>
                         </div>
                       </div>
-                      <div>
-                        <TodosList
-                          todos={todos}
-                          onEdit={handleEditTodo}
-                          onDelete={() => {}}
-                          onUpdate={fetchDashboardData}
-                          onStatusChange={async (todoId, isCompleted) => {
-                            // Find the todo from all todos, not just the grouped subset
-                            const todo = dashboardData.todos.find(t => t.id === todoId) || todos.find(t => t.id === todoId);
-                            if (todo) {
-                              await handleTodoStatusChange(todo, isCompleted);
-                            }
-                          }}
-                          showCompleted={false}
-                          hideViewToggle={true}
-                          hideSortOptions={true}
-                          hideAssignee={true}
-                        />
+                      {/* Column Headers */}
+                      <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+                        <div className="w-10">Status</div>
+                        <div className="flex-1 ml-3">Title</div>
+                        <div className="w-24 text-center">Due Date</div>
+                      </div>
+                      
+                      {/* Todo Items */}
+                      <div className="space-y-1">
+                        {todos.map((todo) => {
+                          const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                          const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
+                          
+                          return (
+                            <TodoContextMenu
+                              key={todo.id}
+                              todo={todo}
+                              onEdit={handleEditTodo}
+                              onDelete={() => {}}
+                              onToggleComplete={async (todoToToggle) => {
+                                const todoToUpdate = dashboardData.todos.find(t => t.id === todoToToggle.id);
+                                if (todoToUpdate) {
+                                  await handleTodoStatusChange(todoToUpdate, !isComplete);
+                                }
+                              }}
+                              onReassign={handleEditTodo}
+                              onChangeDueDate={handleEditTodo}
+                              onChangePriority={async (todo, newPriority) => {
+                                try {
+                                  const orgId = user?.organizationId || user?.organization_id;
+                                  const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                                  
+                                  await todosService.updateTodo(todo.id, {
+                                    ...todo,
+                                    organization_id: orgId,
+                                    department_id: effectiveTeamId,
+                                    priority: newPriority
+                                  });
+                                  
+                                  toast.success(`To-do priority updated to ${newPriority}`);
+                                  await fetchDashboardData();
+                                } catch (error) {
+                                  console.error('Failed to change priority:', error);
+                                  toast.error('Failed to update to-do priority');
+                                }
+                              }}
+                              onDuplicate={async (todo) => {
+                                try {
+                                  const orgId = user?.organizationId || user?.organization_id;
+                                  const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                                  
+                                  await todosService.createTodo({
+                                    ...todo,
+                                    id: undefined,
+                                    title: `${todo.title} (Copy)`,
+                                    organization_id: orgId,
+                                    department_id: effectiveTeamId
+                                  });
+                                  
+                                  toast.success('To-do duplicated successfully');
+                                  await fetchDashboardData();
+                                } catch (error) {
+                                  console.error('Failed to duplicate todo:', error);
+                                  toast.error('Failed to duplicate to-do');
+                                }
+                              }}
+                              onCreateLinkedIssue={async (todo) => {
+                                try {
+                                  const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                                  
+                                  const issuesResponse = await issuesService.getIssues();
+                                  const existingIssues = issuesResponse.data?.issues || issuesResponse.issues || issuesResponse;
+                                  const linkedIssue = existingIssues.find(issue => issue.related_todo_id === todo.id);
+                                  
+                                  if (linkedIssue) {
+                                    toast.error('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                                    return;
+                                  }
+
+                                  await issuesService.createIssue({
+                                    title: `Issue from To-Do: ${todo.title}`,
+                                    description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+                                    ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
+                                    teamId: effectiveTeamId,
+                                    related_todo_id: todo.id
+                                  });
+                                  
+                                  toast.success('Issue created successfully from to-do');
+                                } catch (error) {
+                                  console.error('Failed to create linked issue:', error);
+                                  if (error.response?.status === 409) {
+                                    toast.error('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                                  } else {
+                                    toast.error('Failed to create issue from to-do');
+                                  }
+                                }
+                              }}
+                              hidePriorityOptions={true}
+                              hideDeleteOption={true}
+                            >
+                              <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center px-3 py-3 group">
+                                {/* Status Radio Button */}
+                                <div className="w-10 flex items-center relative">
+                                  <div 
+                                    className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                    style={{
+                                      backgroundColor: isComplete ? themeColors.primary + '20' : 'transparent',
+                                      border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
+                                    }}
+                                    onClick={async () => {
+                                      try {
+                                        const newStatus = isComplete ? 'open' : 'complete';
+                                        const todoToUpdate = dashboardData.todos.find(t => t.id === todo.id);
+                                        if (todoToUpdate) {
+                                          await handleTodoStatusChange(todoToUpdate, !isComplete);
+                                        }
+                                      } catch (error) {
+                                        console.error('Failed to update todo status:', error);
+                                      }
+                                    }}
+                                  >
+                                    {isComplete && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
+                                  </div>
+                                </div>
+                                
+                                {/* Title */}
+                                <div className="flex-1 ml-3">
+                                  <div 
+                                    className={`text-sm font-medium cursor-pointer ${
+                                      isComplete ? 'line-through text-slate-400' : 'text-slate-900 hover:text-slate-700'
+                                    }`}
+                                    onClick={() => handleEditTodo(todo)}
+                                  >
+                                    {todo.title}
+                                  </div>
+                                </div>
+                                
+                                {/* Due Date */}
+                                <div className="w-24 text-center">
+                                  <span className="text-xs text-slate-500">
+                                    {dueDate}
+                                  </span>
+                                </div>
+                              </div>
+                              </div>
+                            </TodoContextMenu>
+                          );
+                        })}
                       </div>
                     </div>
                   ));
                 })()}
               </div>
             ) : (
-              // My Items View: Use TodosList component
-              <TodosList
-                todos={dashboardData.todos}
-                onEdit={handleEditTodo}
-                onDelete={() => {}}
-                onUpdate={fetchDashboardData}
-                onStatusChange={async (todoId, isCompleted) => {
-                  const todo = dashboardData.todos.find(t => t.id === todoId);
-                  if (todo) {
-                    await handleTodoStatusChange(todo, isCompleted);
-                  }
-                }}
-                showCompleted={false}
-                hideViewToggle={true}
-                hideSortOptions={true}
-              />
+              // My Items View: Flat list without person grouping (matches My Rocks design)
+              <div className="space-y-1">
+                {/* Header Row - Clean design matching My Rocks */}
+                <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+                  <div className="w-10">Status</div>
+                  <div className="flex-1 ml-3">Title</div>
+                  <div className="w-24 text-center">Due Date</div>
+                </div>
+                
+                {/* Todo Items - Flat list, no person grouping */}
+                <div className="space-y-1">
+                  {dashboardData.todos.map((todo) => {
+                    const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                    const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
+                    
+                    return (
+                      <TodoContextMenu
+                        key={todo.id}
+                        todo={todo}
+                        onEdit={handleEditTodo}
+                        onDelete={() => {}}
+                        onToggleComplete={async (todoToToggle) => {
+                          const todoToUpdate = dashboardData.todos.find(t => t.id === todoToToggle.id);
+                          if (todoToUpdate) {
+                            await handleTodoStatusChange(todoToUpdate, !isComplete);
+                          }
+                        }}
+                        onReassign={handleEditTodo}
+                        onChangeDueDate={handleEditTodo}
+                        onChangePriority={async (todo, newPriority) => {
+                          try {
+                            const orgId = user?.organizationId || user?.organization_id;
+                            const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                            
+                            await todosService.updateTodo(todo.id, {
+                              ...todo,
+                              organization_id: orgId,
+                              department_id: effectiveTeamId,
+                              priority: newPriority
+                            });
+                            
+                            toast.success(`To-do priority updated to ${newPriority}`);
+                            await fetchDashboardData();
+                          } catch (error) {
+                            console.error('Failed to change priority:', error);
+                            toast.error('Failed to update to-do priority');
+                          }
+                        }}
+                        onDuplicate={async (todo) => {
+                          // EXACT COPY from Level 10 Meeting: Duplicate todo with "(Copy)" suffix
+                          try {
+                            const orgId = user?.organizationId || user?.organization_id;
+                            const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                            
+                            await todosService.createTodo({
+                              ...todo,
+                              id: undefined,
+                              title: `${todo.title} (Copy)`,
+                              organization_id: orgId,
+                              department_id: effectiveTeamId
+                            });
+                            
+                            toast.success('To-do duplicated successfully');
+                            await fetchDashboardData();
+                          } catch (error) {
+                            console.error('Failed to duplicate todo:', error);
+                            toast.error('Failed to duplicate to-do');
+                          }
+                        }}
+                        onCreateLinkedIssue={async (todo) => {
+                          // EXACT COPY from Level 10 Meeting: Check for existing linked issue first
+                          try {
+                            const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+                            
+                            // Check if an issue already exists for this todo
+                            const issuesResponse = await issuesService.getIssues();
+                            const existingIssues = issuesResponse.data?.issues || issuesResponse.issues || issuesResponse;
+                            const linkedIssue = existingIssues.find(issue => issue.related_todo_id === todo.id);
+                            
+                            if (linkedIssue) {
+                              toast.error('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                              return;
+                            }
+
+                            await issuesService.createIssue({
+                              title: `Issue from To-Do: ${todo.title}`,
+                              description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+                              ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
+                              teamId: effectiveTeamId,
+                              related_todo_id: todo.id
+                            });
+                            
+                            toast.success('Issue created successfully from to-do');
+                          } catch (error) {
+                            console.error('Failed to create linked issue:', error);
+                            if (error.response?.status === 409) {
+                              toast.error('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+                            } else {
+                              toast.error('Failed to create issue from to-do');
+                            }
+                          }
+                        }}
+                        hidePriorityOptions={true}
+                        hideDeleteOption={true}
+                      >
+                        <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center px-3 py-3 group">
+                            {/* Status Radio Button */}
+                            <div className="w-10 flex items-center relative">
+                              <div 
+                                className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                style={{
+                                  backgroundColor: isComplete ? themeColors.primary + '20' : 'transparent',
+                                  border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
+                                }}
+                                onClick={async () => {
+                                  try {
+                                    const newStatus = isComplete ? 'open' : 'complete';
+                                    const todoToUpdate = dashboardData.todos.find(t => t.id === todo.id);
+                                    if (todoToUpdate) {
+                                      await handleTodoStatusChange(todoToUpdate, !isComplete);
+                                    }
+                                  } catch (error) {
+                                    console.error('Failed to update todo status:', error);
+                                  }
+                                }}
+                              >
+                                {isComplete && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
+                              </div>
+                            </div>
+                            
+                            {/* Title */}
+                            <div className="flex-1 ml-3">
+                              <div 
+                                className={`text-sm font-medium cursor-pointer ${
+                                  isComplete ? 'line-through text-slate-400' : 'text-slate-900 hover:text-slate-700'
+                                }`}
+                                onClick={() => handleEditTodo(todo)}
+                              >
+                                {todo.title}
+                              </div>
+                            </div>
+                            
+                            {/* Due Date */}
+                            <div className="w-24 text-center">
+                              <span className="text-xs text-slate-500">
+                                {dueDate}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TodoContextMenu>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </div>
+
+        {/* Annual Commitment Reminder Card */}
+        {userCommitment && (
+          <div className="mt-8">
+            <CommitmentReminderCard commitment={userCommitment} />
+          </div>
+        )}
 
         {/* Clean Headlines & Messages Section */}
         <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
@@ -1453,43 +1875,27 @@ const DashboardClean = () => {
                   Customer Headlines ({headlines.customer.length})
                 </h3>
                 {headlines.customer.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-0">
                     {headlines.customer.map(headline => (
-                      <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                           style={{ borderLeftColor: themeColors.primary }}>
-                        <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
-                        
-                        {/* Action button appears on hover */}
-                        {!headline.has_related_issue && (
-                          <button
-                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                            onClick={() => createIssueFromHeadline(headline, 'Customer')}
-                            disabled={creatingIssueFromHeadline === headline.id}
-                            title="Create issue from headline"
-                          >
-                            {creatingIssueFromHeadline === headline.id ? (
-                              <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 text-gray-600" />
-                            )}
-                          </button>
-                        )}
-                        
-                        {/* If issue exists, show indicator */}
-                        {headline.has_related_issue && (
-                          <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
-                            <CheckCircle className="h-4 w-4" />
-                          </div>
-                        )}
-                        
-                        <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span className="font-medium">{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
-                          <span className="text-slate-400">•</span>
-                          <span>{format(new Date(headline.created_at), 'MMM d')}</span>
-                        </p>
-                      </div>
+                      <HeadlineItem
+                        key={headline.id}
+                        headline={headline}
+                        teamId={selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual')}
+                        orgId={user?.organizationId || user?.organization_id}
+                        onIssueCreated={() => {
+                          // Update headlines state immediately to show green checkmark
+                          setHeadlines(prev => ({
+                            ...prev,
+                            customer: prev.customer.map(h => 
+                              h.id === headline.id 
+                                ? { ...h, has_related_issue: true, issue_created_at: new Date() }
+                                : h
+                            )
+                          }));
+                        }}
+                        themeColors={themeColors}
+                        type="Customer"
+                      />
                     ))}
                   </div>
                 ) : (
@@ -1504,43 +1910,27 @@ const DashboardClean = () => {
                   Employee Headlines ({headlines.employee.length})
                 </h3>
                 {headlines.employee.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-0">
                     {headlines.employee.map(headline => (
-                      <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                           style={{ borderLeftColor: themeColors.secondary }}>
-                        <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
-                        
-                        {/* Action button appears on hover */}
-                        {!headline.has_related_issue && (
-                          <button
-                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                            onClick={() => createIssueFromHeadline(headline, 'Employee')}
-                            disabled={creatingIssueFromHeadline === headline.id}
-                            title="Create issue from headline"
-                          >
-                            {creatingIssueFromHeadline === headline.id ? (
-                              <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 text-gray-600" />
-                            )}
-                          </button>
-                        )}
-                        
-                        {/* If issue exists, show indicator */}
-                        {headline.has_related_issue && (
-                          <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
-                            <CheckCircle className="h-4 w-4" />
-                          </div>
-                        )}
-                        
-                        <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span className="font-medium">{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
-                          <span className="text-slate-400">•</span>
-                          <span>{format(new Date(headline.created_at), 'MMM d')}</span>
-                        </p>
-                      </div>
+                      <HeadlineItem
+                        key={headline.id}
+                        headline={headline}
+                        teamId={selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual')}
+                        orgId={user?.organizationId || user?.organization_id}
+                        onIssueCreated={() => {
+                          // Update headlines state immediately to show green checkmark
+                          setHeadlines(prev => ({
+                            ...prev,
+                            employee: prev.employee.map(h => 
+                              h.id === headline.id 
+                                ? { ...h, has_related_issue: true, issue_created_at: new Date() }
+                                : h
+                            )
+                          }));
+                        }}
+                        themeColors={themeColors}
+                        type="Employee"
+                      />
                     ))}
                   </div>
                 ) : (
@@ -1558,16 +1948,39 @@ const DashboardClean = () => {
                 Cascaded Messages from Other Teams ({cascadedMessages.length})
               </h3>
               {cascadedMessages.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {cascadedMessages.map(message => (
-                    <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                      <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
-                      <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                        <ArrowDownLeft className="h-3 w-3 text-blue-600" />
-                        <span className="font-medium text-blue-900">{message.from_team_name || 'Unknown Team'}</span>
-                        <span className="text-slate-400">•</span>
-                        <span>{format(new Date(message.created_at), 'MMM d, h:mm a')}</span>
-                      </p>
+                    <div 
+                      key={message.id} 
+                      className="group relative bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-in-out cursor-pointer border-l-4"
+                      style={{ borderLeftColor: '#8b5cf6' }}
+                    >
+                      <div className="p-4 flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-base font-semibold text-slate-900 mb-2 leading-snug">
+                            {message.message}
+                          </h4>
+                          
+                          {/* Enhanced Metadata */}
+                          <div className="flex items-center gap-3 text-sm text-slate-500">
+                            <span className="flex items-center gap-1 font-medium">
+                              <Users className="w-4 h-4" />
+                              {message.from_team_name || 'Unknown Team'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="ml-4 flex-shrink-0">
+                          {/* Optional action indicator */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <ArrowDownLeft className="w-5 h-5 text-purple-500" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1676,6 +2089,7 @@ const DashboardClean = () => {
           onClose={() => setShowIssueDialog(false)}
           issue={editingIssue}
           teamMembers={dashboardData.teamMembers || []}
+          teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           timeline="short_term"
           onSave={async (issueData) => {
             try {
@@ -1726,14 +2140,9 @@ const DashboardClean = () => {
         <HeadlineDialog
           open={showHeadlineDialog}
           onOpenChange={setShowHeadlineDialog}
+          currentTeamId={selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual')}
           onSave={async (headlineData) => {
-            // Use the same teamId that fetchHeadlines uses to ensure consistency
-            const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
-            
-            await headlinesService.createHeadline({
-              ...headlineData,
-              teamId: teamId
-            });
+            await headlinesService.createHeadline(headlineData);
             // Refresh headlines after adding
             await fetchHeadlines();
           }}
@@ -1758,6 +2167,9 @@ const DashboardClean = () => {
           onDeleteAttachment={handleDeleteAttachment}
           onArchive={handleArchivePriority}
         />
+        
+        {/* Delete confirmation dialog */}
+        <deleteConfirmation.ConfirmationDialog />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ const router = express.Router();
 import { stripe, STRIPE_WEBHOOK_SECRET, PLAN_FEATURES, STRIPE_PRICES } from '../config/stripe-flat-rate.js';
 import { query } from '../config/database.js';
 import { notifyTrialConverted } from '../services/notificationService.js';
+import failedOperationsService from '../services/failedOperationsService.js';
 
 // Stripe webhook endpoint (no auth middleware - Stripe will validate)
 router.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -11,8 +12,23 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    
+    // Track successful webhook receipt
+    global.lastStripeWebhook = Date.now();
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
+    
+    // Log webhook signature failure
+    await failedOperationsService.logStripeFailure(
+      'signature_verification',
+      err,
+      {
+        critical: true,
+        signature: sig ? 'present' : 'missing',
+        eventId: req.body?.id
+      }
+    );
+    
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -43,6 +59,19 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
     res.json({ received: true });
   } catch (error) {
     console.error('Webhook processing error:', error);
+    
+    // Log webhook processing failure
+    await failedOperationsService.logStripeFailure(
+      event?.type || 'unknown_webhook_type',
+      error,
+      {
+        eventId: event?.id,
+        customerId: event?.data?.object?.customer,
+        subscriptionId: event?.data?.object?.subscription,
+        critical: ['customer.subscription.deleted', 'invoice.payment_failed'].includes(event?.type)
+      }
+    );
+    
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });

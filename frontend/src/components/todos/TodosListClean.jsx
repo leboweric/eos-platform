@@ -10,13 +10,20 @@ import {
   ArrowDown,
   List,
   Archive,
-  ArchiveRestore
+  ArchiveRestore,
+  Grid3X3,
+  Users,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
+import { TodoContextMenu } from '../TodoContextMenu';
 
 const TodosListClean = ({ 
   todos, 
@@ -26,6 +33,11 @@ const TodosListClean = ({
   onStatusChange,
   onConvertToIssue,
   onUnarchive,
+  onReassign,              // Add missing Level 10 Meeting functionality
+  onChangeDueDate,         // Add missing Level 10 Meeting functionality
+  onChangePriority,        // Add missing Level 10 Meeting functionality
+  onDuplicate,             // Add missing Level 10 Meeting functionality
+  onCreateLinkedIssue,     // Add missing Level 10 Meeting functionality
   showCompleted = true,
   hideViewToggle = false,
   hideSortOptions = false,
@@ -41,17 +53,19 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
-  // Default to list view - only show grid if explicitly set
-  const [showListView, setShowListView] = useState(() => {
-    // If hideViewToggle is true (Dashboard), always show list view
-    if (hideViewToggle) return true;
-    
-    const savedMode = localStorage.getItem('todosViewMode');
-    // If no saved preference or saved as 'list', show list view
-    return savedMode !== 'grid';
+  
+  // View mode: always grouped (removed other options)
+  const [viewMode, setViewMode] = useState('grouped');
+  
+  // Expansion state for grouped view - Default to expanded like Rocks page
+  const [expandedAssignees, setExpandedAssignees] = useState(() => {
+    // ALWAYS start with empty object and let useEffect populate with expanded=true
+    // This ensures all sections default to expanded like Rocks page
+    return {};
   });
   
   useEffect(() => {
+    console.log('TodosListClean: Current viewMode is', viewMode);
     fetchOrganizationTheme();
     
     // Listen for theme changes
@@ -59,57 +73,46 @@ const TodosListClean = ({
       setThemeColors(event.detail);
     };
     
-    // Listen for organization changes
-    const handleOrgChange = () => {
-      fetchOrganizationTheme();
-    };
-    
     window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('organizationChanged', handleOrgChange);
-    
-    return () => {
-      window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('organizationChanged', handleOrgChange);
-    };
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
-  
+
+  // Set all assignees as expanded by default when todos change (replicating Rocks page behavior)
   useEffect(() => {
-    // Sort todos whenever todos prop or sort settings change
-    const sorted = [...todos].sort((a, b) => {
-      if (!sortField) return 0;
+    if (todos && todos.length > 0) {
+      const assigneeIds = new Set();
       
-      let aValue, bValue;
+      todos.forEach(todo => {
+        const assigneeId = todo.assigned_to?.id || 'unassigned';
+        assigneeIds.add(assigneeId);
+      });
       
-      if (sortField === 'assignee') {
-        aValue = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : 'zzz';
-        bValue = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : 'zzz';
-      } else if (sortField === 'dueDate') {
-        if (showingArchived) {
-          // For archived todos, sort by archive date
-          aValue = a.archived_at || a.updated_at || '0000-01-01';
-          bValue = b.archived_at || b.updated_at || '0000-01-01';
-        } else {
-          // For non-archived todos, sort by due date
-          aValue = a.due_date || '9999-12-31';
-          bValue = b.due_date || '9999-12-31';
-        }
-      } else if (sortField === 'title') {
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-      }
+      // Set all assignees as expanded by default (like Rocks page)
+      const expandedByDefault = {};
+      assigneeIds.forEach(id => {
+        expandedByDefault[id] = true;
+      });
       
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-    
-    setSortedTodos(sorted);
+      // COPY EXACT BEHAVIOR FROM ROCKS PAGE: Force all assignees to be expanded
+      const expandedState = {};
+      assigneeIds.forEach(id => {
+        expandedState[id] = true; // Always expanded like Rocks page
+      });
+      
+      setExpandedAssignees(expandedState);
+      localStorage.setItem('todosExpandedAssignees', JSON.stringify(expandedState));
+    }
+  }, [todos]);
+
+  useEffect(() => {
+    sortTodos();
   }, [todos, sortField, sortDirection]);
-  
+
   const fetchOrganizationTheme = async () => {
     try {
       // First check localStorage
-      const orgId = localStorage.getItem('organizationId');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const orgId = user?.organizationId || user?.organization_id;
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
         setThemeColors(savedTheme);
@@ -126,97 +129,316 @@ const TodosListClean = ({
           accent: orgData.theme_accent_color || '#60A5FA'
         };
         setThemeColors(theme);
-        const orgId = localStorage.getItem('organizationId');
         saveOrgTheme(orgId, theme);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
     }
   };
-  
-  // Parse date string as local date, not UTC
-  const parseDateAsLocal = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
-    return new Date(year, month - 1, day); // month is 0-indexed in JS
+
+  const sortTodos = () => {
+    let sorted = [...todos];
+
+    if (sortField) {
+      sorted.sort((a, b) => {
+        let aVal, bVal;
+
+        switch (sortField) {
+          case 'title':
+            aVal = a.title?.toLowerCase() || '';
+            bVal = b.title?.toLowerCase() || '';
+            break;
+          case 'assignee':
+            aVal = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : '';
+            bVal = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : '';
+            break;
+          case 'dueDate':
+            if (showingArchived) {
+              // Sort by archived_at when viewing archived todos
+              aVal = a.archived_at ? new Date(a.archived_at).getTime() : 0;
+              bVal = b.archived_at ? new Date(b.archived_at).getTime() : 0;
+            } else {
+              // Sort by due_date when viewing active todos
+              aVal = a.due_date ? new Date(a.due_date).getTime() : 0;
+              bVal = b.due_date ? new Date(b.due_date).getTime() : 0;
+            }
+            break;
+          default:
+            return 0;
+        }
+
+        if (typeof aVal === 'string') {
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        } else {
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+      });
+    }
+
+    setSortedTodos(sorted);
   };
-  
-  
-  const isOverdue = (todo) => {
-    const dueDate = parseDateAsLocal(todo.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return dueDate && dueDate < today && todo.status !== 'complete';
+
+  const formatDueDate = (todo) => {
+    if (showingArchived && todo.archived_at) {
+      return format(new Date(todo.archived_at), 'MMM d');
+    }
+    if (todo.due_date) {
+      return format(new Date(todo.due_date), 'MMM d');
+    }
+    return '';
+  };
+
+  const formatArchivedDate = (todo) => {
+    if (todo.archived_at) {
+      return format(new Date(todo.archived_at), 'MMM d');
+    }
+    return '';
   };
 
   const getDaysUntilDue = (todo) => {
     if (!todo.due_date) return null;
-    const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(todo.due_date);
     const diffTime = dueDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
-  const formatDueDate = (todo) => {
-    if (!todo.due_date) return null;
-    const days = getDaysUntilDue(todo);
-    
-    if (days === 0) return 'Due today';
-    if (days === 1) return 'Due tomorrow';
-    if (days === -1) return '1 day overdue';
-    if (days < -1) return `${Math.abs(days)} days overdue`;
-    if (days > 1 && days <= 7) return `Due in ${days} days`;
-    
-    return format(parseDateAsLocal(todo.due_date), 'MMM d');
-  };
-
-  const formatArchivedDate = (todo) => {
-    // Check for archived_at field first, then fall back to updated_at if archived
-    const archiveDate = todo.archived_at || (todo.archived ? todo.updated_at : null);
-    if (!archiveDate) return null;
-    
-    try {
-      const date = new Date(archiveDate);
-      return format(date, 'MMM d, yyyy');
-    } catch (error) {
-      console.error('Error formatting archive date:', error);
-      return null;
+  const isOverdue = (todo) => {
+    if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
+      return false;
     }
+    const daysUntilDue = getDaysUntilDue(todo);
+    return daysUntilDue < 0;
   };
 
   const handleUnarchive = async (todoId, e) => {
-    e.stopPropagation(); // Prevent triggering the todo edit
+    e.stopPropagation();
     try {
-      if (onUnarchive) {
-        await onUnarchive(todoId);
-      } else {
-        // Fallback to direct service call
-        await todosService.unarchiveTodo(todoId);
-        if (onUpdate) {
-          onUpdate();
-        }
-      }
+      await todosService.unarchiveTodo(todoId);
+      onUpdate?.();
     } catch (error) {
       console.error('Failed to unarchive todo:', error);
     }
+  };
+
+  const toggleAssigneeExpansion = (assigneeKey) => {
+    const newState = {
+      ...expandedAssignees,
+      [assigneeKey]: !expandedAssignees[assigneeKey]
+    };
+    setExpandedAssignees(newState);
+    localStorage.setItem('todosExpandedAssignees', JSON.stringify(newState));
+  };
+
+  const renderGroupedView = () => {
+    // Group todos by assignee like Level 10 Meeting
+    const todosByAssignee = {};
+    
+    sortedTodos.forEach(todo => {
+      const assigneeId = todo.assigned_to?.id || 'unassigned';
+      const assigneeName = todo.assigned_to ? 
+        `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+        'Unassigned';
+      
+      if (!todosByAssignee[assigneeId]) {
+        todosByAssignee[assigneeId] = {
+          id: assigneeId,
+          name: assigneeName,
+          todos: []
+        };
+      }
+      todosByAssignee[assigneeId].todos.push(todo);
+    });
+    
+    // Convert to array and sort by name
+    const assignees = Object.values(todosByAssignee).sort((a, b) => {
+      if (a.id === 'unassigned') return 1;
+      if (b.id === 'unassigned') return -1;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    if (sortedTodos.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <CheckCircle className="w-12 h-12 text-gray-400 mb-3" />
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No To-Dos</h3>
+          <p className="text-sm text-gray-500 mb-4 max-w-md">
+            This team doesn't have any to-dos yet. To-dos are action items that need to be completed.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {assignees.map(assignee => {
+          const isExpanded = expandedAssignees[assignee.id] !== false; // Default to expanded
+          
+          return (
+            <Card key={assignee.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-slate-100">
+                      <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                        {assignee.id === 'unassigned' ? 'UN' : assignee.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{assignee.name}</h3>
+                      <p className="text-sm text-slate-500">{assignee.todos.length} To-Do{assignee.todos.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleAssigneeExpansion(assignee.id)}
+                    className="p-1 hover:bg-slate-100 rounded transition-colors"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-slate-400" />
+                    )}
+                  </button>
+                </div>
+              </CardHeader>
+              
+              {isExpanded && (
+                <CardContent className="pt-0">
+                  <div className="space-y-1">
+                    {/* Header Row */}
+                    <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                      <div className="w-10">Status</div>
+                      <div className="flex-1 ml-3">Title</div>
+                      <div className="w-20 text-right">Due Date</div>
+                      <div className="w-8"></div>
+                    </div>
+                    
+                    {/* To-Do Rows */}
+                    {assignee.todos.map(todo => {
+                      const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                      const daysUntilDue = getDaysUntilDue(todo);
+                      const overdue = isOverdue(todo);
+                      
+                      return (
+                        <TodoContextMenu
+                          key={todo.id}
+                          todo={todo}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onToggleComplete={(todoId, completed) => {
+                            if (onStatusChange) {
+                              onStatusChange(todoId, completed);
+                            }
+                          }}
+                          onReassign={onReassign}
+                          onChangeDueDate={onChangeDueDate}
+                          onChangePriority={onChangePriority}
+                          onDuplicate={onDuplicate}
+                          onCreateLinkedIssue={onCreateLinkedIssue}
+                          hidePriorityOptions={true}
+                          hideDeleteOption={true}
+                        >
+                          <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                          {/* Main To-Do Row */}
+                          <div className="flex items-center px-3 py-3 group">
+                            {/* Status Indicator */}
+                            <div className="w-10 flex items-center relative">
+                              <div 
+                                className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                style={{
+                                  backgroundColor: isComplete ? themeColors.primary + '20' : 'transparent',
+                                  border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
+                                }}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (onStatusChange) {
+                                    onStatusChange(todo.id, !isComplete);
+                                  } else if (onUpdate) {
+                                    await todosService.updateTodo(todo.id, { 
+                                      status: isComplete ? 'incomplete' : 'complete' 
+                                    });
+                                    onUpdate();
+                                  }
+                                }}
+                              >
+                                {isComplete && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
+                              </div>
+                            </div>
+                            
+                            {/* Title */}
+                            <div 
+                              className={`flex-1 ml-3 cursor-pointer ${showingArchived ? 'pr-4' : ''}`}
+                              onClick={() => onEdit && onEdit(todo)}
+                            >
+                              <div className={`text-sm font-medium ${isComplete ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                {todo.title}
+                              </div>
+                              {todo.description && (
+                                <div className="text-xs text-slate-500 mt-1">{todo.description}</div>
+                              )}
+                            </div>
+                            
+                            {/* Due Date & Actions Container */}
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              {/* Due Date */}
+                              <div className="text-right">
+                                {todo.due_date && (
+                                  <span className={`text-xs ${
+                                    overdue ? 'text-red-600 font-medium' : 
+                                    daysUntilDue === 0 ? 'text-orange-600 font-medium' :
+                                    daysUntilDue === 1 ? 'text-yellow-600' :
+                                    'text-slate-500'
+                                  }`}>
+                                    {formatDueDate(todo)}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Actions Space */}
+                              <div className="flex items-center justify-center">
+                                {todo.archived && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => handleUnarchive(todo.id, e)}
+                                    className="h-6 px-2 text-xs text-blue-600 border-blue-200 hover:bg-blue-50"
+                                    title="Unarchive"
+                                  >
+                                    <ArchiveRestore className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          </div>
+                        </TodoContextMenu>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    );
   };
   
   const handleSort = (field) => {
     if (sortField === field) {
       // Toggle direction if same field
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
-      // New field, default to ascending
+      // New field, start with ascending
       setSortField(field);
       setSortDirection('asc');
     }
   };
-  
+
   const getSortIcon = (field) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+      return <ArrowUpDown className="h-3 w-3" />;
     }
     return sortDirection === 'asc' 
       ? <ArrowUp className="h-3 w-3" />
@@ -267,269 +489,19 @@ const TodosListClean = ({
                 setSortField(null);
                 setSortDirection('asc');
               }}
-              className="h-7 px-3 py-1 ml-2 text-xs font-medium text-red-600 hover:bg-red-50"
+              className="h-7 px-3 py-1 text-xs font-medium text-gray-500 hover:bg-gray-200"
             >
               ✕ Clear
             </Button>
           )}
           </div>
           
-          {/* List view toggle */}
-          {!hideViewToggle && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const newMode = !showListView;
-                setShowListView(newMode);
-                localStorage.setItem('todosViewMode', newMode ? 'list' : 'grid');
-              }}
-              className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
-              title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
-            >
-              <List className="h-3 w-3 mr-1" />
-              {showListView ? "Grid View" : "List View"}
-            </Button>
-          )}
         </div>
       </div>
       )}
       
-      {/* Default compact grid view - cards in columns */}
-      <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
-        {sortedTodos.map((todo) => {
-        const daysUntilDue = getDaysUntilDue(todo);
-        const overdue = isOverdue(todo);
-        
-        if (showListView) {
-          // List View - Compact row layout
-          return (
-            <div
-              key={todo.id}
-              onClick={() => onEdit && onEdit(todo)}
-              className={`
-                group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01]
-                ${(todo.status === 'complete' || todo.status === 'completed') && !todo.archived ? 'opacity-60' : ''}
-              `}
-            >
-              {/* Enhanced status indicator */}
-              {overdue ? (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-600 rounded-l-xl" />
-              ) : (
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }} />
-              )}
-              {/* Enhanced checkbox */}
-              <div className="relative">
-                <Checkbox
-                  checked={todo.status === 'complete' || todo.status === 'completed'}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={(checked) => {
-                    if (onStatusChange) {
-                      onStatusChange(todo.id, checked);
-                    } else if (onUpdate) {
-                      todosService.updateTodo(todo.id, { 
-                        status: checked ? 'complete' : 'incomplete' 
-                      }).then(() => {
-                        onUpdate();
-                      });
-                    }
-                  }}
-                  className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
-                    (todo.status === 'complete' || todo.status === 'completed') ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
-                  }`}
-                  style={{
-                    borderColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : '#D1D5DB',
-                    backgroundColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : 'transparent'
-                  }}
-                />
-              </div>
-              
-              {/* Title */}
-              <h3 className={`
-                flex-1 text-sm font-medium
-                ${(todo.status === 'complete' || todo.status === 'completed') ? 'text-gray-400 line-through' : 'text-gray-900'}
-              `}>
-                {todo.title}
-              </h3>
-              
-              {/* Assignee */}
-              {!hideAssignee && todo.assigned_to && (
-                <span className="text-sm text-gray-500">
-                  {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                </span>
-              )}
-              
-              {/* Date info - show archive date for archived todos, due date for others */}
-              {todo.archived ? (
-                // Show archive date and unarchive button for archived todos
-                <div className="flex items-center gap-2">
-                  {formatArchivedDate(todo) && (
-                    <span className="flex items-center gap-1 text-sm text-gray-500">
-                      <Archive className="h-3 w-3" />
-                      Archived {formatArchivedDate(todo)}
-                    </span>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => handleUnarchive(todo.id, e)}
-                    className="h-6 px-2 text-xs text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                    title="Move back to active todos"
-                  >
-                    <ArchiveRestore className="h-3 w-3 mr-1" />
-                    Unarchive
-                  </Button>
-                </div>
-              ) : (
-                // Show due date for non-archived todos
-                todo.due_date && (
-                  <span className={`
-                    flex items-center gap-1 text-sm
-                    ${overdue ? 'text-red-600 font-medium' : 
-                      daysUntilDue === 0 ? 'text-orange-600' :
-                      daysUntilDue === 1 ? 'text-yellow-600' :
-                      'text-gray-500'}
-                  `}>
-                    <Calendar className="h-3 w-3" />
-                    {formatDueDate(todo)}
-                  </span>
-                )
-              )}
-              
-            </div>
-          );
-        }
-        
-        // Compact Grid View - Default
-        return (
-          <div
-            key={todo.id}
-            onClick={() => onEdit && onEdit(todo)}
-            className={`
-              group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-all duration-200 h-full cursor-pointer shadow-sm hover:shadow-xl hover:scale-[1.02]
-              ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
-            `}
-          >
-            {/* Enhanced status indicator */}
-            {overdue ? (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-600 rounded-l-2xl" />
-            ) : (
-              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }} />
-            )}
-            
-            <div className="p-4 pl-5">
-              <div className="flex items-start gap-3">
-                {/* Enhanced checkbox */}
-                <div className="pt-0.5">
-                  <div className="relative">
-                    <Checkbox
-                      checked={todo.status === 'complete' || todo.status === 'completed'}
-                      onClick={(e) => e.stopPropagation()}
-                      onCheckedChange={(checked) => {
-                        if (onStatusChange) {
-                          onStatusChange(todo.id, checked);
-                        } else if (onUpdate) {
-                          // Fallback to onUpdate if onStatusChange not provided
-                          todosService.updateTodo(todo.id, { 
-                            status: checked ? 'complete' : 'incomplete' 
-                          }).then(() => {
-                            onUpdate();
-                          });
-                        }
-                      }}
-                      className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
-                      style={{
-                        borderColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : '#D1D5DB',
-                        backgroundColor: (todo.status === 'complete' || todo.status === 'completed') ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
-                      }}
-                    />
-                  </div>
-                </div>
-                
-                {/* Main content */}
-                <div className="flex-1 min-w-0">
-                  {/* Title - smaller for compact view */}
-                  <h3 className={`
-                    text-sm font-medium leading-tight line-clamp-2
-                    ${(todo.status === 'complete' || todo.status === 'completed') ? 'text-gray-400 line-through' : 'text-gray-900'}
-                  `}>
-                    {todo.title}
-                  </h3>
-                  
-                  {/* Description hidden from main view - only shown in edit dialog */}
-                  
-                  {/* Metadata - compact */}
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    {/* Date info - show archive date for archived todos, due date for others */}
-                    {todo.archived ? (
-                      // Show archive date and unarchive button for archived todos
-                      <div className="flex flex-wrap items-center gap-2">
-                        {formatArchivedDate(todo) && (
-                          <span className="flex items-center gap-1.5 text-gray-500">
-                            <Archive className="h-3.5 w-3.5" />
-                            Archived {formatArchivedDate(todo)}
-                          </span>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => handleUnarchive(todo.id, e)}
-                          className="h-6 px-2 text-xs text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                          title="Move back to active todos"
-                        >
-                          <ArchiveRestore className="h-3 w-3 mr-1" />
-                          Unarchive
-                        </Button>
-                      </div>
-                    ) : (
-                      // Show due date for non-archived todos
-                      todo.due_date && (
-                        <span className={`
-                          flex items-center gap-1.5
-                          ${overdue ? 'text-red-600 font-medium' : 
-                            daysUntilDue === 0 ? 'text-orange-600 font-medium' :
-                            daysUntilDue === 1 ? 'text-yellow-600' :
-                            'text-gray-500'}
-                        `}>
-                          {overdue && <AlertCircle className="h-3.5 w-3.5" />}
-                          <Calendar className="h-3.5 w-3.5" />
-                          {formatDueDate(todo)}
-                        </span>
-                      )
-                    )}
-                    
-                    {/* Separator */}
-                    {((todo.archived && formatArchivedDate(todo)) || (!todo.archived && todo.due_date)) && todo.assigned_to && (
-                      <span className="text-gray-300">•</span>
-                    )}
-                    
-                    {/* Assignee */}
-                    {!hideAssignee && todo.assigned_to && (
-                      <span className="text-gray-500">
-                        {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                      </span>
-                    )}
-                    
-                    
-                    {/* Enhanced done badge if completed */}
-                    {(todo.status === 'complete' || todo.status === 'completed') && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: `${themeColors.primary}15`, color: themeColors.primary }}>
-                          <CheckCircle className="h-3 w-3" />
-                          Done
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-              </div>
-            </div>
-          </div>
-        );
-        })}
-      </div>
+      {/* Always render grouped view */}
+      {renderGroupedView()}
     </div>
   );
 };

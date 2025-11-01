@@ -2,7 +2,9 @@ import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useDepartment } from '../contexts/DepartmentContext';
 import meetingHistoryService from '../services/meetingHistoryService';
+import api from '../services/axiosConfig';
 import { teamsService } from '../services/teamsService';
+import MeetingSummaryModal from '../components/MeetingSummaryModal';
 import MeetingDetailDialog from '../components/MeetingDetailDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { 
   Calendar,
   Download,
@@ -28,7 +30,8 @@ import {
   AlertTriangle,
   Plus,
   Target,
-  ListTodo
+  ListTodo,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -316,33 +319,31 @@ const MeetingHistoryPageClean = () => {
         return;
       }
       
-      console.log('📄 Step 4: Building fetch URL...');
-      console.log('📄 VITE_API_URL:', import.meta.env.VITE_API_URL);
+      console.log('📄 Step 4: Building API request...');
       console.log('📄 meeting.organization_id:', meeting.organization_id);
       console.log('📄 meeting.id:', meeting.id);
       
       const orgId = meeting.organization_id || user?.organization_id || user?.organizationId;
       console.log('📄 Resolved orgId:', orgId);
       
-      const url = `${import.meta.env.VITE_API_URL}/organizations/${orgId}/meeting-history/${meeting.id}/summary`;
-      console.log('📄 Fetch URL:', url);
+      if (!orgId) {
+        console.error('📄 ERROR: No organization ID available');
+        throw new Error('No organization ID available');
+      }
       
-      console.log('📄 Step 5: Making fetch request...');
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Use meeting_id (actual meeting ID) not id (snapshot ID)
+      const meetingId = meeting.meeting_id || meeting.id;
+      const url = `/organizations/${orgId}/meeting-history/${meetingId}/summary`;
+      console.log('📄 API endpoint:', url);
+      console.log('📄 Using meeting ID:', meetingId, '(from meeting_id field)');
+      
+      console.log('📄 Step 5: Making API request...');
+      const response = await api.get(url);
       
       console.log('📄 Step 6: Response received:', response.status);
       
-      if (!response.ok) {
-        console.error('📄 ERROR: Response not OK:', response.status);
-        throw new Error('Failed to load meeting summary');
-      }
-      
-      console.log('📄 Step 7: Parsing HTML...');
-      const html = await response.text();
+      console.log('📄 Step 7: Getting HTML from response...');
+      const html = response.data;
       console.log('📄 HTML length:', html.length);
       
       console.log('📄 Step 8: Setting HTML state...');
@@ -595,7 +596,7 @@ const MeetingHistoryPageClean = () => {
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                               <span className="text-sm font-medium">
-                                {meeting.average_rating.toFixed(1)}
+                                {typeof meeting.average_rating === 'number' ? meeting.average_rating.toFixed(1) : 'N/A'}
                               </span>
                             </div>
                           )}
@@ -690,43 +691,17 @@ const MeetingHistoryPageClean = () => {
         )}
 
         {/* Meeting Summary Modal Dialog */}
-        <Dialog open={showSummary} onOpenChange={(open) => {
-          if (!open) {
-            setShowSummary(false);
-            setSummaryHTML('');
-          }
-        }}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="flex items-center justify-between">
-                <span>Meeting Summary</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Save as PDF
-                </Button>
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="flex-1 overflow-auto">
-              {loadingSummary ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-3 text-gray-600">Loading meeting summary...</span>
-                </div>
-              ) : (
-                <div 
-                  dangerouslySetInnerHTML={{ __html: summaryHTML }}
-                  className="meeting-summary-content pr-2"
-                />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <MeetingSummaryModal
+          open={showSummary}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowSummary(false);
+              setSummaryHTML('');
+            }
+          }}
+          summaryHTML={summaryHTML}
+          loading={loadingSummary}
+        />
 
         {/* Meeting Detail Dialog - DISABLED - Using new summary modal instead */}
         {/* {showDetail && selectedMeeting && (
