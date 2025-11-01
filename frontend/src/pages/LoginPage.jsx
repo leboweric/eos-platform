@@ -79,7 +79,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Revolutionary Features */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-12 flex-col justify-between relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
         <div className="absolute inset-0">
@@ -99,74 +99,29 @@ const LoginPage = () => {
           </div>
           
           {/* Main Message */}
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <Sparkles className="h-4 w-4" />
-              Beyond Traditional Business Software
-            </div>
-            
+          <div className="space-y-4">
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
-              Welcome Back to
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block mt-2">
-                The Business Software That Adapts
-              </span>
+              Welcome back
             </h1>
-            
             <p className="text-lg text-slate-600">
-              Your execution platform that transforms with your methodology, 
-              integrates with your cloud, and evolves with your business.
+              Your adaptive execution platform for strategic execution.
             </p>
           </div>
 
-          {/* Revolutionary Features */}
-          <div className="mt-12 space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center mt-0.5">
-                <RefreshCw className="w-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-slate-800 font-semibold">Adaptive Framework Technology™</h3>
-                <p className="text-slate-600 text-sm mt-1">Switch between EOS, 4DX, OKRs instantly without losing data</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mt-0.5">
-                <Cloud className="w-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-slate-800 font-semibold">Your Cloud, Your Control</h3>
-                <p className="text-slate-600 text-sm mt-1">Store documents in YOUR Google Drive or OneDrive</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mt-0.5">
-                <Video className="w-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-slate-800 font-semibold">Real-Time Collaborative Meetings</h3>
-                <p className="text-slate-600 text-sm mt-1">Live presence, synchronized navigation, instant team ratings</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Trust Badges */}
+          {/* Trust Indicators */}
           <div className="mt-12 pt-8 border-t border-slate-200">
-            <p className="text-sm text-slate-500 mb-3">Join forward-thinking organizations</p>
-            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-              <span>✓ Strategy Consultants</span>
+            <div className="flex items-center space-x-4 text-sm text-slate-600">
+              <Shield className="h-5 w-5 text-slate-500" />
+              <span>SOC 2 Type II Compliant</span>
               <span>•</span>
-              <span>✓ Growing Companies</span>
-              <span>•</span>
-              <span>✓ Leadership Teams</span>
+              <span>Enterprise-Grade Security</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+      <div className="w-full lg:w-3/5 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
@@ -180,10 +135,10 @@ const LoginPage = () => {
           </div>
 
           {/* Form Container */}
-          <div className="bg-white lg:bg-gray-50 p-8 rounded-2xl lg:shadow-xl lg:border border-gray-100">
+          <div className="bg-white p-8 rounded-2xl">
             {/* Header */}
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
               <p className="text-gray-600 mt-2">Sign in to your adaptive execution platform</p>
             </div>
 
@@ -320,7 +275,7 @@ const LoginPage = () => {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02]"
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 text-base rounded-lg transition-all transform hover:scale-[1.02]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -343,7 +298,7 @@ const LoginPage = () => {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-gray-50 lg:bg-gray-50 text-gray-500">Or continue with</span>
+                <span className="px-4 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
 
@@ -352,7 +307,7 @@ const LoginPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 border-gray-300 hover:bg-gray-50 font-medium group"
+                className="w-full py-3 border-gray-300 hover:bg-gray-50 font-medium group"
                 onClick={async () => {
                   try {
                     await oauthService.googleLogin();
@@ -373,7 +328,7 @@ const LoginPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 border-gray-300 hover:bg-gray-50 font-medium group"
+                className="w-full py-3 border-gray-300 hover:bg-gray-50 font-medium group"
                 onClick={async () => {
                   try {
                     await oauthService.microsoftLogin();
@@ -393,7 +348,7 @@ const LoginPage = () => {
             </div>
 
             {/* Sign Up Section */}
-            <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="mt-8 p-4 rounded-lg border border-slate-200">
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-900 mb-2">
                   New to the Adaptive Execution Platform?
@@ -411,11 +366,6 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Security Note */}
-            <div className="mt-6 flex items-center justify-center space-x-2 text-xs text-gray-500">
-              <Shield className="h-3 w-3" />
-              <span>Enterprise-grade security • SOC 2 compliant</span>
-            </div>
           </div>
 
           {/* Footer Links */}
