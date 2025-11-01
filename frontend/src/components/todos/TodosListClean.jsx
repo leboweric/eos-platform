@@ -236,10 +236,18 @@ const TodosListClean = ({
     const todosByAssignee = {};
     
     sortedTodos.forEach(todo => {
-      const assigneeId = todo.assigned_to?.id || 'unassigned';
-      const assigneeName = todo.assigned_to ? 
-        `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
-        'Unassigned';
+      let assigneeId = 'unassigned';
+      let assigneeName = 'Unassigned';
+
+      if (todo.assignees && todo.assignees.length > 0) {
+        // Use the first assignee from the multi-assignee array
+        assigneeId = todo.assignees[0].id;
+        assigneeName = `${todo.assignees[0].first_name} ${todo.assignees[0].last_name}`;
+      } else if (todo.assigned_to) {
+        // Fallback to the single assignee field
+        assigneeId = todo.assigned_to.id;
+        assigneeName = `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`;
+      }
       
       if (!todosByAssignee[assigneeId]) {
         todosByAssignee[assigneeId] = {
