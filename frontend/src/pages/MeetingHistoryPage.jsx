@@ -100,7 +100,7 @@ const MeetingHistoryPageClean = () => {
   
   // Summary modal state
   const [showSummary, setShowSummary] = useState(false);
-  const [summaryHTML, setSummaryHTML] = useState('');
+  const [summaryData, setSummaryData] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   
   // Filter state
@@ -340,12 +340,12 @@ const MeetingHistoryPageClean = () => {
       
       console.log('📄 Step 6: Response received:', response.status);
       
-      console.log('📄 Step 7: Getting HTML from response...');
-      const html = response.data;
-      console.log('📄 HTML length:', html.length);
+      console.log('📄 Step 7: Getting JSON data from response...');
+      const summaryData = response.data?.data || response.data;
+      console.log('📄 Summary data received:', summaryData);
       
-      console.log('📄 Step 8: Setting HTML state...');
-      setSummaryHTML(html);
+      console.log('📄 Step 8: Setting summary data state...');
+      setSummaryData(summaryData);
       console.log('📄 SUCCESS: Summary loaded');
       
     } catch (error) {
@@ -694,10 +694,10 @@ const MeetingHistoryPageClean = () => {
           onOpenChange={(open) => {
             if (!open) {
               setShowSummary(false);
-              setSummaryHTML('');
+              setSummaryData(null);
             }
           }}
-          summaryHTML={summaryHTML}
+          summaryData={summaryData}
           loading={loadingSummary}
         />
 

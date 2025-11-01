@@ -197,14 +197,34 @@ const parseHTMLSummary = (htmlString) => {
 export const MeetingSummaryModal = ({ 
   open, 
   onOpenChange, 
-  summaryHTML,
+  summaryData,  // Now receiving JSON data directly
+  summaryHTML,  // Keep for backward compatibility
   loading
 }) => {
-  // Parse HTML when it changes
+  // Use direct JSON data if available, otherwise parse HTML (backward compatibility)
   const parsedData = React.useMemo(() => {
+    if (summaryData) {
+      console.log('📊 Using direct JSON data:', summaryData);
+      // Transform backend JSON structure to match expected format
+      return {
+        meetingInfo: {
+          teamName: summaryData.teamName,
+          meetingType: summaryData.meetingType,
+          meta: summaryData.meetingDate
+        },
+        aiSummary: summaryData.aiSummary,
+        headlines: summaryData.headlines || [],
+        cascadingMessages: summaryData.cascadingMessages || [],
+        solvedIssues: summaryData.issues?.solved || [],
+        newIssues: summaryData.issues?.new || [],
+        completedTodos: summaryData.todos?.completed || [],
+        newTodos: summaryData.todos?.new || []
+      };
+    }
     if (!summaryHTML) return null;
+    console.log('📊 Falling back to HTML parsing');
     return parseHTMLSummary(summaryHTML);
-  }, [summaryHTML]);
+  }, [summaryData, summaryHTML]);
 
   const {
     meetingInfo,

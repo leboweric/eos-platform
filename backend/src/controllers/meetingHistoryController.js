@@ -947,12 +947,12 @@ export const getMeetingSummaryHTML = async (req, res) => {
     });
     console.log('📄 ===== END DEBUG =====');
 
-    // Generate HTML using simplified template
-    const html = generateMeetingSummaryHTML(formattedData);
-
-    // Send raw HTML (browser will render it)
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    // Return JSON data instead of HTML for better reliability
+    // Frontend will handle the rendering
+    res.json({
+      success: true,
+      data: formattedData
+    });
 
   } catch (error) {
     console.error('Error generating meeting summary HTML:', error);
