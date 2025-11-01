@@ -195,21 +195,31 @@ const TodosListClean = ({
     return '';
   };
 
+  // Parse date string as local date, not UTC
+  const parseDateAsLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
+    return new Date(year, month - 1, day); // month is 0-indexed in JS
+  };
+
   const getDaysUntilDue = (todo) => {
     if (!todo.due_date) return null;
     const today = new Date();
-    const dueDate = new Date(todo.due_date);
+    today.setHours(0, 0, 0, 0);
+    const dueDate = parseDateAsLocal(todo.due_date);
     const diffTime = dueDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
   const isOverdue = (todo) => {
-    if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
+    if (!todo.due_date || todo.status === 'complete' || todo.status === 'completed' || todo.status === 'cancelled') {
       return false;
     }
-    const daysUntilDue = getDaysUntilDue(todo);
-    return daysUntilDue < 0;
+    const dueDate = parseDateAsLocal(todo.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate && dueDate < today;
   };
 
   const handleUnarchive = async (todoId, e) => {
@@ -347,7 +357,9 @@ const TodosListClean = ({
                           hidePriorityOptions={true}
                           hideDeleteOption={true}
                         >
-                          <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                          <div className={`border-b border-slate-100 last:border-0 cursor-context-menu transition-colors rounded ${
+                            overdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'
+                          }`}>
                           {/* Main To-Do Row */}
                           <div className="flex items-center px-3 py-3 group">
                             {/* Status Indicator */}
@@ -379,7 +391,10 @@ const TodosListClean = ({
                               className={`flex-1 ml-3 cursor-pointer ${showingArchived ? 'pr-4' : ''}`}
                               onClick={() => onEdit && onEdit(todo)}
                             >
-                              <div className={`text-sm font-medium ${isComplete ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                              <div className={`text-sm font-medium ${
+                                isComplete ? 'text-slate-400 line-through' : 
+                                overdue ? 'text-red-700' : 'text-slate-900'
+                              }`}>
                                 {todo.title}
                               </div>
                               {todo.description && (
