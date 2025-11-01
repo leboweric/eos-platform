@@ -2061,17 +2061,7 @@ const DashboardClean = () => {
               // Add organization_id and team_id if not present
               const orgId = user?.organizationId || user?.organization_id;
               
-              // Get the user's actual department/team ID (same logic as fetchDashboardData)
-              let userTeamId = null;
-              if (user?.teams && user.teams.length > 0) {
-                const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
-                if (nonLeadershipTeam) {
-                  userTeamId = nonLeadershipTeam.id;
-                } else {
-                  const leadershipTeam = user.teams.find(team => team.is_leadership_team);
-                  userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
-                }
-              }
+              const userTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
               
               const todoDataWithOrgInfo = {
                 ...todoData,
@@ -2111,17 +2101,7 @@ const DashboardClean = () => {
             try {
               const orgId = user?.organizationId || user?.organization_id;
               
-              // Get the user's actual department/team ID (same logic as fetchDashboardData)
-              let userTeamId = null;
-              if (user?.teams && user.teams.length > 0) {
-                const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
-                if (nonLeadershipTeam) {
-                  userTeamId = nonLeadershipTeam.id;
-                } else {
-                  const leadershipTeam = user.teams.find(team => team.is_leadership_team);
-                  userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
-                }
-              }
+              const userTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
               
               const issueDataWithOrgInfo = {
                 ...issueData,
