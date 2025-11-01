@@ -2064,7 +2064,8 @@ const DashboardClean = () => {
               const userTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
               
               const todoDataWithOrgInfo = {
-                ...todoData,
+                ...(editingTodo || {}), // Spread the original todo data first
+                ...todoData,           // Then spread the new form data
                 organization_id: orgId,
                 team_id: userTeamId,
                 department_id: userTeamId
