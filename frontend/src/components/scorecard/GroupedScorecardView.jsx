@@ -344,27 +344,27 @@ const GroupedScorecardView = ({
   const handleDrop = async (e, groupId) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Drop event - groupId:', groupId, 'draggedMetric:', draggedMetric);
     setDragOverGroup(null);
-    
+
     if (!draggedMetric) {
-      console.log('No dragged metric found');
       return;
     }
-    
-    // Skip if dropping in the same group
-    if (draggedMetric.group_id === groupId) {
-      console.log('Metric already in this group');
+
+    // Find the most up-to-date version of the metric from the metrics array
+    const currentMetric = metrics.find(m => m.id === draggedMetric.id);
+
+    // If the metric is already in the target group, do nothing
+    if (currentMetric && currentMetric.group_id === groupId) {
       setDraggedMetric(null);
       return;
     }
-    
+
     try {
       await handleMoveMetricToGroup(draggedMetric.id, groupId);
     } catch (error) {
       console.error('Failed to move metric:', error);
     }
-    
+
     setDraggedMetric(null);
   };
 
