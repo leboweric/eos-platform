@@ -401,11 +401,18 @@ export const createMeetingSnapshot = async (req, res) => {
       ? ratingsWithValues.reduce((sum, a) => sum + a.rating, 0) / ratingsWithValues.length
       : null;
 
-    // Get issues created during meeting
+    // Get issues created during meeting (with owner name for email template)
     const issuesCreatedQuery = `
-      SELECT id, title, priority_rank as priority, created_by_id as created_by
-      FROM issues
-      WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
+      SELECT 
+        i.id, 
+        i.title, 
+        i.priority_rank as priority, 
+        i.created_by_id as created_by,
+        i.created_at,
+        u.first_name || ' ' || u.last_name as owner
+      FROM issues i
+      LEFT JOIN users u ON i.owner_id = u.id
+      WHERE i.meeting_id = $1 AND i.organization_id = $2 AND i.deleted_at IS NULL
     `;
     const issuesCreated = await client.query(issuesCreatedQuery, [meetingId, orgId]);
 
@@ -423,43 +430,58 @@ export const createMeetingSnapshot = async (req, res) => {
       meeting.team_id, orgId, startTime, now
     ]);
 
-    // Get issues solved during meeting
+    // Get issues solved during meeting (with owner name for email template)
     const issuesSolvedQuery = `
-      SELECT id, title, resolution_notes as solution, resolved_at as solved_at
-      FROM issues
-      WHERE status = 'closed' 
-        AND resolved_at BETWEEN $1 AND $2
-        AND team_id = $3
-        AND organization_id = $4
-        AND deleted_at IS NULL
+      SELECT 
+        i.id, 
+        i.title, 
+        i.resolution_notes as solution, 
+        i.resolved_at as solved_at,
+        u.first_name || ' ' || u.last_name as owner
+      FROM issues i
+      LEFT JOIN users u ON i.owner_id = u.id
+      WHERE i.status = 'closed' 
+        AND i.resolved_at BETWEEN $1 AND $2
+        AND i.team_id = $3
+        AND i.organization_id = $4
+        AND i.deleted_at IS NULL
     `;
     const issuesSolved = await client.query(issuesSolvedQuery, [
       startTime, now, meeting.team_id, orgId
     ]);
 
-    // Get todos created during meeting
+    // Get todos created during meeting (with consistent field names for email template)
     const todosCreatedQuery = `
       SELECT 
         t.id, 
         t.title, 
-        t.assigned_to_id as assignee_id,
-        u.first_name || ' ' || u.last_name as assignee_name,
-        t.due_date
+        t.assigned_to_id,
+        u.first_name || ' ' || u.last_name as assignee,
+        u.first_name || ' ' || u.last_name as assigned_to,
+        t.due_date,
+        t.created_at
       FROM todos t
       LEFT JOIN users u ON t.assigned_to_id = u.id
       WHERE t.meeting_id = $1 AND t.organization_id = $2 AND t.deleted_at IS NULL
     `;
     const todosCreated = await client.query(todosCreatedQuery, [meetingId, orgId]);
 
-    // Get todos completed during meeting
+    // Get todos completed during meeting (with assignee name for email template)
     const todosCompletedQuery = `
-      SELECT id, title, assigned_to_id as completed_by
-      FROM todos
-      WHERE status = 'complete' 
-        AND updated_at BETWEEN $1 AND $2
-        AND team_id = $3
-        AND organization_id = $4
-        AND deleted_at IS NULL
+      SELECT 
+        t.id, 
+        t.title, 
+        t.assigned_to_id,
+        u.first_name || ' ' || u.last_name as assignee,
+        u.first_name || ' ' || u.last_name as assigned_to,
+        t.updated_at as completed_at
+      FROM todos t
+      LEFT JOIN users u ON t.assigned_to_id = u.id
+      WHERE t.status = 'complete' 
+        AND t.updated_at BETWEEN $1 AND $2
+        AND t.team_id = $3
+        AND t.organization_id = $4
+        AND t.deleted_at IS NULL
     `;
     const todosCompleted = await client.query(todosCompletedQuery, [
       startTime, now, meeting.team_id, orgId
