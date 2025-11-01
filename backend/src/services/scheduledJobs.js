@@ -40,7 +40,7 @@ export const initializeScheduledJobs = () => {
   
   console.log('Scheduled jobs initialized:');
   console.log('- Daily active users report: 8:00 AM daily');
-  console.log('- Todo reminders: 9:00 AM daily (sends to teams 6 days after meeting)');
+  console.log('- Todo reminders: 9:00 AM daily (sends 2-day due date reminders)');
   
   // Optional: Schedule a test run in development
   if (process.env.NODE_ENV === 'development') {

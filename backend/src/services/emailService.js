@@ -741,6 +741,45 @@ const templates = {
     `
   }),
 
+  todoDueDateReminder: (data) => ({
+    subject: `You have ${data.todos.length} to-do(s) due in 2 days`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>To-Do Reminder</h2>
+        <p>Hi ${data.firstName},</p>
+        <p>This is a reminder that the following to-do(s) are due in 2 days:</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <ul style="color: #333; line-height: 1.8; list-style-type: none; padding: 0;">
+            ${data.todos.map(todo => `
+              <li style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+                <strong>${todo.title}</strong><br/>
+                <span style="color: #6b7280; font-size: 14px;">Due: ${new Date(todo.due_date).toLocaleDateString()}</span>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/todos" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View All To-Dos
+          </a>
+        </div>
+      </div>
+    `,
+    text: `
+      To-Do Reminder
+      
+      Hi ${data.firstName},
+      
+      This is a reminder that the following to-do(s) are due in 2 days:
+      
+      ${data.todos.map(todo => `- ${todo.title} (Due: ${new Date(todo.due_date).toLocaleDateString()})`).join("\n")}
+      
+      View all to-dos: ${process.env.FRONTEND_URL || 'https://axplatform.app'}/todos
+    `
+  }),
+
   // OLD TEMPLATE - DEPRECATED: Use sendMeetingSummary() function instead
   // meetingSummary: (data) => ({
   //   subject: `${data.teamName} Meeting Summary - ${data.organizationName}`,
