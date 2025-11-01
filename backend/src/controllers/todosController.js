@@ -290,13 +290,13 @@ export const updateTodo = async (req, res) => {
     // Handle assignee updates
     const isMultiAssignee = assignedToIds !== undefined && assignedToIds.length > 0;
     
-    if (assignedToIds !== undefined) {
+    if (Array.isArray(assignedToIds) && assignedToIds.length > 0) {
       // Switching to multi-assignee mode
       updates.push(`assigned_to_id = NULL`);
       updates.push(`is_multi_assignee = TRUE`);
       
       // We'll handle the junction table after the main update
-    } else if (assignedToId !== undefined) {
+    } else if (assignedToId !== undefined && assignedToId !== null && assignedToId !== '') {
       // Single assignee mode
       updates.push(`assigned_to_id = $${paramIndex}`);
       values.push(assignedToId);
