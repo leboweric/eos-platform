@@ -39,6 +39,7 @@ const GroupedScorecardView = ({
   onMetricShare,
   onChartOpen,
   onRefresh,
+  onRefreshGroups,
   showTotal,
   weekOptions,
   monthOptions,
@@ -247,6 +248,9 @@ const GroupedScorecardView = ({
       setNewGroupName('');
       setNewGroupColor('');
       setGroupDialog({ isOpen: false, group: null });
+      if (onRefreshGroups) {
+        onRefreshGroups();
+      }
     } catch (error) {
       console.error('Failed to create group:', error);
     }
@@ -364,7 +368,10 @@ const GroupedScorecardView = ({
     setDraggedMetric(null);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = async () => {
+    if (draggedMetric && dragOverGroup) {
+      await handleMoveMetricToGroup(draggedMetric.id, dragOverGroup);
+    }
     setDraggedMetric(null);
     setDragOverGroup(null);
     setDraggedGroup(null);

@@ -485,6 +485,7 @@ const ScorecardPageClean = () => {
                 onMetricDelete={handleDeleteMetric}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
+                onRefreshGroups={fetchGroups}
                 showTotal={false}
                 weekOptions={weekDates.map((date, index) => ({ value: date, label: weekLabels[index] }))}
                 weekOptionsOriginal={weekDates.map((date, index) => ({ value: date, label: weekLabels[index] }))}
@@ -528,6 +529,7 @@ const ScorecardPageClean = () => {
                 onMetricDelete={handleDeleteMetric}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
+                onRefreshGroups={fetchGroups}
                 showTotal={false}
                 weekOptions={[]}
                 weekOptionsOriginal={[]}
