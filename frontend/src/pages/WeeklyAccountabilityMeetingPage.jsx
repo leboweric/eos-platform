@@ -5810,6 +5810,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {assignee.todos.map(todo => {
                               const isComplete = todo.status === 'complete' || todo.status === 'completed';
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
+                              const overdue = isOverdue(todo);
                               
                               return (
                                 <TodoContextMenu
@@ -5826,7 +5827,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   hidePriorityOptions={true}
                                   hideDeleteOption={true}
                                 >
-                                  <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                                  <div className={`border-b border-slate-100 last:border-0 cursor-context-menu transition-colors rounded ${
+                                    overdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'
+                                  }`}>
                                     {/* Main To-Do Row */}
                                     <div className="flex items-center px-3 py-3 group">
                                       {/* Status Indicator */}
@@ -5865,7 +5868,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           setShowTodoDialog(true);
                                         }}
                                       >
-                                        <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
+                                        <div className={`font-semibold leading-tight ${
+                                          isComplete ? 'line-through text-slate-400' : 
+                                          overdue ? 'text-red-700' : 'text-slate-900'
+                                        }`}>
                                           {todo.title}
                                           {todo.isMultiAssignee && (
                                             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
