@@ -1,0 +1,377 @@
+      case 'check-in-day1':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>📅 Day 1: Check-In</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="font-semibold text-blue-900 mb-2">Welcome to Day 1 of Annual Planning!</p>
+                  <p className="text-sm text-gray-700">
+                    Everyone shares what's on their mind, both personally and professionally.
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-3">Each person shares:</h4>
+                  <ul className="space-y-2 text-sm">
+                    <li>• One personal good news item</li>
+                    <li>• One business good news item</li>
+                    <li>• What you're most excited about for this planning session</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'review-previous':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Previous Year/Quarterly Rocks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Review the past year's rocks and quarterly priorities. Celebrate wins and learn from misses.
+                </p>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Discussion Questions:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• What percentage of rocks did we complete?</li>
+                    <li>• What were our biggest wins?</li>
+                    <li>• What prevented completion of others?</li>
+                    <li>• What patterns or lessons do we see?</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'team-health':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Health Assessment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Assess the health and effectiveness of the leadership team.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-3">Rate Each 1-10:</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li>• Team cohesiveness: ____</li>
+                      <li>• Communication quality: ____</li>
+                      <li>• Trust level: ____</li>
+                      <li>• Accountability: ____</li>
+                      <li>• Results orientation: ____</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">Discussion:</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Where are we strongest?</li>
+                      <li>• Where do we need improvement?</li>
+                      <li>• What specific actions will help?</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'org-checkup':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Organizational Checkup</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+                  <h4 className="font-semibold mb-2 text-green-900">Financial Health</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Revenue vs. target: _____</li>
+                    <li>• Profit margins: _____</li>
+                    <li>• Overall grade: _____</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                  <h4 className="font-semibold mb-2 text-blue-900">Customer Health</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Satisfaction score: _____</li>
+                    <li>• Retention rate: _____</li>
+                    <li>• Overall grade: _____</li>
+                  </ul>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+                  <h4 className="font-semibold mb-2 text-purple-900">People Health</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Employee engagement: _____</li>
+                    <li>• Right people, right seats: _____</li>
+                    <li>• Overall grade: _____</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'swot':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>S.W.O.T. Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                  <h4 className="font-semibold mb-2 text-green-800">✓ Strengths</h4>
+                  <p className="text-xs text-gray-600 mb-2 italic">Internal positives</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• What do we do best?</li>
+                    <li>• What advantages do we have?</li>
+                  </ul>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                  <h4 className="font-semibold mb-2 text-red-800">✗ Weaknesses</h4>
+                  <p className="text-xs text-gray-600 mb-2 italic">Internal negatives</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Where are we vulnerable?</li>
+                    <li>• What needs improvement?</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
+                  <h4 className="font-semibold mb-2 text-blue-800">⚡ Opportunities</h4>
+                  <p className="text-xs text-gray-600 mb-2 italic">External positives</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• What trends favor us?</li>
+                    <li>• What can we capitalize on?</li>
+                  </ul>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-300">
+                  <h4 className="font-semibold mb-2 text-orange-800">⚠ Threats</h4>
+                  <p className="text-xs text-gray-600 mb-2 italic">External negatives</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• What competition exists?</li>
+                    <li>• What could cause trouble?</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'vto':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>V/TO™ (Vision/Traction Organizer)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Review and refresh the organization's V/TO™ - the foundation of your vision.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Review & Update:</h4>
+                  <ul className="space-y-2 text-sm">
+                    <li><strong>Core Values:</strong> Are they being lived?</li>
+                    <li><strong>Core Focus:</strong> Is it clear and compelling?</li>
+                    <li><strong>10-Year Target:</strong> Still the right destination?</li>
+                    <li><strong>Marketing Strategy:</strong> Target market, 3 uniques, proven process</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'three-year':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>3-Year Picture™</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Paint a vivid, specific picture of what the company looks like 3 years from today.
+                </p>
+                <div className="bg-purple-50 p-4 rounded-lg border-2 border-purple-300">
+                  <h4 className="font-semibold mb-3 text-purple-900">{currentYear + 3} Vision</h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="bg-white p-3 rounded">
+                      <p className="font-semibold">Revenue: $_______</p>
+                    </div>
+                    <div className="bg-white p-3 rounded">
+                      <p className="font-semibold">Number of customers: _______</p>
+                    </div>
+                    <div className="bg-white p-3 rounded">
+                      <p className="font-semibold">Number of employees: _______</p>
+                    </div>
+                    <div className="bg-white p-3 rounded">
+                      <p className="font-semibold">What does it look like?</p>
+                      <p className="text-gray-600 text-xs italic mt-1">
+                        Describe in vivid detail...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'check-in-day2':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>📅 Day 2: Check-In</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="font-semibold text-purple-900 mb-2">Welcome to Day 2!</p>
+                  <p className="text-sm">Reconnect before diving into today's work.</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Each person shares:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• How are you feeling after Day 1?</li>
+                    <li>• Any insights from yesterday?</li>
+                    <li>• What are you looking forward to today?</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'review-issues':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Issues List / 3-Year Picture™</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Quick review of yesterday's work to keep it fresh.
+                </p>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">3-Year Picture Summary</h4>
+                  <p className="text-sm">Revisit yesterday's vision.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'one-year-plan':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>1-Year Plan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Define specific, measurable goals for {nextYear}.
+                </p>
+                <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                  <h4 className="font-semibold mb-3">{nextYear} Goals</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Revenue Goal:</strong> $_______</p>
+                    <p><strong>Profit Goal:</strong> $_______</p>
+                    <p><strong>Key Metrics:</strong> _______</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'quarterly-rocks':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Establish Quarterly Rocks (Q1 {nextYear})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Rock Guidelines:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• 90-day priorities</li>
+                    <li>• 3-7 rocks maximum</li>
+                    <li>• Each has single owner</li>
+                    <li>• Specific and measurable</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'ids':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>IDS (Identify, Discuss, Solve)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">IDS Process:</h4>
+                  <ol className="space-y-2 text-sm">
+                    <li><strong>1. Identify:</strong> What is the real issue?</li>
+                    <li><strong>2. Discuss:</strong> Open discussion</li>
+                    <li><strong>3. Solve:</strong> Determine solution</li>
+                  </ol>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'next-steps':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Next Steps / Conclude</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">✓ What We Accomplished:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Reviewed performance</li>
+                    <li>• Assessed health</li>
+                    <li>• Completed SWOT</li>
+                    <li>• Created 3-Year Picture</li>
+                    <li>• Set 1-Year Plan</li>
+                    <li>• Established Q1 Rocks</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Communication Plan:</h4>
+                  <p className="text-sm">How will we share this with the team?</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Section not found</p>
+          </div>
+        );

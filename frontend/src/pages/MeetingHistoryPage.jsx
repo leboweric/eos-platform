@@ -206,7 +206,7 @@ const MeetingHistoryPageClean = () => {
         console.log('⚠️ No department selected - skipping meeting history fetch');
         setLoading(false);
         setMeetings([]);
-        setTotalCount(0);
+        setTotal(0);  // Fixed: use setTotal instead of setTotalCount
         return; // Don't fetch without a valid team ID
       }
       
