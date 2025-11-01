@@ -571,8 +571,47 @@ const MeetingHistoryPageClean = () => {
           <div className="space-y-5">
             {meetings.map((meeting) => {
               const snapshotData = meeting.snapshot_data || {};
-              const issues = snapshotData.issues || {};
-              const todos = snapshotData.todos || {};
+              
+              // --- Normalize data structures for resilience --- //
+
+              // Normalize Issues
+              let issuesCreated = [];
+              let issuesSolved = [];
+              if (snapshotData.issues) {
+                if (Array.isArray(snapshotData.issues)) {
+                  // Handles case where `issues` is a direct array (newer snapshots).
+                  // We'll assume all issues in a raw array are "created" for this page's context.
+                  issuesCreated = snapshotData.issues;
+                } else {
+                  // Handles case where `issues` is an object (older snapshots).
+                  if (Array.isArray(snapshotData.issues.created)) {
+                    issuesCreated = snapshotData.issues.created;
+                  } else if (Array.isArray(snapshotData.issues.new)) {
+                    // Also check for 'new' for consistency with the summary modal.
+                    issuesCreated = snapshotData.issues.new;
+                  }
+                  if (Array.isArray(snapshotData.issues.solved)) {
+                    issuesSolved = snapshotData.issues.solved;
+                  }
+                }
+              }
+
+              // Normalize Todos
+              let todosCreated = [];
+              if (snapshotData.todos) {
+                  if (Array.isArray(snapshotData.todos)) {
+                      // Handles case where `todos` is a direct array.
+                      todosCreated = snapshotData.todos;
+                  } else {
+                      // Handles case where `todos` is an object.
+                      if (Array.isArray(snapshotData.todos.created)) {
+                          todosCreated = snapshotData.todos.created;
+                      } else if (Array.isArray(snapshotData.todos.added)) {
+                          // Also check for 'added' for consistency.
+                          todosCreated = snapshotData.todos.added;
+                      }
+                  }
+              }
               
               return (
                 <Card 
@@ -625,27 +664,27 @@ const MeetingHistoryPageClean = () => {
                         </div>
 
                         <div className="flex items-center gap-4">
-                          {issues.solved && issues.solved.length > 0 && (
+                          {issuesSolved.length > 0 && (
                             <div className="flex items-center gap-1 text-green-600">
                               <CheckCircle className="h-4 w-4" />
                               <span className="text-sm font-medium">
-                                {issues.solved.length} solved
+                                {issuesSolved.length} solved
                               </span>
                             </div>
                           )}
-                          {issues.created && issues.created.length > 0 && (
+                          {issuesCreated.length > 0 && (
                             <div className="flex items-center gap-1 text-blue-600">
                               <AlertTriangle className="h-4 w-4" />
                               <span className="text-sm font-medium">
-                                {issues.created.length} issues
+                                {issuesCreated.length} issues
                               </span>
                             </div>
                           )}
-                          {todos.created && todos.created.length > 0 && (
+                          {todosCreated.length > 0 && (
                             <div className="flex items-center gap-1 text-purple-600">
                               <ListTodo className="h-4 w-4" />
                               <span className="text-sm font-medium">
-                                {todos.created.length} todos
+                                {todosCreated.length} todos
                               </span>
                             </div>
                           )}
