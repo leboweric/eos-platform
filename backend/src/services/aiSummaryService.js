@@ -299,7 +299,7 @@ Be thorough but concise. If information is not available in the transcript, mark
         UPDATE meeting_snapshots 
         SET snapshot_data = jsonb_set(
           snapshot_data, 
-          '{aiSummary}', 
+          '{ai_summary}', 
           to_jsonb($1::text)
         )
         WHERE meeting_id = $2

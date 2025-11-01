@@ -481,7 +481,7 @@ export const createMeetingSnapshot = async (req, res) => {
     const snapshotData = {
       attendees: attendeesResult.rows,
       notes: meeting.notes || '',
-      aiSummary: aiSummary,  // Add AI summary
+      ai_summary: aiSummary,  // Add AI summary (using snake_case for consistency)
       issues: {
         new: issuesCreated.rows,      // Renamed from 'created' to match template
         discussed: issuesDiscussed.rows,
