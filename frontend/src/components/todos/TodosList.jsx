@@ -147,19 +147,6 @@ const TodosList = ({
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Debug logging
-    if (todo.due_date) {
-      console.log('TodosList isOverdue check:', {
-        title: todo.title,
-        due_date: todo.due_date,
-        parsedDueDate: dueDate,
-        today: today,
-        isOverdue: dueDate < today,
-        status: todo.status
-      });
-    }
-    
     return dueDate && dueDate < today && todo.status !== 'complete' && todo.status !== 'completed';
   };
 
@@ -267,8 +254,9 @@ const TodosList = ({
           <div
             key={todo.id}
             className={`
-              group relative bg-white rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer h-full border-l-4
+              group relative rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer h-full border-l-4
               ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
+              ${overdue ? 'bg-red-50' : 'bg-white'}
               hover:scale-[1.01] hover:-translate-y-0.5
             `}
             style={{
@@ -301,8 +289,9 @@ const TodosList = ({
                 <div className="flex-1 min-w-0">
                   {/* Title - matching Rock card styling */}
                   <h4 className={`
-                    text-base font-semibold text-gray-900 mb-2 leading-snug
-                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : ''}
+                    text-base font-semibold mb-2 leading-snug
+                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 
+                      overdue ? 'text-red-700' : 'text-gray-900'}
                   `}>
                     {todo.title}
                   </h4>
