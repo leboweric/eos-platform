@@ -573,6 +573,7 @@ const MeetingHistoryPageClean = () => {
               const snapshotData = meeting.snapshot_data || {};
               
               // --- Normalize data structures for resilience --- //
+              // ARCHITECTURAL FIX: Handle inconsistent snapshot data structures
 
               // Normalize Issues
               let issuesCreated = [];
