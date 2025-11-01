@@ -1852,7 +1852,8 @@ const DashboardClean = () => {
                             <div className="flex-1 ml-3">
                               <div 
                                 className={`text-sm font-medium cursor-pointer ${
-                                  isComplete ? 'line-through text-slate-400' : 'text-slate-900 hover:text-slate-700'
+                                  isComplete ? 'line-through text-slate-400' : 
+                                  overdue ? 'text-red-700 hover:text-red-600' : 'text-slate-900 hover:text-slate-700'
                                 }`}
                                 onClick={() => handleEditTodo(todo)}
                               >
@@ -1862,7 +1863,7 @@ const DashboardClean = () => {
                             
                             {/* Due Date */}
                             <div className="w-24 text-center">
-                              <span className="text-xs text-slate-500">
+                              <span className={`text-xs font-medium ${overdue ? 'text-red-600' : 'text-slate-500'}`}>
                                 {dueDate}
                               </span>
                             </div>
