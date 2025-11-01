@@ -100,7 +100,7 @@ const parseHTMLSummary = (htmlString) => {
   const extractListItems = (sectionComment) => {
     const items = [];
     const allComments = [];
-    const walker = document.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
+    const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
     
     while (walker.nextNode()) {
       allComments.push(walker.currentNode);
