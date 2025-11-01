@@ -888,13 +888,29 @@ export const getMeetingSummaryHTML = async (req, res) => {
       cascadingMessages: snapshotData.cascading_messages || snapshotData.cascadingMessages || [],
       
       issues: {
-        solved: snapshotData.issues?.solved || [],
-        new: snapshotData.issues?.new || snapshotData.issues?.created || []  // Support both field names
+        solved: (snapshotData.issues?.solved || []).map(issue => ({
+          ...issue,
+          owner: issue.owner || issue.owner_name  // Support both field names
+        })),
+        new: (snapshotData.issues?.new || snapshotData.issues?.created || []).map(issue => ({
+          ...issue,
+          owner: issue.owner || issue.owner_name  // Support both field names
+        }))
       },
       
       todos: {
-        completed: snapshotData.todos?.completed || [],
-        new: snapshotData.todos?.added || snapshotData.todos?.created || []  // Support both field names
+        completed: (snapshotData.todos?.completed || []).map(todo => ({
+          ...todo,
+          assignee: todo.assignee || todo.assigned_to || todo.assigned_to_name,  // Support all variations
+          assigned_to: todo.assigned_to || todo.assignee || todo.assigned_to_name,  // Both fields for compatibility
+          due_date: todo.due_date || todo.dueDate  // Support both snake_case and camelCase
+        })),
+        new: (snapshotData.todos?.added || snapshotData.todos?.created || []).map(todo => ({
+          ...todo,
+          assignee: todo.assignee || todo.assigned_to || todo.assigned_to_name,  // Support all variations
+          assigned_to: todo.assigned_to || todo.assignee || todo.assigned_to_name,  // Both fields for compatibility
+          due_date: todo.due_date || todo.dueDate  // Support both snake_case and camelCase
+        }))
       },
       
       attendees: snapshotData.attendees || [],
