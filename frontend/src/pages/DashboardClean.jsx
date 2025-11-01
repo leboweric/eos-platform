@@ -245,17 +245,6 @@ const DashboardClean = () => {
     }
   }, [user?.organizationId, user?.id]);
 
-  // Helper function to check if a todo is overdue
-  const isOverdue = (todo) => {
-    if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
-      return false;
-    }
-    const dueDate = new Date(todo.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate < today;
-  };
 
   // Automatically create issues for overdue todos
 
