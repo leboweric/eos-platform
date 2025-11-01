@@ -372,7 +372,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {solvedIssues.map((issue, idx) => (
-                          <ListItem key={idx} completed={true}>{issue}</ListItem>
+                          <ListItem key={idx} completed={true}>{issue.title}</ListItem>
                         ))}
                       </div>
                     )}
@@ -389,7 +389,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {newIssues.map((issue, idx) => (
-                          <ListItem key={idx}>{issue}</ListItem>
+                          <ListItem key={idx}>{issue.title}</ListItem>
                         ))}
                       </div>
                     )}
@@ -411,7 +411,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {completedTodos.map((todo, idx) => (
-                          <ListItem key={idx} completed={true}>{todo}</ListItem>
+                          <ListItem key={idx} completed={true}>{todo.title}</ListItem>
                         ))}
                       </div>
                     )}
@@ -428,7 +428,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {newTodos.map((todo, idx) => (
-                          <ListItem key={idx}>{todo}</ListItem>
+                          <ListItem key={idx}>{todo.title}</ListItem>
                         ))}
                       </div>
                     )}
