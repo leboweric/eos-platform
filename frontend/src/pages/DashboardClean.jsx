@@ -81,6 +81,23 @@ const DashboardClean = () => {
     if (!priority.milestones || !Array.isArray(priority.milestones)) return 0;
     return priority.milestones.filter(m => !m.completed && getDaysUntilDue(m.dueDate) < 0).length;
   };
+
+  // Helper functions for to-do overdue checking
+  const parseDateAsLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split("-").map(num => parseInt(num));
+    return new Date(year, month - 1, day);
+  };
+
+  const isOverdue = (todo) => {
+    if (!todo.due_date || todo.status === 'complete' || todo.status === 'completed') {
+      return false;
+    }
+    const dueDate = parseDateAsLocal(todo.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate && dueDate < today;
+  };
   const { labels } = useTerminology();
   const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
@@ -1553,6 +1570,7 @@ const DashboardClean = () => {
                       <div className="space-y-1">
                         {todos.map((todo) => {
                           const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                          const overdue = isOverdue(todo);
                           const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
                           
                           return (
@@ -1672,7 +1690,8 @@ const DashboardClean = () => {
                                 <div className="flex-1 ml-3">
                                   <div 
                                     className={`text-sm font-medium cursor-pointer ${
-                                      isComplete ? 'line-through text-slate-400' : 'text-slate-900 hover:text-slate-700'
+                                      isComplete ? 'line-through text-slate-400' : 
+                                      overdue ? 'text-red-700 hover:text-red-600' : 'text-slate-900 hover:text-slate-700'
                                     }`}
                                     onClick={() => handleEditTodo(todo)}
                                   >
@@ -1682,7 +1701,7 @@ const DashboardClean = () => {
                                 
                                 {/* Due Date */}
                                 <div className="w-24 text-center">
-                                  <span className="text-xs text-slate-500">
+                                  <span className={`text-xs font-medium ${overdue ? 'text-red-600' : 'text-slate-500'}`}>
                                     {dueDate}
                                   </span>
                                 </div>
@@ -1710,6 +1729,7 @@ const DashboardClean = () => {
                 <div className="space-y-1">
                   {dashboardData.todos.map((todo) => {
                     const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                    const overdue = isOverdue(todo);
                     const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
                     
                     return (
