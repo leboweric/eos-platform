@@ -815,13 +815,37 @@ export const getMeetingSummaryHTML = async (req, res) => {
 
     const orgData = orgResult.rows[0];
 
+    // If snapshot doesn't have AI summary, try to fetch it from database (for old meetings)
+    if (!snapshotData.ai_summary && !snapshotData.aiSummary && !snapshotData.meetingSummary) {
+      console.log('📄 Snapshot missing AI summary, fetching from database...');
+      
+      const aiSummaryQuery = `
+        SELECT mas.executive_summary
+        FROM meeting_ai_summaries mas
+        JOIN meeting_transcripts mt ON mas.transcript_id = mt.id
+        WHERE mt.meeting_id = $1
+        ORDER BY mas.created_at DESC
+        LIMIT 1
+      `;
+      
+      const aiSummaryResult = await db.query(aiSummaryQuery, [meetingId]);
+      
+      if (aiSummaryResult.rows.length > 0) {
+        snapshotData.ai_summary = aiSummaryResult.rows[0].executive_summary;
+        console.log('📄 Found AI summary in database');
+      } else {
+        console.log('📄 No AI summary found in database either');
+      }
+    }
+
     console.log('📄 Meeting data retrieved:', {
       id: meetingData.id,
       teamName: meetingData.team_name,
       meetingType: meetingData.meeting_type,
       meetingDate: meetingData.meeting_date || meetingData.started_at,
       themeColor: orgData?.theme_primary_color || '#6366f1',
-      hasSnapshot: !!snapshotData.issues
+      hasSnapshot: !!snapshotData.issues,
+      hasAISummary: !!(snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary)
     });
 
     // Format data for simplified template
