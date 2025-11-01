@@ -418,9 +418,15 @@ const DashboardClean = () => {
       } else {
         // In my items view, show only user's todos (including completed ones)
         displayTodos = allTodos.filter(todo => {
+          // Check single assignee field
           const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
           const isAssignedToUser = assignedToId === user.id;
-          return isAssignedToUser;
+          
+          // Check multi-assignee field
+          const isInAssigneesArray = todo.assignees && Array.isArray(todo.assignees) && 
+            todo.assignees.some(assignee => (assignee.id || assignee.user_id) === user.id);
+          
+          return isAssignedToUser || isInAssigneesArray;
         });
       }
       

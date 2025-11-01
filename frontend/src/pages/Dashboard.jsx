@@ -241,7 +241,7 @@ const DashboardClean = () => {
 
         // Check multi-assignee field
         const isInAssigneesArray = todo.assignees && Array.isArray(todo.assignees) && 
-          todo.assignees.some(assignee => assignee.id === user.id);
+          todo.assignees.some(assignee => (assignee.id || assignee.user_id) === user.id);
 
         const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
 
