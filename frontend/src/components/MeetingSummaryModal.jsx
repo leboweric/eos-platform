@@ -98,6 +98,7 @@ const parseHTMLSummary = (htmlString) => {
 
   // Extract text content from sections
   const extractListItems = (sectionComment) => {
+    console.log(`🔎 Searching for section: "${sectionComment}"`);
     const items = [];
     const allComments = [];
     const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
@@ -110,7 +111,12 @@ const parseHTMLSummary = (htmlString) => {
       c.textContent.trim().toUpperCase().includes(sectionComment.toUpperCase())
     );
     
-    if (!targetComment) return items;
+    if (!targetComment) {
+      console.log(`❌ Section "${sectionComment}" not found in comments`);
+      return items;
+    }
+    
+    console.log(`✅ Found section "${sectionComment}"`)
     
     let currentNode = targetComment.nextSibling;
     while (currentNode && currentNode.nodeType !== 8) {
@@ -127,6 +133,7 @@ const parseHTMLSummary = (htmlString) => {
       currentNode = currentNode.nextSibling;
     }
     
+    console.log(`📦 Extracted ${items.length} items from "${sectionComment}"`);
     return items;
   };
 
@@ -159,6 +166,31 @@ const parseHTMLSummary = (htmlString) => {
     completedTodos: extractListItems('COMPLETED'),
     newTodos: extractListItems('NEW TODOS')
   };
+  
+  // Debug logging to see what the parser extracted
+  console.log('🔍 Parser Debug Results:', {
+    htmlLength: htmlString?.length,
+    docElementsFound: doc?.body?.children?.length,
+    executiveSummary: result.executiveSummary?.substring(0, 100) + '...',
+    headlines: result.headlines,
+    cascadingMessages: result.cascadingMessages,
+    solvedIssues: result.solvedIssues,
+    newIssues: result.newIssues,
+    completedTodos: result.completedTodos,
+    newTodos: result.newTodos,
+    totalIssues: (result.solvedIssues?.length || 0) + (result.newIssues?.length || 0),
+    totalTodos: (result.completedTodos?.length || 0) + (result.newTodos?.length || 0)
+  });
+  
+  // Check what comment nodes were found
+  const allComments = [];
+  const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
+  while (walker.nextNode()) {
+    allComments.push(walker.currentNode.textContent);
+  }
+  console.log('🔍 All comment nodes found in HTML:', allComments);
+  
+  return result;
 };
 
 // Main Modal Component
