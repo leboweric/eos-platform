@@ -235,10 +235,17 @@ const DashboardClean = () => {
       
       
       const userTodos = allTodos.filter(todo => {
+        // Check single assignee field
         const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
         const isAssignedToUser = assignedToId === user.id;
+
+        // Check multi-assignee field
+        const isInAssigneesArray = todo.assignees && Array.isArray(todo.assignees) && 
+          todo.assignees.some(assignee => assignee.id === user.id);
+
         const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
-        return isAssignedToUser && isNotCompleted;
+
+        return (isAssignedToUser || isInAssigneesArray) && isNotCompleted;
       });
       
       const today = new Date();
