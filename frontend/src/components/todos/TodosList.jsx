@@ -309,16 +309,12 @@ const TodosList = ({
                     {/* Due date with calendar icon */}
                     {todo.due_date && (
                       <span className={`flex items-center gap-1 ${
-                        overdue ? 'text-red-600 font-medium' : 
-                        getDaysUntilDue(todo) === 0 ? 'text-orange-600 font-medium' :
-                        getDaysUntilDue(todo) === 1 ? 'text-yellow-600' :
+                        isOverdue(todo) ? 'text-red-600 font-medium' : 
+                        getDaysUntilDue(todo) <= 2 ? 'text-yellow-600 font-medium' :
                         'text-slate-500'
                       }`}>
                         <Calendar className="w-4 h-4" />
-                        {overdue ? formatDueDate(todo) : 
-                         getDaysUntilDue(todo) === 0 ? 'Today' :
-                         getDaysUntilDue(todo) === 1 ? 'Tomorrow' :
-                         format(parseDateAsLocal(todo.due_date), 'MMM d')}
+                        {formatDueDate(todo)}
                       </span>
                     )}
                   </div>
