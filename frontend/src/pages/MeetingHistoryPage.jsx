@@ -201,23 +201,21 @@ const MeetingHistoryPageClean = () => {
       // CRITICAL: Get team ID for access control
       const teamId = selectedDepartment?.id;
       
-      // TEMPORARY: Allow fetch without team for testing
+      // Handle case where no department is selected
       if (!teamId) {
-        console.warn('⚠️ No department selected - using hardcoded SSO team for testing');
-        // Use SSO team ID as fallback for testing
-        const fallbackTeamId = 'e621f912-d26e-4498-90f6-b287782b3a31';
-        console.log('🔧 Using fallback team ID:', fallbackTeamId);
+        console.log('⚠️ No department selected - skipping meeting history fetch');
+        setLoading(false);
+        setMeetings([]);
+        setTotalCount(0);
+        return; // Don't fetch without a valid team ID
       }
       
       console.log('🔒 Filtering meetings by team:', teamId);
       console.log('🔒 Team name:', selectedDepartment?.name);
-
-      // Use fallback team ID if no department selected (temporary for testing)
-      const effectiveTeamId = teamId || 'e621f912-d26e-4498-90f6-b287782b3a31';
       
       const params = {
         ...filters,
-        team_id: effectiveTeamId,  // Use effective team ID
+        team_id: teamId,  // Use actual team ID from selected department
         limit,
         offset: (page - 1) * limit
       };
