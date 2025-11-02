@@ -163,27 +163,15 @@ export const updateHeadline = async (req, res) => {
     }
 
     // Check if user has permission to update
-    // Allow: 1) Creator, 2) Admins, 3) Organization owners
+    // Allow: 1) Creator, 2) Admins
     const isCreator = existingHeadline.rows[0].created_by === userId;
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isCreator) {
-      // Check if user is admin or org owner
-      const userRoleResult = await query(
-        `SELECT uo.role 
-         FROM user_organizations uo
-         WHERE uo.user_id = $1 AND uo.organization_id = $2`,
-        [userId, orgId]
-      );
-
-      const userRole = userRoleResult.rows[0]?.role;
-      const canEdit = userRole === 'admin' || userRole === 'owner';
-
-      if (!canEdit) {
-        return res.status(403).json({
-          success: false,
-          error: 'You can only edit your own headlines unless you are an admin or owner'
-        });
-      }
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only edit your own headlines unless you are an admin'
+      });
     }
 
     const result = await query(
@@ -281,27 +269,15 @@ export const archiveHeadline = async (req, res) => {
     }
 
     // Check if user has permission to archive
-    // Allow: 1) Creator, 2) Admins, 3) Organization owners
+    // Allow: 1) Creator, 2) Admins
     const isCreator = existingHeadline.rows[0].created_by === userId;
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isCreator) {
-      // Check if user is admin or org owner
-      const userRoleResult = await query(
-        `SELECT uo.role 
-         FROM user_organizations uo
-         WHERE uo.user_id = $1 AND uo.organization_id = $2`,
-        [userId, orgId]
-      );
-
-      const userRole = userRoleResult.rows[0]?.role;
-      const canArchive = userRole === 'admin' || userRole === 'owner';
-
-      if (!canArchive) {
-        return res.status(403).json({
-          success: false,
-          error: 'You can only archive your own headlines unless you are an admin or owner'
-        });
-      }
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only archive your own headlines unless you are an admin'
+      });
     }
 
     // Archive the headline
