@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
@@ -30,6 +30,9 @@ const HeadlinesPage = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageText, setEditingMessageText] = useState('');
   const [deletingMessageId, setDeletingMessageId] = useState(null);
+  
+  // Add ref to track archive execution
+  const archiveInProgressRef = useRef(false);
   
   // Confirmation dialogs
   const archiveConfirmation = useConfirmationDialog();
@@ -144,6 +147,16 @@ const HeadlinesPage = () => {
       actionLabel: 'Archive',
       onConfirm: async () => {
         console.log('🟠 onConfirm handler STARTED');
+        
+        // Guard against double execution
+        if (archiveInProgressRef.current) {
+          console.log('⚠️ Archive already in progress, skipping duplicate call');
+          return;
+        }
+        
+        archiveInProgressRef.current = true;
+        console.log('🔒 Locked - archive in progress');
+        
         try {
           console.log('🟡 Setting deleting state...');
           setDeletingHeadlineId(headline.id);
@@ -163,8 +176,9 @@ const HeadlinesPage = () => {
           toast.error('Failed to archive headline');
           throw err; // Re-throw to keep dialog open on error
         } finally {
-          console.log('🏁 Finally block - clearing deleting state');
+          console.log('🏁 Finally block - clearing deleting state and unlocking');
           setDeletingHeadlineId(null);
+          archiveInProgressRef.current = false;
         }
       }
     });
