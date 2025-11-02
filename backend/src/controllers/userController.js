@@ -657,37 +657,19 @@ export const getUserDepartments = async (req, res) => {
     
     console.log('Getting departments for user:', { userId, organizationId });
     
-    // Get user's team context to determine if they're on leadership team
-    const userTeam = await getUserTeamContext(userId, organizationId);
-    const isLeadershipMember = userTeam && userTeam.is_leadership_team;
+    // All users (including Leadership members) only see departments they're members of
+    const result = await query(
+      `SELECT DISTINCT t.id, t.name, t.is_leadership_team
+       FROM teams t
+       JOIN team_members tm ON t.id = tm.team_id
+       WHERE tm.user_id = $1 AND t.organization_id = $2
+       ORDER BY t.is_leadership_team DESC, t.name ASC`,
+      [userId, organizationId]
+    );
+    const availableDepartments = result.rows;
     
-    console.log('User team context:', userTeam);
-    console.log('Is leadership member:', isLeadershipMember);
-    
-    let availableDepartments;
-    
-    if (isLeadershipMember) {
-      // Leadership members can see ALL departments
-      const result = await query(
-        `SELECT id, name, is_leadership_team
-         FROM teams 
-         WHERE organization_id = $1
-         ORDER BY is_leadership_team DESC, name ASC`,
-        [organizationId]
-      );
-      availableDepartments = result.rows;
-    } else {
-      // Regular users only see their own departments
-      const result = await query(
-        `SELECT DISTINCT t.id, t.name, t.is_leadership_team
-         FROM teams t
-         JOIN team_members tm ON t.id = tm.team_id
-         WHERE tm.user_id = $1 AND t.organization_id = $2
-         ORDER BY t.name ASC`,
-        [userId, organizationId]
-      );
-      availableDepartments = result.rows;
-    }
+    // Check if user is on leadership team (for frontend display purposes)
+    const isLeadershipMember = availableDepartments.some(dept => dept.is_leadership_team);
     
     const departments = availableDepartments.map(team => ({
       id: team.id,
