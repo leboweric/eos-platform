@@ -6,6 +6,7 @@ import {
   createHeadline,
   updateHeadline,
   deleteHeadline,
+  archiveHeadline,
   archiveHeadlines
 } from '../controllers/headlinesController.js';
 
@@ -31,6 +32,11 @@ router.post('/', [
 router.put('/archive', [
   body('teamId').optional().isUUID()
 ], archiveHeadlines);
+
+// Archive a single headline
+router.put('/:headlineId/archive', [
+  param('headlineId').isUUID()
+], archiveHeadline);
 
 // Update a headline
 router.put('/:headlineId', [

@@ -243,6 +243,49 @@ export const deleteHeadline = async (req, res) => {
   }
 };
 
+// @desc    Archive a single headline
+// @route   PUT /api/v1/organizations/:orgId/headlines/:headlineId/archive
+// @access  Private
+export const archiveHeadline = async (req, res) => {
+  try {
+    const { orgId, headlineId } = req.params;
+    const userId = req.user.id;
+
+    // Check if headline exists and belongs to the organization
+    const existingHeadline = await query(
+      'SELECT * FROM headlines WHERE id = $1 AND organization_id = $2',
+      [headlineId, orgId]
+    );
+
+    if (existingHeadline.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Headline not found'
+      });
+    }
+
+    // Archive the headline
+    const result = await query(
+      `UPDATE headlines 
+       SET archived = true, archived_at = NOW()
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [headlineId, orgId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error archiving headline:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to archive headline'
+    });
+  }
+};
+
 // @desc    Archive headlines (after meeting conclusion)
 // @route   PUT /api/v1/organizations/:orgId/headlines/archive
 // @access  Private
@@ -292,5 +335,6 @@ export default {
   createHeadline,
   updateHeadline,
   deleteHeadline,
+  archiveHeadline,
   archiveHeadlines
 };
