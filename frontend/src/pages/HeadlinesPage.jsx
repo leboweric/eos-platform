@@ -135,25 +135,41 @@ const HeadlinesPage = () => {
   };
 
   const handleArchiveHeadline = async (headline) => {
+    console.log('🔴 handleArchiveHeadline called for:', headline.text);
+    
     archiveConfirmation.showConfirmation({
       type: 'archive',
       title: 'Archive Headline',
       message: `Are you sure you want to archive "${headline.text.length > 50 ? headline.text.substring(0, 50) + '...' : headline.text}"?`,
       actionLabel: 'Archive',
       onConfirm: async () => {
+        console.log('🟠 onConfirm handler STARTED');
         try {
+          console.log('🟡 Setting deleting state...');
           setDeletingHeadlineId(headline.id);
+          
+          console.log('🟢 Calling archiveHeadline API...');
           await headlinesService.archiveHeadline(headline.id);
+          
+          console.log('🔵 API call successful, showing toast...');
           toast.success('Headline archived successfully!');
-          await fetchHeadlines(); // Add await to ensure list updates before modal closes
+          
+          console.log('🟣 Fetching updated headlines...');
+          await fetchHeadlines();
+          
+          console.log('✅ onConfirm handler COMPLETED - should close modal now');
         } catch (err) {
+          console.log('❌ ERROR in onConfirm:', err);
           toast.error('Failed to archive headline');
           throw err; // Re-throw to keep dialog open on error
         } finally {
+          console.log('🏁 Finally block - clearing deleting state');
           setDeletingHeadlineId(null);
         }
       }
     });
+    
+    console.log('🔴 handleArchiveHeadline finished - modal should be showing');
   };
 
   const handleUpdateMessage = async (messageId) => {
