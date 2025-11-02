@@ -138,57 +138,43 @@ const HeadlinesPage = () => {
   };
 
   const handleArchiveHeadline = async (headline) => {
-    console.log('🔴 handleArchiveHeadline called for:', headline.text);
-    
     archiveConfirmation.showConfirmation({
       type: 'archive',
       title: 'Archive Headline',
       message: `Are you sure you want to archive "${headline.text.length > 50 ? headline.text.substring(0, 50) + '...' : headline.text}"?`,
       actionLabel: 'Archive',
       onConfirm: async () => {
-        console.log('🟠 onConfirm handler STARTED');
-        
         // Guard against double execution
         if (archiveInProgressRef.current) {
-          console.log('⚠️ Archive already in progress, skipping duplicate call');
           return;
         }
         
         archiveInProgressRef.current = true;
-        console.log('🔒 Locked - archive in progress');
         
         try {
-          console.log('🟡 Setting deleting state...');
           setDeletingHeadlineId(headline.id);
           
-          console.log('🟢 Calling archiveHeadline API...');
+          // 1. Archive the headline
           await headlinesService.archiveHeadline(headline.id);
           
-          console.log('🔵 API call successful, showing toast...');
+          // 2. Close the modal FIRST (before fetchHeadlines to prevent flashing)
+          archiveConfirmation.hideConfirmation();
+          
+          // 3. Show success message
           toast.success('Headline archived successfully!');
           
-          console.log('🟣 Fetching updated headlines...');
+          // 4. Refresh headlines (happens in background, no flicker)
           await fetchHeadlines();
           
-          console.log('✅ onConfirm handler COMPLETED - manually closing modal');
-          
-          // WORKAROUND: Manually close the modal
-          archiveConfirmation.hideConfirmation();
-          console.log('🚪 Called hideConfirmation() manually');
-          
         } catch (err) {
-          console.log('❌ ERROR in onConfirm:', err);
           toast.error('Failed to archive headline');
           throw err; // Re-throw to keep dialog open on error
         } finally {
-          console.log('🏁 Finally block - clearing deleting state and unlocking');
           setDeletingHeadlineId(null);
           archiveInProgressRef.current = false;
         }
       }
     });
-    
-    console.log('🔴 handleArchiveHeadline finished - modal should be showing');
   };
 
   const handleUpdateMessage = async (messageId) => {
