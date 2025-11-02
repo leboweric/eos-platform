@@ -170,7 +170,12 @@ const HeadlinesPage = () => {
           console.log('🟣 Fetching updated headlines...');
           await fetchHeadlines();
           
-          console.log('✅ onConfirm handler COMPLETED - should close modal now');
+          console.log('✅ onConfirm handler COMPLETED - manually closing modal');
+          
+          // WORKAROUND: Manually close the modal
+          archiveConfirmation.hideConfirmation();
+          console.log('🚪 Called hideConfirmation() manually');
+          
         } catch (err) {
           console.log('❌ ERROR in onConfirm:', err);
           toast.error('Failed to archive headline');
