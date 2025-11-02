@@ -234,18 +234,12 @@ export const getUserTeamIds = async (userId, organizationId) => {
 
 // Get user's team scope for mandatory data isolation
 export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', explicitTeamId = null, paramIndex = 1) => {
-  // First, check if the user is on the leadership team for the organization
-  const isLeadership = await isUserOnLeadershipTeam(userId, organizationId);
-
-  // If an explicit team ID is provided, ALWAYS filter by that team
-  // This allows Leadership members to narrow their view to a specific team (including Leadership Team)
+  // If an explicit team ID is provided, filter by that team
   if (explicitTeamId) {
-    // Security check: Verify user has access to this team
-    if (!isLeadership) {
-      const userTeamIds = await getUserTeamIds(userId, organizationId);
-      if (!userTeamIds.includes(explicitTeamId)) {
-        throw new Error('Access denied: You do not have permission to view this team');
-      }
+    // Security check: Verify user is actually a member of this team
+    const userTeamIds = await getUserTeamIds(userId, organizationId);
+    if (!userTeamIds.includes(explicitTeamId)) {
+      throw new Error('Access denied: You do not have permission to view this team');
     }
     
     // Filter by the requested team
@@ -253,23 +247,16 @@ export const getUserTeamScope = async (userId, organizationId, tableAlias = 't',
     return { query, params: [explicitTeamId] };
   }
 
-  // If they are on the leadership team (and no explicit filter), they can see all teams.
-  // We return a no-op filter.
-  if (isLeadership) {
-    return { query: '1=1', params: [] };
-  }
-
-  // If not on the leadership team, get the list of teams they are a member of.
+  // If no explicit team filter, get the list of teams the user is a member of
   const userTeamIds = await getUserTeamIds(userId, organizationId);
 
   // If the user is not a member of any teams, they can only see items
-  // that are not assigned to any team (i.e., team_id IS NULL).
+  // that are not assigned to any team (i.e., team_id IS NULL)
   if (userTeamIds.length === 0) {
     return { query: `${tableAlias}.team_id IS NULL`, params: [] };
   }
 
-  // Otherwise, the user can see items assigned to any of their teams.
-  // Use the provided paramIndex to build the correct placeholder.
+  // Otherwise, the user can see items assigned to any of their teams
   const query = `${tableAlias}.team_id = ANY($${paramIndex}::uuid[])`;
   return { query, params: [userTeamIds] };
 };
