@@ -2,7 +2,7 @@ import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
-import { getUserTeamContext } from '../utils/teamUtils.js';
+import { getUserTeamContext, getUserTeamScope } from '../utils/teamUtils.js';
 import { getDateDaysFromNow } from '../utils/dateUtils.js';
 
 // @desc    Get all todos for an organization
@@ -46,13 +46,16 @@ export const getTodos = async (req, res) => {
       paramIndex++;
     }
     
-    // Always filter by specific department if provided
-    if (department_id) {
-      conditions.push(`t.team_id = $${paramIndex}`);
-      params.push(department_id);
-      paramIndex++;
-      console.log('Filtering to specific department:', department_id);
+    // =====================================================================
+    // MANDATORY TEAM ISOLATION
+    // =====================================================================
+    const teamScope = await getUserTeamScope(userId, orgId, 't'); // Use 't' as the alias for the todos table
+    conditions.push(`(${teamScope.query})`);
+    if (teamScope.params.length > 0) {
+      params.push(...teamScope.params);
+      paramIndex += teamScope.params.length;
     }
+    // =====================================================================
 
     // Get todos with owner and assignee information
     const todosResult = await query(

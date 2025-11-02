@@ -1,7 +1,7 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
-import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
+import { isZeroUUID, isLeadershipTeam, getUserTeamScope } from '../utils/teamUtils.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -159,16 +159,10 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND p.quarter = $2::varchar(2)
            AND p.year = $3::integer
            ${deletedAtClause}
-           AND (
-             -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
-             CASE
-               WHEN $4 = true THEN true  -- Leadership sees everything
-               ELSE (t.is_leadership_team IS NOT TRUE OR p.team_id IS NULL)  -- Departments exclude Leadership team priorities
-             END
-           )
+           AND (${teamScope.query})
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.created_at`,
-        [orgId, currentQuarter, currentYear, isLeadership]
+        [orgId, currentQuarter, currentYear, ...teamScope.params]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
@@ -1205,9 +1199,8 @@ export const getArchivedPriorities = async (req, res) => {
       });
     }
     
-    // Check if user is on leadership team
-    const isLeadership = await isUserOnLeadershipTeam(req.user.id, orgId);
-    console.log('User is on leadership team:', isLeadership);
+    // Get team scope for mandatory team isolation
+    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p');
     
     // Get progress-safe query
     const { select } = await getProgressSafeQuery();
@@ -1239,23 +1232,10 @@ export const getArchivedPriorities = async (req, res) => {
        LEFT JOIN teams t ON p.team_id = t.id
        WHERE p.organization_id = $1::uuid 
          AND p.deleted_at IS NOT NULL
-         AND (
-           -- Team-based filtering for security
-           CASE
-             WHEN $3::uuid IS NULL THEN true  -- No specific team filter
-             ELSE p.team_id = $3::uuid  -- Filter by the specific team requested
-           END
-         )
-         AND (
-           -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
-           CASE
-             WHEN $2 = true THEN true  -- Leadership sees everything
-             ELSE (t.is_leadership_team IS NOT TRUE OR p.team_id IS NULL)  -- Departments exclude Leadership team priorities
-           END
-         )
+         AND (${teamScope.query})
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.created_at`,
-      [orgId, isLeadership, teamId]
+      [orgId, ...teamScope.params]
     );
     
     // Get latest updates for each priority
@@ -1389,9 +1369,8 @@ export const getCurrentPriorities = async (req, res) => {
     const hasDeletedAt = await checkDeletedAtColumn();
     console.log('deleted_at column exists:', hasDeletedAt);
     
-    // Check if user is on leadership team
-    const isLeadership = await isUserOnLeadershipTeam(req.user.id, orgId);
-    console.log('User is on leadership team:', isLeadership);
+    // Get team scope for mandatory team isolation
+    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p');
     
     // Get current active priorities (non-deleted)
     // Always filter out deleted items - only use IS NULL for timestamp columns
@@ -1414,13 +1393,7 @@ export const getCurrentPriorities = async (req, res) => {
       LEFT JOIN teams t ON p.team_id = t.id
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
-      AND (
-        -- Filter by specific department
-        CASE
-          WHEN $2::uuid IS NULL THEN true  -- No specific team filter
-          ELSE p.team_id = $2::uuid  -- Filter by the specific team requested (including Leadership Team)
-        END
-      )
+      AND (${teamScope.query})
       ORDER BY p.created_at ASC
     `;
     
@@ -1439,7 +1412,7 @@ export const getCurrentPriorities = async (req, res) => {
       isLeadershipTeamView = teamCheckResult.rows.length > 0 && teamCheckResult.rows[0].is_leadership_team;
     }
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, ...teamScope.params]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

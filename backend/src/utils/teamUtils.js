@@ -216,3 +216,44 @@ export const unpublishFromDepartments = async (itemId, tableName) => {
     throw error;
   }
 };
+
+// Get all team IDs that a user belongs to
+export const getUserTeamIds = async (userId, organizationId) => {
+  try {
+    const result = await db.query(
+      `SELECT team_id FROM team_members WHERE user_id = $1 AND team_id IN 
+       (SELECT id FROM teams WHERE organization_id = $2)`,
+      [userId, organizationId]
+    );
+    return result.rows.map(row => row.team_id);
+  } catch (error) {
+    console.error("Error getting user's team IDs:", error);
+    return [];
+  }
+};
+
+// Get user's team scope for mandatory data isolation
+export const getUserTeamScope = async (userId, organizationId, tableAlias = 't') => {
+  // First, check if the user is on the leadership team for the organization
+  const isLeadership = await isUserOnLeadershipTeam(userId, organizationId);
+
+  // If they are on the leadership team, they can see all teams.
+  // We return a no-op filter.
+  if (isLeadership) {
+    return { query: '1=1', params: [] };
+  }
+
+  // If not on the leadership team, get the list of teams they are a member of.
+  const userTeamIds = await getUserTeamIds(userId, organizationId);
+
+  // If the user is not a member of any teams, they can only see items
+  // that are not assigned to any team (i.e., team_id IS NULL).
+  if (userTeamIds.length === 0) {
+    return { query: `${tableAlias}.team_id IS NULL`, params: [] };
+  }
+
+  // Otherwise, the user can see items assigned to any of their teams.
+  // We use the PostgreSQL ANY operator for an efficient query.
+  const query = `${tableAlias}.team_id = ANY($1::uuid[])`;
+  return { query, params: [userTeamIds] };
+};

@@ -1,7 +1,7 @@
 import db from '../config/database.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { getUserTeamContext, isZeroUUID } from '../utils/teamUtils.js';
+import { getUserTeamContext, isZeroUUID, getUserTeamScope } from '../utils/teamUtils.js';
 import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 
 // Configure multer for memory storage
@@ -90,20 +90,16 @@ export const getIssues = async (req, res) => {
       paramCount++;
     }
     
-    // Always filter by specific department if provided
-    if (department_id) {
-      // For Leadership Team (zero UUID), include both the specific ID and NULL team_id
-      if (isZeroUUID(department_id)) {
-        query += ` AND (i.team_id = $${paramCount} OR i.team_id IS NULL)`;
-        params.push(department_id);
-        paramCount++;
-      } else {
-        query += ` AND i.team_id = $${paramCount}`;
-        params.push(department_id);
-        paramCount++;
-      }
-      console.log('Filtering to specific department:', department_id);
+    // =====================================================================
+    // MANDATORY TEAM ISOLATION
+    // =====================================================================
+    const teamScope = await getUserTeamScope(userId, orgId, 'i'); // Use 'i' as the alias for the issues table
+    query += ` AND (${teamScope.query})`;
+    if (teamScope.params.length > 0) {
+      params.push(...teamScope.params);
+      paramCount += teamScope.params.length;
     }
+    // =====================================================================
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
                ORDER BY i.priority_rank ASC, i.created_at DESC`;
