@@ -93,7 +93,7 @@ export const getIssues = async (req, res) => {
     // =====================================================================
     // MANDATORY TEAM ISOLATION
     // =====================================================================
-    const teamScope = await getUserTeamScope(userId, orgId, 'i', paramCount); // Use 'i' as the alias for the issues table
+    const teamScope = await getUserTeamScope(userId, orgId, 'i', null, paramCount); // Use 'i' as the alias for the issues table
     query += ` AND (${teamScope.query})`;
     if (teamScope.params.length > 0) {
       params.push(teamScope.params[0]); // CORRECTED LINE
