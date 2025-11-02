@@ -90,6 +90,10 @@ Core user accounts table.
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 
+**Important Notes**:
+- Uses `first_name` and `last_name` fields (no single `name` field)
+- `password_hash` is required for password-based authentication
+
 ### user_organizations
 Junction table for user-organization membership with roles.
 
@@ -127,16 +131,22 @@ Core strategic planning documents (formerly VTOs).
 | id | UUID | PRIMARY KEY | |
 | organization_id | UUID | FOREIGN KEY | References organizations(id) |
 | team_id | UUID | FOREIGN KEY | References teams(id), NULL for org-level |
-| ten_year_target | TEXT | | Long-term vision |
-| three_year_picture | TEXT | | Mid-term goals |
-| one_year_plan | TEXT | | Annual objectives |
-| quarterly_rocks_q1 | TEXT | | Q1 priorities (legacy) |
-| quarterly_rocks_q2 | TEXT | | Q2 priorities (legacy) |
-| quarterly_rocks_q3 | TEXT | | Q3 priorities (legacy) |
-| quarterly_rocks_q4 | TEXT | | Q4 priorities (legacy) |
+| core_purpose | TEXT | | Organization's core purpose/mission |
+| core_values | JSONB | DEFAULT '[]' | Array of core values |
+| ten_year_target | TEXT | | Long-term vision (10-year target) |
+| marketing_strategy | TEXT | | Marketing strategy statement |
+| three_year_target | TEXT | | Mid-term goals (3-year picture) |
+| one_year_target | TEXT | | Annual objectives (1-year plan) |
+| quarterly_rocks | JSONB | DEFAULT '[]' | Legacy quarterly rocks (use quarterly_priorities table instead) |
+| issues_list | JSONB | DEFAULT '[]' | Legacy issues list (use issues table instead) |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
-| deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete |
+
+**Important Notes**:
+- Column names use `three_year_target` and `one_year_target` (not `three_year_picture` or `one_year_plan`)
+- `core_values` is JSONB array (separate `core_values` table also exists for structured storage)
+- `marketing_strategy` field stores the marketing strategy component of VTO
+- Legacy `quarterly_rocks` and `issues_list` JSONB fields exist but should use dedicated tables instead
 
 ### core_values
 Organization's core values linked to blueprints.
@@ -163,7 +173,7 @@ Goals and objectives (formerly Rocks).
 | created_by | UUID | FOREIGN KEY | References users(id) |
 | title | VARCHAR(500) | NOT NULL | Priority title |
 | description | TEXT | | Detailed description |
-| quarter | VARCHAR(2) | | 'Q1', 'Q2', 'Q3', 'Q4' or '1', '2', '3', '4' |
+| quarter | VARCHAR(10) | | 'Q1', 'Q2', 'Q3', 'Q4' (not just '1', '2', '3', '4') |
 | year | INTEGER | | Year of the quarter |
 | status | VARCHAR(50) | DEFAULT 'on_track' | 'on-track', 'off-track', 'at-risk', 'complete' |
 | progress | INTEGER | DEFAULT 0 | 0-100 completion percentage |
@@ -176,8 +186,8 @@ Goals and objectives (formerly Rocks).
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete |
 
-### priority_milestones
-Sub-goals and checkpoints for quarterly priorities.
+### rock_milestones
+Sub-goals and checkpoints for quarterly priorities (also called priority_milestones in some contexts).
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -516,6 +526,7 @@ IDS (Identify, Discuss, Solve) issue tracking.
 | created_by | UUID | FOREIGN KEY | References users(id) |
 | assigned_to | UUID | FOREIGN KEY | References users(id) |
 | priority | VARCHAR(20) | DEFAULT 'medium' | 'low', 'medium', 'high', 'critical' |
+| priority_rank | INTEGER | | Numeric priority ranking (1-10, higher = more important) |
 | status | VARCHAR(20) | DEFAULT 'open' | 'open', 'in-progress', 'resolved', 'closed' |
 | upvotes | INTEGER | DEFAULT 0 | Voting count |
 | display_order | INTEGER | | Manual sort order |
@@ -551,7 +562,7 @@ Task management system.
 | status | VARCHAR(20) | DEFAULT 'incomplete' | 'incomplete', 'complete', 'cancelled' |
 | completed | BOOLEAN | DEFAULT false | Legacy field - use status instead |
 | completed_at | TIMESTAMP WITH TIME ZONE | | |
-| priority | VARCHAR(20) | DEFAULT 'medium' | |
+| priority | VARCHAR(20) | DEFAULT 'medium' | 'low', 'medium', 'high', 'urgent' |
 | category | VARCHAR(50) | | Task category |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
@@ -628,14 +639,18 @@ Good news/bad news sharing for L10 meetings organized by team.
 | id | UUID | PRIMARY KEY | Unique headline identifier |
 | organization_id | UUID | FOREIGN KEY | References organizations(id) |
 | team_id | UUID | FOREIGN KEY | References teams(id) |
-| title | VARCHAR(255) | NOT NULL | Headline title |
-| content | TEXT | | Detailed headline content |
+| text | TEXT | NOT NULL | Headline content (main field used by UI) |
 | type | VARCHAR(20) | DEFAULT 'good' | 'good', 'bad' - category |
+| meeting_date | DATE | | Date of the meeting where headline was shared |
 | created_by | UUID | FOREIGN KEY | References users(id) |
 | archived | BOOLEAN | DEFAULT false | Archive status for hiding |
 | archived_at | TIMESTAMP WITH TIME ZONE | | Archive timestamp |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Important Notes**:
+- Primary content field is `text` (not `title` or `content`)
+- `meeting_date` field tracks when the headline was shared
 
 ### cascading_messages
 Message system for communicating between teams and departments.
@@ -708,18 +723,56 @@ Visual organizational structure with accountability mapping.
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 
-### chart_positions
-Individual positions within organizational charts.
+### positions
+Individual positions (seats) within organizational charts.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PRIMARY KEY | |
 | chart_id | UUID | FOREIGN KEY | References organizational_charts(id) |
+| parent_position_id | UUID | FOREIGN KEY | Self-reference for hierarchy |
 | title | VARCHAR(255) | NOT NULL | Position title |
 | description | TEXT | | Position description |
-| user_id | UUID | FOREIGN KEY | References users(id) - person in position |
-| parent_position_id | UUID | FOREIGN KEY | Self-reference for hierarchy |
-| position_data | JSONB | | Position metadata and coordinates |
+| level | INTEGER | NOT NULL DEFAULT 0 | Hierarchy level (0 = top) |
+| sort_order | INTEGER | DEFAULT 0 | Display order |
+| position_type | VARCHAR(50) | CHECK constraint | 'leadership', 'management', 'individual_contributor' |
+| is_shared | BOOLEAN | DEFAULT false | Whether position can have multiple holders |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Important Notes**:
+- Table name is `positions` (not `chart_positions`)
+- User assignment is in separate `position_holders` table (not `user_id` column here)
+- `level` field tracks hierarchy depth for easier querying
+
+### position_holders
+Links users to positions (who sits in each seat).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| position_id | UUID | FOREIGN KEY | References positions(id) |
+| user_id | UUID | FOREIGN KEY | References users(id), can be NULL |
+| external_name | VARCHAR(255) | | For people not in the system |
+| external_email | VARCHAR(255) | | External person's email |
+| start_date | DATE | | When person started in position |
+| end_date | DATE | | When person left position (NULL = current) |
+| is_primary | BOOLEAN | DEFAULT true | Primary holder for shared positions |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Constraint**: Either `user_id` OR (`external_name` AND `external_email`) must be provided
+
+### position_responsibilities
+Responsibilities and accountabilities for each position.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| position_id | UUID | FOREIGN KEY | References positions(id) |
+| responsibility | TEXT | NOT NULL | Responsibility description |
+| priority | VARCHAR(20) | CHECK constraint | 'critical', 'high', 'medium', 'low' |
+| sort_order | INTEGER | DEFAULT 0 | Display order |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 
