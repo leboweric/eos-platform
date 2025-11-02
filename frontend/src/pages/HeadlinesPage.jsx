@@ -145,7 +145,7 @@ const HeadlinesPage = () => {
           setDeletingHeadlineId(headline.id);
           await headlinesService.archiveHeadline(headline.id);
           toast.success('Headline archived successfully!');
-          fetchHeadlines();
+          await fetchHeadlines(); // Add await to ensure list updates before modal closes
         } catch (err) {
           toast.error('Failed to archive headline');
           throw err; // Re-throw to keep dialog open on error
