@@ -162,7 +162,7 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND (${teamScope.query})
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.created_at`,
-        [orgId, currentQuarter, currentYear, ...teamScope.params]
+        [orgId, currentQuarter, currentYear, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
@@ -1235,7 +1235,7 @@ export const getArchivedPriorities = async (req, res) => {
          AND (${teamScope.query})
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.created_at`,
-      [orgId, ...teamScope.params]
+      [orgId, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]
     );
     
     // Get latest updates for each priority
@@ -1412,7 +1412,7 @@ export const getCurrentPriorities = async (req, res) => {
       isLeadershipTeamView = teamCheckResult.rows.length > 0 && teamCheckResult.rows[0].is_leadership_team;
     }
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, ...teamScope.params]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

@@ -52,8 +52,8 @@ export const getTodos = async (req, res) => {
     const teamScope = await getUserTeamScope(userId, orgId, 't'); // Use 't' as the alias for the todos table
     conditions.push(`(${teamScope.query})`);
     if (teamScope.params.length > 0) {
-      params.push(...teamScope.params);
-      paramIndex += teamScope.params.length;
+      params.push(teamScope.params[0]); // CORRECTED LINE
+      paramIndex++;
     }
     // =====================================================================
 

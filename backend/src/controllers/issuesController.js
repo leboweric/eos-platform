@@ -96,8 +96,8 @@ export const getIssues = async (req, res) => {
     const teamScope = await getUserTeamScope(userId, orgId, 'i'); // Use 'i' as the alias for the issues table
     query += ` AND (${teamScope.query})`;
     if (teamScope.params.length > 0) {
-      params.push(...teamScope.params);
-      paramCount += teamScope.params.length;
+      params.push(teamScope.params[0]); // CORRECTED LINE
+      paramCount++;
     }
     // =====================================================================
     
