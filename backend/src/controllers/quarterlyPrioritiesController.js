@@ -153,7 +153,7 @@ export const getQuarterlyPriorities = async (req, res) => {
           ) FILTER (WHERE m.id IS NOT NULL) as milestones
          FROM quarterly_priorities p
          LEFT JOIN users u ON p.owner_id = u.id
-         LEFT JOIN priority_milestones m ON p.id = m.priority_id
+         LEFT JOIN rock_milestones m ON p.id = m.rock_id
          LEFT JOIN teams t ON p.team_id = t.id
          WHERE p.organization_id = $1::uuid 
            AND p.quarter = $2::varchar(2)
