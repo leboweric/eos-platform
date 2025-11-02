@@ -162,12 +162,28 @@ export const updateHeadline = async (req, res) => {
       });
     }
 
-    // Only allow the creator to update
-    if (existingHeadline.rows[0].created_by !== userId) {
-      return res.status(403).json({
-        success: false,
-        error: 'You can only edit your own headlines'
-      });
+    // Check if user has permission to update
+    // Allow: 1) Creator, 2) Admins, 3) Organization owners
+    const isCreator = existingHeadline.rows[0].created_by === userId;
+
+    if (!isCreator) {
+      // Check if user is admin or org owner
+      const userRoleResult = await query(
+        `SELECT uo.role 
+         FROM user_organizations uo
+         WHERE uo.user_id = $1 AND uo.organization_id = $2`,
+        [userId, orgId]
+      );
+
+      const userRole = userRoleResult.rows[0]?.role;
+      const canEdit = userRole === 'admin' || userRole === 'owner';
+
+      if (!canEdit) {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only edit your own headlines unless you are an admin or owner'
+        });
+      }
     }
 
     const result = await query(
@@ -264,10 +280,34 @@ export const archiveHeadline = async (req, res) => {
       });
     }
 
+    // Check if user has permission to archive
+    // Allow: 1) Creator, 2) Admins, 3) Organization owners
+    const isCreator = existingHeadline.rows[0].created_by === userId;
+
+    if (!isCreator) {
+      // Check if user is admin or org owner
+      const userRoleResult = await query(
+        `SELECT uo.role 
+         FROM user_organizations uo
+         WHERE uo.user_id = $1 AND uo.organization_id = $2`,
+        [userId, orgId]
+      );
+
+      const userRole = userRoleResult.rows[0]?.role;
+      const canArchive = userRole === 'admin' || userRole === 'owner';
+
+      if (!canArchive) {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only archive your own headlines unless you are an admin or owner'
+        });
+      }
+    }
+
     // Archive the headline
     const result = await query(
       `UPDATE headlines 
-       SET archived = true, archived_at = NOW()
+       SET archived = true, archived_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
       [headlineId, orgId]
