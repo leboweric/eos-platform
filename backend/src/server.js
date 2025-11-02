@@ -270,6 +270,15 @@ if (orgValidationEnabled) {
   app.use('/api/v1/organizations/:orgId', async (req, res, next) => {
     const { orgId } = req.params;
 
+    // =====================================================================
+    // CRITICAL FIX: Allow the 'current' keyword to pass through.
+    // The route handler for '/organizations/current' is responsible for
+    // securely resolving the user's actual organization.
+    // =====================================================================
+    if (orgId === 'current') {
+      return next();
+    }
+
     // If the user object isn't attached, something is wrong with authentication. Block the request.
     if (!req.user) {
       console.warn('[Security] Access denied: No user object on request. Ensure authenticate middleware runs first.');
