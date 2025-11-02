@@ -98,6 +98,9 @@ export const getQuarterlyPriorities = async (req, res) => {
     
     console.log('Fetching quarterly priorities:', { orgId, teamId, quarter: currentQuarter, year: currentYear });
     
+    // Get team scope for mandatory team isolation
+    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p', 4); // 4 because we have orgId, quarter, year as 1,2,3
+    
     // Get predictions
     console.log('Query params for predictions:', { 
       $1: orgId, 
@@ -162,7 +165,9 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND (${teamScope.query})
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.created_at`,
-        [orgId, currentQuarter, currentYear, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]
+        teamScope.params.length > 0 
+          ? [orgId, currentQuarter, currentYear, teamScope.params[0]]
+          : [orgId, currentQuarter, currentYear]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
@@ -1200,7 +1205,7 @@ export const getArchivedPriorities = async (req, res) => {
     }
     
     // Get team scope for mandatory team isolation
-    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p');
+    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p', 2); // 2 because orgId is $1
     
     // Get progress-safe query
     const { select } = await getProgressSafeQuery();
@@ -1235,7 +1240,9 @@ export const getArchivedPriorities = async (req, res) => {
          AND (${teamScope.query})
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.created_at`,
-      [orgId, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]
+      teamScope.params.length > 0 
+        ? [orgId, teamScope.params[0]]
+        : [orgId]
     );
     
     // Get latest updates for each priority
@@ -1370,7 +1377,7 @@ export const getCurrentPriorities = async (req, res) => {
     console.log('deleted_at column exists:', hasDeletedAt);
     
     // Get team scope for mandatory team isolation
-    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p');
+    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p', 2); // 2 because orgId is $1
     
     // Get current active priorities (non-deleted)
     // Always filter out deleted items - only use IS NULL for timestamp columns
@@ -1412,7 +1419,7 @@ export const getCurrentPriorities = async (req, res) => {
       isLeadershipTeamView = teamCheckResult.rows.length > 0 && teamCheckResult.rows[0].is_leadership_team;
     }
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, ...(teamScope.params.length > 0 ? [teamScope.params[0]] : [])]);
+    const prioritiesResult = await query(prioritiesQuery, teamScope.params.length > 0 ? [orgId, teamScope.params[0]] : [orgId]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

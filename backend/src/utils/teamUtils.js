@@ -233,7 +233,7 @@ export const getUserTeamIds = async (userId, organizationId) => {
 };
 
 // Get user's team scope for mandatory data isolation
-export const getUserTeamScope = async (userId, organizationId, tableAlias = 't') => {
+export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', paramIndex = 1) => {
   // First, check if the user is on the leadership team for the organization
   const isLeadership = await isUserOnLeadershipTeam(userId, organizationId);
 
@@ -253,7 +253,7 @@ export const getUserTeamScope = async (userId, organizationId, tableAlias = 't')
   }
 
   // Otherwise, the user can see items assigned to any of their teams.
-  // We use the PostgreSQL ANY operator for an efficient query.
-  const query = `${tableAlias}.team_id = ANY($1::uuid[])`;
+  // Use the provided paramIndex to build the correct placeholder.
+  const query = `${tableAlias}.team_id = ANY($${paramIndex}::uuid[])`;
   return { query, params: [userTeamIds] };
 };
