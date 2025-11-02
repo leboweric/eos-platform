@@ -272,9 +272,30 @@ if (orgValidationEnabled) {
       });
     }
 
-    // Check if the organization ID from the URL parameter matches the user's organization ID from their token.
-    if (req.user.organization_id !== orgId && req.user.organizationId !== orgId) {
-      // SPECIAL CASE: Allow consultants to access organizations they are assigned to.
+    // Get the user's organization ID (handle both field names)
+    const userOrgId = req.user.organization_id || req.user.organizationId;
+
+    // SPECIAL CASE 1: Super admins (users with no organization_id) can access any organization
+    // This is typically for platform administrators or system users
+    if (!userOrgId) {
+      // Check if this is actually a super admin by checking their role
+      if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+        console.log(`[Security] Super admin ${req.user.email} granted access to org ${orgId}`);
+        return next();
+      }
+      
+      // If user has no org and is not an admin, something is wrong with their account
+      console.warn(`[Security] DENIED: User ${req.user.id} (${req.user.email}) has no organization_id and is not an admin`);
+      return res.status(403).json({ 
+        success: false,
+        error: 'Access denied. Your account is not properly configured.',
+        code: 'NO_ORGANIZATION_ASSIGNED'
+      });
+    }
+
+    // Check if the organization ID from the URL parameter matches the user's organization ID
+    if (userOrgId !== orgId) {
+      // SPECIAL CASE 2: Allow consultants to access organizations they are assigned to
       if (req.user.is_consultant) {
         try {
           const accessCheck = await query(
@@ -297,7 +318,6 @@ if (orgValidationEnabled) {
       }
       
       // If not a consultant with access, deny the request.
-      const userOrgId = req.user.organization_id || req.user.organizationId;
       console.warn(`[Security] DENIED: User ${req.user.id} (${req.user.email}) from org ${userOrgId} attempted to access org ${orgId}.`);
       
       return res.status(403).json({ 
