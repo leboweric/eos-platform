@@ -233,11 +233,22 @@ export const getUserTeamIds = async (userId, organizationId) => {
 };
 
 // Get user's team scope for mandatory data isolation
-export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', paramIndex = 1) => {
+export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', explicitTeamId = null, paramIndex = 1) => {
   // First, check if the user is on the leadership team for the organization
   const isLeadership = await isUserOnLeadershipTeam(userId, organizationId);
 
-  // If they are on the leadership team, they can see all teams.
+  // If an explicit team ID is provided and it's not the Leadership Team,
+  // filter by that team even for Leadership Team members
+  if (explicitTeamId) {
+    const isExplicitTeamLeadership = await isLeadershipTeam(explicitTeamId);
+    if (!isExplicitTeamLeadership) {
+      // User wants to filter by a specific non-Leadership team
+      const query = `${tableAlias}.team_id = $${paramIndex}`;
+      return { query, params: [explicitTeamId] };
+    }
+  }
+
+  // If they are on the leadership team (and no explicit filter), they can see all teams.
   // We return a no-op filter.
   if (isLeadership) {
     return { query: '1=1', params: [] };
