@@ -79,6 +79,9 @@ import { initializeScheduledJobs } from './services/scheduledJobs.js';
 // Import utilities
 import { ensureUploadsDirectory } from './utils/ensureUploadsDirectory.js';
 
+// Import database query function for organization access validation
+import { query } from './config/database.js';
+
 // Import WebSocket service
 import meetingSocketService from './services/meetingSocketService.js';
 
@@ -243,6 +246,79 @@ app.use('/api/v1/*', (req, res, next) => {
     checkTrialReminders(req, res, next);
   });
 });
+
+// ============================================
+// CRITICAL: Organization Access Validation Middleware
+// ============================================
+// This middleware validates that an authenticated user can only access
+// their own organization's data. It must be placed BEFORE any other
+// routes that use the /api/v1/organizations/:orgId/ path.
+// Can be disabled with ENABLE_ORG_VALIDATION=false for emergency rollback.
+
+const orgValidationEnabled = process.env.ENABLE_ORG_VALIDATION !== 'false';
+
+if (orgValidationEnabled) {
+  console.log('[Security] ✅ Organization access validation is ENABLED');
+  
+  app.use('/api/v1/organizations/:orgId', async (req, res, next) => {
+    const { orgId } = req.params;
+
+    // If the user object isn't attached, something is wrong with authentication. Block the request.
+    if (!req.user) {
+      console.warn('[Security] Access denied: No user object on request. Ensure authenticate middleware runs first.');
+      return res.status(401).json({ 
+        success: false,
+        error: 'Authentication required.' 
+      });
+    }
+
+    // Check if the organization ID from the URL parameter matches the user's organization ID from their token.
+    if (req.user.organization_id !== orgId && req.user.organizationId !== orgId) {
+      // SPECIAL CASE: Allow consultants to access organizations they are assigned to.
+      if (req.user.is_consultant) {
+        try {
+          const accessCheck = await query(
+            'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
+            [req.user.id, orgId]
+          );
+          
+          if (accessCheck.rows.length > 0) {
+            // This consultant has explicit access to this organization. Allow them.
+            console.log(`[Security] Consultant ${req.user.email} granted access to org ${orgId}`);
+            return next();
+          }
+        } catch (error) {
+          console.error('[Security] CRITICAL: Error during consultant access check:', error);
+          return res.status(500).json({ 
+            success: false,
+            error: 'Server error during authorization check.' 
+          });
+        }
+      }
+      
+      // If not a consultant with access, deny the request.
+      const userOrgId = req.user.organization_id || req.user.organizationId;
+      console.warn(`[Security] DENIED: User ${req.user.id} (${req.user.email}) from org ${userOrgId} attempted to access org ${orgId}.`);
+      
+      return res.status(403).json({ 
+        success: false,
+        error: 'Access denied. You do not have access to this organization.',
+        code: 'ORGANIZATION_ACCESS_DENIED'
+      });
+    }
+
+    // If we reach here, the user belongs to the organization. Allow the request to proceed.
+    next();
+  });
+} else {
+  console.warn('[Security] ⚠️  Organization access validation is DISABLED - THIS IS A SECURITY RISK!');
+  console.warn('[Security] ⚠️  Users can access data from ANY organization!');
+  console.warn('[Security] ⚠️  Enable with: ENABLE_ORG_VALIDATION=true');
+}
+
+// ============================================
+// End of Organization Access Validation
+// ============================================
 
 // API Routes with specific rate limiters
 app.use('/api/v1/auth', authLimiter, authRoutes);
