@@ -237,15 +237,20 @@ export const getUserTeamScope = async (userId, organizationId, tableAlias = 't',
   // First, check if the user is on the leadership team for the organization
   const isLeadership = await isUserOnLeadershipTeam(userId, organizationId);
 
-  // If an explicit team ID is provided and it's not the Leadership Team,
-  // filter by that team even for Leadership Team members
+  // If an explicit team ID is provided, ALWAYS filter by that team
+  // This allows Leadership members to narrow their view to a specific team (including Leadership Team)
   if (explicitTeamId) {
-    const isExplicitTeamLeadership = await isLeadershipTeam(explicitTeamId);
-    if (!isExplicitTeamLeadership) {
-      // User wants to filter by a specific non-Leadership team
-      const query = `${tableAlias}.team_id = $${paramIndex}`;
-      return { query, params: [explicitTeamId] };
+    // Security check: Verify user has access to this team
+    if (!isLeadership) {
+      const userTeamIds = await getUserTeamIds(userId, organizationId);
+      if (!userTeamIds.includes(explicitTeamId)) {
+        throw new Error('Access denied: You do not have permission to view this team');
+      }
     }
+    
+    // Filter by the requested team
+    const query = `${tableAlias}.team_id = $${paramIndex}`;
+    return { query, params: [explicitTeamId] };
   }
 
   // If they are on the leadership team (and no explicit filter), they can see all teams.
