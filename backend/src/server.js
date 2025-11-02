@@ -70,6 +70,7 @@ import { notFound } from './middleware/notFound.js';
 import { checkTrialStatus, checkTrialReminders } from './middleware/trialCheck.js';
 import { requestMetrics } from './middleware/requestMetrics.js';
 import { trackUserActivity } from './middleware/activityTracking.js';
+import { authenticate } from './middleware/auth.js'; // Required for org validation
 // import { setRequestContext } from './middleware/queryMetrics.js'; // Removed - export doesn't exist
 
 // Import jobs
@@ -259,6 +260,12 @@ const orgValidationEnabled = process.env.ENABLE_ORG_VALIDATION !== 'false';
 
 if (orgValidationEnabled) {
   console.log('[Security] ✅ Organization access validation is ENABLED');
+  
+  // =====================================================================
+  // CRITICAL FIX: Apply authentication BEFORE the validation middleware.
+  // This ensures req.user is populated before the security check runs.
+  // =====================================================================
+  app.use('/api/v1/organizations/:orgId', authenticate);
   
   app.use('/api/v1/organizations/:orgId', async (req, res, next) => {
     const { orgId } = req.params;
