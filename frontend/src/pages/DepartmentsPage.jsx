@@ -129,13 +129,28 @@ const DepartmentsPage = () => {
   };
 
   const handleToggleActive = async (dept) => {
+    const newStatus = !dept.is_active;
+    const currentStatus = dept.is_active;
+    
+    // Optimistic UI update
+    setDepartments(prevDepartments => 
+      prevDepartments.map(d => 
+        d.id === dept.id ? { ...d, is_active: newStatus } : d
+      )
+    );
+    
     try {
       setError(null);
       await departmentService.updateDepartment(dept.id, {
-        is_active: !dept.is_active
+        is_active: newStatus
       });
-      await fetchDepartments();
     } catch (error) {
+      // Revert on error
+      setDepartments(prevDepartments => 
+        prevDepartments.map(d => 
+          d.id === dept.id ? { ...d, is_active: currentStatus } : d
+        )
+      );
       console.error('Error toggling department status:', error);
       setError(error.response?.data?.error || 'Failed to update department status');
     }
