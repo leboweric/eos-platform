@@ -38,6 +38,7 @@ const getDepartments = async (req, res) => {
         d.description,
         d.leader_id,
         d.parent_department_id,
+        d.is_active,
         d.created_at,
         d.updated_at,
         u.first_name || ' ' || u.last_name as leader_name,
@@ -197,7 +198,7 @@ const updateDepartment = async (req, res) => {
   try {
     const { id } = req.params;
     const { organizationId } = req.user;
-    const { name, description, leaderId, parentDepartmentId } = req.body;
+    const { name, description, leaderId, parentDepartmentId, is_active } = req.body;
 
     // Check department exists and belongs to org
     const existingCheck = await db.query(
@@ -224,14 +225,57 @@ const updateDepartment = async (req, res) => {
       }
     }
 
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramCount}`);
+      values.push(name);
+      paramCount++;
+    }
+
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount}`);
+      values.push(description);
+      paramCount++;
+    }
+
+    if (leaderId !== undefined) {
+      updates.push(`leader_id = $${paramCount}`);
+      values.push(leaderId || null);
+      paramCount++;
+    }
+
+    if (parentDepartmentId !== undefined) {
+      updates.push(`parent_department_id = $${paramCount}`);
+      values.push(parentDepartmentId || null);
+      paramCount++;
+    }
+
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramCount}`);
+      values.push(is_active);
+      paramCount++;
+    }
+
+    // Always update the timestamp
+    updates.push("updated_at = NOW()");
+
+    // If no fields to update (except updated_at), return error
+    if (updates.length === 1) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
     // Update department
     const query = `
       UPDATE departments 
-      SET name = $1, description = $2, leader_id = $3, parent_department_id = $4, updated_at = NOW()
-      WHERE id = $5 AND organization_id = $6
+      SET ${updates.join(", ")}
+      WHERE id = $${paramCount} AND organization_id = $${paramCount + 1}
       RETURNING *`;
 
-    const values = [name, description, leaderId || null, parentDepartmentId || null, id, organizationId];
+    values.push(id, organizationId);
     const { rows } = await db.query(query, values);
 
     // Fetch with leader info
