@@ -17,6 +17,7 @@ export const getTeams = async (req, res) => {
         t.created_at,
         t.updated_at,
         t.is_leadership_team,
+        t.is_active,
         d.name as department_name,
         COUNT(DISTINCT tm.user_id) as member_count
       FROM teams t
@@ -59,6 +60,7 @@ export const getTeam = async (req, res) => {
         t.created_at,
         t.updated_at,
         t.is_leadership_team,
+        t.is_active,
         d.name as department_name
       FROM teams t
       LEFT JOIN departments d ON t.department_id = d.id
