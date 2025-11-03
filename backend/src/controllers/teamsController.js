@@ -150,7 +150,7 @@ export const createTeam = async (req, res) => {
 // @access  Private
 export const updateTeam = async (req, res) => {
   const { orgId, teamId } = req.params;
-  const { name, description, department_id, is_leadership_team } = req.body;
+  const { name, description, department_id, is_leadership_team, is_active } = req.body;
 
   try {
     const query = `
@@ -160,8 +160,9 @@ export const updateTeam = async (req, res) => {
         description = COALESCE($2, description),
         department_id = COALESCE($3, department_id),
         is_leadership_team = COALESCE($4, is_leadership_team),
+        is_active = COALESCE($5, is_active),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5 AND organization_id = $6
+      WHERE id = $6 AND organization_id = $7
       RETURNING *
     `;
 
@@ -170,6 +171,7 @@ export const updateTeam = async (req, res) => {
       description,
       department_id,
       is_leadership_team,
+      is_active,
       teamId,
       orgId
     ]);
