@@ -832,8 +832,39 @@ function QuarterlyPlanningMeetingPage() {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
-      // End the meeting session using meetingSessionsService
-      await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId);
+      // Calculate meeting duration in minutes
+      let durationMinutes;
+      if (elapsedTime > 0) {
+        durationMinutes = Math.floor(elapsedTime / 60);
+      } else if (meetingStartTime) {
+        const now = Date.now();
+        const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
+        durationMinutes = actualDuration;
+      } else {
+        durationMinutes = 90; // Default quarterly planning meeting duration
+      }
+      
+      // Prepare meeting data for conclude call
+      const meetingData = {
+        meetingType: 'Quarterly Planning',
+        duration: durationMinutes,
+        rating: averageRating,
+        individualRatings: participantRatings,
+        summary: 'Quarterly planning session completed with priorities and strategic planning.',
+        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        priorities: priorities.map(priority => ({
+          name: priority.name,
+          owner: priority.owner_name,
+          status: priority.status,
+          milestones: priority.milestones?.length || 0
+        })),
+        vto: vtoData,
+        notes: cascadingMessage || '',
+        cascadingMessage: cascadingMessage
+      };
+      
+      // Use the correct conclude meeting endpoint
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, true, meetingData);
       
       setSuccess('Meeting concluded and summary sent to team!');
       setTimeout(() => {

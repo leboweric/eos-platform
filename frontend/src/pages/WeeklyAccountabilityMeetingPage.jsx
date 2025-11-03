@@ -3375,27 +3375,43 @@ const WeeklyAccountabilityMeetingPage = () => {
         ? ratingsArray.reduce((sum, r) => sum + r, 0) / ratingsArray.length
         : meetingRating || 8;
       
-      // Send meeting summary with individual and average ratings
+      // Prepare meeting data for conclude call
+      const meetingData = {
+        meetingType: 'Level 10 Meeting',
+        duration: durationMinutes,
+        rating: averageRating,
+        individualRatings: participantRatings,
+        summary: `Meeting completed with ${selectedIssueIds.length} issues discussed and ${selectedTodoIds.length} todos assigned.`,
+        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        metrics: scorecardMetrics.map(metric => ({
+          name: metric.name,
+          value: weeklyScores[metric.id] || null,
+          notes: weeklyNotes[metric.id] || ''
+        })),
+        todos: {
+          completed: todos.filter(todo => todo.completed),
+          added: todos.filter(todo => !todo.id) // New todos without ID
+        },
+        issues: {
+          discussed: shortTermIssues.filter(issue => selectedIssueIds.includes(issue.id)),
+          created: shortTermIssues.filter(issue => !issue.id) // New issues without ID
+        },
+        notes: cascadingMessage || '',
+        cascadingMessage: cascadingMessage
+      };
+      
       console.log('🏁 [concludeMeeting] About to call meetingsService.concludeMeeting with:', {
         orgId,
         effectiveTeamId,
-        meetingData: {
-          meetingType: 'weekly',
-          duration: durationMinutes,
-          rating: averageRating,
-          individualRatings: participantRatings,
-          cascadingMessage: cascadingMessage,
-          issuesDiscussed: selectedIssueIds.length,
-          todosAssigned: selectedTodoIds.length
-        }
+        sessionId,
+        meetingData
       });
       
-      // FIXED: Now using sessionId instead of meeting data
       if (!sessionId) {
         throw new Error('No active session ID found - cannot conclude meeting');
       }
       
-      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, false); // sendEmail = false
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, true, meetingData); // sendEmail = true
       
       console.log('✅ [concludeMeeting] meetingsService.concludeMeeting completed successfully');
       

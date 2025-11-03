@@ -2039,8 +2039,34 @@ function AnnualPlanningMeetingPage() {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
-      // End the meeting session using meetingSessionsService
-      await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId);
+      // Calculate meeting duration in minutes
+      let durationMinutes;
+      if (elapsedTime > 0) {
+        durationMinutes = Math.floor(elapsedTime / 60);
+      } else if (meetingStartTime) {
+        const now = Date.now();
+        const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
+        durationMinutes = actualDuration;
+      } else {
+        durationMinutes = 120; // Default annual planning meeting duration (2 hours)
+      }
+      
+      // Prepare meeting data for conclude call
+      const meetingData = {
+        meetingType: 'Annual Planning',
+        duration: durationMinutes,
+        rating: averageRating,
+        individualRatings: participantRatings,
+        summary: 'Annual planning session completed with strategic planning and goal setting.',
+        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        vto: vtoData,
+        goals: goals || [],
+        notes: cascadingMessage || '',
+        cascadingMessage: cascadingMessage
+      };
+      
+      // Use the correct conclude meeting endpoint
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, true, meetingData);
       
       setSuccess('Meeting concluded and summary sent to team!');
       setTimeout(() => {
