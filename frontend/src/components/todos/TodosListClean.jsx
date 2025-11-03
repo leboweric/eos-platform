@@ -54,7 +54,6 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
-  const [expandedDescriptions, setExpandedDescriptions] = useState({});
   
   // View mode: always grouped (removed other options)
   const [viewMode, setViewMode] = useState('grouped');
