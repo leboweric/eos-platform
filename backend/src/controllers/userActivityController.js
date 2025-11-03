@@ -5,7 +5,8 @@ const activityService = ActivityTrackingService.getInstance();
 // Get user activity statistics
 export async function getActivityStats(req, res) {
   try {
-    const organizationId = req.user.organization_id || req.user.organizationId;
+    // For admin dashboard, pass null to get platform-wide stats across all organizations
+    const organizationId = null;
     const days = parseInt(req.query.days) || 7;
 
     const [activeUsers, avgDuration, featureUsage, timeline] = await Promise.all([
@@ -38,7 +39,8 @@ export async function getActivityStats(req, res) {
 // Get top active users
 export async function getTopActiveUsers(req, res) {
   try {
-    const organizationId = req.user.organization_id || req.user.organizationId;
+    // For admin dashboard, pass null to get platform-wide stats across all organizations
+    const organizationId = null;
     const limit = parseInt(req.query.limit) || 10;
     const days = parseInt(req.query.days) || 7;
 
@@ -62,7 +64,8 @@ export async function getTopActiveUsers(req, res) {
 // Get recent activity
 export async function getRecentActivity(req, res) {
   try {
-    const organizationId = req.user.organization_id || req.user.organizationId;
+    // For admin dashboard, pass null to get platform-wide stats across all organizations
+    const organizationId = null;
     const limit = parseInt(req.query.limit) || 20;
 
     const recentActivity = await activityService.getRecentActivity(organizationId, limit);
@@ -181,11 +184,42 @@ export async function getAdminActivityStats(req, res) {
   }
 }
 
+// Get meeting statistics (for admin dashboard)
+export async function getMeetingStats(req, res) {
+  try {
+    // For admin dashboard, we want platform-wide stats, so organizationId is null
+    const organizationId = null; 
+    const days = parseInt(req.query.days) || 30;
+
+    const [stats, timeline] = await Promise.all([
+      activityService.getMeetingStats(organizationId, days),
+      activityService.getMeetingTimeline(organizationId, days)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        stats,
+        timeline,
+        days
+      }
+    });
+  } catch (error) {
+    console.error('[UserActivity] Error getting meeting stats:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch meeting statistics',
+      message: error.message 
+    });
+  }
+}
+
 export default {
   getActivityStats,
   getTopActiveUsers,
   getRecentActivity,
   getUserActivity,
   trackActivity,
-  getAdminActivityStats
+  getAdminActivityStats,
+  getMeetingStats
 };
