@@ -1228,6 +1228,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }
                     console.log('📊 New meeting session started:', result.session.id);
                     
+                    // Create meeting record in database (fixes conclude 404 error)
+                    try {
+                      console.log('📝 Creating meeting record in database...');
+                      const meetingResult = await meetingsService.createMeeting(
+                        orgId, 
+                        effectiveTeamId, 
+                        'weekly'
+                      );
+                      console.log('✅ Meeting record created:', meetingResult.meeting.id);
+                    } catch (meetingError) {
+                      console.error('❌ Failed to create meeting record:', meetingError);
+                      // Don't block the UI - meeting can still proceed with just the session
+                    }
+                    
                     // Auto-start the first section for new sessions
                     await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 1)');
                   }
@@ -1342,6 +1356,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                   setTotalPausedTime(result.session.total_paused_duration || 0);
                 }
                 console.log('📊 New meeting session started:', result.session.id);
+                
+                // Create meeting record in database (fixes conclude 404 error)
+                try {
+                  console.log('📝 Creating meeting record in database (immediate path)...');
+                  const meetingResult = await meetingsService.createMeeting(
+                    orgId, 
+                    effectiveTeamId, 
+                    'weekly'
+                  );
+                  console.log('✅ Meeting record created (immediate path):', meetingResult.meeting.id);
+                } catch (meetingError) {
+                  console.error('❌ Failed to create meeting record (immediate path):', meetingError);
+                  // Don't block the UI - meeting can still proceed with just the session
+                }
                 
                 // Auto-start the first section for new sessions
                 await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 2)');
@@ -1602,6 +1630,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                 setTotalPausedTime(result.session.total_paused_duration || 0);
               }
               
+              // Create meeting record in database (fixes conclude 404 error)
+              try {
+                console.log('📝 Creating meeting record in database (fallback path)...');
+                const meetingResult = await meetingsService.createMeeting(
+                  orgId, 
+                  effectiveTeamId, 
+                  'weekly'
+                );
+                console.log('✅ Meeting record created (fallback path):', meetingResult.meeting.id);
+              } catch (meetingError) {
+                console.error('❌ Failed to create meeting record (fallback path):', meetingError);
+                // Don't block the UI - meeting can still proceed with just the session
+              }
+              
               // Auto-start the first section for new sessions
               await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 3)');
             }
@@ -1815,6 +1857,20 @@ const WeeklyAccountabilityMeetingPage = () => {
               const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
               console.log('📊 Session created for leader:', result.session.id);
               setSessionId(result.session.id);
+              
+              // Create meeting record in database (fixes conclude 404 error)
+              try {
+                console.log('📝 Creating meeting record in database (leader path)...');
+                const meetingResult = await meetingsService.createMeeting(
+                  orgId, 
+                  effectiveTeamId, 
+                  'weekly'
+                );
+                console.log('✅ Meeting record created (leader path):', meetingResult.meeting.id);
+              } catch (meetingError) {
+                console.error('❌ Failed to create meeting record (leader path):', meetingError);
+                // Don't block the UI - meeting can still proceed with just the session
+              }
               
               // Auto-start the first section for new sessions
               await autoStartFirstSection(result.session.id, orgId, effectiveTeamId, '(location 4 - leader)');
