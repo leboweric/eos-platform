@@ -24,10 +24,7 @@ export const meetingsService = {
       sendEmail: sendEmail !== false // Default to true
     };
     
-    // If sessionId is provided, include it as specificMeetingId
-    if (sessionId) {
-      requestBody.specificMeetingId = sessionId;
-    }
+    // DON'T pass specificMeetingId - let backend find the in-progress meeting
     
     console.log('🔍 [meetingsService] Request body keys:', Object.keys(requestBody));
     
