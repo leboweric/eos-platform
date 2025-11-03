@@ -260,11 +260,14 @@ export const getLogo = async (req, res) => {
 
     const { logo_data, logo_mime_type } = result.rows[0];
 
-    // Set cache headers and CORS headers
+    // Set comprehensive CORS and cache headers
     res.set({
       'Content-Type': logo_mime_type || 'image/png',
-      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-      'Cross-Origin-Resource-Policy': 'cross-origin' // Allow cross-origin access
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*', // Allow all origins for public logos
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Cross-Origin-Resource-Policy': 'cross-origin'
     });
 
     res.send(logo_data);

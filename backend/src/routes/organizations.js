@@ -13,6 +13,18 @@ import { query } from '../config/database.js';
 const router = express.Router();
 
 // Public routes (no authentication required)
+// @route   OPTIONS /api/v1/organizations/:orgId/logo
+// @desc    Handle preflight requests for organization logo
+// @access  Public
+router.options('/:orgId/logo', (req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  });
+  res.sendStatus(200);
+});
+
 // @route   GET /api/v1/organizations/:orgId/logo
 // @desc    Get organization logo
 // @access  Public (for display purposes)
