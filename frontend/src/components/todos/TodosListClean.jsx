@@ -45,6 +45,7 @@ const TodosListClean = ({
   showingArchived = false
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -398,7 +399,37 @@ const TodosListClean = ({
                                 {todo.title}
                               </div>
                               {todo.description && (
-                                <div className="text-xs text-slate-500 mt-1">{todo.description}</div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {todo.description.length > 150 && !expandedDescriptions[todo.id] ? (
+                                    <>
+                                      {todo.description.substring(0, 150)}...
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedDescriptions(prev => ({ ...prev, [todo.id]: true }));
+                                        }}
+                                        className="ml-1 text-blue-600 hover:text-blue-800 font-medium"
+                                      >
+                                        Show more
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {todo.description}
+                                      {todo.description.length > 150 && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedDescriptions(prev => ({ ...prev, [todo.id]: false }));
+                                          }}
+                                          className="ml-1 text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                          Show less
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
                             
