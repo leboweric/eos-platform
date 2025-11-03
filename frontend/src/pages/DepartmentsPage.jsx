@@ -391,7 +391,7 @@ const DepartmentsPage = () => {
 
       {/* Department Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingDept ? 'Edit Department' : 'Create Department'}
@@ -487,7 +487,7 @@ const DepartmentsPage = () => {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-2xl">
             <DialogHeader>
               <DialogTitle>Delete Department</DialogTitle>
               <DialogDescription>

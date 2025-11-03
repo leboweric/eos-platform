@@ -495,7 +495,7 @@ const UsersPage = () => {
                       Create User
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+                  <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-2xl">
                   <form onSubmit={handleCreateUser}>
                     <DialogHeader>
                       <DialogTitle>Create New User</DialogTitle>
@@ -665,7 +665,7 @@ const UsersPage = () => {
                   Invite User
                 </Button>
               </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <form onSubmit={handleInviteUser}>
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
@@ -731,7 +731,7 @@ const UsersPage = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <form onSubmit={handleUpdateUser}>
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
