@@ -3373,27 +3373,38 @@ const WeeklyAccountabilityMeetingPage = () => {
         ? ratingsArray.reduce((sum, r) => sum + r, 0) / ratingsArray.length
         : meetingRating || 8;
       
-      // Send meeting summary with individual and average ratings
+      // Prepare meeting data for conclude call
+      const meetingData = {
+        meetingType: 'Level 10 Meeting',
+        duration: durationMinutes,
+        rating: averageRating,
+        individualRatings: participantRatings,
+        summary: `Meeting completed with ${selectedIssueIds.length} issues discussed and ${selectedTodoIds.length} todos assigned.`,
+        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        todos: {
+          completed: todos.filter(todo => todo.completed),
+          added: todos.filter(todo => !todo.id) // New todos without ID
+        },
+        issues: {
+          discussed: shortTermIssues.filter(issue => selectedIssueIds.includes(issue.id)),
+          created: shortTermIssues.filter(issue => !issue.id) // New issues without ID
+        },
+        notes: cascadingMessage || '',
+        cascadingMessage: cascadingMessage
+      };
+      
       console.log('🏁 [concludeMeeting] About to call meetingsService.concludeMeeting with:', {
         orgId,
         effectiveTeamId,
-        meetingData: {
-          meetingType: 'weekly',
-          duration: durationMinutes,
-          rating: averageRating,
-          individualRatings: participantRatings,
-          cascadingMessage: cascadingMessage,
-          issuesDiscussed: selectedIssueIds.length,
-          todosAssigned: selectedTodoIds.length
-        }
+        sessionId,
+        meetingData
       });
       
-      // FIXED: Now using sessionId instead of meeting data
       if (!sessionId) {
         throw new Error('No active session ID found - cannot conclude meeting');
       }
       
-      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, false); // sendEmail = false
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, false, meetingData); // sendEmail = false, include meetingData
       
       console.log('✅ [concludeMeeting] meetingsService.concludeMeeting completed successfully');
       
@@ -6845,17 +6856,44 @@ const WeeklyAccountabilityMeetingPage = () => {
                             };
                           }) : [];
                         
+                        // Calculate average rating from participant ratings
+                        const validRatings = allParticipantRatings.filter(r => r.rating > 0);
+                        const averageRating = validRatings.length > 0 
+                          ? validRatings.reduce((sum, r) => sum + r.rating, 0) / validRatings.length
+                          : meetingRating || 8;
+                        
+                        // Prepare comprehensive meeting data
+                        const meetingData = {
+                          meetingType: 'Level 10 Meeting',
+                          duration: durationMinutes,
+                          rating: averageRating,
+                          individualRatings: allParticipantRatings,
+                          summary: `Meeting completed with ${allIssues.length} issues tracked and meeting activities recorded.`,
+                          attendees: allParticipantRatings.map(r => r.userName).filter(Boolean),
+                          todos: {
+                            completed: todos.filter(todo => todo.completed),
+                            added: todos.filter(todo => !todo.id)
+                          },
+                          issues: {
+                            discussed: allIssues,
+                            created: allIssues.filter(issue => !issue.id)
+                          },
+                          notes: cascadeMessage || '',
+                          cascadingMessage: cascadeMessage
+                        };
+                        
                         // ALWAYS conclude the meeting session in database
                         let emailResult = null;
                         try {
                           console.log('🔍 [Frontend] Calling meetingsService.concludeMeeting...');
                           console.log('🔍 [Frontend] sessionId:', sessionId, 'sendSummaryEmail:', sendSummaryEmail);
+                          console.log('🔍 [Frontend] meetingData:', meetingData);
                           
                           if (!sessionId) {
                             throw new Error('No active session ID found - cannot conclude meeting');
                           }
                           
-                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail);
+                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail, meetingData);
                           console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
                         } catch (emailError) {
                           console.error('❌ [Frontend] Failed to conclude meeting:', emailError);
