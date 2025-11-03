@@ -1,6 +1,32 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 export const meetingsService = {
+  // Create a new meeting record in the database
+  createMeeting: async (orgId, teamId, meetingType, title = null) => {
+    const token = localStorage.getItem('accessToken');
+    const url = `${API_URL}/organizations/${orgId}/teams/${teamId}/meetings`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ 
+        meetingType,
+        title: title || `${meetingType} Meeting`,
+        scheduledDate: new Date().toISOString()
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create meeting');
+    }
+    
+    return await response.json();
+  },
+
   // Conclude a meeting (uses correct /meetings/conclude endpoint)
   concludeMeeting: async (orgId, teamId, sessionId, sendEmail = true, meetingData = null) => {
     console.log('🔍 [meetingsService] concludeMeeting called with:', { orgId, teamId, sessionId, sendEmail });

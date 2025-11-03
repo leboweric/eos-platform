@@ -4,6 +4,97 @@ import { recordMeetingConclusion } from '../services/todoReminderService.js';
 import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 import transcriptionService from '../services/transcriptionService.js';
 import logger from '../utils/logger.js';
+import { v4 as uuidv4 } from 'uuid';
+
+// Create a new meeting record in database
+export const createMeeting = async (req, res) => {
+  const client = await db.getClient();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const { 
+      meetingType,      // 'weekly', 'quarterly', 'annual'
+      title,
+      agendaId,         
+      facilitatorId,
+      scheduledDate 
+    } = req.body;
+    
+    const { orgId, teamId } = req.params;
+    const userId = req.user.id;
+    
+    logger.debug('Creating meeting:', { orgId, teamId, meetingType, title });
+    
+    // Default values if not provided
+    const meetingTitle = title || `${meetingType} Meeting`;
+    const facilitator = facilitatorId || userId;
+    const scheduled = scheduledDate || new Date();
+    
+    // Get or create agenda_id for this meeting type
+    let agenda_id = agendaId;
+    if (!agenda_id) {
+      // Try to find existing agenda for this meeting type
+      const agendaResult = await client.query(
+        'SELECT id FROM meeting_agendas WHERE meeting_type = $1 AND organization_id = $2 AND (team_id = $3 OR team_id IS NULL) LIMIT 1',
+        [meetingType, orgId, teamId]
+      );
+      
+      if (agendaResult.rows.length > 0) {
+        agenda_id = agendaResult.rows[0].id;
+        logger.debug('Found existing agenda:', agenda_id);
+      } else {
+        // Create a default agenda if none exists
+        const newAgendaResult = await client.query(
+          `INSERT INTO meeting_agendas (id, organization_id, team_id, name, meeting_type, total_duration_minutes, is_template)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING id`,
+          [uuidv4(), orgId, teamId, `Default ${meetingType} Agenda`, meetingType, 90, false]
+        );
+        agenda_id = newAgendaResult.rows[0].id;
+        logger.debug('Created new agenda:', agenda_id);
+      }
+    }
+    
+    // Create meeting record
+    const meetingId = uuidv4();
+    const result = await client.query(
+      `INSERT INTO meetings (
+        id,
+        organization_id, 
+        team_id, 
+        agenda_id,
+        facilitator_id,
+        title,
+        scheduled_date,
+        actual_start_time,
+        status,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), 'in-progress', NOW(), NOW())
+      RETURNING *`,
+      [meetingId, orgId, teamId, agenda_id, facilitator, meetingTitle, scheduled]
+    );
+    
+    await client.query('COMMIT');
+    
+    logger.info('Meeting created successfully:', { meetingId, title: meetingTitle, type: meetingType });
+    
+    res.json({ 
+      success: true, 
+      meeting: result.rows[0] 
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error creating meeting:', error);
+    res.status(500).json({ 
+      error: 'Failed to create meeting',
+      details: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
 
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
@@ -218,14 +309,26 @@ export const concludeMeeting = async (req, res) => {
     );
 
     let aiSummary = null;
+    let usedFallbackSummary = false;
+    
     if (transcriptCheck.rows.length > 0) {
       const transcript = transcriptCheck.rows[0];
       logger.info('🎤 AI recording found:', transcript.id, 'Status:', transcript.status);
       
       if (transcript.status === 'completed') {
         logger.info('Recording already completed, checking for AI summary...');
-        // Skip stopping, go straight to waiting for AI summary
-        aiSummary = await waitForAISummary(transcript.id, 2); // Shorter wait for completed recordings
+        // Skip stopping, go straight to waiting for AI summary with timeout
+        try {
+          aiSummary = await Promise.race([
+            waitForAISummary(transcript.id, 2), // Shorter wait for completed recordings
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('AI summary timeout')), 30000) // 30 second timeout
+            )
+          ]);
+        } catch (error) {
+          logger.error('❌ AI summary generation failed for completed recording:', error.message);
+          // Continue without AI summary - will use fallback later
+        }
       } else {
         logger.info('Active recording detected, stopping transcription');
         
@@ -234,10 +337,20 @@ export const concludeMeeting = async (req, res) => {
           await transcriptionService.stopRealtimeTranscription(transcript.id);
           logger.info('✅ Recording stopped successfully');
           
-          logger.info('⏳ Waiting up to 10 minutes for AI summary...');
+          logger.info('⏳ Waiting up to 3 minutes for AI summary...');
           
-          // Wait for AI summary (up to 10 minutes)
-          aiSummary = await waitForAISummary(transcript.id, 10);
+          // Wait for AI summary with shorter timeout and fallback
+          try {
+            aiSummary = await Promise.race([
+              waitForAISummary(transcript.id, 3), // Reduced from 10 to 3 minutes
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('AI summary timeout')), 180000) // 3 minute timeout
+              )
+            ]);
+          } catch (aiError) {
+            logger.error('❌ AI summary generation failed:', aiError.message);
+            // Continue without AI summary - will use fallback later
+          }
           
         } catch (stopError) {
           logger.error('⚠️ Error stopping recording:', stopError);
@@ -246,6 +359,22 @@ export const concludeMeeting = async (req, res) => {
       }
     } else {
       logger.debug('No active or recent recording found');
+    }
+    
+    // RESILIENCE: If AI summary failed or is not available, generate fallback summary
+    if (!aiSummary) {
+      logger.info('📝 Generating fallback summary (AI summary not available)');
+      usedFallbackSummary = true;
+      aiSummary = generateFallbackSummary({
+        meetingType,
+        duration,
+        rating,
+        attendees,
+        todos,
+        issues,
+        notes,
+        userName
+      });
     }
 
     // Get organization details including theme colors
@@ -561,6 +690,7 @@ export const concludeMeeting = async (req, res) => {
       
       // AI Summary
       aiSummary: aiSummary,
+      usedFallbackSummary: usedFallbackSummary,
       
       // Headlines in correct format
       headlines: req.body.headlines || { customer: [], employee: [] },
@@ -627,7 +757,12 @@ export const concludeMeeting = async (req, res) => {
           console.error('Email error details:', emailError.message, emailError.stack);
           // Continue with successful conclusion even if email fails
           // Record meeting conclusion for reminder scheduling
-          await recordMeetingConclusion(organizationId, teamId, meetingType);
+          await recordMeetingConclusion(organizationId, teamId, meetingType, {
+            meetingId: specificMeetingId,
+            participantCount: individualRatings?.length || attendees?.length,
+            durationMinutes: duration,
+            attendees: attendees || []
+          });
 
           return res.json({
             success: true,
@@ -644,7 +779,12 @@ export const concludeMeeting = async (req, res) => {
     }
 
     // Record meeting conclusion for reminder scheduling
-    await recordMeetingConclusion(organizationId, teamId, meetingType);
+    await recordMeetingConclusion(organizationId, teamId, meetingType, {
+      meetingId: specificMeetingId,
+      participantCount: individualRatings?.length || attendees?.length,
+      durationMinutes: duration,
+      attendees: attendees || []
+    });
 
     // Create meeting snapshot for history
     try {
@@ -712,7 +852,9 @@ export const concludeMeeting = async (req, res) => {
     res.json({
       success: true,
       message: 'Meeting concluded successfully',
-      emailsSent: emailsSent
+      emailsSent: emailsSent,
+      usedFallbackSummary: usedFallbackSummary,
+      warning: usedFallbackSummary ? 'AI summary was not available. A basic summary was generated instead.' : null
     });
 
   } catch (error) {
@@ -785,4 +927,42 @@ async function getAISummaryForTranscript(transcriptId) {
     console.error('Error fetching AI summary:', error);
     return null;
   }
+}
+
+// Generate fallback summary when AI is not available
+function generateFallbackSummary({ meetingType, duration, rating, attendees, todos, issues, notes, userName }) {
+  const now = new Date();
+  const attendeeList = attendees?.map(a => a.name || a.userName || 'Unknown').join(', ') || 'Not recorded';
+  const avgRating = rating || 'Not rated';
+  const todoCount = todos?.length || 0;
+  const issueCount = issues?.length || 0;
+  
+  return {
+    executive_summary: `
+${meetingType || 'Meeting'} Summary
+Date: ${now.toLocaleDateString()}
+Duration: ${duration || 'Not recorded'} minutes
+Facilitator: ${userName || 'Not recorded'}
+Attendees: ${attendeeList}
+Rating: ${avgRating} / 5
+
+Key Items Discussed:
+- ${todoCount} To-Do items reviewed
+- ${issueCount} Issues addressed
+- ${notes ? 'Meeting notes provided' : 'No additional notes recorded'}
+
+${notes ? `\nNotes:\n${notes}` : ''}
+
+---
+Note: AI-generated summary was not available for this meeting. This summary was automatically generated from meeting data.
+    `.trim(),
+    key_takeaways: [
+      `Meeting completed with ${todoCount} to-dos and ${issueCount} issues discussed`,
+      notes ? 'Additional meeting notes were provided' : 'No additional notes recorded',
+      `Team rated the meeting ${avgRating}/5`
+    ].filter(Boolean),
+    action_items: todos?.map(todo => todo.description || todo.text || 'Action item') || [],
+    participants: attendees?.map(a => a.name || a.userName) || [],
+    meeting_effectiveness: avgRating ? `${avgRating}/5` : 'Not rated'
+  };
 }
