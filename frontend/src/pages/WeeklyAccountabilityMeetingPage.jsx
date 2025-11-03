@@ -6852,7 +6852,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const confirmConcludeMeeting = async () => {
+  const confirmConcludeMeeting = async (e) => {
+    // CRITICAL: Prevent any form submission or page reload
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setShowConcludeDialog(false);
     try {
       // Note: AI recording stop is now handled automatically by the backend during meeting conclusion
@@ -7691,6 +7697,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={confirmConcludeMeeting}
               className="bg-green-600 hover:bg-green-700 text-white"
             >

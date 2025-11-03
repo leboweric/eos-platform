@@ -6778,6 +6778,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       )}
                       
                       <Button
+                        type="button"
                         className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
                           aiRecordingState.isRecording 
                             ? "bg-gray-400 cursor-not-allowed opacity-50" 
@@ -6788,7 +6789,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                             ? undefined 
                             : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           if (!aiRecordingState.isRecording) {
                             setShowConcludeDialog(true);
                           }
@@ -6837,7 +6840,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const confirmConcludeMeeting = async () => {
+  const confirmConcludeMeeting = async (e) => {
+    // CRITICAL: Prevent any form submission or page reload
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setShowConcludeDialog(false);
     try {
       // Note: AI recording stop is now handled automatically by the backend during meeting conclusion
@@ -7031,7 +7040,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                         
                         // Navigate to Dashboard after concluding meeting
                         setTimeout(() => {
-                          navigate('/dashboard');
+                          try {
+                            console.log('🚀 Navigating to dashboard after successful meeting conclusion');
+                            navigate('/dashboard');
+                          } catch (navError) {
+                            console.error('Navigation error:', navError);
+                            // Fallback: hard redirect if navigate fails
+                            window.location.href = '/dashboard';
+                          }
                         }, 1500); // Brief delay to show success message
     } catch (error) {
       console.error('Failed to conclude meeting:', error);
@@ -7633,6 +7649,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={confirmConcludeMeeting}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
