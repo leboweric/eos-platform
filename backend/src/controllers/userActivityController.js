@@ -136,10 +136,56 @@ export async function trackActivity(req, res) {
   }
 }
 
+// Get admin platform-wide statistics (for admin dashboard)
+export async function getAdminActivityStats(req, res) {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required'
+      });
+    }
+
+    const days = parseInt(req.query.days) || 7;
+
+    // Use null organizationId for platform-wide statistics
+    const [activeUsers, avgDuration, featureUsage, timeline, topUsers, recentActivity] = await Promise.all([
+      activityService.getActiveUsers(null),
+      activityService.getAverageSessionDuration(null, days),
+      activityService.getFeatureUsage(null, days),
+      activityService.getActivityTimeline(null, days),
+      activityService.getTopUsers(null, 10, days),
+      activityService.getRecentActivity(null, 20)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        activeUsers,
+        avgSessionDuration: avgDuration,
+        featureUsage,
+        timeline,
+        topUsers,
+        recentActivity,
+        days
+      }
+    });
+  } catch (error) {
+    console.error('[UserActivity] Error getting admin activity stats:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch admin activity statistics',
+      message: error.message 
+    });
+  }
+}
+
 export default {
   getActivityStats,
   getTopActiveUsers,
   getRecentActivity,
   getUserActivity,
-  trackActivity
+  trackActivity,
+  getAdminActivityStats
 };

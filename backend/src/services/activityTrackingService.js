@@ -55,17 +55,33 @@ export class ActivityTrackingService {
   }
 
   // Get Daily/Weekly/Monthly Active Users
-  async getActiveUsers(organizationId) {
-    const query = `
-      SELECT 
-        COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '1 day' THEN user_id END) as dau,
-        COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN user_id END) as wau,
-        COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN user_id END) as mau
-      FROM user_activity
-      WHERE organization_id = $1
-    `;
+  async getActiveUsers(organizationId = null) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT 
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '1 day' THEN user_id END) as dau,
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN user_id END) as wau,
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN user_id END) as mau
+        FROM user_activity
+        WHERE organization_id = $1
+      `;
+      params = [organizationId];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT 
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '1 day' THEN user_id END) as dau,
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN user_id END) as wau,
+          COUNT(DISTINCT CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN user_id END) as mau
+        FROM user_activity
+      `;
+      params = [];
+    }
 
-    const result = await pool.query(query, [organizationId]);
+    const result = await pool.query(query, params);
     return {
       dau: parseInt(result.rows[0].dau || 0),
       wau: parseInt(result.rows[0].wau || 0),
@@ -74,77 +90,160 @@ export class ActivityTrackingService {
   }
 
   // Get average session duration
-  async getAverageSessionDuration(organizationId, days = 7) {
-    const query = `
-      SELECT AVG(duration_ms) as avg_duration
-      FROM user_activity
-      WHERE organization_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
-        AND duration_ms IS NOT NULL
-    `;
+  async getAverageSessionDuration(organizationId = null, days = 7) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT AVG(duration_ms) as avg_duration
+        FROM user_activity
+        WHERE organization_id = $1
+          AND created_at >= NOW() - INTERVAL '${days} days'
+          AND duration_ms IS NOT NULL
+      `;
+      params = [organizationId];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT AVG(duration_ms) as avg_duration
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '${days} days'
+          AND duration_ms IS NOT NULL
+      `;
+      params = [];
+    }
 
-    const result = await pool.query(query, [organizationId]);
+    const result = await pool.query(query, params);
     return Math.round(result.rows[0].avg_duration || 0);
   }
 
   // Get top active users
-  async getTopUsers(organizationId, limit = 10, days = 7) {
-    const query = `
-      SELECT 
-        u.id,
-        u.first_name,
-        u.last_name,
-        u.email,
-        COUNT(*) as activity_count,
-        COUNT(DISTINCT DATE(ua.created_at)) as active_days,
-        MAX(ua.created_at) as last_active
-      FROM user_activity ua
-      JOIN users u ON ua.user_id = u.id
-      WHERE ua.organization_id = $1
-        AND ua.created_at >= NOW() - INTERVAL '${days} days'
-      GROUP BY u.id, u.first_name, u.last_name, u.email
-      ORDER BY activity_count DESC
-      LIMIT $2
-    `;
+  async getTopUsers(organizationId = null, limit = 10, days = 7) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT 
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          COUNT(*) as activity_count,
+          COUNT(DISTINCT DATE(ua.created_at)) as active_days,
+          MAX(ua.created_at) as last_active
+        FROM user_activity ua
+        JOIN users u ON ua.user_id = u.id
+        WHERE ua.organization_id = $1
+          AND ua.created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY u.id, u.first_name, u.last_name, u.email
+        ORDER BY activity_count DESC
+        LIMIT $2
+      `;
+      params = [organizationId, limit];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT 
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          o.name as organization_name,
+          COUNT(*) as activity_count,
+          COUNT(DISTINCT DATE(ua.created_at)) as active_days,
+          MAX(ua.created_at) as last_active
+        FROM user_activity ua
+        JOIN users u ON ua.user_id = u.id
+        JOIN organizations o ON ua.organization_id = o.id
+        WHERE ua.created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY u.id, u.first_name, u.last_name, u.email, o.name
+        ORDER BY activity_count DESC
+        LIMIT $1
+      `;
+      params = [limit];
+    }
 
-    const result = await pool.query(query, [organizationId, limit]);
+    const result = await pool.query(query, params);
     return result.rows;
   }
 
   // Get feature usage statistics
-  async getFeatureUsage(organizationId, days = 7) {
-    const query = `
-      SELECT 
-        feature_name,
-        COUNT(*) as usage_count,
-        COUNT(DISTINCT user_id) as unique_users,
-        ROUND(COUNT(*)::numeric / COUNT(DISTINCT user_id), 2) as avg_per_user
-      FROM user_activity
-      WHERE organization_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
-      GROUP BY feature_name
-      ORDER BY usage_count DESC
-    `;
+  async getFeatureUsage(organizationId = null, days = 7) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT 
+          feature_name,
+          COUNT(*) as usage_count,
+          COUNT(DISTINCT user_id) as unique_users,
+          ROUND(COUNT(*)::numeric / COUNT(DISTINCT user_id), 2) as avg_per_user
+        FROM user_activity
+        WHERE organization_id = $1
+          AND created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY feature_name
+        ORDER BY usage_count DESC
+      `;
+      params = [organizationId];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT 
+          feature_name,
+          COUNT(*) as usage_count,
+          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(DISTINCT organization_id) as unique_organizations,
+          ROUND(COUNT(*)::numeric / COUNT(DISTINCT user_id), 2) as avg_per_user
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY feature_name
+        ORDER BY usage_count DESC
+      `;
+      params = [];
+    }
 
-    const result = await pool.query(query, [organizationId]);
+    const result = await pool.query(query, params);
     return result.rows;
   }
 
   // Get activity timeline (daily breakdown)
-  async getActivityTimeline(organizationId, days = 7) {
-    const query = `
-      SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as activity_count,
-        COUNT(DISTINCT user_id) as unique_users
-      FROM user_activity
-      WHERE organization_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
-      GROUP BY DATE(created_at)
-      ORDER BY date
-    `;
+  async getActivityTimeline(organizationId = null, days = 7) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as activity_count,
+          COUNT(DISTINCT user_id) as unique_users
+        FROM user_activity
+        WHERE organization_id = $1
+          AND created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `;
+      params = [organizationId];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as activity_count,
+          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(DISTINCT organization_id) as unique_organizations
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `;
+      params = [];
+    }
 
-    const result = await pool.query(query, [organizationId]);
+    const result = await pool.query(query, params);
     return result.rows;
   }
 
@@ -168,24 +267,49 @@ export class ActivityTrackingService {
   }
 
   // Get recent activity (for the dashboard)
-  async getRecentActivity(organizationId, limit = 20) {
-    const query = `
-      SELECT 
-        ua.action_type,
-        ua.feature_name,
-        ua.page_path,
-        ua.created_at,
-        u.first_name,
-        u.last_name,
-        u.email
-      FROM user_activity ua
-      JOIN users u ON ua.user_id = u.id
-      WHERE ua.organization_id = $1
-      ORDER BY ua.created_at DESC
-      LIMIT $2
-    `;
+  async getRecentActivity(organizationId = null, limit = 20) {
+    let query, params;
+    
+    if (organizationId) {
+      // Organization-specific statistics
+      query = `
+        SELECT 
+          ua.action_type,
+          ua.feature_name,
+          ua.page_path,
+          ua.created_at,
+          u.first_name,
+          u.last_name,
+          u.email
+        FROM user_activity ua
+        JOIN users u ON ua.user_id = u.id
+        WHERE ua.organization_id = $1
+        ORDER BY ua.created_at DESC
+        LIMIT $2
+      `;
+      params = [organizationId, limit];
+    } else {
+      // Platform-wide statistics
+      query = `
+        SELECT 
+          ua.action_type,
+          ua.feature_name,
+          ua.page_path,
+          ua.created_at,
+          u.first_name,
+          u.last_name,
+          u.email,
+          o.name as organization_name
+        FROM user_activity ua
+        JOIN users u ON ua.user_id = u.id
+        JOIN organizations o ON ua.organization_id = o.id
+        ORDER BY ua.created_at DESC
+        LIMIT $1
+      `;
+      params = [limit];
+    }
 
-    const result = await pool.query(query, [organizationId, limit]);
+    const result = await pool.query(query, params);
     return result.rows;
   }
 }

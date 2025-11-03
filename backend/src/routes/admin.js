@@ -52,6 +52,7 @@ router.post('/failed-operations/bulk-resolve', failedOperationsController.bulkRe
 
 // User Activity monitoring
 router.get('/activity/stats', userActivityController.getActivityStats);
+router.get('/activity/admin-stats', userActivityController.getAdminActivityStats);
 router.get('/activity/top-users', userActivityController.getTopActiveUsers);
 router.get('/activity/recent', userActivityController.getRecentActivity);
 router.get('/activity/user/:userId', userActivityController.getUserActivity);
