@@ -132,7 +132,6 @@ const DepartmentsPage = () => {
     try {
       setError(null);
       await departmentService.updateDepartment(dept.id, {
-        ...dept,
         is_active: !dept.is_active
       });
       await fetchDepartments();
