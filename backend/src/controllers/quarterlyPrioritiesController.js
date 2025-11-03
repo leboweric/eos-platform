@@ -1403,7 +1403,6 @@ export const getCurrentPriorities = async (req, res) => {
       LEFT JOIN teams t ON p.team_id = t.id
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
-      AND (p.archived = false OR p.archived IS NULL)
       AND (${teamScope.query})
       ORDER BY p.created_at ASC
     `;
