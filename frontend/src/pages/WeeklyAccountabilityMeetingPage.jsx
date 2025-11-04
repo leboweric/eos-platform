@@ -3431,6 +3431,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         ? ratingsArray.reduce((sum, r) => sum + r, 0) / ratingsArray.length
         : meetingRating || 8;
       
+      // Get today's date in YYYY-MM-DD format for filtering
+      const today = new Date().toISOString().split('T')[0];
+      
       // Prepare meeting data for conclude call
       const meetingData = {
         meetingType: 'Level 10 Meeting',
@@ -3445,12 +3448,23 @@ const WeeklyAccountabilityMeetingPage = () => {
           notes: weeklyNotes[metric.id] || ''
         })),
         todos: {
-          completed: todos.filter(todo => todo.completed),
+          completed: todos.filter(todo => {
+            // Only include todos completed TODAY
+            if (!todo.completed || !todo.completed_at) return false;
+            const completedDate = new Date(todo.completed_at).toISOString().split('T')[0];
+            return completedDate === today;
+          }),
           added: todos.filter(todo => !todo.id) // New todos without ID
         },
         issues: {
           discussed: shortTermIssues.filter(issue => selectedIssueIds.includes(issue.id)),
-          created: shortTermIssues.filter(issue => !issue.id) // New issues without ID
+          created: shortTermIssues.filter(issue => !issue.id), // New issues without ID
+          solved: shortTermIssues.filter(issue => {
+            // Only include issues solved TODAY
+            if (!issue.is_solved || !issue.resolved_at) return false;
+            const resolvedDate = new Date(issue.resolved_at).toISOString().split('T')[0];
+            return resolvedDate === today;
+          })
         },
         notes: cascadingMessage || '',
         cascadingMessage: cascadingMessage

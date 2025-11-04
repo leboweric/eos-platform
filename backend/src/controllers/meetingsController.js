@@ -681,13 +681,30 @@ export const concludeMeeting = async (req, res) => {
       todo.title || todo.todo || 'Untitled'
     );
 
-    // Format issues - separate resolved vs unresolved
-    const resolvedIssues = (issues || []).filter(issue => issue.is_solved).map(issue => 
-      issue.title || issue.issue || 'Untitled issue'
-    );
-    const unresolvedIssues = (issues || []).filter(issue => !issue.is_solved).map(issue => 
-      issue.title || issue.issue || 'Untitled issue'
-    );
+    // Format issues - handle both array and object structure
+    let resolvedIssues = [];
+    let unresolvedIssues = [];
+    
+    if (Array.isArray(issues)) {
+      // Legacy format: array of issues
+      resolvedIssues = issues.filter(issue => issue.is_solved).map(issue => 
+        issue.title || issue.issue || 'Untitled issue'
+      );
+      unresolvedIssues = issues.filter(issue => !issue.is_solved).map(issue => 
+        issue.title || issue.issue || 'Untitled issue'
+      );
+    } else if (issues && typeof issues === 'object') {
+      // New format: object with {discussed, created, solved}
+      // Solved issues go to resolved
+      resolvedIssues = (issues.solved || []).map(issue => 
+        issue.title || issue.issue || 'Untitled issue'
+      );
+      // Discussed and created issues go to unresolved (unless they're marked as solved)
+      const discussedAndCreated = [...(issues.discussed || []), ...(issues.created || [])];
+      unresolvedIssues = discussedAndCreated
+        .filter(issue => !issue.is_solved)
+        .map(issue => issue.title || issue.issue || 'Untitled issue');
+    }
 
     // Format meeting type for display
     const formattedMeetingType = meetingType === 'weekly' ? 'Weekly Accountability Meeting' : 
@@ -994,13 +1011,13 @@ function generateFallbackSummary({ meetingType, duration, rating, attendees, tod
     todosArray = [...(todos.completed || []), ...(todos.added || [])];
   }
   
-  // Handle issues as either array or object {discussed: [], created: []}
+  // Handle issues as either array or object {discussed: [], created: [], solved: []}
   let issuesArray = [];
   if (Array.isArray(issues)) {
     issuesArray = issues;
   } else if (issues && typeof issues === 'object') {
-    // Combine discussed and created issues
-    issuesArray = [...(issues.discussed || []), ...(issues.created || [])];
+    // Combine discussed, created, and solved issues
+    issuesArray = [...(issues.discussed || []), ...(issues.created || []), ...(issues.solved || [])];
   }
   
   const todoCount = todosArray.length || 0;
