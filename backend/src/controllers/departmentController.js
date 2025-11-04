@@ -378,10 +378,12 @@ const getDepartmentWithDetails = async (departmentId, organizationId) => {
 
 // Add member to department
 const addDepartmentMember = async (req, res) => {
+  console.log('🚀 ADD MEMBER CONTROLLER CALLED:', { params: req.params, body: req.body, user: req.user });
   try {
     const { id } = req.params; // department id
     const { userId } = req.body;
     const { organizationId } = req.user;
+    console.log('📝 Processing add member:', { departmentId: id, userId, organizationId });
 
     // Verify department exists and belongs to org
     const deptCheck = await db.query(
@@ -418,9 +420,11 @@ const addDepartmentMember = async (req, res) => {
 
 // Remove member from department
 const removeDepartmentMember = async (req, res) => {
+  console.log('🚀 REMOVE MEMBER CONTROLLER CALLED:', { params: req.params, user: req.user });
   try {
     const { id, userId } = req.params; // department id and user id
     const { organizationId } = req.user;
+    console.log('📝 Processing remove member:', { departmentId: id, userId, organizationId });
 
     // Verify department exists and belongs to org
     const deptCheck = await db.query(

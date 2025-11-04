@@ -5,6 +5,18 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Log all requests to department routes
+router.use((req, res, next) => {
+  console.log('🔥 DEPARTMENT ROUTE HIT:', {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    params: req.params,
+    body: req.body
+  });
+  next();
+});
+
 // All routes require authentication
 router.use(authenticate);
 
@@ -24,10 +36,16 @@ router.put('/:id', updateDepartment);
 router.delete('/:id', deleteDepartment);
 
 // Add member to department
-router.post('/:id/members', addDepartmentMember);
+router.post('/:id/members', (req, res, next) => {
+  console.log('🎯 ADD MEMBER ROUTE MATCHED:', { id: req.params.id, body: req.body });
+  next();
+}, addDepartmentMember);
 
 // Remove member from department
-router.delete('/:id/members/:userId', removeDepartmentMember);
+router.delete('/:id/members/:userId', (req, res, next) => {
+  console.log('🎯 REMOVE MEMBER ROUTE MATCHED:', { id: req.params.id, userId: req.params.userId });
+  next();
+}, removeDepartmentMember);
 
 // Get Business Blueprint for department
 router.get('/:departmentId/business-blueprint', getDepartmentBusinessBlueprint);
