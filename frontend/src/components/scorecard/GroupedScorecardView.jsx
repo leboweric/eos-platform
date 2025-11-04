@@ -673,10 +673,25 @@ const GroupedScorecardView = ({
     return new Date(d.setDate(diff));
   };
 
-  // Format date as "MMM D"
+  // Format date as "MMM D - MMM D" (week range) to match Ninety.io
   const formatWeekLabel = (date) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[date.getMonth()]} ${date.getDate()}`;
+    const weekStart = new Date(date);
+    const weekEnd = new Date(date);
+    weekEnd.setDate(weekEnd.getDate() + 6); // Sunday to Saturday
+    
+    const startMonth = months[weekStart.getMonth()];
+    const startDay = weekStart.getDate();
+    const endMonth = months[weekEnd.getMonth()];
+    const endDay = weekEnd.getDate();
+    
+    // If same month, show "Oct 20 - 26", otherwise "Oct 27 - Nov 2"
+    const formattedLabel = startMonth === endMonth 
+      ? `${startMonth} ${startDay} - ${endDay}`
+      : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+    
+    console.log('📅 GroupedScorecardView week label formatted:', { date, formattedLabel });
+    return formattedLabel;
   };
 
   // Get the start of the current quarter
