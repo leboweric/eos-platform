@@ -223,8 +223,16 @@ const DepartmentsPage = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const data = await response.json();
-      const users = data.users || data;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Users API response:', result);
+      
+      // Backend returns { success: true, data: [...users] }
+      const users = result.data || result.users || result;
       
       // Filter out users already in the department
       const currentMemberIds = new Set(dept.members?.map(m => m.id) || []);
