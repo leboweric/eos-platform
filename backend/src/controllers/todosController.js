@@ -94,10 +94,11 @@ export const getTodos = async (req, res) => {
     if (multiAssigneeTodoIds.length > 0) {
       const multiAssigneesResult = await query(
         `SELECT ta.todo_id, u.id, u.first_name, u.last_name, u.email,
-                ta.completed, ta.completed_at
+                ta.completed, ta.completed_at, ta.archived, ta.archived_at
          FROM todo_assignees ta
          JOIN users u ON ta.user_id = u.id
-         WHERE ta.todo_id = ANY($1)`,
+         WHERE ta.todo_id = ANY($1)
+         AND (ta.archived = false OR ta.archived IS NULL)`,
         [multiAssigneeTodoIds]
       );
       
@@ -112,7 +113,9 @@ export const getTodos = async (req, res) => {
           last_name: row.last_name,
           email: row.email,
           completed: row.completed,
-          completed_at: row.completed_at
+          completed_at: row.completed_at,
+          archived: row.archived,
+          archived_at: row.archived_at
         });
       });
     }
@@ -737,19 +740,39 @@ export const archiveDoneTodos = async (req, res) => {
     const { orgId } = req.params;
     const userId = req.user.id;
 
-    // Archive all completed todos for the organization
-    const result = await query(
+    // Archive completed todos
+    // For single-assignee todos: archive the main todo
+    const singleAssigneeResult = await query(
       `UPDATE todos 
        SET archived = true, updated_at = NOW()
-       WHERE organization_id = $1 AND status = 'complete' AND (archived = false OR archived IS NULL)
+       WHERE organization_id = $1 
+       AND (archived = false OR archived IS NULL)
+       AND is_multi_assignee = false 
+       AND status = 'complete'
        RETURNING id`,
       [orgId]
     );
+    
+    // For multi-assignee todos: archive individual completed copies
+    const multiAssigneeResult = await query(
+      `UPDATE todo_assignees 
+       SET archived = true, archived_at = NOW()
+       WHERE todo_id IN (
+         SELECT id FROM todos WHERE organization_id = $1 AND is_multi_assignee = true
+       )
+       AND completed = true
+       AND (archived = false OR archived IS NULL)
+       RETURNING id`,
+      [orgId]
+    );
+    
+    const totalArchived = singleAssigneeResult.rows.length + multiAssigneeResult.rows.length;
+    console.log(`📦 Archived ${singleAssigneeResult.rows.length} single-assignee todos and ${multiAssigneeResult.rows.length} multi-assignee copies`);
 
     res.json({
       success: true,
       data: {
-        archivedCount: result.rows.length
+        archivedCount: totalArchived
       }
     });
   } catch (error) {
