@@ -31,6 +31,32 @@ const getDepartments = async (req, res) => {
         FROM teams t
         WHERE t.department_id IS NOT NULL
         GROUP BY t.department_id
+      ),
+      department_member_list AS (
+        SELECT 
+          t.department_id,
+          json_agg(jsonb_build_object(
+            'id', u.id,
+            'name', u.first_name || ' ' || u.last_name,
+            'firstName', u.first_name,
+            'lastName', u.last_name,
+            'email', u.email,
+            'avatarUrl', u.avatar_url
+          ) ORDER BY u.first_name, u.last_name) as members
+        FROM (
+          SELECT DISTINCT ON (t.department_id, u.id)
+            t.department_id,
+            u.id,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.avatar_url
+          FROM teams t
+          JOIN team_members tm ON tm.team_id = t.id
+          JOIN users u ON u.id = tm.user_id
+          WHERE t.department_id IS NOT NULL
+        ) AS unique_members
+        GROUP BY department_id
       )
       SELECT 
         d.id,
@@ -43,11 +69,13 @@ const getDepartments = async (req, res) => {
         d.updated_at,
         u.first_name || ' ' || u.last_name as leader_name,
         COALESCE(dm.member_count, 0) as member_count,
-        COALESCE(dt.teams, '[]'::json) as teams
+        COALESCE(dt.teams, '[]'::json) as teams,
+        COALESCE(dml.members, '[]'::json) as members
       FROM departments d
       LEFT JOIN users u ON u.id = d.leader_id
       LEFT JOIN department_members dm ON dm.department_id = d.id
       LEFT JOIN department_teams dt ON dt.department_id = d.id
+      LEFT JOIN department_member_list dml ON dml.department_id = d.id
       WHERE d.organization_id = $1
       ORDER BY d.parent_department_id NULLS FIRST, d.name`;
 
