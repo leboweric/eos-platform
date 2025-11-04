@@ -673,6 +673,14 @@ const GroupedScorecardView = ({
     return new Date(d.setDate(diff));
   };
 
+  // Format date in local timezone (YYYY-MM-DD) without UTC conversion
+  const toLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Format date as "MMM D - MMM D" (week range) to match Ninety.io
   const formatWeekLabel = (date) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -760,7 +768,7 @@ const GroupedScorecardView = ({
       let currentWeek = getWeekStartDate(effectiveStartDate);
       while (currentWeek <= endDate) {
         labels.push(formatWeekLabel(currentWeek));
-        dates.push(currentWeek.toISOString().split('T')[0]);
+        dates.push(toLocalDateString(currentWeek));
         currentWeek = new Date(currentWeek);
         currentWeek.setDate(currentWeek.getDate() + 7);
       }
@@ -788,7 +796,7 @@ const GroupedScorecardView = ({
         const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
         const yearLabel = date.getFullYear().toString().slice(-2);
         labels.push(`${monthLabel} ${yearLabel}`);
-        dates.push(date.toISOString().split('T')[0]);
+        dates.push(toLocalDateString(date));
         currentMonth.setMonth(currentMonth.getMonth() + 1);
       }
       
