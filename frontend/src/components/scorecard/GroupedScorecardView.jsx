@@ -738,7 +738,13 @@ const GroupedScorecardView = ({
       // For weekly - get current quarter dates or use actual data dates
       const quarterStart = getQuarterStart(today);
       const quarterEnd = getQuarterEnd(today);
-      const endDate = today < quarterEnd ? today : quarterEnd;
+      
+      // Exclude current incomplete week - only show completed weeks
+      const currentWeekStart = getWeekStartDate(today);
+      const lastCompletedWeekEnd = new Date(currentWeekStart);
+      lastCompletedWeekEnd.setDate(lastCompletedWeekEnd.getDate() - 1); // Day before current week starts
+      
+      const endDate = lastCompletedWeekEnd < quarterEnd ? lastCompletedWeekEnd : quarterEnd;
       
       let effectiveStartDate = quarterStart;
       if (sortedDates.length > 0) {
