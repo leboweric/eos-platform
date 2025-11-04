@@ -775,14 +775,15 @@ const GroupedScorecardView = ({
       console.log(`🔧 GroupedView: Using ${dates.length} weeks from ${dates[0]} to ${dates[dates.length-1]}`);
       return { labels, dates };
     } else {
-      // For monthly - get current quarter months
-      const quarterStart = getQuarterStart(today);
-      const quarterEnd = getQuarterEnd(today);
-      
+      // For monthly - show last 4 completed months
       const labels = [];
       const dates = [];
-      let currentMonth = new Date(quarterStart);
-      while (currentMonth <= today && currentMonth <= quarterEnd) {
+      
+      // Start from 4 months ago
+      let currentMonth = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      
+      // Generate 4 months
+      for (let i = 0; i < 4; i++) {
         const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
         const yearLabel = date.getFullYear().toString().slice(-2);
@@ -791,7 +792,7 @@ const GroupedScorecardView = ({
         currentMonth.setMonth(currentMonth.getMonth() + 1);
       }
       
-      console.log(`🔧 GroupedView: Using Q${Math.floor(today.getMonth() / 3) + 1} months:`, dates);
+      console.log(`🔧 GroupedView: Using last 4 months:`, dates);
       return { labels, dates };
     }
   };
@@ -826,7 +827,7 @@ const GroupedScorecardView = ({
               }`}>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-normal text-gray-500 mb-1">
-                    {isCurrentPeriod ? 'Last Week' : ''}
+                    {isCurrentPeriod && viewMode === 'weekly' ? 'Last Week' : ''}
                   </span>
                   <span>{label}</span>
                 </div>
