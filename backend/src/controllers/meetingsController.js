@@ -361,6 +361,15 @@ export const concludeMeeting = async (req, res) => {
       logger.debug('No active or recent recording found');
     }
     
+    // Get user details BEFORE fallback summary (needed for userName)
+    const userResult = await db.query(
+      'SELECT email, first_name, last_name FROM users WHERE id = $1',
+      [userId]
+    );
+    const user = userResult.rows[0];
+    const userEmail = user?.email;
+    const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+    
     // RESILIENCE: If AI summary failed or is not available, generate fallback summary
     if (!aiSummary) {
       logger.info('📝 Generating fallback summary (AI summary not available)');
@@ -393,14 +402,7 @@ export const concludeMeeting = async (req, res) => {
     );
     const teamName = teamResult.rows[0]?.name || 'Team';
 
-    // Get user details
-    const userResult = await db.query(
-      'SELECT email, first_name, last_name FROM users WHERE id = $1',
-      [userId]
-    );
-    const user = userResult.rows[0];
-    const userEmail = user?.email;
-    const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+    // User details already fetched earlier (before fallback summary generation)
 
     // Get team members' emails
     logger.debug('Getting team members for teamId:', teamId);
