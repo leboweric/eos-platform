@@ -260,7 +260,7 @@ export const createTodo = async (req, res) => {
 export const updateTodo = async (req, res) => {
   try {
     const { orgId, todoId } = req.params;
-    const { title, description, assignedToId, assignedToIds, dueDate, status } = req.body;
+    const { title, description, assignedToId, assignedToIds, dueDate, status, assigneeId } = req.body;
     const userId = req.user.id;
 
     // Check if todo exists and belongs to the organization
@@ -325,30 +325,35 @@ export const updateTodo = async (req, res) => {
       // Don't update the main todo status here - it will be calculated after
       console.log(`Multi-assignee todo ${todoId}: User ${userId} marking as ${status}`);
       
+      // For multi-assignee todos, use the assigneeId from the request (which assignee's copy to mark)
+      // This allows facilitators to mark specific assignees' copies as complete
+      const targetUserId = assigneeId || userId; // Use assigneeId if provided, otherwise current user
+      
+      console.log(`🔍 Target assignee ID: ${targetUserId} (provided: ${assigneeId}, current user: ${userId})`);
+      
       // Debug: Check what assignees exist for this todo
       const existingAssignees = await query(
         `SELECT user_id, completed FROM todo_assignees WHERE todo_id = $1`,
         [todoId]
       );
       console.log(`🔍 Existing assignees for todo:`, existingAssignees.rows);
-      console.log(`🔍 Current user ID: ${userId}`);
       
       if (status === 'complete') {
-        // Mark this user's assignment as complete
+        // Mark the target assignee's copy as complete
         const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = TRUE, completed_at = NOW() 
            WHERE todo_id = $1 AND user_id = $2`,
-          [todoId, userId]
+          [todoId, targetUserId]
         );
         console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
       } else if (status === 'incomplete') {
-        // Unmark this user's assignment
+        // Unmark the target assignee's copy
         const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = FALSE, completed_at = NULL 
            WHERE todo_id = $1 AND user_id = $2`,
-          [todoId, userId]
+          [todoId, targetUserId]
         );
         console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
       }

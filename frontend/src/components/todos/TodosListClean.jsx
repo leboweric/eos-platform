@@ -409,9 +409,17 @@ const TodosListClean = ({
                                   if (onStatusChange) {
                                     onStatusChange(todo.id, !isComplete);
                                   } else if (onUpdate) {
-                                    await todosService.updateTodo(todo.id, { 
-                                      status: isComplete ? 'incomplete' : 'complete' 
-                                    });
+                                    // For multi-assignee todos, pass the specific assignee ID
+                                    const updateData = { 
+                                      status: isComplete ? 'incomplete' : 'complete'
+                                    };
+                                    
+                                    // If this is a multi-assignee todo, include which assignee's copy to mark
+                                    if (todo._currentAssignee) {
+                                      updateData.assigneeId = todo._currentAssignee.id;
+                                    }
+                                    
+                                    await todosService.updateTodo(todo.id, updateData);
                                     onUpdate();
                                   }
                                 }}
