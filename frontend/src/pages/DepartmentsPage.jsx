@@ -218,7 +218,7 @@ const DepartmentsPage = () => {
     
     // Fetch all users in the organization
     try {
-      const response = await fetch(`/api/v1/organizations/${user.organizationId}/users/organization`, {
+      const response = await fetch(`/api/v1/users/organization`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
