@@ -90,7 +90,7 @@ class NinetyImportService {
         if (dateStr && value !== '' && value !== undefined && value !== null) {
           // CHOOSE PARSER BASED ON CADENCE
           const dateRange = cadence === "monthly" 
-            ? this.parseMonthColumn(dateStr)
+            ? this.parseMonthColumn(dateStr, j, dateColumns)
             : this.parseDateRange(dateStr);
           
           const parsedValue = this.parseNumericValue(value);
@@ -245,8 +245,11 @@ class NinetyImportService {
 
   /**
    * Parse month-only column headers like "November" to ISO dates
+   * @param {string} monthStr - Month name (e.g., "November")
+   * @param {number} columnIndex - Index of this column in the date columns array
+   * @param {Array} allDateColumns - All date column headers to detect duplicates
    */
-  static parseMonthColumn(monthStr) {
+  static parseMonthColumn(monthStr, columnIndex = 0, allDateColumns = []) {
     if (!monthStr) return { startDate: null, endDate: null };
     
     const monthNames = ["January", "February", "March", "April", "May", "June", 
@@ -259,9 +262,19 @@ class NinetyImportService {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth();
     
-    // If the month is in the future, assume it's from last year
+    // Check if this month appears earlier in the columns (duplicate)
+    const isDuplicate = allDateColumns.slice(0, columnIndex).some(col => 
+      col && col.trim() === monthStr.trim()
+    );
+    
+    // Determine year:
+    // 1. If duplicate month name, it's from last year (e.g., second "November" is Nov 2024)
+    // 2. If month is in the future, it's from last year
     let year = currentYear;
-    if (monthIndex > currentMonth) {
+    if (isDuplicate) {
+      year = currentYear - 1;
+      console.log(`  Duplicate month "${monthStr}" at index ${columnIndex} - assigning to ${year}`);
+    } else if (monthIndex > currentMonth) {
       year = currentYear - 1;
     }
     
