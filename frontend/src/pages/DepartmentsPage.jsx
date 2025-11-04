@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { departmentService } from '../services/departmentService';
 import { useAuthStore } from '../stores/authStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import axios from '../services/axiosConfig';
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState([]);
@@ -218,21 +219,11 @@ const DepartmentsPage = () => {
     
     // Fetch all users in the organization
     try {
-      const response = await fetch(`/api/v1/users/organization`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      console.log('Users API response:', result);
+      const response = await axios.get('/users/organization');
+      console.log('Users API response:', response.data);
       
       // Backend returns { success: true, data: [...users] }
-      const users = result.data || result.users || result;
+      const users = response.data.data || response.data.users || response.data;
       
       // Filter out users already in the department
       const currentMemberIds = new Set(dept.members?.map(m => m.id) || []);
