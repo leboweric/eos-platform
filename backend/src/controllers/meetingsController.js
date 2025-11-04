@@ -317,12 +317,12 @@ export const concludeMeeting = async (req, res) => {
       
       if (transcript.status === 'completed') {
         logger.info('Recording already completed, checking for AI summary...');
-        // Skip stopping, go straight to waiting for AI summary with timeout
+        // Skip stopping, go straight to waiting for AI summary with SHORT timeout
         try {
           aiSummary = await Promise.race([
-            waitForAISummary(transcript.id, 2), // Shorter wait for completed recordings
+            waitForAISummary(transcript.id, 0.17), // 10 seconds for better UX
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('AI summary timeout')), 30000) // 30 second timeout
+              setTimeout(() => reject(new Error('AI summary timeout')), 10000) // 10 second timeout
             )
           ]);
         } catch (error) {
@@ -337,14 +337,15 @@ export const concludeMeeting = async (req, res) => {
           await transcriptionService.stopRealtimeTranscription(transcript.id);
           logger.info('✅ Recording stopped successfully');
           
-          logger.info('⏳ Waiting up to 3 minutes for AI summary...');
+          logger.info('⏳ Waiting up to 10 seconds for AI summary...');
           
-          // Wait for AI summary with shorter timeout and fallback
+          // Wait for AI summary with SHORT timeout for better UX
+          // If AI isn't ready in 10 seconds, use fallback summary instead of making user wait
           try {
             aiSummary = await Promise.race([
-              waitForAISummary(transcript.id, 3), // Reduced from 10 to 3 minutes
+              waitForAISummary(transcript.id, 0.17), // 10 seconds (0.17 minutes)
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('AI summary timeout')), 180000) // 3 minute timeout
+                setTimeout(() => reject(new Error('AI summary timeout')), 10000) // 10 second timeout
               )
             ]);
           } catch (aiError) {
