@@ -327,20 +327,22 @@ export const updateTodo = async (req, res) => {
       
       if (status === 'complete') {
         // Mark this user's assignment as complete
-        await query(
+        const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = TRUE, completed_at = NOW() 
            WHERE todo_id = $1 AND user_id = $2`,
           [todoId, userId]
         );
+        console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
       } else if (status === 'incomplete') {
         // Unmark this user's assignment
-        await query(
+        const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = FALSE, completed_at = NULL 
            WHERE todo_id = $1 AND user_id = $2`,
           [todoId, userId]
         );
+        console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
       }
       
       // Check if ALL assignees have completed
@@ -352,14 +354,18 @@ export const updateTodo = async (req, res) => {
         [todoId]
       );
       
+      console.log(`📊 Assignee status: ${assigneeStatus.rows[0].completed_count}/${assigneeStatus.rows[0].total} completed`);
+      
       const allCompleted = assigneeStatus.rows[0].total > 0 && 
                           assigneeStatus.rows[0].total === assigneeStatus.rows[0].completed_count;
       
       // Update main todo status based on all assignees
       if (allCompleted) {
+        console.log(`✅ All assignees completed - marking todo as complete`);
         updates.push(`status = 'complete'`);
         updates.push(`completed_at = NOW()`);
       } else {
+        console.log(`⏳ Not all assignees completed - keeping todo as incomplete`);
         updates.push(`status = 'incomplete'`);
         updates.push(`completed_at = NULL`);
       }
