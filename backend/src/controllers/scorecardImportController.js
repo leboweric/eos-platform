@@ -664,7 +664,7 @@ export const importMonthlyScorecard = async (req, res) => {
           if (scoreValue === null) continue;
 
           // Use current year for the month date
-          const monthDate = parseMonthDate(monthName, 2024);
+          const monthDate = parseMonthDate(monthName);
           if (!monthDate) continue;
 
           console.log(`  Importing ${monthName}: ${scoreValue}`);
