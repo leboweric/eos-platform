@@ -4234,7 +4234,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
                         <BarChart className="h-5 w-5" style={{ color: themeColors.primary }} />
                       </div>
-                      🚨🚨🚨 SCORECARD REVIEW - TESTING 🚨🚨🚨
+                      Scorecard Review
                     </CardTitle>
                     <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
                   </div>
