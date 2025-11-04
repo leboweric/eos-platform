@@ -405,13 +405,13 @@ const addDepartmentMember = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Add member (ON CONFLICT DO NOTHING to avoid duplicates)
+    // Add member to team_members table (ON CONFLICT DO NOTHING to avoid duplicates)
     // Note: role defaults to 'member' if not specified
     await db.query(
-      'INSERT INTO department_members (department_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT (department_id, user_id) DO NOTHING',
+      'INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT (team_id, user_id) DO NOTHING',
       [id, userId, 'member']
     );
-    console.log('✅ Member added to department_members table');
+    console.log('✅ Member added to team_members table');
 
     // Return updated department
     const department = await getDepartmentWithDetails(id, organizationId);
@@ -441,19 +441,19 @@ const removeDepartmentMember = async (req, res) => {
     }
     console.log('✅ Department/team found:', deptCheck.rows[0]);
 
-    // Remove member
-    console.log('🗑️ Attempting to delete from department_members:', { department_id: id, user_id: userId });
+    // Remove member from team_members table
+    console.log('🗑️ Attempting to delete from team_members:', { team_id: id, user_id: userId });
     const result = await db.query(
-      'DELETE FROM department_members WHERE department_id = $1 AND user_id = $2 RETURNING *',
+      'DELETE FROM team_members WHERE team_id = $1 AND user_id = $2 RETURNING *',
       [id, userId]
     );
     console.log('🗑️ Delete result:', { rowCount: result.rowCount, deleted: result.rows });
 
     if (result.rowCount === 0) {
-      console.log('❌ No rows deleted - member not found in department_members table');
+      console.log('❌ No rows deleted - member not found in team_members table');
       return res.status(404).json({ error: 'Member not found in department' });
     }
-    console.log('✅ Member removed from department_members table');
+    console.log('✅ Member removed from team_members table');
 
     // Return updated department
     const department = await getDepartmentWithDetails(id, organizationId);
