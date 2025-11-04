@@ -289,6 +289,21 @@ export const concludeMeeting = async (req, res) => {
     const updatedMeetingId = meetingUpdateResult.rows[0].id;
     logger.info('✅ Meeting marked as completed:', updatedMeetingId);
 
+    // IMMEDIATE RESPONSE: Send success to user right away
+    // Don't make them wait for AI processing or email sending
+    res.json({
+      success: true,
+      message: 'Meeting concluded successfully',
+      meetingId: updatedMeetingId,
+      note: 'Summary email will be sent shortly'
+    });
+    
+    // ASYNC BACKGROUND PROCESSING: Handle AI summary and email without blocking user
+    // Wrap in setImmediate to ensure response is sent first
+    setImmediate(async () => {
+      try {
+        logger.info('🔄 Starting background processing for meeting:', updatedMeetingId);
+        
     // 2. Check if AI recording is active or recently completed
     logger.debug('Checking for active or recent AI recordings...');
     const transcriptCheck = await db.query(
@@ -852,13 +867,16 @@ export const concludeMeeting = async (req, res) => {
       // Don't fail the entire conclusion if snapshot creation fails
     }
 
-    res.json({
-      success: true,
-      message: 'Meeting concluded successfully',
-      emailsSent: emailsSent,
-      usedFallbackSummary: usedFallbackSummary,
-      warning: usedFallbackSummary ? 'AI summary was not available. A basic summary was generated instead.' : null
-    });
+    // Response already sent immediately after marking meeting complete
+    // This background processing completes asynchronously
+    logger.info('✅ Background processing complete for meeting:', updatedMeetingId);
+    logger.info('📧 Emails sent:', emailsSent, '| Used fallback summary:', usedFallbackSummary);
+      
+      } catch (bgError) {
+        logger.error('❌ Error in background processing:', bgError);
+        // Don't crash - user already got success response
+      }
+    }); // End of setImmediate
 
   } catch (error) {
     console.error('Error concluding meeting:', error);
