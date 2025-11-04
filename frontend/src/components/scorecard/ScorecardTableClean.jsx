@@ -242,87 +242,31 @@ const ScorecardTableClean = ({
       
       console.log(`📊 SCORECARD: Showing ${weekDates.length} weeks from ${weekDates[0]} to ${weekDates[weekDates.length-1]}`);
     } else {
-      // Meeting mode - Use actual dates from the data instead of generating them
+      // Meeting mode - Generate weeks from current date (same as main scorecard)
+      // This ensures meeting scorecard always shows the same weeks as main scorecard
       const weeksToShow = Math.min(maxPeriods, 10);
       
-      // Get dates from the first metric that has data
-      const firstMetricWithData = metrics?.find(m => weeklyScores?.[m.id] && Object.keys(weeklyScores[m.id]).length > 0);
-      
-      if (firstMetricWithData && weeklyScores[firstMetricWithData.id]) {
-        // ✅ FIX: Group actual dates by week start, don't use individual dates
-        // Business Rule: Weeks run Monday-Sunday, so Oct 20 (Sun) and Oct 21 (Mon) 
-        // should be grouped into the same week column for proper display
-        const allDates = Object.keys(weeklyScores[firstMetricWithData.id]).sort();
+      // ✅ FIX: Generate weeks from current date instead of from data
+      // This matches ScorecardTable.jsx logic (lines 121-139)
+      // Start from last week (not current week) to match Ninety.io
+      for (let i = weeksToShow; i >= 1; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - (i * 7));
+        const mondayOfWeek = getWeekStartDate(weekStart);
+        const weekStartStr = mondayOfWeek.toISOString().split('T')[0];
         
-        // Group dates by their week start (Monday)
-        const weekGroups = new Map();
-        allDates.forEach(dateStr => {
-          const date = new Date(dateStr + 'T12:00:00');
-          const weekStart = getWeekStartDate(date);
-          const weekStartStr = weekStart.toISOString().split('T')[0];
-          
-          if (!weekGroups.has(weekStartStr)) {
-            weekGroups.set(weekStartStr, []);
-          }
-          weekGroups.get(weekStartStr).push(dateStr);
-        });
-        
-        // Get the most recent weeks (by week start date)
-        const uniqueWeekStarts = Array.from(weekGroups.keys()).sort();
-        
-        // ✅ FIX: Exclude current week (incomplete) to match Ninety.io behavior
-        // Only show completed weeks - shift back by 1 week
-        // 🐛 TIMEZONE FIX: Use local date string, NOT UTC
-        const currentWeekStart = toLocalDateString(getWeekStartDate(today));
-        const completedWeeks = uniqueWeekStarts.filter(weekStart => weekStart < currentWeekStart);
-        
-        // Take the most recent N completed weeks
-        const weeksToDisplay = completedWeeks.slice(-weeksToShow);
-        
-        console.log('🚨🚨🚨 LEVEL 10 MEETING - Week display logic:', {
-          TODAY: toLocalDateString(today),
-          currentWeekStart,
-          uniqueWeekStarts,
-          totalWeeksInData: uniqueWeekStarts.length,
-          completedWeeks,
-          completedWeeksCount: completedWeeks.length,
-          weeksToShow,
-          weeksToDisplay,
-          weeksDisplayed: weeksToDisplay.length,
-          behavior: 'Excluding current incomplete week to match Ninety.io',
-          FILE: 'ScorecardTableClean.jsx LINE 272'
-        });
-        
-        console.log('🚨 CURRENT WEEK START:', currentWeekStart);
-        console.log('🚨 UNIQUE WEEK STARTS:', uniqueWeekStarts);
-        console.log('🚨 COMPLETED WEEKS (FILTERED):', completedWeeks);
-        console.log('🚨 WEEKS TO DISPLAY (FINAL):', weeksToDisplay);
-        
-        weeksToDisplay.forEach(weekStartStr => {
-          const weekStartDate = new Date(weekStartStr + 'T12:00:00');
-          labels.push(formatWeekLabel(weekStartDate));
-          weekDates.push(weekStartStr);
-        });
-        
-        console.log('✅ Meeting mode - Week grouping fix applied:', {
-          originalDates: allDates,
-          weekGroups: Array.from(weekGroups.entries()),
-          finalWeekStarts: weekDates,
-          issueFixed: 'Oct 20 and Oct 21 should now be grouped into same week'
-        });
-      } else {
-        // Fallback to generated dates if no data
-        // ✅ FIX: Start from last week (not current week) to match Ninety.io
-        for (let i = weeksToShow; i >= 1; i--) {
-          const weekStart = new Date(today);
-          weekStart.setDate(today.getDate() - (i * 7));
-          const mondayOfWeek = getWeekStartDate(weekStart);
-          
-          labels.push(formatWeekLabel(mondayOfWeek));
-          weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
-        }
-        console.log('Meeting mode - No data found, using generated dates (excluding current week):', weekDates);
+        labels.push(formatWeekLabel(mondayOfWeek));
+        weekDates.push(weekStartStr);
       }
+      
+      console.log('🚨🚨🚨 LEVEL 10 MEETING - Week display logic (FIXED):', {
+        TODAY: toLocalDateString(today),
+        weeksToShow,
+        generatedWeeks: weekDates,
+        weeksDisplayed: weekDates.length,
+        behavior: 'Generating weeks from current date to match main scorecard',
+        FILE: 'ScorecardTableClean.jsx'
+      });
     }
     
     // Final debug output
