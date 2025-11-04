@@ -826,7 +826,7 @@ const GroupedScorecardView = ({
               }`}>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-normal text-gray-500 mb-1">
-                    {isCurrentPeriod ? 'Current' : ''}
+                    {isCurrentPeriod ? 'Last Week' : ''}
                   </span>
                   <span>{label}</span>
                 </div>
