@@ -445,24 +445,33 @@ export const updateTodo = async (req, res) => {
     
     // Handle multi-assignee updates
     if (isMultiAssignee) {
+      console.log('🔄 Handling multi-assignee update');
+      console.log('   assignedToIds:', assignedToIds);
+      
       // Clear existing assignees
-      await query('DELETE FROM todo_assignees WHERE todo_id = $1', [todoId]);
+      const deleteResult = await query('DELETE FROM todo_assignees WHERE todo_id = $1', [todoId]);
+      console.log(`🗑️ Deleted ${deleteResult.rowCount} existing assignees`);
       
       // Add new assignees
       if (assignedToIds && assignedToIds.length > 0) {
         const assigneeValues = assignedToIds.map((assigneeId, index) => 
-          `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+          `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, $${index * 5 + 4}, $${index * 5 + 5})`
         ).join(', ');
         
         const assigneeParams = assignedToIds.flatMap(assigneeId => 
-          [todoId, assigneeId, userId]
+          [todoId, assigneeId, userId, false, null]  // Explicitly set completed=false, completed_at=null
         );
         
-        await query(
-          `INSERT INTO todo_assignees (todo_id, user_id, assigned_by) 
+        console.log('📝 Inserting assignees:');
+        console.log('   SQL: INSERT INTO todo_assignees (todo_id, user_id, assigned_by, completed, completed_at) VALUES ...');
+        console.log('   Assignee IDs:', assignedToIds);
+        
+        const insertResult = await query(
+          `INSERT INTO todo_assignees (todo_id, user_id, assigned_by, completed, completed_at) 
            VALUES ${assigneeValues}`,
           assigneeParams
         );
+        console.log(`✅ Inserted ${insertResult.rowCount} assignees`);
       }
     }
 
