@@ -703,7 +703,7 @@ export const concludeMeeting = async (req, res) => {
       duration: duration || 60,
       rating: typeof rating === 'number' ? rating : null,
       facilitatorName: userName,
-      organizationName,
+      organizationName: orgName,
       themeColor: themeColor,
       
       // AI Summary
