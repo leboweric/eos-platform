@@ -214,11 +214,25 @@ const TodosPage = () => {
     }
   };
 
-  const handleStatusChange = async (todoId, completed) => {
+  const handleStatusChange = async (todoId, completed, assigneeId = null) => {
     try {
-      await todosService.updateTodo(todoId, { 
+      console.log('📦 TodosPage handleStatusChange called');
+      console.log('   todoId:', todoId);
+      console.log('   completed:', completed);
+      console.log('   assigneeId:', assigneeId);
+      
+      const updateData = { 
         status: completed ? 'complete' : 'incomplete' 
-      });
+      };
+      
+      // For multi-assignee todos, include the assigneeId
+      if (assigneeId) {
+        updateData.assigneeId = assigneeId;
+        console.log('✅ Adding assigneeId to update:', assigneeId);
+      }
+      
+      console.log('📤 Sending update with data:', updateData);
+      await todosService.updateTodo(todoId, updateData);
       // Update local state instead of refetching to avoid flashing
       setTodos(prevTodos => 
         prevTodos.map(todo => 

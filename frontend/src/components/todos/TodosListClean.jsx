@@ -406,8 +406,19 @@ const TodosListClean = ({
                                 }}
                                 onClick={async (e) => {
                                   e.stopPropagation();
+                                  
+                                  console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
+                                  console.log('📋 Todo ID:', todo.id);
+                                  console.log('📊 Current status:', todo.status);
+                                  console.log('🎯 Is multi-assignee?', !!todo._currentAssignee);
+                                  console.log('👤 Current assignee object:', todo._currentAssignee);
+                                  console.log('🔢 Assignees array:', todo.assignees);
+                                  
                                   if (onStatusChange) {
-                                    onStatusChange(todo.id, !isComplete);
+                                    // For multi-assignee todos, pass the assigneeId as a third parameter
+                                    const assigneeId = todo._currentAssignee ? todo._currentAssignee.id : null;
+                                    console.log('🎯 Calling onStatusChange with assigneeId:', assigneeId);
+                                    onStatusChange(todo.id, !isComplete, assigneeId);
                                   } else if (onUpdate) {
                                     console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
                                     console.log('📋 Todo ID:', todo.id);
