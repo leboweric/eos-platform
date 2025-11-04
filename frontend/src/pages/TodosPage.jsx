@@ -233,13 +233,34 @@ const TodosPage = () => {
       
       console.log('📤 Sending update with data:', updateData);
       await todosService.updateTodo(todoId, updateData);
+      
       // Update local state instead of refetching to avoid flashing
       setTodos(prevTodos => 
-        prevTodos.map(todo => 
-          todo.id === todoId 
-            ? { ...todo, status: completed ? 'complete' : 'incomplete' }
-            : todo
-        )
+        prevTodos.map(todo => {
+          if (todo.id !== todoId) return todo;
+          
+          // For multi-assignee todos, update the specific assignee's completion status
+          if (assigneeId && todo.assignees) {
+            const updatedAssignees = todo.assignees.map(assignee => 
+              assignee.id === assigneeId
+                ? { ...assignee, completed: completed, completed_at: completed ? new Date().toISOString() : null }
+                : assignee
+            );
+            
+            // Check if all assignees are complete
+            const allComplete = updatedAssignees.every(a => a.completed);
+            
+            return {
+              ...todo,
+              assignees: updatedAssignees,
+              status: allComplete ? 'complete' : 'incomplete',
+              completed_at: allComplete ? new Date().toISOString() : null
+            };
+          }
+          
+          // For single-assignee todos, update the main status
+          return { ...todo, status: completed ? 'complete' : 'incomplete' };
+        })
       );
     } catch (error) {
       console.error('Failed to update todo status:', error);
