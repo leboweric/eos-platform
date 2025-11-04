@@ -409,6 +409,13 @@ const TodosListClean = ({
                                   if (onStatusChange) {
                                     onStatusChange(todo.id, !isComplete);
                                   } else if (onUpdate) {
+                                    console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
+                                    console.log('📋 Todo ID:', todo.id);
+                                    console.log('📊 Current status:', todo.status);
+                                    console.log('🎯 Is multi-assignee?', !!todo._currentAssignee);
+                                    console.log('👤 Current assignee object:', todo._currentAssignee);
+                                    console.log('🔢 Assignees array:', todo.assignees);
+                                    
                                     // For multi-assignee todos, pass the specific assignee ID
                                     const updateData = { 
                                       status: isComplete ? 'incomplete' : 'complete'
@@ -417,9 +424,14 @@ const TodosListClean = ({
                                     // If this is a multi-assignee todo, include which assignee's copy to mark
                                     if (todo._currentAssignee) {
                                       updateData.assigneeId = todo._currentAssignee.id;
+                                      console.log('✅ Adding assigneeId to request:', updateData.assigneeId);
+                                    } else {
+                                      console.log('⚠️ No _currentAssignee found, not adding assigneeId');
                                     }
                                     
+                                    console.log('📤 Sending update request with data:', updateData);
                                     await todosService.updateTodo(todo.id, updateData);
+                                    console.log('✅ Update request completed');
                                     onUpdate();
                                   }
                                 }}

@@ -262,6 +262,13 @@ export const updateTodo = async (req, res) => {
     const { orgId, todoId } = req.params;
     const { title, description, assignedToId, assignedToIds, dueDate, status, assigneeId } = req.body;
     const userId = req.user.id;
+    
+    console.log('🔥🔥🔥 UPDATE TODO REQUEST 🔥🔥🔥');
+    console.log('📦 Full request body:', JSON.stringify(req.body, null, 2));
+    console.log('🆔 Todo ID:', todoId);
+    console.log('👤 Current user ID:', userId);
+    console.log('🎯 Assignee ID from request:', assigneeId);
+    console.log('📊 Status from request:', status);
 
     // Check if todo exists and belongs to the organization
     const existingTodo = await query(
@@ -340,6 +347,10 @@ export const updateTodo = async (req, res) => {
       
       if (status === 'complete') {
         // Mark the target assignee's copy as complete
+        console.log('🛠️ EXECUTING UPDATE QUERY:');
+        console.log('   SQL: UPDATE todo_assignees SET completed = TRUE, completed_at = NOW() WHERE todo_id = $1 AND user_id = $2');
+        console.log('   Params: [', todoId, ',', targetUserId, ']');
+        
         const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = TRUE, completed_at = NOW() 
@@ -347,8 +358,18 @@ export const updateTodo = async (req, res) => {
           [todoId, targetUserId]
         );
         console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
+        
+        if (updateResult.rowCount === 0) {
+          console.log('❌❌❌ UPDATE FAILED - NO ROWS AFFECTED ❌❌❌');
+          console.log('   This means the WHERE clause did not match any rows');
+          console.log('   Either todo_id or user_id does not exist in todo_assignees table');
+        }
       } else if (status === 'incomplete') {
         // Unmark the target assignee's copy
+        console.log('🛠️ EXECUTING UPDATE QUERY:');
+        console.log('   SQL: UPDATE todo_assignees SET completed = FALSE, completed_at = NULL WHERE todo_id = $1 AND user_id = $2');
+        console.log('   Params: [', todoId, ',', targetUserId, ']');
+        
         const updateResult = await query(
           `UPDATE todo_assignees 
            SET completed = FALSE, completed_at = NULL 
@@ -356,6 +377,12 @@ export const updateTodo = async (req, res) => {
           [todoId, targetUserId]
         );
         console.log(`✅ Updated assignee completion: ${updateResult.rowCount} rows affected`);
+        
+        if (updateResult.rowCount === 0) {
+          console.log('❌❌❌ UPDATE FAILED - NO ROWS AFFECTED ❌❌❌');
+          console.log('   This means the WHERE clause did not match any rows');
+          console.log('   Either todo_id or user_id does not exist in todo_assignees table');
+        }
       }
       
       // Check if ALL assignees have completed
