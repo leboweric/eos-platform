@@ -110,7 +110,8 @@ const ScorecardTable = ({
     const today = new Date();
     const weeksToShow = Math.min(maxPeriods, 10); // Cap at 10 weeks max
     
-    for (let i = weeksToShow - 1; i >= 0; i--) {
+    // ✅ FIX: Start from last week (not current week) to match Ninety.io
+    for (let i = weeksToShow; i >= 1; i--) {
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
@@ -119,6 +120,7 @@ const ScorecardTable = ({
       weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
     }
     
+    console.log('Main Scorecard - Week labels (excluding current week):', weekDates);
     return { labels, weekDates };
   };
 
@@ -262,7 +264,8 @@ const ScorecardTable = ({
                   const today = new Date();
                   
                   // Generate dates for the last 13 weeks
-                  for (let i = 12; i >= 0; i--) {
+                  // ✅ FIX: Start from last week (not current week) to match Ninety.io
+                  for (let i = 13; i >= 1; i--) {
                     const weekStart = new Date(today);
                     weekStart.setDate(today.getDate() - (i * 7));
                     const mondayOfWeek = getWeekStartDate(weekStart);
