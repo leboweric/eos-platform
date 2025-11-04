@@ -41,6 +41,7 @@ const DepartmentsPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [userSearchTerm, setUserSearchTerm] = useState('');
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
@@ -259,6 +260,7 @@ const DepartmentsPage = () => {
       setSelectedDepartment(null);
       setSelectedUserId('');
       setAvailableUsers([]);
+      setUserSearchTerm('');
     } catch (error) {
       console.error('Error adding member:', error);
       setError(error.response?.data?.error || 'Failed to add member');
@@ -752,7 +754,7 @@ const DepartmentsPage = () => {
 
         {/* Add Member Dialog */}
         <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-md">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add Member to {selectedDepartment?.name}</DialogTitle>
               <DialogDescription>
@@ -760,26 +762,91 @@ const DepartmentsPage = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="user-select">Select User</Label>
-                <select
-                  id="user-select"
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Select a user --</option>
-                  {availableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.first_name} {user.last_name} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {availableUsers.length === 0 && (
-                <p className="text-sm text-gray-500 italic">
-                  All users are already members of this department.
-                </p>
+              {/* Search Input */}
+              {availableUsers.length > 0 && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              )}
+
+              {/* User List */}
+              {availableUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 italic">
+                    All users are already members of this department.
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+                  {availableUsers
+                    .filter(user => {
+                      if (!userSearchTerm) return true;
+                      const searchLower = userSearchTerm.toLowerCase();
+                      const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+                      const email = (user.email || '').toLowerCase();
+                      return fullName.includes(searchLower) || email.includes(searchLower);
+                    })
+                    .map((user) => {
+                      const isSelected = selectedUserId === user.id;
+                      return (
+                        <div
+                          key={user.id}
+                          onClick={() => setSelectedUserId(user.id)}
+                          className={`
+                            flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
+                            ${isSelected 
+                              ? 'border-blue-500 bg-blue-50 shadow-sm' 
+                              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            {user.avatarUrl ? (
+                              <img
+                                src={user.avatarUrl}
+                                alt={`${user.first_name} ${user.last_name}`}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                                {user.first_name?.[0]}{user.last_name?.[0]}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* User Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {user.first_name} {user.last_name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {user.email}
+                            </p>
+                          </div>
+                          
+                          {/* Selection Indicator */}
+                          {isSelected && (
+                            <div className="flex-shrink-0">
+                              <div className="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center">
+                                <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 12 12">
+                                  <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
               )}
             </div>
             <DialogFooter>
@@ -790,6 +857,7 @@ const DepartmentsPage = () => {
                   setSelectedDepartment(null);
                   setSelectedUserId('');
                   setAvailableUsers([]);
+                  setUserSearchTerm('');
                 }}
               >
                 Cancel
