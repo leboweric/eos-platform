@@ -7025,8 +7025,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                           console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
                         } catch (emailError) {
                           console.error('❌ [Frontend] Failed to conclude meeting:', emailError);
-                          // Re-throw to handle in outer catch
-                          throw emailError;
+                          
+                          // Check if error is "already concluded" - this is actually SUCCESS
+                          const errorMessage = emailError?.message || emailError?.toString() || '';
+                          const isAlreadyConcluded = errorMessage.includes('No active meeting found') || 
+                                                     errorMessage.includes('already concluded') ||
+                                                     errorMessage.includes('404');
+                          
+                          if (isAlreadyConcluded) {
+                            console.log('✅ Meeting was already concluded - treating as success');
+                            // Don't throw - let the success flow continue
+                            emailResult = { success: true, alreadyConcluded: true };
+                          } else {
+                            // Re-throw for real errors
+                            throw emailError;
+                          }
                         }
                         
                         // Build success message based on what actually happened
