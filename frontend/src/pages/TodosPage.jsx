@@ -365,7 +365,20 @@ const TodosPage = () => {
   const filteredTodos = getFilteredTodos();
   const notDoneTodosCount = todos.filter(t => t.archived !== true).length;
   const doneTodosCount = todos.filter(t => t.archived === true).length;
-  const doneNotArchivedCount = todos.filter(t => t.status === 'complete' && t.archived !== true).length;
+  
+  // Count todos that are complete OR where current user's copy is complete (for multi-assignee)
+  const doneNotArchivedCount = todos.filter(t => {
+    if (t.archived === true) return false;
+    
+    // For single-assignee todos, check main status
+    if (!t.is_multi_assignee || !t.assignees) {
+      return t.status === 'complete';
+    }
+    
+    // For multi-assignee todos, check if current user's copy is complete
+    const currentUserAssignment = t.assignees.find(a => a.id === user.id);
+    return currentUserAssignment?.completed || t.status === 'complete';
+  }).length;
 
   if (loading) {
     return (
