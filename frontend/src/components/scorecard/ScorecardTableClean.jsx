@@ -269,14 +269,24 @@ const ScorecardTableClean = ({
         // Take the most recent N completed weeks
         const weeksToDisplay = completedWeeks.slice(-weeksToShow);
         
-        console.log('📅 Week display logic:', {
+        console.log('🚨🚨🚨 LEVEL 10 MEETING - Week display logic:', {
+          TODAY: today.toISOString().split('T')[0],
           currentWeekStart,
+          uniqueWeekStarts,
           totalWeeksInData: uniqueWeekStarts.length,
-          completedWeeks: completedWeeks.length,
+          completedWeeks,
+          completedWeeksCount: completedWeeks.length,
           weeksToShow,
+          weeksToDisplay,
           weeksDisplayed: weeksToDisplay.length,
-          behavior: 'Excluding current incomplete week to match Ninety.io'
+          behavior: 'Excluding current incomplete week to match Ninety.io',
+          FILE: 'ScorecardTableClean.jsx LINE 272'
         });
+        
+        console.log('🚨 CURRENT WEEK START:', currentWeekStart);
+        console.log('🚨 UNIQUE WEEK STARTS:', uniqueWeekStarts);
+        console.log('🚨 COMPLETED WEEKS (FILTERED):', completedWeeks);
+        console.log('🚨 WEEKS TO DISPLAY (FINAL):', weeksToDisplay);
         
         weeksToDisplay.forEach(weekStartStr => {
           const weekStartDate = new Date(weekStartStr + 'T12:00:00');
@@ -516,10 +526,29 @@ const ScorecardTableClean = ({
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                   const isLastWeekColumn = originalIndex === periodLabelsOriginal.length - 1;
                   
+                  // 🚨 DEBUG: Check if this is the current week (Nov 3-9)
+                  const weekDate = periodDates[index];
+                  const currentWeekStart = getWeekStartDate(new Date()).toISOString().split('T')[0];
+                  const isCurrentWeek = weekDate === currentWeekStart;
+                  
+                  if (isCurrentWeek) {
+                    console.log('🚨🚨🚨 FOUND CURRENT WEEK IN DISPLAY!', {
+                      weekDate,
+                      currentWeekStart,
+                      label,
+                      index,
+                      originalIndex,
+                      isLastWeekColumn,
+                      periodDates,
+                      FILE: 'ScorecardTableClean.jsx LINE 520'
+                    });
+                  }
+                  
                   return (
                     <th key={periodDates[index]} className={
                       `text-center ${meetingMode ? "px-2 py-2" : "px-1"} ` +
-                      (isLastWeekColumn ? (meetingMode ? "bg-amber-50 font-semibold" : "bg-amber-50 border-2 border-amber-300") : "")
+                      (isCurrentWeek ? "bg-red-500 text-white font-bold" : 
+                       isLastWeekColumn ? (meetingMode ? "bg-amber-50 font-semibold" : "bg-amber-50 border-2 border-amber-300") : "")
                     }>
                       <div className="flex flex-col items-center gap-0.5">
                         {isLastWeekColumn && (
