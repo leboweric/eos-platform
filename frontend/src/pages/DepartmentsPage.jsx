@@ -218,12 +218,13 @@ const DepartmentsPage = () => {
     
     // Fetch all users in the organization
     try {
-      const response = await fetch(`/api/v1/organizations/${user.organizationId}/users`, {
+      const response = await fetch(`/api/v1/organizations/${user.organizationId}/users/organization`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const users = await response.json();
+      const data = await response.json();
+      const users = data.users || data;
       
       // Filter out users already in the department
       const currentMemberIds = new Set(dept.members?.map(m => m.id) || []);
@@ -744,7 +745,7 @@ const DepartmentsPage = () => {
 
         {/* Add Member Dialog */}
         <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
-          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-md">
             <DialogHeader>
               <DialogTitle>Add Member to {selectedDepartment?.name}</DialogTitle>
               <DialogDescription>
