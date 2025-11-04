@@ -385,14 +385,16 @@ const addDepartmentMember = async (req, res) => {
     const { organizationId } = req.user;
     console.log('📝 Processing add member:', { departmentId: id, userId, organizationId });
 
-    // Verify department exists and belongs to org
+    // Verify department/team exists and belongs to org
     const deptCheck = await db.query(
-      'SELECT id FROM departments WHERE id = $1 AND organization_id = $2',
+      'SELECT id FROM teams WHERE id = $1 AND organization_id = $2',
       [id, organizationId]
     );
     if (deptCheck.rows.length === 0) {
+      console.log('❌ Department/team not found in database');
       return res.status(404).json({ error: 'Department not found' });
     }
+    console.log('✅ Department/team found:', deptCheck.rows[0]);
 
     // Verify user exists and belongs to org
     const userCheck = await db.query(
@@ -426,14 +428,16 @@ const removeDepartmentMember = async (req, res) => {
     const { organizationId } = req.user;
     console.log('📝 Processing remove member:', { departmentId: id, userId, organizationId });
 
-    // Verify department exists and belongs to org
+    // Verify department/team exists and belongs to org
     const deptCheck = await db.query(
-      'SELECT id FROM departments WHERE id = $1 AND organization_id = $2',
+      'SELECT id FROM teams WHERE id = $1 AND organization_id = $2',
       [id, organizationId]
     );
     if (deptCheck.rows.length === 0) {
+      console.log('❌ Department/team not found in database');
       return res.status(404).json({ error: 'Department not found' });
     }
+    console.log('✅ Department/team found:', deptCheck.rows[0]);
 
     // Remove member
     const result = await db.query(
