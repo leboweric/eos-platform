@@ -240,6 +240,7 @@ const TodosPage = () => {
           if (todo.id !== todoId) return todo;
           
           // For multi-assignee todos, update the specific assignee's completion status
+          // Each assignee's copy is independent - don't update main todo status
           if (assigneeId && todo.assignees) {
             const updatedAssignees = todo.assignees.map(assignee => 
               assignee.id === assigneeId
@@ -247,14 +248,10 @@ const TodosPage = () => {
                 : assignee
             );
             
-            // Check if all assignees are complete
-            const allComplete = updatedAssignees.every(a => a.completed);
-            
             return {
               ...todo,
-              assignees: updatedAssignees,
-              status: allComplete ? 'complete' : 'incomplete',
-              completed_at: allComplete ? new Date().toISOString() : null
+              assignees: updatedAssignees
+              // Don't update main status - each copy is independent
             };
           }
           
@@ -375,9 +372,10 @@ const TodosPage = () => {
       return t.status === 'complete';
     }
     
-    // For multi-assignee todos, check if current user's copy is complete
+    // For multi-assignee todos, ONLY check if current user's copy is complete
+    // Each copy is independent, so main status doesn't matter
     const currentUserAssignment = t.assignees.find(a => a.id === user.id);
-    return currentUserAssignment?.completed || t.status === 'complete';
+    return currentUserAssignment?.completed === true;
   }).length;
 
   if (loading) {

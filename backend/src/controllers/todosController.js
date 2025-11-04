@@ -385,30 +385,10 @@ export const updateTodo = async (req, res) => {
         }
       }
       
-      // Check if ALL assignees have completed
-      const assigneeStatus = await query(
-        `SELECT COUNT(*) as total, 
-                COUNT(CASE WHEN completed = TRUE THEN 1 END) as completed_count
-         FROM todo_assignees 
-         WHERE todo_id = $1`,
-        [todoId]
-      );
-      
-      console.log(`📊 Assignee status: ${assigneeStatus.rows[0].completed_count}/${assigneeStatus.rows[0].total} completed`);
-      
-      const allCompleted = assigneeStatus.rows[0].total > 0 && 
-                          assigneeStatus.rows[0].total === assigneeStatus.rows[0].completed_count;
-      
-      // Update main todo status based on all assignees
-      if (allCompleted) {
-        console.log(`✅ All assignees completed - marking todo as complete`);
-        updates.push(`status = 'complete'`);
-        updates.push(`completed_at = NOW()`);
-      } else {
-        console.log(`⏳ Not all assignees completed - keeping todo as incomplete`);
-        updates.push(`status = 'incomplete'`);
-        updates.push(`completed_at = NULL`);
-      }
+      // For multi-assignee todos, each assignee's copy is independent
+      // Don't update the main todo status - it's not used
+      // Each assignee's completion is tracked in todo_assignees.completed
+      console.log('✅ Multi-assignee todo: Individual assignee status updated, main status unchanged');
     } else if (status !== undefined) {
       // Single assignee todo - original behavior
       updates.push(`status = $${paramIndex}`);
