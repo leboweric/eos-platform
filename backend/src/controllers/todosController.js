@@ -93,7 +93,8 @@ export const getTodos = async (req, res) => {
     let multiAssigneesMap = {};
     if (multiAssigneeTodoIds.length > 0) {
       const multiAssigneesResult = await query(
-        `SELECT ta.todo_id, u.id, u.first_name, u.last_name, u.email
+        `SELECT ta.todo_id, u.id, u.first_name, u.last_name, u.email,
+                ta.completed, ta.completed_at
          FROM todo_assignees ta
          JOIN users u ON ta.user_id = u.id
          WHERE ta.todo_id = ANY($1)`,
@@ -109,7 +110,9 @@ export const getTodos = async (req, res) => {
           id: row.id,
           first_name: row.first_name,
           last_name: row.last_name,
-          email: row.email
+          email: row.email,
+          completed: row.completed,
+          completed_at: row.completed_at
         });
       });
     }
@@ -313,7 +316,55 @@ export const updateTodo = async (req, res) => {
       paramIndex++;
     }
 
-    if (status !== undefined) {
+    // Handle status updates differently for multi-assignee todos
+    const currentTodo = existingTodo.rows[0];
+    const isCurrentlyMultiAssignee = currentTodo.is_multi_assignee;
+    
+    if (status !== undefined && isCurrentlyMultiAssignee) {
+      // For multi-assignee todos, update individual assignee completion
+      // Don't update the main todo status here - it will be calculated after
+      console.log(`Multi-assignee todo ${todoId}: User ${userId} marking as ${status}`);
+      
+      if (status === 'complete') {
+        // Mark this user's assignment as complete
+        await query(
+          `UPDATE todo_assignees 
+           SET completed = TRUE, completed_at = NOW() 
+           WHERE todo_id = $1 AND user_id = $2`,
+          [todoId, userId]
+        );
+      } else if (status === 'incomplete') {
+        // Unmark this user's assignment
+        await query(
+          `UPDATE todo_assignees 
+           SET completed = FALSE, completed_at = NULL 
+           WHERE todo_id = $1 AND user_id = $2`,
+          [todoId, userId]
+        );
+      }
+      
+      // Check if ALL assignees have completed
+      const assigneeStatus = await query(
+        `SELECT COUNT(*) as total, 
+                COUNT(CASE WHEN completed = TRUE THEN 1 END) as completed_count
+         FROM todo_assignees 
+         WHERE todo_id = $1`,
+        [todoId]
+      );
+      
+      const allCompleted = assigneeStatus.rows[0].total > 0 && 
+                          assigneeStatus.rows[0].total === assigneeStatus.rows[0].completed_count;
+      
+      // Update main todo status based on all assignees
+      if (allCompleted) {
+        updates.push(`status = 'complete'`);
+        updates.push(`completed_at = NOW()`);
+      } else {
+        updates.push(`status = 'incomplete'`);
+        updates.push(`completed_at = NULL`);
+      }
+    } else if (status !== undefined) {
+      // Single assignee todo - original behavior
       updates.push(`status = $${paramIndex}`);
       values.push(status);
       paramIndex++;
@@ -393,7 +444,8 @@ export const updateTodo = async (req, res) => {
     let multiAssignees = [];
     if (result.rows[0]?.is_multi_assignee) {
       const assigneesResult = await query(
-        `SELECT u.id, u.first_name, u.last_name, u.email
+        `SELECT u.id, u.first_name, u.last_name, u.email, 
+                ta.completed, ta.completed_at
          FROM todo_assignees ta
          JOIN users u ON ta.user_id = u.id
          WHERE ta.todo_id = $1`,
