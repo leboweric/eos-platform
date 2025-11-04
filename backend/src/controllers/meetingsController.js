@@ -774,6 +774,7 @@ export const concludeMeeting = async (req, res) => {
           console.error('Failed to send meeting summary email:', emailError);
           console.error('Email error details:', emailError.message, emailError.stack);
           // Continue with successful conclusion even if email fails
+          // Note: Response already sent to user, this is background processing
           // Record meeting conclusion for reminder scheduling
           await recordMeetingConclusion(organizationId, teamId, meetingType, {
             meetingId: specificMeetingId,
@@ -781,13 +782,7 @@ export const concludeMeeting = async (req, res) => {
             durationMinutes: duration,
             attendees: attendees || []
           });
-
-          return res.json({
-            success: true,
-            message: 'Meeting concluded successfully (email delivery failed)',
-            error: `Email failed: ${emailError.message}`,
-            emailsSent: 0
-          });
+          // Don't return - continue with snapshot creation
         }
       } else {
         console.warn('No email addresses found for team members');
@@ -810,14 +805,13 @@ export const concludeMeeting = async (req, res) => {
       
       // Get the meeting that was just concluded
       let meetingToSnapshot;
-      if (specificMeetingId) {
+      const meetingIdToQuery = specificMeetingId || updatedMeetingId;
+      if (meetingIdToQuery) {
         const result = await db.query(
           'SELECT * FROM meetings WHERE id = $1 AND organization_id = $2',
-          [specificMeetingId, organizationId]
+          [meetingIdToQuery, organizationId]
         );
         meetingToSnapshot = result.rows[0];
-      } else if (meetingUpdateResult && meetingUpdateResult.rows.length > 0) {
-        meetingToSnapshot = meetingUpdateResult.rows[0];
       }
 
       // Create snapshot whether we have a formal meeting record or not
