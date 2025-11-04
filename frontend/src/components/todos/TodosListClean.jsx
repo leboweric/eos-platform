@@ -247,27 +247,60 @@ const TodosListClean = ({
     const todosByAssignee = {};
     
     sortedTodos.forEach(todo => {
-      let assigneeId = 'unassigned';
-      let assigneeName = 'Unassigned';
-
+      // For multi-assignee todos, show under each assignee with their individual completion status
       if (todo.assignees && todo.assignees.length > 0) {
-        // Use the first assignee from the multi-assignee array
-        assigneeId = todo.assignees[0].id;
-        assigneeName = `${todo.assignees[0].first_name} ${todo.assignees[0].last_name}`;
+        // Show this todo under EACH assignee
+        todo.assignees.forEach(assignee => {
+          const assigneeId = assignee.id;
+          const assigneeName = `${assignee.first_name} ${assignee.last_name}`;
+          
+          if (!todosByAssignee[assigneeId]) {
+            todosByAssignee[assigneeId] = {
+              id: assigneeId,
+              name: assigneeName,
+              todos: []
+            };
+          }
+          
+          // Create a copy of the todo with this assignee's completion status
+          const todoForAssignee = {
+            ...todo,
+            // Override completion status with this specific assignee's status
+            status: assignee.completed ? 'complete' : 'incomplete',
+            completed_at: assignee.completed_at,
+            // Store the assignee context for the completion handler
+            _currentAssignee: assignee
+          };
+          
+          todosByAssignee[assigneeId].todos.push(todoForAssignee);
+        });
       } else if (todo.assigned_to) {
-        // Fallback to the single assignee field
-        assigneeId = todo.assigned_to.id;
-        assigneeName = `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`;
+        // Single assignee todo - original behavior
+        const assigneeId = todo.assigned_to.id;
+        const assigneeName = `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`;
+        
+        if (!todosByAssignee[assigneeId]) {
+          todosByAssignee[assigneeId] = {
+            id: assigneeId,
+            name: assigneeName,
+            todos: []
+          };
+        }
+        todosByAssignee[assigneeId].todos.push(todo);
+      } else {
+        // Unassigned
+        const assigneeId = 'unassigned';
+        const assigneeName = 'Unassigned';
+        
+        if (!todosByAssignee[assigneeId]) {
+          todosByAssignee[assigneeId] = {
+            id: assigneeId,
+            name: assigneeName,
+            todos: []
+          };
+        }
+        todosByAssignee[assigneeId].todos.push(todo);
       }
-      
-      if (!todosByAssignee[assigneeId]) {
-        todosByAssignee[assigneeId] = {
-          id: assigneeId,
-          name: assigneeName,
-          todos: []
-        };
-      }
-      todosByAssignee[assigneeId].todos.push(todo);
     });
     
     // Convert to array and sort by name
