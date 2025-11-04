@@ -120,11 +120,12 @@ const ScorecardTableClean = ({
     const endDay = weekEnd.getDate();
     
     // If same month, show "Oct 20 - 26", otherwise "Oct 27 - Nov 2"
-    if (startMonth === endMonth) {
-      return `${startMonth} ${startDay} - ${endDay}`;
-    } else {
-      return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
-    }
+    const formattedLabel = startMonth === endMonth 
+      ? `${startMonth} ${startDay} - ${endDay}`
+      : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+    
+    console.log('📅 Week label formatted:', { date, formattedLabel });
+    return formattedLabel;
   };
 
   // Get the start of the current quarter
