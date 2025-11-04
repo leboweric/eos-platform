@@ -325,6 +325,14 @@ export const updateTodo = async (req, res) => {
       // Don't update the main todo status here - it will be calculated after
       console.log(`Multi-assignee todo ${todoId}: User ${userId} marking as ${status}`);
       
+      // Debug: Check what assignees exist for this todo
+      const existingAssignees = await query(
+        `SELECT user_id, completed FROM todo_assignees WHERE todo_id = $1`,
+        [todoId]
+      );
+      console.log(`🔍 Existing assignees for todo:`, existingAssignees.rows);
+      console.log(`🔍 Current user ID: ${userId}`);
+      
       if (status === 'complete') {
         // Mark this user's assignment as complete
         const updateResult = await query(
