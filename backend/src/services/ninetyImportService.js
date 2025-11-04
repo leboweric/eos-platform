@@ -4,6 +4,16 @@ import { v4 as uuidv4 } from 'uuid';
 
 class NinetyImportService {
   /**
+   * Format date in local timezone (YYYY-MM-DD) without UTC conversion
+   */
+  static toLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
    * Parse CSV file buffer using PapaParse
    */
   static parseCSV(fileBuffer) {
@@ -258,10 +268,14 @@ class NinetyImportService {
     // Month starts on day 1
     const startDate = new Date(year, monthIndex, 1);
     
-    // Month ends on the last day of the month
-    const endDate = new Date(year, monthIndex + 1, 0); // Day 0 = last day of previous month
+    // For monthly scorecard, use the first day of the month as the key date
+    // This matches the frontend expectation of YYYY-MM-01 format
+    const endDate = new Date(year, monthIndex, 1);
     
-    return { startDate, endDate };
+    return { 
+      startDate: this.toLocalDateString(startDate), 
+      endDate: this.toLocalDateString(endDate) 
+    };
   }
 
   /**
