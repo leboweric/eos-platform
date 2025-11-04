@@ -955,8 +955,27 @@ function generateFallbackSummary({ meetingType, duration, rating, attendees, tod
   const now = new Date();
   const attendeeList = attendees?.map(a => a.name || a.userName || 'Unknown').join(', ') || 'Not recorded';
   const avgRating = rating || 'Not rated';
-  const todoCount = todos?.length || 0;
-  const issueCount = issues?.length || 0;
+  
+  // Handle todos as either array or object {completed: [], added: []}
+  let todosArray = [];
+  if (Array.isArray(todos)) {
+    todosArray = todos;
+  } else if (todos && typeof todos === 'object') {
+    // Combine completed and added todos
+    todosArray = [...(todos.completed || []), ...(todos.added || [])];
+  }
+  
+  // Handle issues as either array or object {discussed: [], created: []}
+  let issuesArray = [];
+  if (Array.isArray(issues)) {
+    issuesArray = issues;
+  } else if (issues && typeof issues === 'object') {
+    // Combine discussed and created issues
+    issuesArray = [...(issues.discussed || []), ...(issues.created || [])];
+  }
+  
+  const todoCount = todosArray.length || 0;
+  const issueCount = issuesArray.length || 0;
   
   return {
     executive_summary: `
@@ -982,7 +1001,7 @@ Note: AI-generated summary was not available for this meeting. This summary was 
       notes ? 'Additional meeting notes were provided' : 'No additional notes recorded',
       `Team rated the meeting ${avgRating}/5`
     ].filter(Boolean),
-    action_items: todos?.map(todo => todo.description || todo.text || 'Action item') || [],
+    action_items: todosArray.map(todo => todo.description || todo.text || 'Action item'),
     participants: attendees?.map(a => a.name || a.userName) || [],
     meeting_effectiveness: avgRating ? `${avgRating}/5` : 'Not rated'
   };
