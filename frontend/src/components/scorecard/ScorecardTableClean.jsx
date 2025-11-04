@@ -100,6 +100,15 @@ const ScorecardTableClean = ({
   // Get week start date for a given date
   // Business Logic: Weeks run Monday-Sunday (Monday = week start)
   // This ensures consistent week boundaries for scorecard grouping
+  // Helper: Convert Date to local YYYY-MM-DD string (NOT UTC)
+  // This prevents timezone bugs where toISOString() shifts the date
+  const toLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getWeekStartDate = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -263,14 +272,15 @@ const ScorecardTableClean = ({
         
         // ✅ FIX: Exclude current week (incomplete) to match Ninety.io behavior
         // Only show completed weeks - shift back by 1 week
-        const currentWeekStart = getWeekStartDate(today).toISOString().split('T')[0];
+        // 🐛 TIMEZONE FIX: Use local date string, NOT UTC
+        const currentWeekStart = toLocalDateString(getWeekStartDate(today));
         const completedWeeks = uniqueWeekStarts.filter(weekStart => weekStart < currentWeekStart);
         
         // Take the most recent N completed weeks
         const weeksToDisplay = completedWeeks.slice(-weeksToShow);
         
         console.log('🚨🚨🚨 LEVEL 10 MEETING - Week display logic:', {
-          TODAY: today.toISOString().split('T')[0],
+          TODAY: toLocalDateString(today),
           currentWeekStart,
           uniqueWeekStarts,
           totalWeeksInData: uniqueWeekStarts.length,
@@ -528,7 +538,7 @@ const ScorecardTableClean = ({
                   
                   // 🚨 DEBUG: Check if this is the current week (Nov 3-9)
                   const weekDate = periodDates[index];
-                  const currentWeekStart = getWeekStartDate(new Date()).toISOString().split('T')[0];
+                  const currentWeekStart = toLocalDateString(getWeekStartDate(new Date()));
                   const isCurrentWeek = weekDate === currentWeekStart;
                   
                   if (isCurrentWeek) {
