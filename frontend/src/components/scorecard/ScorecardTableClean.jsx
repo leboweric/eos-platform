@@ -239,7 +239,23 @@ const ScorecardTableClean = ({
         
         // Get the most recent weeks (by week start date)
         const uniqueWeekStarts = Array.from(weekGroups.keys()).sort();
-        const weeksToDisplay = uniqueWeekStarts.slice(-weeksToShow);
+        
+        // ✅ FIX: Exclude current week (incomplete) to match Ninety.io behavior
+        // Only show completed weeks - shift back by 1 week
+        const currentWeekStart = getWeekStartDate(today).toISOString().split('T')[0];
+        const completedWeeks = uniqueWeekStarts.filter(weekStart => weekStart < currentWeekStart);
+        
+        // Take the most recent N completed weeks
+        const weeksToDisplay = completedWeeks.slice(-weeksToShow);
+        
+        console.log('📅 Week display logic:', {
+          currentWeekStart,
+          totalWeeksInData: uniqueWeekStarts.length,
+          completedWeeks: completedWeeks.length,
+          weeksToShow,
+          weeksDisplayed: weeksToDisplay.length,
+          behavior: 'Excluding current incomplete week to match Ninety.io'
+        });
         
         weeksToDisplay.forEach(weekStartStr => {
           const weekStartDate = new Date(weekStartStr + 'T12:00:00');
@@ -255,7 +271,8 @@ const ScorecardTableClean = ({
         });
       } else {
         // Fallback to generated dates if no data
-        for (let i = weeksToShow - 1; i >= 0; i--) {
+        // ✅ FIX: Start from last week (not current week) to match Ninety.io
+        for (let i = weeksToShow; i >= 1; i--) {
           const weekStart = new Date(today);
           weekStart.setDate(today.getDate() - (i * 7));
           const mondayOfWeek = getWeekStartDate(weekStart);
@@ -263,7 +280,7 @@ const ScorecardTableClean = ({
           labels.push(formatWeekLabel(mondayOfWeek));
           weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
         }
-        console.log('Meeting mode - No data found, using generated dates:', weekDates);
+        console.log('Meeting mode - No data found, using generated dates (excluding current week):', weekDates);
       }
     }
     
