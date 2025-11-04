@@ -2330,13 +2330,21 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
-      await todosService.updateTodo(todo.id, {
+      const updateData = {
         ...todo,
         organization_id: orgId,
         department_id: effectiveTeamId,
         completed: !todo.completed,
         status: !todo.completed ? 'completed' : 'pending'
-      });
+      };
+      
+      // For multi-assignee todos, pass the assigneeId to mark specific copy
+      if (todo._currentAssignee) {
+        updateData.assigneeId = todo._currentAssignee.id;
+        console.log('🎯 Level 10 Meeting: Marking multi-assignee todo for assignee:', todo._currentAssignee.id);
+      }
+      
+      await todosService.updateTodo(todo.id, updateData);
       await fetchTodosData();
       
       // Broadcast todo status update to other participants
@@ -5798,7 +5806,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                       todosByAssignee[assigneeId].todos.push({
                         ...todo,
                         isMultiAssignee: todo.assignees.length > 1,
-                        allAssignees: todo.assignees
+                        allAssignees: todo.assignees,
+                        _currentAssignee: assignee  // Store which assignee's copy this is
                       });
                     });
                   } else {
@@ -5904,7 +5913,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                             
                             {/* To-Do Rows */}
                             {assignee.todos.map(todo => {
-                              const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                              // For multi-assignee todos, check if THIS assignee's copy is complete
+                              const isComplete = todo._currentAssignee 
+                                ? todo._currentAssignee.completed === true
+                                : (todo.status === 'complete' || todo.status === 'completed');
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
                               const overdue = isOverdue(todo);
                               
@@ -6385,7 +6397,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                             acc[assigneeName].push({
                               ...todo,
                               isMultiAssignee: todo.assignees.length > 1,
-                              allAssignees: todo.assignees
+                              allAssignees: todo.assignees,
+                              _currentAssignee: assignee  // Store which assignee's copy this is
                             });
                           });
                         } else {
