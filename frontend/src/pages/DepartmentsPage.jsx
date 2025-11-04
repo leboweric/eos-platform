@@ -228,6 +228,14 @@ const DepartmentsPage = () => {
       // Filter out users already in the department
       const currentMemberIds = new Set(dept.members?.map(m => m.id) || []);
       const available = users.filter(u => !currentMemberIds.has(u.id));
+      
+      // Sort alphabetically by first name
+      available.sort((a, b) => {
+        const nameA = (a.first_name || '').toLowerCase();
+        const nameB = (b.first_name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      
       setAvailableUsers(available);
     } catch (error) {
       console.error('Error fetching users:', error);
