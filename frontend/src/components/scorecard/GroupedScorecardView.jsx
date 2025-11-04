@@ -783,15 +783,15 @@ const GroupedScorecardView = ({
       console.log(`🔧 GroupedView: Using ${dates.length} weeks from ${dates[0]} to ${dates[dates.length-1]}`);
       return { labels, dates };
     } else {
-      // For monthly - show last 4 completed months
+      // For monthly - show last 12 months
       const labels = [];
       const dates = [];
       
-      // Start from 4 months ago
-      let currentMonth = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      // Start from 12 months ago
+      let currentMonth = new Date(today.getFullYear(), today.getMonth() - 11, 1);
       
-      // Generate 4 months
-      for (let i = 0; i < 4; i++) {
+      // Generate 12 months
+      for (let i = 0; i < 12; i++) {
         const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
         const yearLabel = date.getFullYear().toString().slice(-2);
@@ -800,7 +800,7 @@ const GroupedScorecardView = ({
         currentMonth.setMonth(currentMonth.getMonth() + 1);
       }
       
-      console.log(`🔧 GroupedView: Using last 4 months:`, dates);
+      console.log(`🔧 GroupedView: Using last 12 months:`, dates);
       return { labels, dates };
     }
   };
