@@ -515,7 +515,7 @@ const ScorecardTableClean = ({
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
                     {(() => {
                       const { label } = getDateRange(scorecardTimePeriodPreference);
-                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Avg';
                       
                       // Debug logging for scorecard label (both meeting and main scorecard)
                       console.log('🔍 ScorecardTableClean - Label calculation:', {

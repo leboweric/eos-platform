@@ -813,7 +813,7 @@ const GroupedScorecardView = ({
           <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">
             {(() => {
               const { label } = getDateRange(scorecardTimePeriodPreference);
-              return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+              return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Avg';
             })()}
           </th>
           {labels.map((label, index) => {
