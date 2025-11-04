@@ -54,5 +54,23 @@ export const departmentService = {
     
     const response = await axios.delete(`/organizations/${orgId}/teams/${id}`);
     return response.data;
+  },
+
+  // Add member to department
+  async addMember(departmentId, userId) {
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    const response = await axios.post(`/organizations/${orgId}/teams/${departmentId}/members`, { userId });
+    return response.data;
+  },
+
+  // Remove member from department
+  async removeMember(departmentId, userId) {
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    const response = await axios.delete(`/organizations/${orgId}/teams/${departmentId}/members/${userId}`);
+    return response.data;
   }
 };

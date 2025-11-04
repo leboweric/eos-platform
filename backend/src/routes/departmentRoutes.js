@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController.js';
+import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment, addDepartmentMember, removeDepartmentMember } from '../controllers/departmentController.js';
 import { getDepartmentBusinessBlueprint } from '../controllers/businessBlueprintController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -22,6 +22,12 @@ router.put('/:id', updateDepartment);
 
 // Delete department
 router.delete('/:id', deleteDepartment);
+
+// Add member to department
+router.post('/:id/members', addDepartmentMember);
+
+// Remove member from department
+router.delete('/:id/members/:userId', removeDepartmentMember);
 
 // Get Business Blueprint for department
 router.get('/:departmentId/business-blueprint', getDepartmentBusinessBlueprint);

@@ -8,14 +8,12 @@ const getDepartments = async (req, res) => {
 
     // Get all departments with their leader info, member count, and teams
     const query = `
-      WITH department_members AS (
+      WITH dept_member_counts AS (
         SELECT 
-          d.id as department_id,
-          COUNT(DISTINCT tm.user_id) as member_count
-        FROM departments d
-        LEFT JOIN teams t ON t.department_id = d.id
-        LEFT JOIN team_members tm ON tm.team_id = t.id
-        GROUP BY d.id
+          department_id,
+          COUNT(*) as member_count
+        FROM department_members
+        GROUP BY department_id
       ),
       department_teams AS (
         SELECT 
@@ -34,7 +32,7 @@ const getDepartments = async (req, res) => {
       ),
       department_member_list AS (
         SELECT 
-          t.department_id,
+          dm.department_id,
           json_agg(jsonb_build_object(
             'id', u.id,
             'name', u.first_name || ' ' || u.last_name,
@@ -43,20 +41,9 @@ const getDepartments = async (req, res) => {
             'email', u.email,
             'avatarUrl', u.avatar_url
           ) ORDER BY u.first_name, u.last_name) as members
-        FROM (
-          SELECT DISTINCT ON (t.department_id, u.id)
-            t.department_id,
-            u.id,
-            u.first_name,
-            u.last_name,
-            u.email,
-            u.avatar_url
-          FROM teams t
-          JOIN team_members tm ON tm.team_id = t.id
-          JOIN users u ON u.id = tm.user_id
-          WHERE t.department_id IS NOT NULL
-        ) AS unique_members
-        GROUP BY department_id
+        FROM department_members dm
+        JOIN users u ON u.id = dm.user_id
+        GROUP BY dm.department_id
       )
       SELECT 
         d.id,
@@ -73,7 +60,7 @@ const getDepartments = async (req, res) => {
         COALESCE(dml.members, '[]'::json) as members
       FROM departments d
       LEFT JOIN users u ON u.id = d.leader_id
-      LEFT JOIN department_members dm ON dm.department_id = d.id
+      LEFT JOIN dept_member_counts dm ON dm.department_id = d.id
       LEFT JOIN department_teams dt ON dt.department_id = d.id
       LEFT JOIN department_member_list dml ON dml.department_id = d.id
       WHERE d.organization_id = $1
@@ -389,10 +376,86 @@ const getDepartmentWithDetails = async (departmentId, organizationId) => {
   return rows[0];
 };
 
+// Add member to department
+const addDepartmentMember = async (req, res) => {
+  try {
+    const { id } = req.params; // department id
+    const { userId } = req.body;
+    const { organizationId } = req.user;
+
+    // Verify department exists and belongs to org
+    const deptCheck = await db.query(
+      'SELECT id FROM departments WHERE id = $1 AND organization_id = $2',
+      [id, organizationId]
+    );
+    if (deptCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Verify user exists and belongs to org
+    const userCheck = await db.query(
+      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, organizationId]
+    );
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Add member (ON CONFLICT DO NOTHING to avoid duplicates)
+    await db.query(
+      'INSERT INTO department_members (department_id, user_id) VALUES ($1, $2) ON CONFLICT (department_id, user_id) DO NOTHING',
+      [id, userId]
+    );
+
+    // Return updated department
+    const department = await getDepartmentWithDetails(id, organizationId);
+    res.json(department);
+  } catch (error) {
+    logger.error('Error adding department member:', error);
+    res.status(500).json({ error: 'Failed to add member to department' });
+  }
+};
+
+// Remove member from department
+const removeDepartmentMember = async (req, res) => {
+  try {
+    const { id, userId } = req.params; // department id and user id
+    const { organizationId } = req.user;
+
+    // Verify department exists and belongs to org
+    const deptCheck = await db.query(
+      'SELECT id FROM departments WHERE id = $1 AND organization_id = $2',
+      [id, organizationId]
+    );
+    if (deptCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Remove member
+    const result = await db.query(
+      'DELETE FROM department_members WHERE department_id = $1 AND user_id = $2 RETURNING *',
+      [id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Member not found in department' });
+    }
+
+    // Return updated department
+    const department = await getDepartmentWithDetails(id, organizationId);
+    res.json(department);
+  } catch (error) {
+    logger.error('Error removing department member:', error);
+    res.status(500).json({ error: 'Failed to remove member from department' });
+  }
+};
+
 export {
   getDepartments,
   getDepartment,
   createDepartment,
   updateDepartment,
-  deleteDepartment
+  deleteDepartment,
+  addDepartmentMember,
+  removeDepartmentMember
 };

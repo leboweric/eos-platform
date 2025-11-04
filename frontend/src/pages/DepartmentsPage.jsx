@@ -14,7 +14,10 @@ import {
   Search,
   Loader2,
   AlertCircle,
-  Trash2
+  Trash2,
+  X,
+  UserPlus,
+  ChevronDown
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { departmentService } from '../services/departmentService';
@@ -33,6 +36,10 @@ const DepartmentsPage = () => {
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [expandedDepts, setExpandedDepts] = useState(new Set());
+  const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
@@ -204,6 +211,71 @@ const DepartmentsPage = () => {
     }
   };
 
+  // Handle add member click
+  const handleAddMemberClick = async (dept) => {
+    setSelectedDepartment(dept);
+    setAddMemberDialogOpen(true);
+    
+    // Fetch all users in the organization
+    try {
+      const response = await fetch(`/api/v1/organizations/${user.organizationId}/users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const users = await response.json();
+      
+      // Filter out users already in the department
+      const currentMemberIds = new Set(dept.members?.map(m => m.id) || []);
+      const available = users.filter(u => !currentMemberIds.has(u.id));
+      setAvailableUsers(available);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError('Failed to load users');
+    }
+  };
+
+  // Handle add member submit
+  const handleAddMember = async () => {
+    if (!selectedUserId || !selectedDepartment) return;
+    
+    try {
+      setSaving(true);
+      await departmentService.addMember(selectedDepartment.id, selectedUserId);
+      
+      // Refresh departments
+      await fetchDepartments();
+      
+      // Close dialog and reset
+      setAddMemberDialogOpen(false);
+      setSelectedDepartment(null);
+      setSelectedUserId('');
+      setAvailableUsers([]);
+    } catch (error) {
+      console.error('Error adding member:', error);
+      setError(error.response?.data?.error || 'Failed to add member');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle remove member
+  const handleRemoveMember = async (departmentId, userId) => {
+    if (!confirm('Are you sure you want to remove this member from the department?')) {
+      return;
+    }
+    
+    try {
+      await departmentService.removeMember(departmentId, userId);
+      
+      // Refresh departments
+      await fetchDepartments();
+    } catch (error) {
+      console.error('Error removing member:', error);
+      setError(error.response?.data?.error || 'Failed to remove member');
+    }
+  };
+
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dept.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -212,11 +284,19 @@ const DepartmentsPage = () => {
   // Calculate statistics
   const totalDepartments = departments.length;
   const activeDepartments = departments.filter(d => d.is_active !== false).length;
-  const totalMembers = departments.reduce((sum, dept) => {
-    // Ensure member_count is treated as a number
-    const memberCount = parseInt(dept.member_count) || 0;
-    return sum + memberCount;
-  }, 0);
+  // Count unique users across all departments (avoid counting same user multiple times)
+  const totalMembers = (() => {
+    const uniqueUserIds = new Set();
+    departments.forEach(dept => {
+      const members = dept.members || [];
+      members.forEach(member => {
+        if (member.id) {
+          uniqueUserIds.add(member.id);
+        }
+      });
+    });
+    return uniqueUserIds.size;
+  })();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
@@ -406,15 +486,6 @@ const DepartmentsPage = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteClick(dept)}
-                                title="Delete department"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -424,9 +495,20 @@ const DepartmentsPage = () => {
                           <tr className="bg-gray-50/50">
                             <td colSpan="5" className="py-4 px-4">
                               <div className="pl-12">
-                                <p className="text-sm font-semibold text-gray-700 mb-3">
-                                  Team Members ({memberCount})
-                                </p>
+                                <div className="flex items-center justify-between mb-3">
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    Team Members ({memberCount})
+                                  </p>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddMemberClick(dept)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    <UserPlus className="h-4 w-4 mr-1" />
+                                    Add Member
+                                  </Button>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                   {members.map((member) => (
                                     <div
@@ -457,6 +539,15 @@ const DepartmentsPage = () => {
                                           {member.email}
                                         </p>
                                       </div>
+                                      
+                                      {/* Remove Button */}
+                                      <button
+                                        onClick={() => handleRemoveMember(dept.id, member.id)}
+                                        className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="Remove from department"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
@@ -645,6 +736,68 @@ const DepartmentsPage = () => {
                   </>
                 ) : (
                   'Delete Department'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Member Dialog */}
+        <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Member to {selectedDepartment?.name}</DialogTitle>
+              <DialogDescription>
+                Select a user to add to this department
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="user-select">Select User</Label>
+                <select
+                  id="user-select"
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a user --</option>
+                  {availableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {availableUsers.length === 0 && (
+                <p className="text-sm text-gray-500 italic">
+                  All users are already members of this department.
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setAddMemberDialogOpen(false);
+                  setSelectedDepartment(null);
+                  setSelectedUserId('');
+                  setAvailableUsers([]);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddMember}
+                disabled={!selectedUserId || saving}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add Member'
                 )}
               </Button>
             </DialogFooter>
