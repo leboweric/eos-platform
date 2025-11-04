@@ -706,6 +706,145 @@ class TranscriptionService {
       }
     }
   }
+
+  /**
+   * Save all active transcription sessions to database for graceful shutdown
+   */
+  async saveAllActiveSessions() {
+    const activeSessions = Array.from(this.activeConnections.entries());
+    console.log(`💾 [TranscriptionService] Saving ${activeSessions.length} active session(s) to database`);
+    
+    if (activeSessions.length === 0) {
+      console.log('💾 [TranscriptionService] No active sessions to save');
+      return;
+    }
+
+    const client = await getClient();
+    
+    try {
+      await client.query('BEGIN');
+      
+      for (const [transcriptId, sessionData] of activeSessions) {
+        try {
+          // Accumulate all transcript chunks into a single text
+          const partialTranscript = sessionData.transcriptChunks
+            .map(chunk => chunk.text || '')
+            .join(' ')
+            .trim();
+
+          await client.query(`
+            INSERT INTO transcription_sessions (
+              transcript_id, organization_id, partial_transcript, status, 
+              started_at, last_activity_at
+            ) VALUES ($1, $2, $3, 'active', $4, NOW())
+            ON CONFLICT (transcript_id) 
+            DO UPDATE SET 
+              partial_transcript = EXCLUDED.partial_transcript,
+              last_activity_at = NOW(),
+              updated_at = NOW()
+          `, [
+            transcriptId,
+            sessionData.organizationId,
+            partialTranscript,
+            sessionData.startTime
+          ]);
+          
+          console.log(`💾 [TranscriptionService] Saved session ${transcriptId} (${partialTranscript.length} chars)`);
+        } catch (error) {
+          console.error(`❌ [TranscriptionService] Error saving session ${transcriptId}:`, error);
+        }
+      }
+      
+      await client.query('COMMIT');
+      console.log(`✅ [TranscriptionService] Successfully saved ${activeSessions.length} session(s)`);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ [TranscriptionService] Error saving sessions:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Close all WebSocket connections gracefully
+   */
+  async closeAllConnections() {
+    console.log(`🔌 [TranscriptionService] Closing ${this.activeConnections.size} WebSocket connection(s)`);
+    
+    const closePromises = [];
+    
+    for (const [transcriptId, connection] of this.activeConnections.entries()) {
+      if (connection.websocket) {
+        closePromises.push(
+          new Promise((resolve) => {
+            try {
+              connection.websocket.close(1000, 'Server shutting down');
+              console.log(`🔌 [TranscriptionService] Closed connection ${transcriptId}`);
+            } catch (error) {
+              console.error(`❌ [TranscriptionService] Error closing connection ${transcriptId}:`, error);
+            }
+            resolve();
+          })
+        );
+      }
+    }
+    
+    await Promise.all(closePromises);
+    this.activeConnections.clear();
+    console.log('✅ [TranscriptionService] All connections closed');
+  }
+
+  /**
+   * Recover a transcription session from database
+   */
+  async recoverSession(transcriptId) {
+    try {
+      const client = await getClient();
+      
+      const result = await client.query(`
+        SELECT * FROM transcription_sessions
+        WHERE transcript_id = $1 AND status = 'active'
+        ORDER BY last_activity_at DESC
+        LIMIT 1
+      `, [transcriptId]);
+      
+      client.release();
+      
+      if (result.rows.length > 0) {
+        const session = result.rows[0];
+        console.log(`🔄 [TranscriptionService] Recovered session ${transcriptId} from database`);
+        console.log(`🔄 [TranscriptionService] Session data: ${session.partial_transcript?.length || 0} chars, last active: ${session.last_activity_at}`);
+        return session;
+      }
+      
+      console.log(`🔄 [TranscriptionService] No session found in database for ${transcriptId}`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [TranscriptionService] Error recovering session ${transcriptId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Mark a session as completed in database
+   */
+  async completeSession(transcriptId) {
+    try {
+      const client = await getClient();
+      
+      await client.query(`
+        UPDATE transcription_sessions 
+        SET status = 'completed', completed_at = NOW(), updated_at = NOW()
+        WHERE transcript_id = $1
+      `, [transcriptId]);
+      
+      client.release();
+      console.log(`✅ [TranscriptionService] Marked session ${transcriptId} as completed`);
+    } catch (error) {
+      console.error(`❌ [TranscriptionService] Error completing session ${transcriptId}:`, error);
+    }
+  }
 }
 
 // Create singleton instance

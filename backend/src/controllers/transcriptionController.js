@@ -722,3 +722,148 @@ export const getAISummary = async (req, res) => {
     });
   }
 };
+
+export const saveTranscriptionSession = async (req, res) => {
+  try {
+    const { transcriptId, organizationId, meetingId, teamId, userId, partialTranscript } = req.body;
+
+    if (!transcriptId || !organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'transcript_id and organization_id are required'
+      });
+    }
+
+    const client = await getClient();
+    try {
+      await client.query(`
+        INSERT INTO transcription_sessions (
+          transcript_id, organization_id, meeting_id, team_id, user_id, partial_transcript, status, last_activity_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW())
+        ON CONFLICT (transcript_id) 
+        DO UPDATE SET 
+          partial_transcript = EXCLUDED.partial_transcript,
+          last_activity_at = NOW(),
+          updated_at = NOW()
+      `, [transcriptId, organizationId, meetingId, teamId, userId, partialTranscript]);
+
+      res.json({
+        success: true,
+        message: 'Transcription session saved'
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Failed to save transcription session:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save transcription session'
+    });
+  }
+};
+
+export const getTranscriptionSession = async (req, res) => {
+  try {
+    const { transcriptId } = req.params;
+
+    if (!transcriptId) {
+      return res.status(400).json({
+        success: false,
+        error: 'transcript_id is required'
+      });
+    }
+
+    const client = await getClient();
+    try {
+      const result = await client.query(`
+        SELECT * FROM transcription_sessions 
+        WHERE transcript_id = $1 AND status = 'active'
+      `, [transcriptId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Active transcription session not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        session: result.rows[0]
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Failed to get transcription session:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get transcription session'
+    });
+  }
+};
+
+export const completeTranscriptionSession = async (req, res) => {
+  try {
+    const { transcriptId } = req.params;
+
+    if (!transcriptId) {
+      return res.status(400).json({
+        success: false,
+        error: 'transcript_id is required'
+      });
+    }
+
+    const client = await getClient();
+    try {
+      await client.query(`
+        UPDATE transcription_sessions 
+        SET status = 'completed', completed_at = NOW(), updated_at = NOW()
+        WHERE transcript_id = $1
+      `, [transcriptId]);
+
+      res.json({
+        success: true,
+        message: 'Transcription session completed'
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Failed to complete transcription session:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to complete transcription session'
+    });
+  }
+};
+
+export const cleanupAbandonedSessions = async (req, res) => {
+  try {
+    const client = await getClient();
+    try {
+      const result = await client.query(`
+        UPDATE transcription_sessions 
+        SET status = 'abandoned', updated_at = NOW()
+        WHERE status = 'active' 
+        AND last_activity_at < NOW() - INTERVAL '30 minutes'
+        RETURNING transcript_id
+      `);
+
+      res.json({
+        success: true,
+        message: `Cleaned up ${result.rows.length} abandoned sessions`,
+        abandoned_sessions: result.rows.map(row => row.transcript_id)
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Failed to cleanup abandoned sessions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to cleanup abandoned sessions'
+    });
+  }
+};

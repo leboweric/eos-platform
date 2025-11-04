@@ -6790,10 +6790,36 @@ const WeeklyAccountabilityMeetingPage = () => {
                             : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
                         onClick={(e) => {
+                          console.log('🔴 MAIN CONCLUDE BUTTON CLICKED', {
+                            timestamp: new Date().toISOString(),
+                            event: e,
+                            target: e.target,
+                            currentTarget: e.currentTarget,
+                            aiRecordingState,
+                            disabled: aiRecordingState.isRecording,
+                            meetingCode,
+                            isLeader,
+                            sessionId,
+                            user: user ? { id: user.id, email: user.email } : null,
+                            showConcludeDialog
+                          });
+                          
+                          console.log('🔴 [1.5] Button state check:', {
+                            buttonDisabled: aiRecordingState.isRecording,
+                            hasAccessToButton: !meetingCode || (meetingCode && isLeader),
+                            currentDialogState: showConcludeDialog
+                          });
+                          
                           e.preventDefault();
                           e.stopPropagation();
+                          
+                          console.log('🔴 [2] Event handling complete, checking AI recording state');
                           if (!aiRecordingState.isRecording) {
+                            console.log('🔴 [3] AI not recording - opening conclude dialog');
                             setShowConcludeDialog(true);
+                            console.log('🔴 [4] Dialog state set to true');
+                          } else {
+                            console.log('🔴 [3] AI IS RECORDING - button should be disabled');
                           }
                         }}
                         disabled={aiRecordingState.isRecording}
@@ -6841,13 +6867,28 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const confirmConcludeMeeting = async (e) => {
+    console.log('🟠 [1] CONFIRM CONCLUDE MEETING HANDLER ENTERED', {
+      timestamp: new Date().toISOString(),
+      event: e,
+      eventType: e?.type,
+      target: e?.target,
+      currentTarget: e?.currentTarget
+    });
+    
     // CRITICAL: Prevent any form submission or page reload
     if (e) {
+      console.log('🟠 [2] Event exists - calling preventDefault');
       e.preventDefault();
+      console.log('🟠 [3] Calling stopPropagation');
       e.stopPropagation();
+      console.log('🟠 [4] Event handling complete');
+    } else {
+      console.log('🟠 [2] No event parameter passed');
     }
     
+    console.log('🟠 [5] Closing conclude dialog');
     setShowConcludeDialog(false);
+    console.log('🟠 [6] Dialog closed, entering try block');
     try {
       // Note: AI recording stop is now handled automatically by the backend during meeting conclusion
                         // Send cascading message if there is one
@@ -6948,17 +6989,39 @@ const WeeklyAccountabilityMeetingPage = () => {
                         };
                         
                         // ALWAYS conclude the meeting session in database
+                        console.log('🟠 [7] About to conclude meeting in database');
+                        console.log('🟠 [8] Current state check:', {
+                          sessionId,
+                          sendSummaryEmail,
+                          hasMeetingData: !!meetingData,
+                          orgId,
+                          effectiveTeamId,
+                          userObject: user
+                        });
+                        
                         let emailResult = null;
                         try {
+                          console.log('🟠 [9] Entering service call try block');
                           console.log('🔍 [Frontend] Calling meetingsService.concludeMeeting...');
                           console.log('🔍 [Frontend] sessionId:', sessionId, 'sendSummaryEmail:', sendSummaryEmail);
                           console.log('🔍 [Frontend] meetingData:', meetingData);
                           
                           if (!sessionId) {
+                            console.error('🔴 NO SESSION ID - throwing error');
                             throw new Error('No active session ID found - cannot conclude meeting');
                           }
                           
+                          console.log('🟠 [10] About to call meetingsService.concludeMeeting');
+                          console.log('🟠 [11] Service call parameters:', {
+                            orgId,
+                            effectiveTeamId,
+                            sessionId,
+                            sendSummaryEmail,
+                            meetingDataKeys: Object.keys(meetingData || {})
+                          });
+                          
                           emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail, meetingData);
+                          console.log('🟠 [12] Service call completed successfully');
                           console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
                         } catch (emailError) {
                           console.error('❌ [Frontend] Failed to conclude meeting:', emailError);
@@ -7039,16 +7102,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                         sessionStorage.removeItem('meetingStartTime');
                         
                         // Navigate to Dashboard after concluding meeting
+                        console.log('🟠 [13] Setting up navigation timeout');
                         setTimeout(() => {
                           try {
+                            console.log('🟠 [14] Timeout triggered - about to navigate');
                             console.log('🚀 Navigating to dashboard after successful meeting conclusion');
                             navigate('/dashboard');
+                            console.log('🟠 [15] Navigate function called successfully');
                           } catch (navError) {
-                            console.error('Navigation error:', navError);
+                            console.error('🔴 Navigation error:', navError);
+                            console.log('🟠 [16] Using fallback redirect');
                             // Fallback: hard redirect if navigate fails
                             window.location.href = '/dashboard';
                           }
                         }, 1500); // Brief delay to show success message
+                        console.log('🟠 [17] Navigation timeout set, function should complete');
     } catch (error) {
       console.error('Failed to conclude meeting:', error);
       setError('Failed to conclude meeting. Please try again.');
@@ -7650,7 +7718,20 @@ const WeeklyAccountabilityMeetingPage = () => {
             </Button>
             <Button
               type="button"
-              onClick={confirmConcludeMeeting}
+              onClick={(e) => {
+                console.log('🟢 DIALOG CONCLUDE BUTTON CLICKED', {
+                  timestamp: new Date().toISOString(),
+                  event: e,
+                  target: e.target,
+                  currentTarget: e.currentTarget,
+                  buttonText: e.target.textContent,
+                  dialogOpen: showConcludeDialog
+                });
+                
+                console.log('🟢 [2] About to call confirmConcludeMeeting');
+                confirmConcludeMeeting(e);
+                console.log('🟢 [3] confirmConcludeMeeting called');
+              }}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               <CheckSquare className="mr-2 h-4 w-4" />

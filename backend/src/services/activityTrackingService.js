@@ -312,6 +312,53 @@ export class ActivityTrackingService {
     const result = await pool.query(query, params);
     return result.rows;
   }
+
+  // Get meeting completion stats
+  async getMeetingStats(organizationId = null, days = 30) {
+    const orgFilter = organizationId ? 'organization_id = $1 AND' : '';
+    const queryParams = organizationId ? [organizationId] : [];
+
+    const query = `
+      SELECT 
+        COUNT(*) as total_meetings,
+        COUNT(*) FILTER (WHERE used_ai_notes = true) as meetings_with_ai,
+        COUNT(*) FILTER (WHERE meeting_type = 'weekly') as weekly_meetings,
+        COUNT(*) FILTER (WHERE meeting_type = 'quarterly') as quarterly_meetings,
+        COUNT(*) FILTER (WHERE meeting_type = 'annual') as annual_meetings,
+        ROUND(
+          COUNT(*) FILTER (WHERE used_ai_notes = true)::numeric / 
+          NULLIF(COUNT(*), 0) * 100, 
+          1
+        ) as ai_adoption_rate
+      FROM meeting_conclusions
+      WHERE ${orgFilter}
+        concluded_at >= NOW() - INTERVAL '${days} days'
+    `;
+
+    const result = await pool.query(query, queryParams);
+    return result.rows[0];
+  }
+
+  // Get meeting timeline (daily breakdown)
+  async getMeetingTimeline(organizationId = null, days = 30) {
+    const orgFilter = organizationId ? 'organization_id = $1 AND' : '';
+    const queryParams = organizationId ? [organizationId] : [];
+
+    const query = `
+      SELECT 
+        DATE(concluded_at) as date,
+        COUNT(*) as total_meetings,
+        COUNT(*) FILTER (WHERE used_ai_notes = true) as meetings_with_ai
+      FROM meeting_conclusions
+      WHERE ${orgFilter}
+        concluded_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(concluded_at)
+      ORDER BY date
+    `;
+
+    const result = await pool.query(query, queryParams);
+    return result.rows;
+  }
 }
 
 export default ActivityTrackingService;

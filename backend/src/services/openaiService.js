@@ -280,6 +280,99 @@ Respond in JSON format:
 };
 
 /**
+ * Generate multiple complete SMART Rock options from a user's vision of success.
+ */
+export const generateRocksFromVision = async (vision, context = {}, numberOfOptions = 3) => {
+  try {
+    const { 
+      teamName,
+      teamType,
+      teamMemberCount,
+      organizationName,
+      industry,
+      quarter,
+      year,
+      companyRocks,
+      challenges,
+      strategicFocus
+    } = context;
+
+    const prompt = `You are an expert EOS implementer helping a ${teamType || 'team'} at a ${industry || 'company'} create SMART quarterly Rocks.
+
+CONTEXT:
+- Company: ${organizationName || 'Not specified'}
+- Industry: ${industry || 'Not specified'}
+- Team: ${teamName || 'Not specified'} (${teamMemberCount || 'N/A'} members)
+- Quarter: ${quarter || 'Current Quarter'} ${year || new Date().getFullYear()}
+${companyRocks ? `- Current Company Rocks this quarter:\n${companyRocks}` : ''}
+${challenges ? `- Current challenges to solve: ${challenges}` : ''}
+${strategicFocus ? `- Strategic focus for this Rock: ${strategicFocus.join(', ')}` : ''}
+
+USER'S VISION OF SUCCESS (What great looks like at the end of the quarter):
+"""
+${vision}
+"""
+
+Based on the user's vision and the provided context, generate ${numberOfOptions} distinct, high-quality SMART Rock options. Each option must be a complete, actionable quarterly priority.
+
+For each Rock option, provide:
+1.  **title**: A clear, action-oriented title (max 100 characters).
+2.  **description**: A detailed description explaining the Rock and its purpose.
+3.  **successCriteria**: A list of 3-5 specific, measurable outcomes that define success.
+4.  **keyMetrics**: A list of 2-4 metrics to track progress.
+5.  **smartScore**: An overall SMART score (0-100).
+6.  **smartBreakdown**: Individual scores for Specific, Measurable, Achievable, Relevant, and Time-bound (all 0-100).
+7.  **milestones**: A list of 3-5 specific milestones with realistic due dates within the quarter.
+8.  **potentialRisks**: A list of 2-3 potential risks or obstacles.
+
+Respond in a valid JSON object with an "options" array. Example format for a single option:
+{
+  "title": "Launch New Client Onboarding Process to Reduce Churn by 15%",
+  "description": "Implement a standardized, automated client onboarding process to improve initial client experience, increase product adoption, and reduce first-90-day churn.",
+  "successCriteria": ["All new clients go through the standardized process", "Time-to-value for new clients is reduced by 20%", "Client churn within the first 90 days is reduced from 25% to 10%"],
+  "keyMetrics": ["90-day Churn Rate", "Time-to-Value (days)", "Client Satisfaction Score (CSAT)"],
+  "smartScore": 95,
+  "smartBreakdown": { "specific": 98, "measurable": 95, "achievable": 90, "relevant": 98, "timeBound": 99 },
+  "milestones": [
+    { "title": "Map current onboarding process and identify pain points", "dueDate": "2025-10-15" },
+    { "title": "Develop new automated workflow and training materials", "dueDate": "2025-11-15" },
+    { "title": "Pilot new process with 5 new clients", "dueDate": "2025-12-05" },
+    { "title": "Full rollout to all new clients", "dueDate": "2025-12-20" }
+  ],
+  "potentialRisks": ["Technical integration issues with CRM", "Resistance from sales team to adopt new process"]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo', // Use a powerful model
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert EOS implementer. Always respond with valid JSON that strictly follows the requested structure.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.8,
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    return {
+      success: true,
+      data: result
+    };
+  } catch (error) {
+    console.error('Error generating SMART Rocks from vision:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to generate SMART Rocks'
+    };
+  }
+};
+
+/**
  * Validate if OpenAI service is configured properly
  */
 export const validateConfiguration = async () => {

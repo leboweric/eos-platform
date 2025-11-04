@@ -475,6 +475,64 @@ const io = meetingSocketService.initialize(server);
 // Make io globally available for observability
 global.io = io;
 
+// Graceful shutdown handler for meeting resilience
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  
+  // 1. Stop accepting new connections
+  server.close(() => {
+    console.log('🚫 HTTP server closed');
+  });
+  
+  // 2. Save all active transcription sessions
+  try {
+    const transcriptionService = await import('./services/transcriptionService.js');
+    await transcriptionService.default.saveAllActiveSessions();
+    console.log('💾 All active transcription sessions saved');
+  } catch (error) {
+    console.error('❌ Error saving transcription sessions:', error);
+  }
+  
+  // 3. Close WebSocket connections gracefully
+  try {
+    if (global.io) {
+      global.io.close();
+      console.log('🔌 All WebSocket connections closed');
+    }
+  } catch (error) {
+    console.error('❌ Error closing WebSocket connections:', error);
+  }
+  
+  // 4. Close database connections
+  try {
+    const { pool } = await import('./config/database.js');
+    await pool.end();
+    console.log('🗃️ Database connections closed');
+  } catch (error) {
+    console.error('❌ Error closing database:', error);
+  }
+  
+  console.log('✅ Graceful shutdown complete');
+  process.exit(0);
+}
+
+// Listen for shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Set shutdown timeout (force exit after 10 seconds)
+setTimeout(() => {
+  if (isShuttingDown) {
+    console.error('⏰ Graceful shutdown timeout. Forcing exit.');
+    process.exit(1);
+  }
+}, 10000);
+
 // Only start server when not in test mode
 // Tests use supertest which handles this internally
 if (process.env.NODE_ENV !== 'test') {

@@ -19,12 +19,33 @@ export const getTeams = async (req, res) => {
         t.is_leadership_team,
         t.is_active,
         d.name as department_name,
-        COUNT(DISTINCT tm.user_id) as member_count
+        COUNT(DISTINCT tm.user_id) as member_count,
+        COALESCE(
+          (
+            SELECT JSON_AGG(member_data)
+            FROM (
+              SELECT DISTINCT ON (u2.id)
+                JSON_BUILD_OBJECT(
+                  'id', u2.id,
+                  'firstName', u2.first_name,
+                  'lastName', u2.last_name,
+                  'name', CONCAT(u2.first_name, ' ', u2.last_name),
+                  'email', u2.email,
+                  'avatarUrl', u2.avatar_url
+                ) as member_data
+              FROM team_members tm2
+              JOIN users u2 ON u2.id = tm2.user_id
+              WHERE tm2.team_id = t.id
+              ORDER BY u2.id, u2.first_name, u2.last_name
+            ) ordered_members
+          ),
+          '[]'::json
+        ) as members
       FROM teams t
       LEFT JOIN departments d ON t.department_id = d.id
       LEFT JOIN team_members tm ON tm.team_id = t.id
       WHERE t.organization_id = $1
-      GROUP BY t.id, d.id
+      GROUP BY t.id, d.name
       ORDER BY t.is_leadership_team DESC, t.name
     `;
 

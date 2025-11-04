@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Building2,
@@ -31,6 +32,7 @@ const DepartmentsPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [expandedDepts, setExpandedDepts] = useState(new Set());
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
@@ -40,6 +42,19 @@ const DepartmentsPage = () => {
     parentDepartmentId: null,
     is_active: true
   });
+
+  // Toggle department expansion
+  const toggleDeptExpanded = (deptId) => {
+    setExpandedDepts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(deptId)) {
+        newSet.delete(deptId);
+      } else {
+        newSet.add(deptId);
+      }
+      return newSet;
+    });
+  };
 
   // Fetch departments from API
   useEffect(() => {
@@ -323,79 +338,148 @@ const DepartmentsPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDepartments.map((dept) => (
-                    <tr key={dept.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center">
-                          <Building2 className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="font-medium">{dept.name}</p>
-                            {dept.leader_name && (
-                              <p className="text-sm text-gray-500">Led by {dept.leader_name}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-gray-600 max-w-xs truncate">
-                          {dept.description || '-'}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Badge variant="secondary">
-                          {parseInt(dept.member_count) || 0}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleActive(dept)}
-                            className={`
-                              relative inline-flex h-5 w-9 items-center rounded-full
-                              transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                              ${dept.is_active !== false ? 'bg-green-600' : 'bg-gray-300'}
-                              cursor-pointer hover:opacity-80
-                            `}
-                            role="switch"
-                            aria-checked={dept.is_active !== false}
-                            aria-label={`Toggle ${dept.name} active status`}
-                          >
-                            <span
-                              className={`
-                                inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm
-                                ${dept.is_active !== false ? 'translate-x-5' : 'translate-x-1'}
-                              `}
-                            />
-                          </button>
-                          <span className={`text-sm ${dept.is_active !== false ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-                            {dept.is_active !== false ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenDialog(dept)}
-                            title="Edit department"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(dept)}
-                            title="Delete department"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredDepartments.map((dept) => {
+                    const isExpanded = expandedDepts.has(dept.id);
+                    const members = dept.members || [];
+                    const memberCount = parseInt(dept.member_count) || 0;
+                    
+                    return (
+                      <React.Fragment key={dept.id}>
+                        {/* Main Row */}
+                        <tr className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center">
+                              <Building2 className="h-5 w-5 text-gray-400 mr-3" />
+                              <div>
+                                <p className="font-medium">{dept.name}</p>
+                                {dept.leader_name && (
+                                  <p className="text-sm text-gray-500">Led by {dept.leader_name}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <p className="text-sm text-gray-600 max-w-xs truncate">
+                              {dept.description || '-'}
+                            </p>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              onClick={() => toggleDeptExpanded(dept.id)}
+                              className="inline-flex items-center gap-1 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+                              title={memberCount > 0 ? "Click to view members" : "No members"}
+                            >
+                              <Badge variant="secondary" className="cursor-pointer">
+                                {memberCount}
+                              </Badge>
+                              {memberCount > 0 && (
+                                <svg
+                                  className={`h-4 w-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Switch
+                                checked={dept.is_active !== false}
+                                onCheckedChange={() => handleToggleActive(dept)}
+                                className="data-[state=checked]:bg-green-500"
+                              />
+                              <span className={`text-sm font-medium ${dept.is_active !== false ? 'text-green-600' : 'text-gray-400'}`}>
+                                {dept.is_active !== false ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenDialog(dept)}
+                                title="Edit department"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(dept)}
+                                title="Delete department"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* Expanded Members Row */}
+                        {isExpanded && memberCount > 0 && (
+                          <tr className="bg-gray-50/50">
+                            <td colSpan="5" className="py-4 px-4">
+                              <div className="pl-12">
+                                <p className="text-sm font-semibold text-gray-700 mb-3">
+                                  Team Members ({memberCount})
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {members.map((member) => (
+                                    <div
+                                      key={member.id}
+                                      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all"
+                                    >
+                                      {/* Avatar */}
+                                      <div className="flex-shrink-0">
+                                        {member.avatarUrl ? (
+                                          <img
+                                            src={member.avatarUrl}
+                                            alt={member.name}
+                                            className="h-10 w-10 rounded-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                                            {member.firstName?.[0]}{member.lastName?.[0]}
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Member Info */}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                          {member.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">
+                                          {member.email}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        
+                        {/* Empty State for Expanded Row with No Members */}
+                        {isExpanded && memberCount === 0 && (
+                          <tr className="bg-gray-50/50">
+                            <td colSpan="5" className="py-4 px-4">
+                              <div className="pl-12">
+                                <p className="text-sm text-gray-500 italic">
+                                  No members in this department yet.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

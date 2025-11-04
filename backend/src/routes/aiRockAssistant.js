@@ -7,7 +7,8 @@ import {
   checkAlignment,
   generateRock,
   applySuggestion,
-  getSuggestionHistory
+  getSuggestionHistory,
+  generateFromVision
 } from '../controllers/aiRockAssistantController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -29,6 +30,9 @@ router.post('/check-alignment', checkAlignment);
 
 // Generate a complete SMART Rock from an idea
 router.post('/generate', generateRock);
+
+// Generate multiple SMART Rock options from a vision
+router.post('/generate-from-vision', generateFromVision);
 
 // Mark a suggestion as applied
 router.put('/suggestions/:suggestionId/apply', applySuggestion);

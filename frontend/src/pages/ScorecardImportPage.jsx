@@ -43,6 +43,7 @@ const ScorecardImportPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [selectedCadence, setSelectedCadence] = useState('weekly'); // Default to weekly
   const [dragOver, setDragOver] = useState(false);
 
   // Step 2: Preview
@@ -143,6 +144,7 @@ const ScorecardImportPage = () => {
       formData.append('file', selectedFile);
       formData.append('organizationId', organizationId);
       formData.append('teamId', selectedTeamId);
+      formData.append('cadence', selectedCadence);
 
       const response = await scorecardImportService.preview(formData);
       setPreviewData(response.preview);
@@ -176,6 +178,7 @@ const ScorecardImportPage = () => {
       formData.append('file', selectedFile);
       formData.append('organizationId', organizationId);
       formData.append('teamId', selectedTeamId);
+      formData.append('cadence', selectedCadence);
       formData.append('conflictStrategy', conflictStrategy);
       formData.append('ownerMappings', JSON.stringify(sanitizedMappings));
 
@@ -246,6 +249,35 @@ const ScorecardImportPage = () => {
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Cadence Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="cadence">Scorecard Cadence</Label>
+            <Select value={selectedCadence} onValueChange={setSelectedCadence}>
+              <SelectTrigger id="cadence">
+                <SelectValue placeholder="Select cadence" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Weekly Scorecard</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="monthly">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    <span>Monthly Scorecard</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500">
+              {selectedCadence === 'weekly' 
+                ? 'Date columns like "Oct 13 - Oct 19"' 
+                : 'Date columns like "November", "October"'}
+            </p>
           </div>
 
           {/* File Upload with Drag & Drop */}

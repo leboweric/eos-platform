@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Edit,
+  Edit2,
   BarChart3,
   GripVertical,
   Archive,
@@ -475,13 +476,23 @@ const ScorecardTableClean = ({
                 {/* Week columns */}
                 {periodLabels.map((label, index) => {
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
-                  const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
+                  const isLastWeekColumn = originalIndex === periodLabelsOriginal.length - 1;
+                  
                   return (
-                    <th key={periodDates[index]} className={'text-center ' + (meetingMode ? 'px-2 py-2' : 'px-1') + ' ' + 
-                      (isCurrentPeriod ? (meetingMode ? 'bg-blue-50 font-semibold' : 'bg-gray-50 border-2 border-gray-300') : '')
+                    <th key={periodDates[index]} className={
+                      `text-center ${meetingMode ? "px-2 py-2" : "px-1"} ` +
+                      (isLastWeekColumn ? (meetingMode ? "bg-amber-50 font-semibold" : "bg-amber-50 border-2 border-amber-300") : "")
                     }>
-                      <div className="flex flex-col items-center">
-                        <span className={'font-medium text-gray-600 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>{label}</span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        {isLastWeekColumn && (
+                          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Last Week</span>
+                        )}
+                        <span className={`font-medium text-gray-600 ${meetingMode ? "text-xs" : "text-[10px]"}`}>
+                          {label}
+                        </span>
+                        {isLastWeekColumn && (
+                          <Edit2 className="h-3 w-3 text-amber-600" />
+                        )}
                       </div>
                     </th>
                   );
@@ -652,16 +663,16 @@ const ScorecardTableClean = ({
                       
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
-                      const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
+                      const isLastWeekColumn = originalIndex === periodLabelsOriginal.length - 1;
                       
                       let cellClassName = 'text-center ';
                       const isLastColumn = index === periodDates.length - 1;
                       if (meetingMode) {
                         cellClassName += isLastColumn ? 'px-2 pr-4 py-2' : 'px-2 py-2';
-                        if (isCurrentPeriod) cellClassName += ' bg-blue-50';
+                        if (isLastWeekColumn) cellClassName += ' bg-amber-50';
                       } else {
                         cellClassName += isLastColumn ? 'px-1 pr-3' : 'px-1';
-                        if (isCurrentPeriod) cellClassName += ' bg-gray-50 border-2 border-gray-300';
+                        if (isLastWeekColumn) cellClassName += ' bg-amber-50 border-2 border-amber-300';
                       }
                       
                       return (
@@ -694,7 +705,7 @@ const ScorecardTableClean = ({
                               // Read-only mode without edit capability - show tooltip for comments
                               <div 
                                 className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium relative ' +
-                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700' : 'bg-white border border-gray-200 text-gray-600'))
+                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isLastWeekColumn ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white border border-gray-200 text-gray-600'))
                                 }
                               >
                                 <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
@@ -719,7 +730,7 @@ const ScorecardTableClean = ({
                               <button
                                 onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
                                 className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
-                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isLastWeekColumn ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
                                 }
                                 title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
                               >

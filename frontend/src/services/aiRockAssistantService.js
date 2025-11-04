@@ -85,5 +85,19 @@ export const aiRockAssistantService = {
       `/organizations/${orgId}${AI_BASE_URL}/suggestions?${params.toString()}`
     );
     return response.data;
+  },
+
+  /**
+   * Generate multiple SMART Rock options from a vision
+   */
+  async generateFromVision(orgId, { vision, teamId, challenges, strategicFocus, numberOfOptions = 3 }) {
+    const response = await api.post(`/organizations/${orgId}${AI_BASE_URL}/generate-from-vision`, {
+      vision,
+      teamId,
+      challenges,
+      strategicFocus,
+      numberOfOptions
+    });
+    return response.data;
   }
 };

@@ -41,6 +41,12 @@ export const userActivityService = {
       // Don't let activity tracking errors break the app
       console.error('[ActivityTracking] Error tracking activity:', error);
     }
+  },
+
+  // Get meeting statistics
+  async getMeetingStats(days = 30) {
+    const response = await axios.get(`${API_BASE}/activity/meetings?days=${days}`);
+    return response.data;
   }
 };
 

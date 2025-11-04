@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Activity, TrendingUp, Clock, Calendar,
-  RefreshCw, User, BarChart, MousePointer
+  RefreshCw, User, BarChart, MousePointer, Video, Bot
 } from 'lucide-react';
 import { LineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { userActivityService } from '../../services/userActivityService';
@@ -13,6 +13,7 @@ const UserActivityPage = () => {
   const [stats, setStats] = useState(null);
   const [topUsers, setTopUsers] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [meetingStats, setMeetingStats] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch all activity data
@@ -21,10 +22,11 @@ const UserActivityPage = () => {
       setRefreshing(true);
       setError(null);
 
-      const [statsResponse, topUsersResponse, recentResponse] = await Promise.all([
+      const [statsResponse, topUsersResponse, recentResponse, meetingStatsResponse] = await Promise.all([
         userActivityService.getActivityStats(timeRange),
         userActivityService.getTopUsers(10, timeRange),
-        userActivityService.getRecentActivity(20)
+        userActivityService.getRecentActivity(20),
+        userActivityService.getMeetingStats(timeRange)
       ]);
 
       if (statsResponse.success) {
@@ -37,6 +39,10 @@ const UserActivityPage = () => {
       
       if (recentResponse.success) {
         setRecentActivity(recentResponse.data);
+      }
+      
+      if (meetingStatsResponse.success) {
+        setMeetingStats(meetingStatsResponse.data);
       }
 
       setLoading(false);
@@ -208,6 +214,51 @@ const UserActivityPage = () => {
               {formatDuration(stats?.avgSessionDuration || 0)}
             </p>
             <p className="text-xs text-gray-500 mt-1">Average time per session</p>
+          </div>
+        </div>
+
+        {/* Meeting Statistics Cards */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Video className="w-5 h-5 text-blue-500" />
+            Meeting & AI Transcription Analytics
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Total Meetings Completed</h3>
+                <Calendar className="w-5 h-5 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{meetingStats?.stats?.total_meetings || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">In the last {timeRange} days</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">AI Adoption Rate</h3>
+                <Bot className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{meetingStats?.stats?.ai_adoption_rate || 0}%</p>
+              <p className="text-xs text-gray-500 mt-1">{meetingStats?.stats?.meetings_with_ai || 0} meetings used AI</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Weekly Meetings</h3>
+                <Users className="w-5 h-5 text-blue-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{meetingStats?.stats?.weekly_meetings || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Regular team meetings</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-600">Quarterly Meetings</h3>
+                <TrendingUp className="w-5 h-5 text-orange-500" />
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{meetingStats?.stats?.quarterly_meetings || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Planning sessions</p>
+            </div>
           </div>
         </div>
 

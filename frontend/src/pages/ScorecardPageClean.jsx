@@ -487,51 +487,106 @@ const ScorecardPageClean = () => {
     return new Date(d.getFullYear(), quarter * 3 + 3, 0);
   };
 
-  // Get week labels based on actual data dates, not calculated from today
+  // Get week labels based on actual data dates, shifted back by 1 week
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     
+    // Calculate the week that just ended (last week)
+    const today = new Date();
+    const lastSunday = new Date(today);
+    lastSunday.setDate(today.getDate() - (today.getDay() || 7)); // Go to last Sunday
+    const lastWeekStart = new Date(lastSunday);
+    lastWeekStart.setDate(lastSunday.getDate() - 6); // Go to last Monday
+    
     // Get all unique dates where we have actual score data
     const allScoreDates = [...new Set(
-      metrics.flatMap(metric => Object.keys(weeklyScores[metric.id] || {}))
-    )].sort();
+      Object.values(weeklyScores).flatMap(scores => Object.keys(scores))
+    )].sort((a, b) => new Date(b) - new Date(a));
     
     if (allScoreDates.length === 0) {
-      console.log('ScorecardPage - No score data available, showing empty weeks');
-      return { labels: [], weekDates: [] };
-    }
-    
-    // For 13-week rolling, show the last 13 weeks that have data
-    let displayDates;
-    if (scorecardTimePeriodPreference === '13_week_rolling') {
-      displayDates = allScoreDates.slice(-13);
-    } else {
-      // For other preferences, still use the existing logic but ensure we have data
-      const today = new Date();
-      const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
+      console.log('ScorecardPage - No score data available, showing last 13 weeks ending with last week');
       
-      // Filter actual dates to only those in the calculated range
-      displayDates = allScoreDates.filter(dateStr => {
-        const date = new Date(dateStr);
-        return date >= startDate && date <= endDate;
-      });
-    }
-    
-    // Convert dates to labels and week start dates
-    displayDates.forEach(dateStr => {
-      const date = new Date(dateStr);
-      const weekStart = getWeekStartDate(date);
-      const weekStartStr = weekStart.toISOString().split('T')[0];
-      
-      // Avoid duplicate weeks
-      if (!weekDates.includes(weekStartStr)) {
+      // Show last 13 weeks, with the rightmost being last week
+      for (let i = 12; i >= 0; i--) {
+        const weekStart = new Date(lastWeekStart);
+        weekStart.setDate(lastWeekStart.getDate() - (i * 7));
+        const weekStartStr = weekStart.toISOString().split('T')[0];
         labels.push(formatWeekLabel(weekStart));
         weekDates.push(weekStartStr);
       }
+      
+      console.log('ScorecardPage - Showing weeks:', weekDates);
+      return { labels, weekDates };
+    }
+    
+    // For 13-week rolling, show the last 13 weeks ending with last week
+    if (scorecardTimePeriodPreference === '13_week_rolling') {
+      // Filter dates to only include weeks up to and including last week
+      const lastWeekEnd = new Date(lastSunday);
+      const filteredDates = allScoreDates.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date <= lastWeekEnd;
+      });
+      
+      // Take the last 13 weeks
+      const last13Weeks = filteredDates.slice(0, 13);
+      
+      last13Weeks.forEach(dateStr => {
+        const date = new Date(dateStr);
+        const weekStart = getWeekStartDate(date);
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+        
+        // Avoid duplicate weeks
+        if (!weekDates.includes(weekStartStr)) {
+          labels.push(formatWeekLabel(weekStart));
+          weekDates.push(weekStartStr);
+        }
+      });
+      
+      // If we don't have 13 weeks of data, fill in the missing weeks
+      if (weekDates.length < 13) {
+        const oldestDate = weekDates.length > 0 ? new Date(weekDates[weekDates.length - 1]) : lastWeekStart;
+        const weeksNeeded = 13 - weekDates.length;
+        
+        for (let i = 1; i <= weeksNeeded; i++) {
+          const weekStart = new Date(oldestDate);
+          weekStart.setDate(oldestDate.getDate() - (i * 7));
+          const weekStartStr = weekStart.toISOString().split('T')[0];
+          
+          if (!weekDates.includes(weekStartStr)) {
+            labels.push(formatWeekLabel(weekStart));
+            weekDates.push(weekStartStr);
+          }
+        }
+      }
+      
+      console.log(`ScorecardPage - Showing 13-week rolling (ending last week):`, weekDates);
+      
+      return { labels, weekDates };
+    }
+    
+    // For other time periods (e.g., quarter, year)
+    const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
+    
+    // Adjust endDate to last week if it's in the future
+    const lastWeekEnd = new Date(lastSunday);
+    const adjustedEndDate = endDate > lastWeekEnd ? lastWeekEnd : endDate;
+    
+    allScoreDates.forEach(dateStr => {
+      const date = new Date(dateStr);
+      if (date >= startDate && date <= adjustedEndDate) {
+        const weekStart = getWeekStartDate(date);
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+        
+        if (!weekDates.includes(weekStartStr)) {
+          labels.push(formatWeekLabel(weekStart));
+          weekDates.push(weekStartStr);
+        }
+      }
     });
     
-    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks with actual data:`, weekDates);
+    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks (ending last week):`, weekDates);
     
     return { labels, weekDates };
   };

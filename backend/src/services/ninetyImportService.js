@@ -25,8 +25,10 @@ class NinetyImportService {
 
   /**
    * Transform Ninety.io data format to AXP format
+   * @param {Object} parseResults - Parsed CSV data
+   * @param {string} cadence - 'weekly' or 'monthly'
    */
-  static transformNinetyData(parseResults) {
+  static transformNinetyData(parseResults, cadence = 'weekly') {
     const data = parseResults.data;
     
     // First row contains headers
@@ -36,6 +38,7 @@ class NinetyImportService {
     const averageIndex = headers.findIndex(h => h === 'Average');
     const dateColumns = headers.slice(averageIndex + 1);
     
+    console.log(`Using cadence: ${cadence}`);
     console.log('Found date columns:', dateColumns.length, dateColumns);
     
     const metrics = [];
@@ -75,10 +78,14 @@ class NinetyImportService {
         const value = row[averageIndex + 1 + j];
         
         if (dateStr && value !== '' && value !== undefined && value !== null) {
-          const dateRange = this.parseDateRange(dateStr);
+          // CHOOSE PARSER BASED ON CADENCE
+          const dateRange = cadence === "monthly" 
+            ? this.parseMonthColumn(dateStr)
+            : this.parseDateRange(dateStr);
+          
           const parsedValue = this.parseNumericValue(value);
           
-          if (parsedValue !== null) {
+          if (parsedValue !== null && dateRange.endDate) {
             scores.push({
               week_ending: dateRange.endDate,
               value: parsedValue,
@@ -99,7 +106,7 @@ class NinetyImportService {
         goal_operator: goalData.operator,
         goal_direction: goalData.direction,
         format: goalData.hasCurrency ? 'currency' : goalData.isPercentage ? 'percentage' : 'number',
-        cadence: 'weekly',
+        cadence: cadence, // USE THE PROVIDED CADENCE
         import_source: 'ninety.io',
         external_id: `ninety_${Date.now()}_${i}`,
         scores
@@ -113,7 +120,8 @@ class NinetyImportService {
     return {
       metrics,
       groups: Array.from(groups.values()),
-      dateColumns
+      dateColumns,
+      cadence // RETURN THE CADENCE
     };
   }
 
@@ -223,6 +231,37 @@ class NinetyImportService {
       startDate: startDate.toISOString().split('T')[0],
       endDate: weekEndingDate.toISOString().split('T')[0]  // Return Monday, not Sunday
     };
+  }
+
+  /**
+   * Parse month-only column headers like "November" to ISO dates
+   */
+  static parseMonthColumn(monthStr) {
+    if (!monthStr) return { startDate: null, endDate: null };
+    
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+    
+    const monthIndex = monthNames.indexOf(monthStr.trim());
+    if (monthIndex === -1) return { startDate: null, endDate: null };
+    
+    // Use current year as base
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    // If the month is in the future, assume it's from last year
+    let year = currentYear;
+    if (monthIndex > currentMonth) {
+      year = currentYear - 1;
+    }
+    
+    // Month starts on day 1
+    const startDate = new Date(year, monthIndex, 1);
+    
+    // Month ends on the last day of the month
+    const endDate = new Date(year, monthIndex + 1, 0); // Day 0 = last day of previous month
+    
+    return { startDate, endDate };
   }
 
   /**

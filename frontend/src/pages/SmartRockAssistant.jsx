@@ -34,6 +34,7 @@ import {
   X
 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
+import { toast } from 'sonner';
 
 const SmartRockAssistant = () => {
   const { orgId } = useParams();
@@ -116,13 +117,20 @@ const SmartRockAssistant = () => {
     loadTheme();
   }, [user]);
   
-  // Step tracking
-  const [currentStep, setCurrentStep] = useState(1);
+  // Step tracking - Start at step 0 (vision input)
+  const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
   
   // Configuration check
   const [isConfigured, setIsConfigured] = useState(null);
   const [configError, setConfigError] = useState(null);
+  
+  // Vision-based workflow state
+  const [vision, setVision] = useState('');
+  const [challenges, setChallenges] = useState('');
+  const [strategicFocus, setStrategicFocus] = useState([]);
+  const [generatedOptions, setGeneratedOptions] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(null);
   
   // Rock data
   const [rockData, setRockData] = useState({
@@ -259,6 +267,48 @@ const SmartRockAssistant = () => {
     }
   };
 
+  // New vision-based workflow functions
+  const handleGenerateOptions = async () => {
+    if (!vision || !rockData.teamId) return;
+    
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    
+    try {
+      const result = await aiRockAssistantService.generateFromVision(orgId, {
+        vision,
+        teamId: rockData.teamId,
+        challenges,
+        strategicFocus
+      });
+      
+      if (result.success) {
+        setGeneratedOptions(result.options);
+        setCurrentStep(1); // Move to new Step 1 (Options Review)
+      } else {
+        setAnalysisError('Failed to generate Rock options.');
+      }
+    } catch (error) {
+      setAnalysisError(error.response?.data?.error || 'An error occurred.');
+      console.error('Generation error:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleSelectOption = (option) => {
+    setSelectedOption(option);
+    // Pre-populate the main rockData state with the selected option
+    setRockData({
+      ...rockData, // Keep teamId, quarter, year
+      title: option.title,
+      description: option.description,
+      owner: user?.id || '' // Reset owner or keep if already set
+    });
+    setMilestones(option.milestones || []);
+    setCurrentStep(2); // Move to new Step 2 (Refinement)
+  };
+
   const saveRock = async () => {
     try {
       // Create the Rock with milestones
@@ -277,10 +327,15 @@ const SmartRockAssistant = () => {
         rockPayload
       );
       
-      // Navigate to priorities page
-      navigate(`/organizations/${orgId}/quarterly-priorities`);
+      // Show success notification
+      toast.success('SMART Rock created successfully!', {
+        description: `"${rockData.title}" has been added to your quarterly priorities.`
+      });
     } catch (error) {
       console.error('Error saving Rock:', error);
+      toast.error('Failed to create Rock', {
+        description: 'Please try again or contact support if the problem persists.'
+      });
     }
   };
 
@@ -288,16 +343,20 @@ const SmartRockAssistant = () => {
     setCompletedSteps([...completedSteps, currentStep]);
     setCurrentStep(currentStep + 1);
     
-    // Trigger analysis when moving to step 2
-    if (currentStep === 1 && rockData.title) {
+    // New workflow:
+    // Step 0 -> 1 is handled by handleGenerateOptions (manual)
+    // Step 1 -> 2 is handled by handleSelectOption (manual)
+    
+    // Trigger analysis when moving from step 2 to step 3 (old step 1 -> 2)
+    if (currentStep === 2 && rockData.title) {
       analyzeRock();
     }
-    // Generate milestones when moving to step 3
-    if (currentStep === 2) {
+    // Generate milestones when moving from step 3 to step 4 (old step 2 -> 3)
+    if (currentStep === 3) {
       generateMilestones();
     }
-    // Check alignment when moving to step 4
-    if (currentStep === 3 && rockData.type === 'individual') {
+    // Check alignment when moving from step 4 to step 5 (old step 3 -> 4)
+    if (currentStep === 4 && rockData.type === 'individual') {
       checkAlignment();
     }
   };
@@ -383,18 +442,250 @@ const SmartRockAssistant = () => {
         {/* Progress Bar */}
         <div className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-semibold text-slate-600">Step {currentStep} of 5</span>
+            <span className="text-sm font-semibold text-slate-600">Step {currentStep + 1} of 6</span>
             {smartAnalysis && (
               <Badge className={getSmartScoreBadge(smartAnalysis.overallScore)}>
                 SMART Score: {smartAnalysis.overallScore}%
               </Badge>
             )}
           </div>
-          <Progress value={(currentStep / 5) * 100} className="h-3 bg-slate-100" />
+          <Progress value={((currentStep + 1) / 6) * 100} className="h-3 bg-slate-100" />
         </div>
 
-        {/* Step 1: Basic Information */}
+        {/* Step 0: Vision Input (New First Step) */}
+        {currentStep === 0 && (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 rounded-xl" style={{
+                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.accent, 0.15)} 0%, ${hexToRgba(themeColors.secondary, 0.15)} 100%)`
+                }}>
+                  <Sparkles className="h-5 w-5" style={{ color: themeColors.accent }} />
+                </div>
+                Step 1: Envision Success
+              </CardTitle>
+              <CardDescription className="text-slate-600 font-medium">
+                Start with the end in mind. What does great look like at the end of the quarter?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Team Select Dropdown */}
+              <div className="space-y-2">
+                <Label htmlFor="team" className="text-sm font-semibold text-slate-700">Team*</Label>
+                <Select
+                  value={rockData.teamId}
+                  onValueChange={(value) => setRockData({ ...rockData, teamId: value })}
+                >
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                    {teams.map(team => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name} {team.is_leadership_team && '(Leadership)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Vision Textarea */}
+              <div className="space-y-2">
+                <Label htmlFor="vision" className="text-sm font-semibold text-slate-700">Your Vision of Success*</Label>
+                <Textarea
+                  id="vision"
+                  value={vision}
+                  onChange={(e) => setVision(e.target.value)}
+                  placeholder="Example: We've successfully onboarded 25 new clients, our team is fully trained on the new software, and client satisfaction scores are above 4.5/5..."
+                  rows={6}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.2)'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+                />
+                <p className="text-sm text-muted-foreground">Describe the outcome, not the process. Be as detailed as possible.</p>
+              </div>
+
+              {/* Optional Fields */}
+              <div className="space-y-2">
+                <Label htmlFor="challenges" className="text-sm font-semibold text-slate-700">What challenge are you trying to solve? (Optional)</Label>
+                <Textarea
+                  id="challenges"
+                  value={challenges}
+                  onChange={(e) => setChallenges(e.target.value)}
+                  rows={2}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.2)'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">Strategic Focus (Optional)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Growth', 'Efficiency', 'Quality', 'Innovation', 'Customer Experience', 'Team Development'].map((focus) => (
+                    <div key={focus} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={focus}
+                        checked={strategicFocus.includes(focus)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setStrategicFocus([...strategicFocus, focus]);
+                          } else {
+                            setStrategicFocus(strategicFocus.filter(f => f !== focus));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={focus} className="text-sm text-slate-600">{focus}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {analysisError && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">{analysisError}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleGenerateOptions}
+                  disabled={!vision || !rockData.teamId || isAnalyzing}
+                  className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  style={{
+                    background: !vision || !rockData.teamId || isAnalyzing
+                      ? '#9CA3AF'
+                      : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                    filter: !vision || !rockData.teamId || isAnalyzing ? 'none' : undefined
+                  }}
+                  onMouseEnter={(e) => {
+                    if (vision && rockData.teamId && !isAnalyzing) {
+                      e.currentTarget.style.filter = 'brightness(1.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (vision && rockData.teamId && !isAnalyzing) {
+                      e.currentTarget.style.filter = 'none';
+                    }
+                  }}
+                >
+                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate SMART Rock Options
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 1: Review Options (New Second Step) */}
         {currentStep === 1 && (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 rounded-xl" style={{
+                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.15)} 0%, ${hexToRgba(themeColors.secondary, 0.15)} 100%)`
+                }}>
+                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
+                Step 2: Review Rock Options
+              </CardTitle>
+              <CardDescription className="text-slate-600 font-medium">
+                Choose the best {labels.rock_singular} option for your team
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {generatedOptions.length > 0 ? (
+                <div className="space-y-4">
+                  {generatedOptions.map((option, index) => (
+                    <Card key={index} className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg font-bold text-slate-900">{option.title}</CardTitle>
+                          <Badge className={getSmartScoreBadge(option.smartScore || 90)}>
+                            {option.smartScore || 90}% SMART
+                          </Badge>
+                        </div>
+                        <CardDescription className="text-slate-600">{option.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <h4 className="font-semibold mb-2 text-slate-900">Success Criteria:</h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 mb-4">
+                          {option.successCriteria?.map((item, i) => <li key={i}>{item}</li>) || []}
+                        </ul>
+                        
+                        {option.milestones && option.milestones.length > 0 && (
+                          <details className="group">
+                            <summary className="cursor-pointer font-semibold text-slate-900 hover:text-primary">
+                              View Milestones ({option.milestones.length})
+                            </summary>
+                            <div className="mt-2 space-y-2">
+                              {option.milestones.map((milestone, i) => (
+                                <div key={i} className="flex justify-between text-sm p-2 bg-slate-50 rounded">
+                                  <span>{milestone.title}</span>
+                                  <span className="font-medium">{format(new Date(milestone.dueDate), 'MMM d')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
+                      </CardContent>
+                      <div className="p-6 pt-0">
+                        <Button 
+                          onClick={() => handleSelectOption(option)}
+                          className="w-full text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                          onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
+                        >
+                          Select This Rock
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-600">No options generated yet.</p>
+                </div>
+              )}
+              
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setCurrentStep(0)}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+                >
+                  Back to Vision
+                </Button>
+                {generatedOptions.length > 0 && (
+                  <Button 
+                    variant="outline"
+                    onClick={handleGenerateOptions}
+                    disabled={isAnalyzing}
+                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Generate New Options
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Refine Rock (Old Step 1 & 3 Combined) */}
+        {currentStep === 2 && (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
             <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
               <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
@@ -403,10 +694,10 @@ const SmartRockAssistant = () => {
                 }}>
                   <Target className="h-5 w-5" style={{ color: themeColors.accent }} />
                 </div>
-                Step 1: Basic {labels.rock_singular} Information
+                Step 3: Refine Your {labels.rock_singular}
               </CardTitle>
               <CardDescription className="text-slate-600 font-medium">
-                Start with your initial {labels.rock_singular} idea. The AI will help refine it.
+                Review and edit the selected {labels.rock_singular} before analysis.
               </CardDescription>
             </CardHeader>
           <CardContent className="p-6 space-y-6">
@@ -526,7 +817,49 @@ const SmartRockAssistant = () => {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            {/* Milestones Section (moved from old step 3) */}
+            {milestones.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-900">Milestones</h3>
+                <div className="space-y-3">
+                  {milestones.map((milestone, index) => (
+                    <div key={index} className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-slate-900">{milestone.title}</h4>
+                          {milestone.description && (
+                            <p className="text-sm text-slate-600 mt-1">{milestone.description}</p>
+                          )}
+                          {milestone.successCriteria && (
+                            <p className="text-sm text-slate-700 mt-2">
+                              <span className="font-semibold">Success Criteria:</span> {milestone.successCriteria}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm px-3 py-1.5 backdrop-blur-sm rounded-lg border ml-4" style={{
+                          backgroundColor: hexToRgba(themeColors.primary, 0.05),
+                          borderColor: hexToRgba(themeColors.primary, 0.2)
+                        }}>
+                          <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="font-medium" style={{ color: themeColors.primary }}>
+                            {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep(1)}
+                className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+              >
+                Back to Options
+              </Button>
               <Button 
                 onClick={nextStep}
                 disabled={!rockData.title || !rockData.owner || !rockData.teamId}
@@ -556,8 +889,8 @@ const SmartRockAssistant = () => {
         </Card>
       )}
 
-        {/* Step 2: SMART Analysis */}
-        {currentStep === 2 && (
+        {/* Step 3: SMART Analysis */}
+        {currentStep === 3 && (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
             <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
               <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
@@ -566,7 +899,7 @@ const SmartRockAssistant = () => {
                 }}>
                   <Sparkles className="h-5 w-5" style={{ color: themeColors.primary }} />
                 </div>
-                Step 2: SMART Analysis
+                Step 4: SMART Analysis
               </CardTitle>
               <CardDescription className="text-slate-600 font-medium">
                 AI analysis of your {labels.rock_singular} against SMART criteria
@@ -682,15 +1015,15 @@ const SmartRockAssistant = () => {
         </Card>
       )}
 
-      {/* Step 3: Milestones */}
-      {currentStep === 3 && (
+      {/* Step 4: Milestones */}
+      {currentStep === 4 && (
         <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
           <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
             <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200">
                 <Target className="h-5 w-5 text-green-600" />
               </div>
-              Step 3: Milestone Generation
+              Step 5: Milestone Generation
             </CardTitle>
             <CardDescription className="text-slate-600 font-medium">
               AI-generated milestones to track quarterly progress
@@ -776,15 +1109,15 @@ const SmartRockAssistant = () => {
         </Card>
       )}
 
-      {/* Step 4: Alignment Check (for Department Rocks) */}
-      {currentStep === 4 && rockData.type === 'individual' && (
+      {/* Step 5: Alignment Check (for Department Rocks) */}
+      {currentStep === 5 && rockData.type === 'individual' && (
         <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
           <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
             <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-200">
                 <Users className="h-5 w-5 text-indigo-600" />
               </div>
-              Step 4: Company {labels.rock_singular} Alignment
+              Step 6: Company {labels.rock_singular} Alignment
             </CardTitle>
             <CardDescription className="text-slate-600 font-medium">
               Ensure your Department {labels.rock_singular} supports Company priorities
@@ -887,15 +1220,15 @@ const SmartRockAssistant = () => {
         </Card>
       )}
 
-      {/* Step 5: Review & Create */}
-      {(currentStep === 5 || (currentStep === 4 && rockData.type === 'company')) && (
+      {/* Step 6: Review & Create */}
+      {(currentStep === 6 || (currentStep === 5 && rockData.type === 'company')) && (
         <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
           <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
             <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-100 to-green-200">
                 <Save className="h-5 w-5 text-emerald-600" />
               </div>
-              Step 5: Review & Create {labels.rock_singular}
+              Step 6: Review & Create {labels.rock_singular}
             </CardTitle>
             <CardDescription className="text-slate-600 font-medium">
               Review your SMART {labels.rock_singular} before creating it

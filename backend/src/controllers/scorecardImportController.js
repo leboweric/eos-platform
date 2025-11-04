@@ -18,12 +18,12 @@ export const preview = async (req, res) => {
       });
     }
 
-    const { organizationId, teamId } = req.body;
+    const { organizationId, teamId, cadence = 'weekly' } = req.body; // ADD cadence
     const userId = req.user.id;
 
     // Parse CSV
     const parseResults = NinetyImportService.parseCSV(req.file.buffer);
-    const transformedData = NinetyImportService.transformNinetyData(parseResults);
+    const transformedData = NinetyImportService.transformNinetyData(parseResults, cadence); // PASS cadence
     
     // Get existing metrics to check for conflicts
     // DEDUPLICATION: Match by organization_id + team_id + name (case-insensitive)
@@ -233,6 +233,7 @@ export const execute = async (req, res) => {
     const { 
       organizationId, 
       teamId, 
+      cadence = 'weekly', // ADD cadence
       conflictStrategy = 'merge', // DEFAULT: Use 'merge' for incremental imports
       ownerMappings = {} 
     } = req.body;
@@ -250,7 +251,7 @@ export const execute = async (req, res) => {
 
     // Parse and transform data
     const parseResults = NinetyImportService.parseCSV(req.file.buffer);
-    const transformedData = NinetyImportService.transformNinetyData(parseResults);
+    const transformedData = NinetyImportService.transformNinetyData(parseResults, cadence); // PASS cadence
     
     console.log('Transformed data summary:');
     console.log(`- Metrics found: ${transformedData.metrics.length}`);

@@ -8,7 +8,11 @@ import {
   getTranscriptStatus,
   createTodosFromAI,
   createIssuesFromAI,
-  getAISummary
+  getAISummary,
+  saveTranscriptionSession,
+  getTranscriptionSession,
+  completeTranscriptionSession,
+  cleanupAbandonedSessions
 } from '../controllers/transcriptionController.js';
 
 const router = express.Router();
@@ -57,6 +61,12 @@ router.post('/:transcriptId/create-todos', createTodosFromAI);
 
 // Create issues from AI-detected issues
 router.post('/:transcriptId/create-issues', createIssuesFromAI);
+
+// Session recovery endpoints
+router.post('/sessions/save', saveTranscriptionSession);
+router.get('/sessions/:transcriptId', getTranscriptionSession);
+router.post('/sessions/:transcriptId/complete', completeTranscriptionSession);
+router.post('/sessions/cleanup', cleanupAbandonedSessions);
 
 // Emergency cleanup endpoint (protected - authenticated users only)
 router.post('/cleanup', async (req, res) => {
