@@ -404,12 +404,12 @@ export const concludeMeeting = async (req, res) => {
 
     // Get organization details
     const orgResult = await db.query(
-      'SELECT name, primary_color FROM organizations WHERE id = $1',
+      'SELECT name FROM organizations WHERE id = $1',
       [organizationId]
     );
     const orgData = orgResult.rows[0];
-    const organizationName = orgData?.name || 'Your Organization';
-    const themeColor = orgData?.primary_color || '#6366f1';
+    const orgName = orgData?.name || 'Your Organization';
+    const themeColor = '#6366f1'; // Default theme color (no branding)
 
     // Get team/department name (we know teamId is valid at this point)
     const teamResult = await db.query(
