@@ -363,20 +363,20 @@ const TodosPage = () => {
   const notDoneTodosCount = todos.filter(t => t.archived !== true).length;
   const doneTodosCount = todos.filter(t => t.archived === true).length;
   
-  // Count todos that are complete OR where current user's copy is complete (for multi-assignee)
-  const doneNotArchivedCount = todos.filter(t => {
-    if (t.archived === true) return false;
+  // Count completed todos (including individual multi-assignee copies)
+  const doneNotArchivedCount = todos.reduce((count, t) => {
+    if (t.archived === true) return count;
     
     // For single-assignee todos, check main status
     if (!t.is_multi_assignee || !t.assignees) {
-      return t.status === 'complete';
+      return count + (t.status === 'complete' ? 1 : 0);
     }
     
-    // For multi-assignee todos, ONLY check if current user's copy is complete
-    // Each copy is independent, so main status doesn't matter
-    const currentUserAssignment = t.assignees.find(a => a.id === user.id);
-    return currentUserAssignment?.completed === true;
-  }).length;
+    // For multi-assignee todos, count each completed copy as a separate todo
+    // This matches the behavior of single-assignee todos
+    const completedCopies = t.assignees.filter(a => a.completed === true).length;
+    return count + completedCopies;
+  }, 0);
 
   if (loading) {
     return (
