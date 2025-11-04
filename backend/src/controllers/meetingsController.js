@@ -699,9 +699,9 @@ export const concludeMeeting = async (req, res) => {
       resolvedIssues = (issues.solved || []).map(issue => 
         issue.title || issue.issue || 'Untitled issue'
       );
-      // Discussed and created issues go to unresolved (unless they're marked as solved)
-      const discussedAndCreated = [...(issues.discussed || []), ...(issues.created || [])];
-      unresolvedIssues = discussedAndCreated
+      // Only created issues go to unresolved (New Issues)
+      // Discussed issues are for context only, not for email summary
+      unresolvedIssues = (issues.created || [])
         .filter(issue => !issue.is_solved)
         .map(issue => issue.title || issue.issue || 'Untitled issue');
     }

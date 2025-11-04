@@ -3454,21 +3454,11 @@ const WeeklyAccountabilityMeetingPage = () => {
             const completedDate = new Date(todo.completed_at).toISOString().split('T')[0];
             return completedDate === today;
           }),
-          added: todos.filter(todo => {
-            // Only include todos created TODAY
-            if (!todo.created_at) return false;
-            const createdDate = new Date(todo.created_at).toISOString().split('T')[0];
-            return createdDate === today;
-          })
+          added: todos.filter(todo => !todo.id) // New todos without ID
         },
         issues: {
           discussed: shortTermIssues.filter(issue => selectedIssueIds.includes(issue.id)),
-          created: shortTermIssues.filter(issue => {
-            // Only include issues created TODAY
-            if (!issue.created_at) return false;
-            const createdDate = new Date(issue.created_at).toISOString().split('T')[0];
-            return createdDate === today;
-          }),
+          created: shortTermIssues.filter(issue => !issue.id), // New issues without ID
           solved: shortTermIssues.filter(issue => {
             // Only include issues solved TODAY
             if (!issue.is_solved || !issue.resolved_at) return false;
