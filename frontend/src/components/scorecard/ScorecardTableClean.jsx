@@ -178,7 +178,13 @@ const ScorecardTableClean = ({
       // Get current quarter start and today
       const quarterStart = getQuarterStart(today);
       const quarterEnd = getQuarterEnd(today);
-      const endDate = today < quarterEnd ? today : quarterEnd;
+      
+      // Exclude current incomplete week - only show completed weeks
+      const currentWeekStart = getWeekStartDate(today);
+      const lastCompletedWeekEnd = new Date(currentWeekStart);
+      lastCompletedWeekEnd.setDate(lastCompletedWeekEnd.getDate() - 1); // Day before current week starts
+      
+      const endDate = lastCompletedWeekEnd < quarterEnd ? lastCompletedWeekEnd : quarterEnd;
       
       // Check if we have historical data that predates current quarter
       let effectiveStartDate = quarterStart;
