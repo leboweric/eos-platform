@@ -801,7 +801,9 @@ export const concludeMeeting = async (req, res) => {
 
     // Create meeting snapshot for history
     try {
+      console.log('🚨🚨🚨 SNAPSHOT CREATION START 🚨🚨🚨');
       logger.info('Creating meeting snapshot for history...');
+      console.log('🔑 Snapshot context:', { organizationId, teamId, specificMeetingId, updatedMeetingId });
       
       // Get the meeting that was just concluded
       let meetingToSnapshot;
@@ -832,31 +834,64 @@ export const concludeMeeting = async (req, res) => {
           metrics: metrics || [],
           summary: summary || '',
           cascadingMessage: cascadingMessage || '',
-          aiSummary: aiSummary || null
+          aiSummary: null  // Fixed: aiSummary was undefined
         };
+        
+        console.log('📊 Snapshot data prepared:', {
+          hasIssues: (issues || []).length > 0,
+          hasTodos: (todos || []).length > 0,
+          attendeeCount: (individualRatings || attendees || []).length,
+          hasNotes: !!(notes || meetingToSnapshot?.notes),
+          rating,
+          metricsCount: (metrics || []).length
+        });
 
         // Create snapshot
-        await db.query(
+        const snapshotParams = [
+          meetingToSnapshot?.id || null,  // Can be null for informal meetings
+          organizationId,
+          teamId,
+          meetingType || 'Weekly Accountability',
+          meetingToSnapshot?.scheduled_date || new Date(),
+          durationMinutes,
+          rating,
+          meetingToSnapshot?.facilitator_id || userId,
+          JSON.stringify(snapshotData)
+        ];
+        
+        console.log('💾 About to INSERT snapshot with params:', {
+          meeting_id: snapshotParams[0],
+          organization_id: snapshotParams[1],
+          team_id: snapshotParams[2],
+          meeting_type: snapshotParams[3],
+          meeting_date: snapshotParams[4],
+          duration_minutes: snapshotParams[5],
+          average_rating: snapshotParams[6],
+          facilitator_id: snapshotParams[7],
+          snapshot_data_length: snapshotParams[8]?.length
+        });
+        
+        const snapshotResult = await db.query(
           `INSERT INTO meeting_snapshots 
            (meeting_id, organization_id, team_id, meeting_type, meeting_date, 
             duration_minutes, average_rating, facilitator_id, snapshot_data)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-           ON CONFLICT (meeting_id) DO NOTHING`,
-          [
-            meetingToSnapshot?.id || null,  // Can be null for informal meetings
-            organizationId,
-            teamId,
-            meetingType || 'Weekly Accountability',
-            meetingToSnapshot?.scheduled_date || new Date(),
-            durationMinutes,
-            rating,
-            meetingToSnapshot?.facilitator_id || userId,
-            JSON.stringify(snapshotData)
-          ]
+           ON CONFLICT (meeting_id) DO NOTHING
+           RETURNING id`,
+          snapshotParams
         );
-        logger.info('✅ Meeting snapshot created successfully');
+        
+        if (snapshotResult.rows.length > 0) {
+          console.log('✅✅✅ Meeting snapshot created successfully! ID:', snapshotResult.rows[0].id);
+          logger.info('✅ Meeting snapshot created successfully');
+        } else {
+          console.log('⚠️ Snapshot INSERT returned 0 rows - likely ON CONFLICT triggered (duplicate)');
+        }
       }
     } catch (snapshotError) {
+      console.error('❌❌❌ SNAPSHOT CREATION FAILED ❌❌❌');
+      console.error('❌ Error:', snapshotError.message);
+      console.error('❌ Stack:', snapshotError.stack);
       logger.error('Error creating meeting snapshot:', snapshotError);
       // Don't fail the entire conclusion if snapshot creation fails
     }
