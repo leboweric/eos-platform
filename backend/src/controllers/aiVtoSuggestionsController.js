@@ -97,7 +97,7 @@ async function fetchVtoContext(organizationId) {
 
   // Fetch 3-Year Picture
   const threeYearResult = await query(
-    `SELECT revenue_target, profit_target, picture_date, what_does_it_look_like 
+    `SELECT revenue_target, profit_target, future_date, what_does_it_look_like 
      FROM three_year_pictures 
      WHERE vto_id = $1 
      LIMIT 1`,
