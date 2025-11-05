@@ -715,8 +715,8 @@ const DocumentRepositoryPage = () => {
                   {uploadFile ? (
                     <div className="flex items-center justify-center space-x-2">
                       {getFileIcon(uploadFile.type)}
-                      <div>
-                        <p className="font-medium">{uploadFile.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium break-words">{uploadFile.name}</p>
                         <p className="text-sm text-gray-500">{formatFileSize(uploadFile.size)}</p>
                       </div>
                     </div>
