@@ -1,10 +1,59 @@
 import { query } from '../config/database.js';
-import { generateVtoSuggestion } from '../services/openaiService.js';
+import { generateVtoSuggestion, generateOneYearGoalSuggestion } from '../services/openaiService.js';
 
 /**
  * Generate AI suggestions for a 3-Year Picture "What does it look like?" bullet
  * Uses VTO context (Core Values, Core Focus, targets, etc.) to generate strategic suggestions
  */
+/**
+ * Generate AI suggestions for a 1-Year Goal
+ * Uses VTO context and 3-Year Picture to generate aligned annual goals
+ */
+export const generateGoalSuggestion = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const organizationId = orgId;
+    const { currentText, goalIndex } = req.body;
+
+    console.log(`[AI 1-Year Goal Suggestion] Generating suggestion for org ${organizationId}, goal index ${goalIndex}`);
+
+    // 1. Fetch VTO context for the organization
+    const vtoContext = await fetchVtoContext(organizationId);
+    
+    if (!vtoContext.vtoId) {
+      return res.status(404).json({
+        success: false,
+        error: 'No VTO found for this organization'
+      });
+    }
+
+    console.log('[AI 1-Year Goal Suggestion] VTO context loaded successfully');
+
+    // 2. Generate AI suggestions using OpenAI
+    const suggestions = await generateOneYearGoalSuggestion(vtoContext, currentText);
+
+    console.log(`[AI 1-Year Goal Suggestion] Generated ${suggestions.length} suggestions`);
+
+    res.json({
+      success: true,
+      suggestions,
+      context: {
+        hasVto: true,
+        coreValuesCount: vtoContext.coreValues.length,
+        hasCoreFocus: !!vtoContext.coreFocus
+      }
+    });
+
+  } catch (error) {
+    console.error('[AI 1-Year Goal Suggestion] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate suggestions',
+      message: error.message
+    });
+  }
+};
+
 export const generateBulletSuggestion = async (req, res) => {
   try {
     const { orgId } = req.params;

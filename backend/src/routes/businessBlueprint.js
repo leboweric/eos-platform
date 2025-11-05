@@ -13,7 +13,7 @@ import {
   toggleOneYearGoalCompletion,
   toggleThreeYearItemCompletion
 } from '../controllers/businessBlueprintController.js';
-import { generateBulletSuggestion } from '../controllers/aiVtoSuggestionsController.js';
+import { generateBulletSuggestion, generateGoalSuggestion } from '../controllers/aiVtoSuggestionsController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -84,5 +84,11 @@ router.post('/ai-suggest-bullet', [
   body('currentText').optional(),
   body('bulletIndex').optional()
 ], generateBulletSuggestion);
+
+// AI Suggestion for 1-Year Goals
+router.post('/ai-suggest-goal', [
+  body('currentText').optional(),
+  body('goalIndex').optional()
+], generateGoalSuggestion);
 
 export default router;

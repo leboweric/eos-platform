@@ -10,6 +10,8 @@ import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueU
 import { formatDateLocal } from '../../utils/dateUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
+import AiSuggestionPopover from './AiSuggestionPopover';
+import apiClient from '../../services/axiosConfig';
 
 const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   const { user } = useAuthStore();
@@ -97,6 +99,35 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
     } finally {
       setSaving(false);
     }
+  };
+
+  // AI Suggestion handler for 1-Year Goals
+  const handleGenerateSuggestions = async (currentText, goalIndex) => {
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    try {
+      const response = await apiClient.post(
+        `/organizations/${orgId}/business-blueprint/ai-suggest-goal`,
+        {
+          currentText: currentText || '',
+          goalIndex
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Failed to generate AI suggestions:', error);
+      throw error;
+    }
+  };
+
+  // Accept AI suggestion for goal
+  const handleAcceptSuggestion = (suggestion, goalIndex) => {
+    setFormData(prev => {
+      const newGoals = [...prev.goals];
+      newGoals[goalIndex] = suggestion;
+      return { ...prev, goals: newGoals };
+    });
   };
 
   return (
@@ -350,33 +381,44 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                   const showDeleteButton = formData.goals.length > 3;
                   console.log(`Goal ${index}: Show delete button?`, showDeleteButton);
                   return (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        placeholder={`Goal ${index + 1}`}
-                        value={typeof goal === 'string' ? goal : (goal?.goal_text || '')}
-                        onChange={(e) => setFormData(prev => {
-                          const newGoals = [...prev.goals];
-                          newGoals[index] = e.target.value;
-                          return { ...prev, goals: newGoals };
-                        })}
-                        className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
-                        style={{ '--focus-color': themeColors.primary }}
-                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}
-                      />
-                      {showDeleteButton && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            goals: prev.goals.filter((_, i) => i !== index)
-                          }))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                    <div key={index} className="space-y-1">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder={`Goal ${index + 1}`}
+                          value={typeof goal === 'string' ? goal : (goal?.goal_text || '')}
+                          onChange={(e) => setFormData(prev => {
+                            const newGoals = [...prev.goals];
+                            newGoals[index] = e.target.value;
+                            return { ...prev, goals: newGoals };
+                          })}
+                          className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                          style={{ '--focus-color': themeColors.primary }}
+                          onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                          onBlur={(e) => e.target.style.borderColor = ''}
+                        />
+                        {showDeleteButton && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              goals: prev.goals.filter((_, i) => i !== index)
+                            }))}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex justify-end">
+                        <AiSuggestionPopover
+                          currentText={typeof goal === 'string' ? goal : (goal?.goal_text || '')}
+                          bulletIndex={index}
+                          onAccept={handleAcceptSuggestion}
+                          onGenerateSuggestions={handleGenerateSuggestions}
+                          themeColor={themeColors.primary}
+                        />
+                      </div>
                     </div>
                   );
                 })}

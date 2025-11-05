@@ -719,3 +719,98 @@ Respond in JSON format:
   }
 };
 
+
+
+/**
+ * Generate AI suggestions for 1-Year Goals
+ * Uses VTO context and 3-Year Picture to create aligned annual goals
+ */
+export const generateOneYearGoalSuggestion = async (vtoContext, currentText = '') => {
+  try {
+    // Build context summary
+    const coreValuesText = vtoContext.coreValues.length > 0
+      ? vtoContext.coreValues.map(cv => `- ${cv.value}${cv.description ? `: ${cv.description}` : ''}`).join('\n')
+      : 'Not defined';
+
+    const coreFocusText = vtoContext.coreFocus
+      ? `Purpose/Cause/Passion: ${vtoContext.coreFocus.purpose_cause_passion || 'Not defined'}\nNiche: ${vtoContext.coreFocus.niche || 'Not defined'}`
+      : 'Not defined';
+
+    const threeYearText = vtoContext.threeYearPicture
+      ? `Revenue Target: ${vtoContext.threeYearPicture.revenue_target || 'Not defined'}\nProfit Target: ${vtoContext.threeYearPicture.profit_target || 'Not defined'}`
+      : 'Not defined';
+
+    const threeYearBulletsText = vtoContext.threeYearPicture?.what_does_it_look_like
+      ? Array.isArray(vtoContext.threeYearPicture.what_does_it_look_like)
+        ? vtoContext.threeYearPicture.what_does_it_look_like.map((b, i) => `${i + 1}. ${b}`).join('\n')
+        : 'Not defined'
+      : 'Not defined';
+
+    const prompt = `You are an expert EOS (Entrepreneurial Operating System) consultant helping a client define their 1-Year Goals.
+
+**Context - Company's VTO:**
+
+**Core Values:**
+${coreValuesText}
+
+**Core Focus:**
+${coreFocusText}
+
+**3-Year Picture:**
+${threeYearText}
+
+**3-Year Vision Bullets:**
+${threeYearBulletsText}
+
+**Current Goal Text:**
+${currentText || '(blank - starting from scratch)'}
+
+**Task:**
+Generate 3 alternative versions of this 1-Year Goal that:
+1. Are SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+2. Align with the company's Core Values and Core Focus
+3. Support progress toward the 3-Year Picture
+4. Are achievable within one year
+5. Are clear, actionable, and inspiring
+6. Include measurable outcomes when possible
+
+If the current text is blank, create suggestions based on the VTO context.
+If there is current text, improve it while maintaining the core intent.
+
+**Important:** Each suggestion should be distinctly different in approach or emphasis.
+
+Respond in JSON format:
+{
+  "suggestions": [
+    "First alternative version",
+    "Second alternative version",
+    "Third alternative version"
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert EOS consultant who helps companies set clear, achievable annual goals aligned with their vision.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.8, // Higher creativity for varied suggestions
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    return result.suggestions || [];
+
+  } catch (error) {
+    console.error('Error generating 1-Year Goal suggestion:', error);
+    throw new Error(`Failed to generate 1-Year Goal suggestion: ${error.message}`);
+  }
+};
+
