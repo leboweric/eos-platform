@@ -626,3 +626,96 @@ Return the plan in clean, well-formatted Markdown. Use headers (##), bullet poin
   }
 };
 
+
+
+/**
+ * Generate AI suggestions for VTO "What does it look like?" bullets
+ * Uses VTO context to create strategic, aligned suggestions
+ */
+export const generateVtoSuggestion = async (vtoContext, currentText = '') => {
+  try {
+    // Build context summary
+    const coreValuesText = vtoContext.coreValues.length > 0
+      ? vtoContext.coreValues.map(cv => `- ${cv.value}${cv.description ? `: ${cv.description}` : ''}`).join('\n')
+      : 'Not defined';
+
+    const coreFocusText = vtoContext.coreFocus
+      ? `Purpose/Cause/Passion: ${vtoContext.coreFocus.purpose_cause_passion || 'Not defined'}\nNiche: ${vtoContext.coreFocus.niche || 'Not defined'}`
+      : 'Not defined';
+
+    const marketingText = vtoContext.marketing
+      ? `Target Market: ${vtoContext.marketing.target_market || 'Not defined'}\nThree Uniques: ${vtoContext.marketing.three_uniques || 'Not defined'}`
+      : 'Not defined';
+
+    const threeYearText = vtoContext.threeYearPicture
+      ? `Revenue Target: ${vtoContext.threeYearPicture.revenue_target || 'Not defined'}\nProfit Target: ${vtoContext.threeYearPicture.profit_target || 'Not defined'}`
+      : 'Not defined';
+
+    const prompt = `You are an expert EOS (Entrepreneurial Operating System) consultant helping a client articulate their 3-Year Picture™ vision.
+
+**Context - Company's VTO:**
+
+**Core Values:**
+${coreValuesText}
+
+**Core Focus:**
+${coreFocusText}
+
+**Marketing Strategy:**
+${marketingText}
+
+**3-Year Picture Targets:**
+${threeYearText}
+
+**Current Bullet Text:**
+${currentText || '(blank - starting from scratch)'}
+
+**Task:**
+Generate 3 alternative versions of this "What does it look like?" bullet that:
+1. Are specific, vivid, and inspiring
+2. Align with the company's Core Values and Core Focus
+3. Paint a clear picture of success 3 years from now
+4. Are measurable or observable (not vague)
+5. Use active, confident language
+6. Are concise (1-2 sentences max)
+
+If the current text is blank, create suggestions based on the VTO context.
+If there is current text, improve it while maintaining the core intent.
+
+**Important:** Each suggestion should be distinctly different in approach or emphasis.
+
+Respond in JSON format:
+{
+  "suggestions": [
+    "First alternative version",
+    "Second alternative version",
+    "Third alternative version"
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert EOS consultant who helps companies articulate clear, inspiring visions.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.8, // Higher creativity for varied suggestions
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    return result.suggestions || [];
+
+  } catch (error) {
+    console.error('Error generating VTO suggestion:', error);
+    throw new Error(`Failed to generate VTO suggestion: ${error.message}`);
+  }
+};
+

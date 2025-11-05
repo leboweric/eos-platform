@@ -9,6 +9,8 @@ import { Loader2, Save, AlertCircle, Plus, Trash2, Rocket } from 'lucide-react';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
+import AiSuggestionPopover from './AiSuggestionPopover';
+import axios from 'axios';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   const { user } = useAuthStore();
@@ -111,6 +113,35 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
     } finally {
       setSaving(false);
     }
+  };
+
+  // AI Suggestion handler
+  const handleGenerateSuggestions = async (currentText, bulletIndex) => {
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    try {
+      const response = await axios.post(
+        `/organizations/${orgId}/business-blueprint/ai-suggest-bullet`,
+        {
+          currentText: currentText || '',
+          bulletIndex
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Failed to generate AI suggestions:', error);
+      throw error;
+    }
+  };
+
+  // Accept AI suggestion
+  const handleAcceptSuggestion = (suggestion, bulletIndex) => {
+    setFormData(prev => {
+      const newItems = [...prev.lookLikeItems];
+      newItems[bulletIndex] = suggestion;
+      return { ...prev, lookLikeItems: newItems };
+    });
   };
 
   return (
@@ -349,33 +380,44 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
               </div>
               <div className="space-y-2">
                 {formData.lookLikeItems.map((item, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder={`Attribute ${index + 1}`}
-                      value={item}
-                      onChange={(e) => setFormData(prev => {
-                        const newItems = [...prev.lookLikeItems];
-                        newItems[index] = e.target.value;
-                        return { ...prev, lookLikeItems: newItems };
-                      })}
-                      className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-                    />
-                    {formData.lookLikeItems.length > 1 && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          lookLikeItems: prev.lookLikeItems.filter((_, i) => i !== index)
-                        }))}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                  <div key={index} className="space-y-1">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={`Attribute ${index + 1}`}
+                        value={item}
+                        onChange={(e) => setFormData(prev => {
+                          const newItems = [...prev.lookLikeItems];
+                          newItems[index] = e.target.value;
+                          return { ...prev, lookLikeItems: newItems };
+                        })}
+                        className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}
+                      />
+                      {formData.lookLikeItems.length > 1 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            lookLikeItems: prev.lookLikeItems.filter((_, i) => i !== index)
+                          }))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex justify-end">
+                      <AiSuggestionPopover
+                        currentText={item}
+                        bulletIndex={index}
+                        onAccept={handleAcceptSuggestion}
+                        onGenerateSuggestions={handleGenerateSuggestions}
+                        themeColor={themeColors.primary}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
