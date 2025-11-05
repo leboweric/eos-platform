@@ -1051,6 +1051,8 @@ const QuarterlyPrioritiesPageClean = () => {
       }
       
           setSuccess('Update deleted successfully');
+          // Close the confirmation dialog
+          setConfirmDialog(prev => ({ ...prev, open: false }));
         } catch (err) {
           console.error('Failed to delete update:', err);
           console.error('Error details:', err.response?.data || err.message);
