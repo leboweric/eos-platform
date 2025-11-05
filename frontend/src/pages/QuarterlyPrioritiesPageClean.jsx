@@ -2041,12 +2041,16 @@ const QuarterlyPrioritiesPageClean = () => {
         const teamId = selectedDepartment?.id;
         
         if (orgId && teamId) {
+          // Convert .md filename to .docx for download (backend converts the file)
+          const fileName = attachment.fileName || attachment.file_name;
+          const downloadFileName = fileName.endsWith('.md') ? fileName.replace(/\.md$/, '.docx') : fileName;
+          
           await quarterlyPrioritiesService.downloadAttachment(
             orgId, 
             teamId, 
             priority.id, 
             attachment.id, 
-            attachment.fileName || attachment.file_name
+            downloadFileName
           );
         }
       } catch (error) {
