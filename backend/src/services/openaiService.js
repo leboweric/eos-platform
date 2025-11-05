@@ -406,3 +406,103 @@ export const validateConfiguration = async () => {
     };
   }
 };
+
+/**
+ * Generate a detailed action plan for a Rock
+ * Provides week-by-week breakdown, suggested actions, blockers, and resources
+ */
+export const generateRockActionPlan = async ({ rock, milestones }) => {
+  try {
+    const milestonesText = milestones.length > 0
+      ? milestones.map((m, i) => `${i + 1}. ${m.title}${m.description ? ` - ${m.description}` : ''} (Due: ${new Date(m.dueDate).toLocaleDateString()})`).join('\n')
+      : 'No milestones defined yet';
+
+    const prompt = `You are an expert EOS implementer and project management coach. Generate a comprehensive, actionable execution plan for this Rock.
+
+**ROCK DETAILS:**
+Title: ${rock.title}
+Description: ${rock.description || 'No description provided'}
+Owner: ${rock.ownerName || 'Not assigned'}
+Team: ${rock.teamName || 'Not specified'}
+Quarter: Q${rock.quarter} ${rock.year}
+Due Date: ${new Date(rock.dueDate).toLocaleDateString()}
+
+**MILESTONES:**
+${milestonesText}
+
+**YOUR TASK:**
+Create a detailed 1-2 page action plan that helps the Rock owner execute successfully. The plan should be practical, specific, and confidence-building.
+
+**REQUIRED SECTIONS:**
+
+1. **Executive Summary** (2-3 sentences)
+   - What success looks like for this Rock
+   - Why it matters to the organization
+
+2. **Week-by-Week Breakdown**
+   - Divide the quarter into weekly focus areas
+   - Map each week to specific milestones
+   - Suggest 2-3 concrete actions per week
+   - Be specific about what "done" looks like each week
+
+3. **Getting Started: First 3 Actions**
+   - What should the owner do in the first 48 hours?
+   - List 3 specific, immediate actions to build momentum
+   - Include who to talk to, what to set up, what to research
+
+4. **Potential Blockers & Mitigation**
+   - Identify 3-5 likely obstacles
+   - For each blocker, provide a proactive mitigation strategy
+   - Include early warning signs to watch for
+
+5. **Resources & Support Needed**
+   - What skills, tools, or budget might be required?
+   - Who should be involved or consulted?
+   - What dependencies exist with other teams?
+
+6. **Progress Check-In Questions**
+   - 5-7 questions the owner should ask themselves weekly
+   - 3-4 questions for manager 1-on-1s
+   - Help them self-assess if they're on track
+
+7. **Success Metrics**
+   - Beyond the milestones, what are leading indicators of success?
+   - What should be measured weekly/bi-weekly?
+   - What does "green" vs "yellow" vs "red" status look like?
+
+**TONE & STYLE:**
+- Encouraging and confidence-building
+- Specific and actionable (avoid generic advice)
+- Assume the owner wants to succeed but may lack experience
+- Use bullet points and clear formatting
+- Keep it to 1-2 pages when printed
+
+**FORMAT:**
+Return the plan in clean, well-formatted Markdown. Use headers (##), bullet points, and **bold** for emphasis.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an experienced EOS implementer and executive coach who helps teams execute their quarterly priorities (Rocks) successfully. You provide practical, actionable guidance that builds confidence and clarity.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2500
+    });
+
+    const actionPlan = response.choices[0].message.content;
+    
+    return actionPlan;
+
+  } catch (error) {
+    console.error('Error generating Rock action plan:', error);
+    throw new Error(`Failed to generate action plan: ${error.message}`);
+  }
+};
+
