@@ -25,6 +25,8 @@ export const initializeScheduledJobs = () => {
   
   // Schedule todo reminders
   // Runs every day at 9:00 AM to check for teams that need reminders
+  // TEMPORARILY DISABLED - Manual trigger was run on 2025-11-04, re-enable after 2025-11-05 9:00 AM EST
+  /*
   cron.schedule('0 9 * * *', async () => {
     console.log('Running scheduled todo reminders check...');
     try {
@@ -37,10 +39,11 @@ export const initializeScheduledJobs = () => {
     scheduled: true,
     timezone: process.env.TZ || 'America/New_York' // Default to EST
   });
+  */
   
   console.log('Scheduled jobs initialized:');
   console.log('- Daily active users report: 8:00 AM daily');
-  console.log('- Todo reminders: 9:00 AM daily (sends 2-day due date reminders)');
+  console.log('- Todo reminders: TEMPORARILY DISABLED (re-enable after 2025-11-05 9:00 AM EST)');
   
   // Optional: Schedule a test run in development
   if (process.env.NODE_ENV === 'development') {
