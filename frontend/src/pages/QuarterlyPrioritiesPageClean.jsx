@@ -1576,6 +1576,14 @@ const QuarterlyPrioritiesPageClean = () => {
         return updated;
       });
       
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          attachments: removeAttachment(prev.attachments)
+        }));
+      }
+      
           setSuccess('Attachment deleted successfully');
           // Close the confirmation dialog
           setConfirmDialog(prev => ({ ...prev, open: false }));
