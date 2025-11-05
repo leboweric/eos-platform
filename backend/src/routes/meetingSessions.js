@@ -61,10 +61,11 @@ router.post('/:id/sections/pause-update', updateSectionPause);
 // Get section configuration
 router.get('/config/:organizationId/:teamId', getSectionConfig);
 
-// Update a meeting session (for concluding meetings)
-router.put('/:id', updateMeetingSession);
-
 // End a session
 router.post('/:id/end', endSession);
+
+// Update a meeting session (for concluding meetings)
+// IMPORTANT: Keep this route last as it's a generic /:id pattern that could match other routes
+router.put('/:id', updateMeetingSession);
 
 export default router;
