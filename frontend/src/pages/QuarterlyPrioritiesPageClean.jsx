@@ -1363,7 +1363,7 @@ const QuarterlyPrioritiesPageClean = () => {
       console.log(`Generating action plan for Rock ${rockId}`);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgId}/rocks/${rockId}/action-plan`,
+        `${import.meta.env.VITE_API_URL}/organizations/${orgId}/rocks/${rockId}/action-plan`,
         {
           method: 'POST',
           headers: {
