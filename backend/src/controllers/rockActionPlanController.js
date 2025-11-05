@@ -50,8 +50,8 @@ export const generateActionPlan = async (req, res) => {
         due_date,
         completed,
         owner_id
-      FROM milestones
-      WHERE rock_id = $1
+      FROM priority_milestones
+      WHERE priority_id = $1
       ORDER BY due_date ASC`,
       [rockId]
     );
