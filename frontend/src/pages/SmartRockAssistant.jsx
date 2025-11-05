@@ -336,9 +336,8 @@ const SmartRockAssistant = () => {
         for (const milestone of milestones) {
           await quarterlyPrioritiesService.createMilestone(orgId, rockData.teamId, newPriority.id, {
             title: milestone.title,
-            description: milestone.description || '',
-            due_date: milestone.dueDate,
-            completed: false
+            dueDate: milestone.dueDate,
+            ownerId: rockData.owner || user?.id
           });
         }
       }
