@@ -142,7 +142,7 @@ const SmartRockAssistant = () => {
     teamId: '',  // Will be set by useEffect when selectedDepartment loads
     quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
     year: new Date().getFullYear(),
-    dueDate: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+    dueDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     type: 'individual' // 'company' or 'individual'
   });
   
@@ -362,7 +362,7 @@ const SmartRockAssistant = () => {
         teamId: selectedDepartment?.id || '',
         quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
         year: new Date().getFullYear(),
-        dueDate: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+        dueDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
         type: 'individual'
       });
     } catch (error) {
@@ -817,6 +817,17 @@ const SmartRockAssistant = () => {
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-700">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={rockData.dueDate}
+                  onChange={(e) => setRockData({ ...rockData, dueDate: e.target.value })}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                />
+              </div>
             </div>
 
             {/* Milestones Section (moved from old step 3) */}
@@ -838,14 +849,18 @@ const SmartRockAssistant = () => {
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-sm px-3 py-1.5 backdrop-blur-sm rounded-lg border ml-4" style={{
-                          backgroundColor: hexToRgba(themeColors.primary, 0.05),
-                          borderColor: hexToRgba(themeColors.primary, 0.2)
-                        }}>
+                        <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="font-medium" style={{ color: themeColors.primary }}>
-                            {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
-                          </span>
+                          <Input
+                            type="date"
+                            value={milestone.dueDate}
+                            onChange={(e) => {
+                              const updatedMilestones = [...milestones];
+                              updatedMilestones[index] = { ...milestone, dueDate: e.target.value };
+                              setMilestones(updatedMilestones);
+                            }}
+                            className="w-40 text-sm"
+                          />
                         </div>
                       </div>
                     </div>
