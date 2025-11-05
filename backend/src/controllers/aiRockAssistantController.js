@@ -475,7 +475,7 @@ export const generateFromVision = async (req, res) => {
       
       // Fetch Core Values
       const coreValuesResult = await query(
-        'SELECT value, description FROM core_values WHERE vto_id = $1 ORDER BY display_order',
+        'SELECT core_value, description FROM core_values WHERE vto_id = $1 ORDER BY display_order',
         [vtoId]
       );
       vtoContext.coreValues = coreValuesResult.rows;

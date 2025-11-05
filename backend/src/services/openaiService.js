@@ -311,7 +311,7 @@ export const generateRocksFromVision = async (vision, context = {}, numberOfOpti
       if (vto.coreValues && vto.coreValues.length > 0) {
         vtoSections += '\n**CORE VALUES:**\n';
         vto.coreValues.forEach(cv => {
-          vtoSections += `- ${cv.value}${cv.description ? ': ' + cv.description : ''}\n`;
+          vtoSections += `- ${cv.core_value}${cv.description ? ': ' + cv.description : ''}\n`;
         });
       }
       
