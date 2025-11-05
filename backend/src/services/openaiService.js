@@ -300,18 +300,17 @@ export const generateRocksFromVision = async (vision, context = {}, numberOfOpti
     
     if (vto) {
       // Core Focus
-      if (vto.coreFocus && (vto.coreFocus.purpose || vto.coreFocus.niche)) {
+      if (vto.coreFocus && (vto.coreFocus.purpose_cause_passion || vto.coreFocus.niche)) {
         vtoSections += '\n**CORE FOCUS:**\n';
-        if (vto.coreFocus.purpose) vtoSections += `- Purpose/Passion: ${vto.coreFocus.purpose}\n`;
+        if (vto.coreFocus.purpose_cause_passion) vtoSections += `- Purpose/Passion: ${vto.coreFocus.purpose_cause_passion}\n`;
         if (vto.coreFocus.niche) vtoSections += `- Niche: ${vto.coreFocus.niche}\n`;
-        if (vto.coreFocus.target_market) vtoSections += `- Target Market: ${vto.coreFocus.target_market}\n`;
       }
       
       // Core Values
       if (vto.coreValues && vto.coreValues.length > 0) {
         vtoSections += '\n**CORE VALUES:**\n';
         vto.coreValues.forEach(cv => {
-          vtoSections += `- ${cv.core_value}${cv.description ? ': ' + cv.description : ''}\n`;
+          vtoSections += `- ${cv.value_text}${cv.description ? ': ' + cv.description : ''}\n`;
         });
       }
       
@@ -338,9 +337,9 @@ export const generateRocksFromVision = async (vision, context = {}, numberOfOpti
       }
       
       // Marketing Strategy
-      if (vto.marketingStrategy && vto.marketingStrategy.unique_value_proposition) {
+      if (vto.marketingStrategy && (vto.marketingStrategy.three_uniques || vto.marketingStrategy.target_market)) {
         vtoSections += '\n**MARKETING STRATEGY:**\n';
-        vtoSections += `- Unique Value Proposition: ${vto.marketingStrategy.unique_value_proposition}\n`;
+        if (vto.marketingStrategy.three_uniques) vtoSections += `- Three Uniques: ${vto.marketingStrategy.three_uniques}\n`;
         if (vto.marketingStrategy.target_market) vtoSections += `- Target Market: ${vto.marketingStrategy.target_market}\n`;
       }
     }
