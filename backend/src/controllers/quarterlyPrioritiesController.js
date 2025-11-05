@@ -1975,11 +1975,15 @@ export const deletePriorityAttachment = async (req, res) => {
 
     // Delete the actual file from storage
     const filePath = result.rows[0].file_path;
-    try {
-      await fs.unlink(filePath);
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      // Continue even if file deletion fails
+    if (filePath) {
+      try {
+        await fs.unlink(filePath);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+        // Continue even if file deletion fails
+      }
+    } else {
+      console.warn('Attachment has no file_path, skipping file deletion');
     }
 
     res.json({

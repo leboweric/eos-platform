@@ -1577,6 +1577,8 @@ const QuarterlyPrioritiesPageClean = () => {
       });
       
           setSuccess('Attachment deleted successfully');
+          // Close the confirmation dialog
+          setConfirmDialog(prev => ({ ...prev, open: false }));
         } catch (error) {
           console.error('Failed to delete attachment:', error);
           setError('Failed to delete attachment');
