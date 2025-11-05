@@ -31,7 +31,8 @@ import {
   Loader2,
   RefreshCw,
   Save,
-  X
+  X,
+  Plus
 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { toast } from 'sonner';
@@ -315,25 +316,53 @@ const SmartRockAssistant = () => {
 
   const saveRock = async () => {
     try {
-      // Create the Rock with milestones
-      const rockPayload = {
-        ...rockData,
-        milestones: milestones.map(m => ({
-          title: m.title,
-          dueDate: m.dueDate,
-          completed: false
-        }))
-      };
-      
-      await quarterlyPrioritiesService.createPriority(
+      // Create the Rock
+      const newPriority = await quarterlyPrioritiesService.createPriority(
         orgId,
-        rockData.teamId || teams.find(t => t.is_leadership_team)?.id,
-        rockPayload
+        rockData.teamId,
+        {
+          title: rockData.title,
+          description: rockData.description,
+          owner: rockData.owner || user?.id,
+          quarter: rockData.quarter,
+          year: rockData.year,
+          type: rockData.type
+        }
       );
+      
+      // Add milestones if any
+      if (milestones.length > 0 && newPriority?.id) {
+        for (const milestone of milestones) {
+          await quarterlyPrioritiesService.createMilestone(orgId, rockData.teamId, newPriority.id, {
+            title: milestone.title,
+            description: milestone.description || '',
+            due_date: milestone.dueDate,
+            completed: false
+          });
+        }
+      }
       
       // Show success notification
       toast.success('SMART Rock created successfully!', {
         description: `"${rockData.title}" has been added to your quarterly priorities.`
+      });
+      
+      // Reset to Step 1 for next Rock creation
+      setCurrentStep(0);
+      setVision('');
+      setChallenges('');
+      setGeneratedOptions([]);
+      setSelectedOption(null);
+      setMilestones([]);
+      setRockData({
+        title: '',
+        description: '',
+        owner: user?.id || '',
+        teamId: selectedDepartment?.id || '',
+        quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
+        year: new Date().getFullYear(),
+        dueDate: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+        type: 'individual'
       });
     } catch (error) {
       console.error('Error saving Rock:', error);
@@ -743,24 +772,7 @@ const SmartRockAssistant = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="team" className="text-sm font-semibold text-slate-700">Team</Label>
-                <Select
-                  value={rockData.teamId}
-                  onValueChange={(value) => setRockData({ ...rockData, teamId: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select team" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name} {team.is_leadership_team && '(Leadership)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -850,477 +862,35 @@ const SmartRockAssistant = () => {
                 Back to Options
               </Button>
               <Button 
-                onClick={nextStep}
-                disabled={!rockData.title || !rockData.owner || !rockData.teamId}
+                onClick={saveRock}
+                disabled={!rockData.title || !rockData.teamId}
                 className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                 style={{
-                  background: !rockData.title || !rockData.owner || !rockData.teamId
+                  background: !rockData.title || !rockData.teamId
                     ? '#9CA3AF'
                     : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                  filter: !rockData.title || !rockData.owner || !rockData.teamId ? 'none' : undefined
+                  filter: !rockData.title || !rockData.teamId ? 'none' : undefined
                 }}
                 onMouseEnter={(e) => {
-                  if (rockData.title && rockData.owner && rockData.teamId) {
+                  if (rockData.title && rockData.teamId) {
                     e.currentTarget.style.filter = 'brightness(1.1)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (rockData.title && rockData.owner && rockData.teamId) {
+                  if (rockData.title && rockData.teamId) {
                     e.currentTarget.style.filter = 'none';
                   }
                 }}
               >
-                Next: SMART Analysis
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <Plus className="h-4 w-4 mr-2" />
+                Add Rock
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
-
-        {/* Step 3: SMART Analysis */}
-        {currentStep === 3 && (
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <div className="p-2 rounded-xl" style={{
-                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.15)} 0%, ${hexToRgba(themeColors.secondary, 0.15)} 100%)`
-                }}>
-                  <Sparkles className="h-5 w-5" style={{ color: themeColors.primary }} />
-                </div>
-                Step 4: SMART Analysis
-              </CardTitle>
-              <CardDescription className="text-slate-600 font-medium">
-                AI analysis of your {labels.rock_singular} against SMART criteria
-              </CardDescription>
-            </CardHeader>
-          <CardContent>
-            {isAnalyzing ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-3" style={{ color: themeColors.primary }} />
-                <span className="text-slate-600 font-medium">Analyzing your {labels.rock_singular}...</span>
-              </div>
-            ) : smartAnalysis ? (
-              <div className="space-y-6">
-                {/* Overall Score */}
-                <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-900">SMART Score</h3>
-                    <span className={`text-3xl font-bold ${getSmartScoreColor(smartAnalysis.overallScore)}`}>
-                      {smartAnalysis.overallScore}%
-                    </span>
-                  </div>
-                  <Progress value={smartAnalysis.overallScore} className="h-4" />
-                </div>
-
-                {/* Individual Scores */}
-                <div className="grid grid-cols-5 gap-4">
-                  {Object.entries(smartAnalysis.scores).map(([key, score]) => (
-                    <div key={key} className="text-center bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                      <div className={`text-2xl font-bold ${getSmartScoreColor(score)}`}>
-                        {score}%
-                      </div>
-                      <div className="text-sm text-slate-600 font-medium capitalize">
-                        {key}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Improvements */}
-                <Tabs defaultValue="improvements" className="w-full">
-                  <TabsList ref={tabsRef} className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
-                    <TabsTrigger value="improvements" className="rounded-xl transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-lg">Improvements</TabsTrigger>
-                    <TabsTrigger value="issues" className="rounded-xl transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-lg">Key Issues</TabsTrigger>
-                    <TabsTrigger value="suggestion" className="rounded-xl transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-lg">Suggested Rewrite</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="improvements" className="space-y-3 mt-6">
-                    {Object.entries(smartAnalysis.improvements).map(([criterion, improvement]) => (
-                      <div key={criterion} className="border-l-4 pl-4 py-3 bg-white/60 backdrop-blur-sm rounded-r-xl shadow-sm hover:shadow-md transition-all duration-200" style={{
-                        borderLeftColor: themeColors.primary
-                      }}>
-                        <div className="font-bold text-slate-900 capitalize mb-1">{criterion}</div>
-                        <div className="text-sm text-slate-600">{improvement}</div>
-                      </div>
-                    ))}
-                  </TabsContent>
-                  
-                  <TabsContent value="issues" className="space-y-3 mt-6">
-                    {smartAnalysis.keyIssues?.map((issue, index) => (
-                      <div key={index} className="flex items-start gap-3 bg-yellow-50/80 backdrop-blur-sm border border-yellow-200/50 rounded-xl p-4 shadow-sm">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-slate-700 font-medium">{issue}</span>
-                      </div>
-                    ))}
-                  </TabsContent>
-                  
-                  <TabsContent value="suggestion" className="space-y-4 mt-6">
-                    <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl p-6 shadow-sm">
-                      <h4 className="font-bold text-green-900 mb-3">Improved Title:</h4>
-                      <p className="text-lg text-slate-800 font-medium">{smartAnalysis.suggestedRewrite?.title}</p>
-                    </div>
-                    <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl p-6 shadow-sm">
-                      <h4 className="font-bold text-green-900 mb-3">Improved Description:</h4>
-                      <p className="text-sm text-slate-700">{smartAnalysis.suggestedRewrite?.description}</p>
-                    </div>
-                    <Button onClick={applySuggestion} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Apply Suggested Improvements
-                    </Button>
-                  </TabsContent>
-                </Tabs>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                    Back
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={analyzeRock} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Re-analyze
-                    </Button>
-                    <Button onClick={nextStep} className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}>
-                      Next: Milestones
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Button onClick={analyzeRock}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Analyze {labels.rock_singular}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 4: Milestones */}
-      {currentStep === 4 && (
-        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200">
-                <Target className="h-5 w-5 text-green-600" />
-              </div>
-              Step 5: Milestone Generation
-            </CardTitle>
-            <CardDescription className="text-slate-600 font-medium">
-              AI-generated milestones to track quarterly progress
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isAnalyzing ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mr-3" />
-                <span>Generating milestones...</span>
-              </div>
-            ) : milestones.length > 0 ? (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  {milestones.map((milestone, index) => (
-                    <div key={index} className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-100 to-emerald-200">
-                              <Target className="h-4 w-4 text-green-600" />
-                            </div>
-                            <h4 className="font-bold text-slate-900">{milestone.title}</h4>
-                          </div>
-                          {milestone.description && (
-                            <p className="text-sm text-slate-600 mb-2">
-                              {milestone.description}
-                            </p>
-                          )}
-                          {milestone.successCriteria && (
-                            <p className="text-sm text-slate-700">
-                              <span className="font-semibold text-slate-900">Success Criteria:</span> {milestone.successCriteria}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm px-3 py-1.5 backdrop-blur-sm rounded-lg border" style={{
-                          backgroundColor: hexToRgba(themeColors.primary, 0.05),
-                          borderColor: hexToRgba(themeColors.primary, 0.2)
-                        }}>
-                          <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="font-medium" style={{ color: themeColors.primary }}>{format(new Date(milestone.dueDate), 'MMM d, yyyy')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                    Back
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={generateMilestones} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Regenerate
-                    </Button>
-                    <Button onClick={nextStep} className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}>
-                      {rockData.type === 'individual' ? 'Next: Alignment Check' : 'Next: Review'}
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Button onClick={generateMilestones} className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}>
-                  <Target className="h-4 w-4 mr-2" />
-                  Generate Milestones
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 5: Alignment Check (for Department Rocks) */}
-      {currentStep === 5 && rockData.type === 'individual' && (
-        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-200">
-                <Users className="h-5 w-5 text-indigo-600" />
-              </div>
-              Step 6: Company {labels.rock_singular} Alignment
-            </CardTitle>
-            <CardDescription className="text-slate-600 font-medium">
-              Ensure your Department {labels.rock_singular} supports Company priorities
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isAnalyzing ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mr-3" />
-                <span>Checking alignment...</span>
-              </div>
-            ) : alignment ? (
-              <div className="space-y-6">
-                {/* Alignment Score */}
-                <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-900">Alignment Score</h3>
-                    <span className={`text-3xl font-bold ${getSmartScoreColor(alignment.alignmentScore)}`}>
-                      {alignment.alignmentScore}%
-                    </span>
-                  </div>
-                  <Progress value={alignment.alignmentScore} className="h-4" />
-                  <p className="text-sm text-slate-600 mt-3">
-                    {alignment.alignmentExplanation}
-                  </p>
-                </div>
-
-                {/* Aligned Company Rocks */}
-                {alignment.alignedRocks?.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-slate-900 mb-3">Supports These Company {labels.rocks}:</h4>
-                    <div className="space-y-2">
-                      {alignment.alignedRocks.map((rock, index) => (
-                        <div key={index} className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-xl shadow-sm">
-                          <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                          <span className="font-semibold text-slate-800">{rock.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggested Adjustments */}
-                {alignment.suggestedAdjustments?.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-slate-900 mb-3">Suggested Adjustments:</h4>
-                    <div className="space-y-2">
-                      {alignment.suggestedAdjustments.map((adjustment, index) => (
-                        <div key={index} className="flex items-start gap-3 backdrop-blur-sm border rounded-xl p-4 shadow-sm" style={{
-                          backgroundColor: hexToRgba(themeColors.primary, 0.05),
-                          borderColor: hexToRgba(themeColors.primary, 0.2)
-                        }}>
-                          <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: themeColors.primary }} />
-                          <span className="text-sm text-slate-700 font-medium">{adjustment}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Recommendation */}
-                {alignment.recommendation && (
-                  <Alert className="bg-blue-50/80 backdrop-blur-sm border-blue-200/50 rounded-xl">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="font-bold text-blue-900">Recommendation</AlertTitle>
-                    <AlertDescription className="text-blue-800">{alignment.recommendation}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                    Back
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={checkAlignment} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Re-check
-                    </Button>
-                    <Button onClick={nextStep} className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}>
-                      Next: Review & Create
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Button onClick={checkAlignment}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Check Alignment
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 6: Review & Create */}
-      {(currentStep === 6 || (currentStep === 5 && rockData.type === 'company')) && (
-        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-100 to-green-200">
-                <Save className="h-5 w-5 text-emerald-600" />
-              </div>
-              Step 6: Review & Create {labels.rock_singular}
-            </CardTitle>
-            <CardDescription className="text-slate-600 font-medium">
-              Review your SMART {labels.rock_singular} before creating it
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Final Rock Summary */}
-            <div className="backdrop-blur-sm border rounded-2xl p-6 space-y-4 shadow-sm" style={{
-              background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.05)} 0%, ${hexToRgba(themeColors.secondary, 0.05)} 100%)`,
-              borderColor: hexToRgba(themeColors.primary, 0.2)
-            }}>
-              <div>
-                <Label className="text-sm font-semibold" style={{ color: themeColors.primary }}>Title</Label>
-                <p className="text-lg font-bold text-slate-900">{rockData.title}</p>
-              </div>
-              
-              {rockData.description && (
-                <div>
-                  <Label className="text-sm font-semibold" style={{ color: themeColors.primary }}>Description</Label>
-                  <p className="text-sm text-slate-700">{rockData.description}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                  <Label className="text-xs font-semibold" style={{ color: themeColors.primary }}>Owner</Label>
-                  <p className="text-sm font-medium text-slate-800">
-                    {user?.first_name} {user?.last_name}
-                  </p>
-                </div>
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                  <Label className="text-xs font-semibold" style={{ color: themeColors.primary }}>Due Date</Label>
-                  <p className="text-sm font-medium text-slate-800">{format(new Date(rockData.dueDate), 'MMM d, yyyy')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* SMART Score Summary */}
-            {smartAnalysis && (
-              <div className="flex items-center justify-between p-5 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl" style={{
-                    background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.15)} 0%, ${hexToRgba(themeColors.secondary, 0.15)} 100%)`
-                  }}>
-                    <Brain className="h-5 w-5" style={{ color: themeColors.primary }} />
-                  </div>
-                  <span className="font-bold text-slate-900">SMART Score</span>
-                </div>
-                <Badge className={`${getSmartScoreBadge(smartAnalysis.overallScore)} text-sm px-3 py-1`}>
-                  {smartAnalysis.overallScore}%
-                </Badge>
-              </div>
-            )}
-
-            {/* Milestones Summary */}
-            {milestones.length > 0 && (
-              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-5 shadow-sm">
-                <h4 className="font-bold text-slate-900 mb-3">Milestones ({milestones.length})</h4>
-                <div className="space-y-2">
-                  {milestones.map((milestone, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 backdrop-blur-sm rounded-lg" style={{
-                      backgroundColor: hexToRgba(themeColors.primary, 0.05)
-                    }}>
-                      <span className="text-sm font-medium text-slate-800">{milestone.title}</span>
-                      <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                        {format(new Date(milestone.dueDate), 'MMM d')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Alignment Summary */}
-            {alignment && rockData.type === 'individual' && (
-              <div className="flex items-center justify-between p-5 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-200">
-                    <Target className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <span className="font-bold text-slate-900">Company Alignment</span>
-                </div>
-                <Badge className={`${getSmartScoreBadge(alignment.alignmentScore)} text-sm px-3 py-1`}>
-                  {alignment.alignmentScore}%
-                </Badge>
-              </div>
-            )}
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
-                Back
-              </Button>
-              <Button onClick={saveRock} size="lg" className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
-                <Save className="h-4 w-4 mr-2" />
-                Create SMART {labels.rock_singular}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        )}
-      </div>
     </div>
-  );
+  </div>
+);
 };
-
 export default SmartRockAssistant;
