@@ -1062,11 +1062,7 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const handleEditUpdate = async (priorityId, updateId, newText) => {
     try {
-      const editText = window.prompt('Edit update:', newText);
-      if (!editText || editText === newText) {
-        return;
-      }
-      
+      // newText is already the edited text from the inline editor
       const orgId = user?.organizationId;
       const teamId = selectedDepartment?.id;
       
@@ -1075,11 +1071,11 @@ const QuarterlyPrioritiesPageClean = () => {
       }
       
       // Call backend to edit the update
-      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, editText);
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, newText);
       
       // Update local state to reflect the edit
       const editUpdate = (updates) => 
-        updates?.map(u => u.id === updateId ? { ...u, text: editText } : u) || [];
+        updates?.map(u => u.id === updateId ? { ...u, text: newText } : u) || [];
       
       // Update company priorities
       setCompanyPriorities(prev => prev.map(p => 
