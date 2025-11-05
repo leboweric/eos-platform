@@ -138,12 +138,19 @@ const SmartRockAssistant = () => {
     title: '',
     description: '',
     owner: user?.id || '',
-    teamId: selectedDepartment?.id || '',
+    teamId: '',  // Will be set by useEffect when selectedDepartment loads
     quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
     year: new Date().getFullYear(),
     dueDate: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
     type: 'individual' // 'company' or 'individual'
   });
+  
+  // Update teamId when selectedDepartment changes
+  useEffect(() => {
+    if (selectedDepartment?.id && !rockData.teamId) {
+      setRockData(prev => ({ ...prev, teamId: selectedDepartment.id }));
+    }
+  }, [selectedDepartment?.id]);
   
   // AI Analysis
   const [smartAnalysis, setSmartAnalysis] = useState(null);
