@@ -60,6 +60,44 @@ export const generateActionPlan = async (req, res) => {
 
     console.log(`[Action Plan] Found ${milestones.length} milestones for Rock`);
 
+    // Fetch VTO context for strategic alignment
+    console.log(`[Action Plan] Fetching VTO context for org ${orgId}`);
+    
+    // Get the org-level business blueprint (VTO)
+    const vtoResult = await query(
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+      [orgId]
+    );
+    
+    let vtoContext = null;
+    if (vtoResult.rows.length > 0) {
+      const vtoId = vtoResult.rows[0].id;
+      
+      // Fetch all VTO components in parallel
+      const [coreValues, coreFocus, marketingStrategy, threeYearPicture, oneYearPlan] = await Promise.all([
+        query('SELECT value_text, description FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [vtoId]),
+        query('SELECT purpose_cause_passion, niche FROM core_focus WHERE vto_id = $1', [vtoId]),
+        query('SELECT target_market, three_uniques, proven_process, guarantee, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5 FROM marketing_strategies WHERE vto_id = $1', [vtoId]),
+        query('SELECT future_date, revenue_target, profit_target, vision_description, what_does_it_look_like, what_does_it_look_like_completions FROM three_year_pictures WHERE vto_id = $1', [vtoId]),
+        query('SELECT planning_year, goals FROM annual_planning_goals WHERE organization_id = $1 ORDER BY planning_year DESC LIMIT 1', [orgId])
+      ]);
+      
+      vtoContext = {
+        coreValues: coreValues.rows.map(v => ({
+          value: v.value_text,
+          description: v.description
+        })),
+        coreFocus: coreFocus.rows[0] || null,
+        marketingStrategy: marketingStrategy.rows[0] || null,
+        threeYearPicture: threeYearPicture.rows[0] || null,
+        oneYearPlan: oneYearPlan.rows[0] || null
+      };
+      
+      console.log(`[Action Plan] VTO context loaded successfully`);
+    } else {
+      console.log(`[Action Plan] No VTO found for organization`);
+    }
+
     // Generate the action plan using AI
     const actionPlan = await generateRockActionPlan({
       rock: {
@@ -76,7 +114,8 @@ export const generateActionPlan = async (req, res) => {
         description: m.description,
         dueDate: m.due_date,
         completed: m.completed
-      }))
+      })),
+      vtoContext: vtoContext
     });
 
     console.log(`[Action Plan] Generated plan successfully`);

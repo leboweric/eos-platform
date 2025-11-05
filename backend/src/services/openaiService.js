@@ -411,11 +411,80 @@ export const validateConfiguration = async () => {
  * Generate a detailed action plan for a Rock
  * Provides week-by-week breakdown, suggested actions, blockers, and resources
  */
-export const generateRockActionPlan = async ({ rock, milestones }) => {
+export const generateRockActionPlan = async ({ rock, milestones, vtoContext }) => {
   try {
     const milestonesText = milestones.length > 0
       ? milestones.map((m, i) => `${i + 1}. ${m.title}${m.description ? ` - ${m.description}` : ''} (Due: ${new Date(m.dueDate).toLocaleDateString()})`).join('\n')
       : 'No milestones defined yet';
+
+    // Build VTO context section if available
+    let vtoSection = '';
+    if (vtoContext) {
+      vtoSection = `\n**STRATEGIC CONTEXT (V/TO):**\n\n`;
+      
+      if (vtoContext.coreValues && vtoContext.coreValues.length > 0) {
+        vtoSection += `**Core Values:**\n`;
+        vtoContext.coreValues.forEach(v => {
+          vtoSection += `- ${v.value}${v.description ? `: ${v.description}` : ''}\n`;
+        });
+        vtoSection += `\n`;
+      }
+      
+      if (vtoContext.coreFocus) {
+        vtoSection += `**Core Focus:**\n`;
+        if (vtoContext.coreFocus.purpose_cause_passion) {
+          vtoSection += `- Purpose/Cause/Passion: ${vtoContext.coreFocus.purpose_cause_passion}\n`;
+        }
+        if (vtoContext.coreFocus.niche) {
+          vtoSection += `- Niche: ${vtoContext.coreFocus.niche}\n`;
+        }
+        vtoSection += `\n`;
+      }
+      
+      if (vtoContext.marketingStrategy) {
+        const ms = vtoContext.marketingStrategy;
+        vtoSection += `**Marketing Strategy:**\n`;
+        if (ms.target_market) vtoSection += `- Target Market: ${ms.target_market}\n`;
+        if (ms.three_uniques) vtoSection += `- Three Uniques: ${ms.three_uniques}\n`;
+        if (ms.proven_process) vtoSection += `- Proven Process: ${ms.proven_process}\n`;
+        if (ms.guarantee) vtoSection += `- Guarantee: ${ms.guarantee}\n`;
+        const differentiators = [ms.differentiator_1, ms.differentiator_2, ms.differentiator_3, ms.differentiator_4, ms.differentiator_5].filter(Boolean);
+        if (differentiators.length > 0) {
+          vtoSection += `- Differentiators: ${differentiators.join(', ')}\n`;
+        }
+        vtoSection += `\n`;
+      }
+      
+      if (vtoContext.threeYearPicture) {
+        const typ = vtoContext.threeYearPicture;
+        vtoSection += `**3-Year Picture (${typ.future_date ? new Date(typ.future_date).getFullYear() : 'Future'}):**\n`;
+        if (typ.revenue_target) vtoSection += `- Revenue Target: ${typ.revenue_target}\n`;
+        if (typ.profit_target) vtoSection += `- Profit Target: ${typ.profit_target}\n`;
+        if (typ.vision_description) vtoSection += `- Vision: ${typ.vision_description}\n`;
+        if (typ.what_does_it_look_like_completions) {
+          const completions = typ.what_does_it_look_like_completions;
+          if (Array.isArray(completions) && completions.length > 0) {
+            vtoSection += `- What It Looks Like:\n`;
+            completions.forEach(item => {
+              if (item.text) vtoSection += `  • ${item.text}\n`;
+            });
+          }
+        }
+        vtoSection += `\n`;
+      }
+      
+      if (vtoContext.oneYearPlan) {
+        const oyp = vtoContext.oneYearPlan;
+        vtoSection += `**1-Year Plan (${oyp.planning_year || 'Current Year'}):**\n`;
+        if (oyp.goals && Array.isArray(oyp.goals)) {
+          vtoSection += `- Goals:\n`;
+          oyp.goals.forEach(goal => {
+            if (goal.text) vtoSection += `  • ${goal.text}\n`;
+          });
+        }
+        vtoSection += `\n`;
+      }
+    }
 
     const prompt = `You are an expert EOS implementer and project management coach. Generate a comprehensive, actionable execution plan for this Rock.
 
@@ -429,9 +498,11 @@ Due Date: ${new Date(rock.dueDate).toLocaleDateString()}
 
 **MILESTONES:**
 ${milestonesText}
-
+${vtoSection}
 **YOUR TASK:**
 Create a detailed 1-2 page action plan that helps the Rock owner execute successfully. The plan should be practical, specific, and confidence-building.
+
+**IMPORTANT:** Use the Strategic Context (V/TO) above to ensure this Rock's execution aligns with the company's core values, focus, long-term vision, and annual goals. Reference specific V/TO elements in your recommendations where relevant.
 
 **REQUIRED SECTIONS:**
 
