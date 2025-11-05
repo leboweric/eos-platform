@@ -1495,21 +1495,11 @@ const QuarterlyPrioritiesPageClean = () => {
       });
       
       // Update selectedPriority if this is the currently selected one
-      console.log('🔍 [Upload] Checking if should update selectedPriority:', {
-        selectedPriorityId: selectedPriority?.id,
-        uploadPriorityId: priorityId,
-        shouldUpdate: selectedPriority?.id === priorityId,
-        newAttachment
-      });
       if (selectedPriority?.id === priorityId) {
-        setSelectedPriority(prev => {
-          const updated = {
-            ...prev,
-            attachments: [...(prev.attachments || []), newAttachment]
-          };
-          console.log('✅ [Upload] Updated selectedPriority:', updated);
-          return updated;
-        });
+        setSelectedPriority(prev => ({
+          ...prev,
+          attachments: [...(prev.attachments || []), newAttachment]
+        }));
       }
       
       setSuccess('Attachment uploaded successfully');
