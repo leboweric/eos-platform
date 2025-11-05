@@ -178,13 +178,22 @@ const OrganizationSettings = () => {
   };
 
   const handleUploadLogo = async () => {
-    if (!selectedFile) return;
+    console.log('🔵 handleUploadLogo called');
+    console.log('🔵 selectedFile:', selectedFile);
     
+    if (!selectedFile) {
+      console.log('🔴 No file selected, returning');
+      return;
+    }
+    
+    console.log('🔵 Starting upload...');
     setError(null);
     setUploadingLogo(true);
     
     try {
-      await organizationService.uploadLogo(selectedFile);
+      console.log('🔵 Calling organizationService.uploadLogo...');
+      const result = await organizationService.uploadLogo(selectedFile);
+      console.log('🟢 Upload successful:', result);
       setSuccess('Logo uploaded successfully');
       setSelectedFile(null);
       
@@ -194,7 +203,8 @@ const OrganizationSettings = () => {
       // Force refresh of logo in sidebar
       window.location.reload();
     } catch (error) {
-      console.error('Logo upload error:', error);
+      console.error('🔴 Logo upload error:', error);
+      console.error('🔴 Error response:', error.response);
       setError(error.response?.data?.error || 'Failed to upload logo');
     } finally {
       setUploadingLogo(false);
