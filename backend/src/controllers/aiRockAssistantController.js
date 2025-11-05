@@ -462,6 +462,7 @@ export const generateFromVision = async (req, res) => {
       : 'User';
 
     // 3. Fetch VTO context
+    console.log('🔍 [VTO] Starting VTO context fetch for org:', orgId);
     let vtoContext = {};
     
     // Get VTO ID from business_blueprints
@@ -469,6 +470,8 @@ export const generateFromVision = async (req, res) => {
       'SELECT id FROM business_blueprints WHERE organization_id = $1 ORDER BY created_at DESC LIMIT 1',
       [orgId]
     );
+    
+    console.log('🔍 [VTO] Blueprint result:', blueprintResult.rows.length > 0 ? `Found VTO ID: ${blueprintResult.rows[0].id}` : 'No VTO found');
     
     if (blueprintResult.rows.length > 0) {
       const vtoId = blueprintResult.rows[0].id;
@@ -479,6 +482,10 @@ export const generateFromVision = async (req, res) => {
         [vtoId]
       );
       vtoContext.coreValues = coreValuesResult.rows;
+      console.log('✅ [VTO] Core Values fetched:', coreValuesResult.rows.length, 'values');
+      if (coreValuesResult.rows.length > 0) {
+        console.log('   Sample:', coreValuesResult.rows[0].value_text);
+      }
       
       // Fetch Core Focus
       const coreFocusResult = await query(
@@ -486,6 +493,10 @@ export const generateFromVision = async (req, res) => {
         [vtoId]
       );
       vtoContext.coreFocus = coreFocusResult.rows[0] || {};
+      console.log('✅ [VTO] Core Focus fetched:', {
+        hasPurpose: !!vtoContext.coreFocus.purpose_cause_passion,
+        hasNiche: !!vtoContext.coreFocus.niche
+      });
       
       // Fetch Marketing Strategy
       const marketingResult = await query(
@@ -493,6 +504,10 @@ export const generateFromVision = async (req, res) => {
         [vtoId]
       );
       vtoContext.marketingStrategy = marketingResult.rows[0] || {};
+      console.log('✅ [VTO] Marketing Strategy fetched:', {
+        hasTargetMarket: !!vtoContext.marketingStrategy.target_market,
+        hasThreeUniques: !!vtoContext.marketingStrategy.three_uniques
+      });
       
       // Fetch 3-Year Picture
       const threeYearResult = await query(
@@ -507,6 +522,11 @@ export const generateFromVision = async (req, res) => {
           profit: threeYear.profit_target,
           bullets: threeYear.what_does_it_look_like_completions || []
         };
+        console.log('✅ [VTO] 3-Year Picture fetched:', {
+          hasDate: !!threeYear.future_date,
+          hasRevenue: !!threeYear.revenue_target,
+          bulletsCount: (threeYear.what_does_it_look_like_completions || []).length
+        });
       }
       
       // Fetch 1-Year Goals
@@ -516,6 +536,9 @@ export const generateFromVision = async (req, res) => {
       );
       if (oneYearResult.rows.length > 0) {
         vtoContext.oneYearGoals = oneYearResult.rows[0].goals || [];
+        console.log('✅ [VTO] 1-Year Goals fetched:', (oneYearResult.rows[0].goals || []).length, 'goals');
+      } else {
+        console.log('⚠️  [VTO] No 1-Year Goals found');
       }
     }
 
@@ -529,6 +552,14 @@ export const generateFromVision = async (req, res) => {
       companyRocks: companyRocksResult.rows.map(r => r.title).join('\n'),
       vto: vtoContext
     };
+    
+    console.log('📊 [VTO] Complete VTO context summary:', {
+      hasCoreValues: vtoContext.coreValues?.length > 0,
+      hasCoreFocus: Object.keys(vtoContext.coreFocus || {}).length > 0,
+      hasMarketingStrategy: Object.keys(vtoContext.marketingStrategy || {}).length > 0,
+      hasThreeYearPicture: !!vtoContext.threeYearPicture,
+      hasOneYearGoals: vtoContext.oneYearGoals?.length > 0
+    });
 
     // 4. Call OpenAI service
     const result = await generateRocksFromVision(vision, context, numberOfOptions);
