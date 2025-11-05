@@ -5953,10 +5953,24 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                            'transparent',
                                             border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
                                           }}
-                                          onClick={async () => {
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            console.log('🔥🔥🔥 Level 10 Meeting: Checkbox clicked');
+                                            console.log('📋 Todo:', todo);
+                                            console.log('👤 _currentAssignee:', todo._currentAssignee);
+                                            
                                             try {
                                               const newStatus = isComplete ? 'incomplete' : 'complete';
-                                              await todosService.updateTodo(todo.id, { status: newStatus });
+                                              const updateData = { status: newStatus };
+                                              
+                                              // For multi-assignee todos, pass the assigneeId
+                                              if (todo._currentAssignee) {
+                                                updateData.assigneeId = todo._currentAssignee.id;
+                                                console.log('🎯 Adding assigneeId:', todo._currentAssignee.id);
+                                              }
+                                              
+                                              console.log('📤 Sending update:', updateData);
+                                              await todosService.updateTodo(todo.id, updateData);
                                               await fetchTodosData();
                                             } catch (error) {
                                               console.error('Failed to update todo status:', error);
