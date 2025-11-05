@@ -14,19 +14,21 @@ export const sendTodoReminders = async () => {
     twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
     const targetDate = twoDaysFromNow.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-    // 2. Query for all to-dos due on the target date
+    // 2. Query for all to-dos due on the target date (handles both single and multi-assignee)
     const todosDueSoon = await db.query(`
-      SELECT 
+      SELECT DISTINCT
         t.title, 
         t.due_date, 
-        u.email, 
-        u.first_name
+        COALESCE(u2.email, u.email) as email,
+        COALESCE(u2.first_name, u.first_name) as first_name
       FROM todos t
-      JOIN users u ON t.assigned_to_id = u.id
+      LEFT JOIN users u ON t.assigned_to_id = u.id
+      LEFT JOIN todo_assignees ta ON t.id = ta.todo_id
+      LEFT JOIN users u2 ON ta.user_id = u2.id
       WHERE t.due_date = $1
         AND t.status != 'complete'
         AND t.deleted_at IS NULL
-        AND u.email IS NOT NULL
+        AND COALESCE(u2.email, u.email) IS NOT NULL
     `, [targetDate]);
 
     if (todosDueSoon.rows.length === 0) {
