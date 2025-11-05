@@ -4705,6 +4705,7 @@ const QuarterlyPrioritiesPageClean = () => {
           onEditUpdate={handleEditUpdate}
           onUploadAttachment={handleUploadAttachment}
           onDownloadAttachment={handleDownloadAttachment}
+          onGenerateActionPlan={handleGenerateActionPlan}
         />
       )}
 

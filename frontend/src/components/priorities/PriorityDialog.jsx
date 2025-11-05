@@ -30,7 +30,8 @@ import {
   Archive,
   TrendingUp,
   TrendingDown,
-  Link
+  Link,
+  Sparkles
 } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 import { useAuthStore } from '../../stores/authStore';
@@ -59,7 +60,8 @@ const PriorityDialog = ({
   onUploadAttachment,
   onDownloadAttachment,
   onDeleteAttachment,
-  onCreateLinkedIssue
+  onCreateLinkedIssue,
+  onGenerateActionPlan
 }) => {
   const { user } = useAuthStore();
   const { labels } = useTerminology();
@@ -830,8 +832,32 @@ const PriorityDialog = ({
         )}
 
         <DialogFooter className="mt-4">
-          {priority && (onArchive || onCreateLinkedIssue) && (
+          {priority && (onArchive || onCreateLinkedIssue || onGenerateActionPlan) && (
             <div className="flex gap-2 mr-auto">
+              {onGenerateActionPlan && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onGenerateActionPlan(priority);
+                  }}
+                  className="border-2 transition-all duration-200"
+                  style={{
+                    borderColor: themeColors.primary,
+                    color: themeColors.primary
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.primary;
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = themeColors.primary;
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Action Plan
+                </Button>
+              )}
               {onArchive && (
                 <Button
                   variant="outline"
