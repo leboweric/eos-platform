@@ -1494,6 +1494,14 @@ const QuarterlyPrioritiesPageClean = () => {
         return updated;
       });
       
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          attachments: [...(prev.attachments || []), newAttachment]
+        }));
+      }
+      
       setSuccess('Attachment uploaded successfully');
     } catch (error) {
       console.error('Failed to upload attachment:', error);
