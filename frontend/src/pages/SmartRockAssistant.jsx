@@ -492,7 +492,7 @@ const SmartRockAssistant = () => {
 
               {/* User/Owner Selection */}
               <div className="space-y-2">
-                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Who will own this Rock?*</Label>
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Who will own this Rock? (Optional - defaults to you)</Label>
                 <TeamMemberSelect
                   teamId={rockData.teamId}
                   value={rockData.owner}
@@ -551,18 +551,18 @@ const SmartRockAssistant = () => {
               <div className="flex justify-end">
                 <Button 
                   onClick={handleGenerateOptions}
-                  disabled={!vision || !industry || !rockData.owner || isAnalyzing}
+                  disabled={!vision || !industry || isAnalyzing}
                   className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   style={{
                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                   }}
                   onMouseEnter={(e) => {
-                    if (vision && industry && rockData.owner && !isAnalyzing) {
+                    if (vision && industry && !isAnalyzing) {
                       e.currentTarget.style.filter = 'brightness(1.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (vision && industry && rockData.owner && !isAnalyzing) {
+                    if (vision && industry && !isAnalyzing) {
                       e.currentTarget.style.filter = 'none';
                     }
                   }}
