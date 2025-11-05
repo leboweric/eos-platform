@@ -386,6 +386,7 @@ app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped use
 app.use('/api/v1/organizations/:orgId/logo', logoLimiter);
 app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/organizations/:orgId/teams', teamRoutes);
+app.use('/api/v1/organizations/:orgId/business-blueprint', businessBlueprintRoutes); // Org-level VTO
 app.use('/api/v1/organizations/:orgId/teams/:teamId/business-blueprint', businessBlueprintRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/quarterly-priorities', quarterlyPrioritiesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/scorecard', scorecardRoutes);
