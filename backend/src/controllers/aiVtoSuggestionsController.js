@@ -55,7 +55,7 @@ export const generateBulletSuggestion = async (req, res) => {
 async function fetchVtoContext(organizationId) {
   // Get VTO ID from business_blueprints (org-level, team_id IS NULL)
   const blueprintResult = await query(
-    `SELECT vto_id FROM business_blueprints 
+    `SELECT id FROM business_blueprints 
      WHERE organization_id = $1 AND team_id IS NULL 
      LIMIT 1`,
     [organizationId]
@@ -65,7 +65,7 @@ async function fetchVtoContext(organizationId) {
     return { vtoId: null };
   }
 
-  const vtoId = blueprintResult.rows[0].vto_id;
+  const vtoId = blueprintResult.rows[0].id;
 
   // Fetch Core Values
   const coreValuesResult = await query(
