@@ -2326,6 +2326,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleToggleTodoComplete = async (todo) => {
+    console.log('🚀🚀🚀 handleToggleTodoComplete CALLED in Level 10 Meeting');
+    console.log('📦 Todo object:', todo);
+    console.log('👤 _currentAssignee:', todo._currentAssignee);
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
