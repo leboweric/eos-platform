@@ -323,10 +323,11 @@ const SmartRockAssistant = () => {
         {
           title: rockData.title,
           description: rockData.description,
-          owner: rockData.owner || user?.id,
+          ownerId: rockData.owner || user?.id,
+          dueDate: rockData.dueDate,
           quarter: rockData.quarter,
           year: rockData.year,
-          type: rockData.type
+          isCompanyPriority: rockData.type === 'company'
         }
       );
       
