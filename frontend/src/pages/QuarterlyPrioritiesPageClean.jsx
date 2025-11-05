@@ -4711,6 +4711,7 @@ const QuarterlyPrioritiesPageClean = () => {
           onDeleteMilestone={handleDeleteMilestone}
           onAddUpdate={handleAddUpdate}
           onEditUpdate={handleEditUpdate}
+          onDeleteUpdate={handleDeleteUpdate}
           onUploadAttachment={handleUploadAttachment}
           onDownloadAttachment={handleDownloadAttachment}
           onDeleteAttachment={handleDeleteAttachment}
