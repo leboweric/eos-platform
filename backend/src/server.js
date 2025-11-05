@@ -289,6 +289,11 @@ if (orgValidationEnabled) {
       return next();
     }
 
+    // Skip validation for public logo GET requests
+    if (req.path.endsWith('/logo') && req.method === 'GET') {
+      return next();
+    }
+
     // If the user object isn't attached, something is wrong with authentication. Block the request.
     if (!req.user) {
       console.warn('[Security] Access denied: No user object on request. Ensure authenticate middleware runs first.');
