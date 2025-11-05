@@ -1954,8 +1954,8 @@ export const downloadPriorityAttachment = async (req, res) => {
         const processor = unified().use(remarkParse);
         const mdast = processor.parse(markdownText);
         
-        // Convert MDAST to DOCX
-        const docxBuffer = await toDocx(mdast, {}, {}, 'buffer');
+        // Convert MDAST to DOCX (use 'nodebuffer' for Node.js compatibility)
+        const docxBuffer = await toDocx(mdast, {}, {}, 'nodebuffer');
         
         // Update filename and mime type
         finalFileName = file_name.replace(/\.md$/, '.docx');
