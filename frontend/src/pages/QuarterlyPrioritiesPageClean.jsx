@@ -4713,6 +4713,7 @@ const QuarterlyPrioritiesPageClean = () => {
           onEditUpdate={handleEditUpdate}
           onUploadAttachment={handleUploadAttachment}
           onDownloadAttachment={handleDownloadAttachment}
+          onDeleteAttachment={handleDeleteAttachment}
           onGenerateActionPlan={handleGenerateActionPlan}
         />
       )}
