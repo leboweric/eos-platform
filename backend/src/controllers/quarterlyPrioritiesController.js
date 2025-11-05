@@ -1,5 +1,7 @@
 import { query } from '../config/database.js';
-import { markdownToDocx } from '@md2docx/core';
+import { toDocx } from '@md2docx/core';
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
 import { isZeroUUID, isLeadershipTeam, getUserTeamScope } from '../utils/teamUtils.js';
@@ -1947,7 +1949,13 @@ export const downloadPriorityAttachment = async (req, res) => {
       try {
         // Convert markdown to docx
         const markdownText = file_data.toString('utf-8');
-        const docxBuffer = await markdownToDocx(markdownText);
+        
+        // Parse markdown to MDAST
+        const processor = unified().use(remarkParse);
+        const mdast = processor.parse(markdownText);
+        
+        // Convert MDAST to DOCX
+        const docxBuffer = await toDocx(mdast, {}, {}, 'buffer');
         
         // Update filename and mime type
         finalFileName = file_name.replace(/\.md$/, '.docx');
