@@ -266,8 +266,16 @@ if (orgValidationEnabled) {
   // =====================================================================
   // CRITICAL FIX: Apply authentication BEFORE the validation middleware.
   // This ensures req.user is populated before the security check runs.
+  // Exception: Skip authentication for public logo endpoint
   // =====================================================================
-  app.use('/api/v1/organizations/:orgId', authenticate);
+  app.use('/api/v1/organizations/:orgId', (req, res, next) => {
+    // Skip authentication for logo GET requests (public endpoint)
+    if (req.path.endsWith('/logo') && req.method === 'GET') {
+      return next();
+    }
+    // Apply authentication for all other routes
+    return authenticate(req, res, next);
+  });
   
   app.use('/api/v1/organizations/:orgId', async (req, res, next) => {
     const { orgId } = req.params;
