@@ -6,7 +6,6 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import { aiRockAssistantService } from '../services/aiRockAssistantService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { teamsService } from '../services/teamsService';
-import { userService } from '../services/userService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { organizationService } from '../services/organizationService';
 import { Button } from '@/components/ui/button';
@@ -153,9 +152,8 @@ const SmartRockAssistant = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState(null);
   
-  // Teams and users
+  // Teams (kept for backward compatibility with other parts of the component)
   const [teams, setTeams] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Check AI configuration
@@ -180,9 +178,8 @@ const SmartRockAssistant = () => {
   const loadInitialData = async () => {
     try {
       setLoadingData(true);
-      // Fetch users for the owner dropdown
-      const usersData = await userService.getOrganizationUsers(orgId);
-      setUsers(usersData);
+      // Note: User loading is now handled by TeamMemberSelect component
+      // No need to fetch users here
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -489,21 +486,14 @@ const SmartRockAssistant = () => {
               {/* User/Owner Selection */}
               <div className="space-y-2">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Who will own this Rock?*</Label>
-                <Select
+                <TeamMemberSelect
+                  teamId={rockData.teamId}
                   value={rockData.owner}
                   onValueChange={(value) => setRockData({ ...rockData, owner: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select owner" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {Array.isArray(users) && users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.first_name} {user.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select owner"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm"
+                  includeAllIfLeadership={true}
+                />
               </div>
 
               {/* Vision Textarea */}
