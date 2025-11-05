@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { aiRockAssistantService } from '../services/aiRockAssistantService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { teamsService } from '../services/teamsService';
@@ -41,6 +42,7 @@ const SmartRockAssistant = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const { labels } = useTerminology();
+  const { selectedDepartment } = useDepartment();
   
   // Theme colors
   const tabsRef = useRef(null);
@@ -137,7 +139,7 @@ const SmartRockAssistant = () => {
     title: '',
     description: '',
     owner: user?.id || '',
-    teamId: '',
+    teamId: selectedDepartment?.id || '',
     quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
     year: new Date().getFullYear(),
     dueDate: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
@@ -178,11 +180,8 @@ const SmartRockAssistant = () => {
   const loadInitialData = async () => {
     try {
       setLoadingData(true);
-      const [teamsData, usersData] = await Promise.all([
-        teamsService.getTeams(orgId),
-        userService.getOrganizationUsers(orgId)
-      ]);
-      setTeams(teamsData);
+      // Fetch users for the owner dropdown
+      const usersData = await userService.getOrganizationUsers(orgId);
       setUsers(usersData);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -279,7 +278,8 @@ const SmartRockAssistant = () => {
         vision,
         industry,
         challenges,
-        userId: user?.id
+        userId: rockData.owner,
+        teamId: rockData.teamId
       });
       
       if (result.success) {
@@ -486,6 +486,26 @@ const SmartRockAssistant = () => {
                 />
               </div>
 
+              {/* User/Owner Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Who will own this Rock?*</Label>
+                <Select
+                  value={rockData.owner}
+                  onValueChange={(value) => setRockData({ ...rockData, owner: value })}
+                >
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                    <SelectValue placeholder="Select owner" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Vision Textarea */}
               <div className="space-y-2">
                 <Label htmlFor="vision" className="text-sm font-semibold text-slate-700">Your Vision of Success*</Label>
@@ -534,23 +554,23 @@ const SmartRockAssistant = () => {
               <div className="flex justify-end">
                 <Button 
                   onClick={handleGenerateOptions}
-                  disabled={!vision || !industry || isAnalyzing}
+                  disabled={!vision || !industry || !rockData.owner || isAnalyzing}
                   className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   style={{
                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                   }}
                   onMouseEnter={(e) => {
-                    if (vision && industry && !isAnalyzing) {
+                    if (vision && industry && rockData.owner && !isAnalyzing) {
                       e.currentTarget.style.filter = 'brightness(1.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (vision && industry && !isAnalyzing) {
+                    if (vision && industry && rockData.owner && !isAnalyzing) {
                       e.currentTarget.style.filter = 'none';
                     }
                   }}
                 >
-                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 animate-spin" />}
                   Generate SMART Rock Options
                 </Button>
               </div>
@@ -1224,17 +1244,11 @@ const SmartRockAssistant = () => {
                 </div>
               )}
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
                   <Label className="text-xs font-semibold" style={{ color: themeColors.primary }}>Owner</Label>
                   <p className="text-sm font-medium text-slate-800">
-                    {users.find(u => u.id === rockData.owner)?.first_name} {users.find(u => u.id === rockData.owner)?.last_name}
-                  </p>
-                </div>
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
-                  <Label className="text-xs font-semibold" style={{ color: themeColors.primary }}>Team</Label>
-                  <p className="text-sm font-medium text-slate-800">
-                    {teams.find(t => t.id === rockData.teamId)?.name}
+                    {user?.first_name} {user?.last_name}
                   </p>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">

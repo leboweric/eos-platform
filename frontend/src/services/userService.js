@@ -3,7 +3,7 @@ import api from './axiosConfig';
 export const userService = {
   async getOrganizationUsers(orgId) {
     try {
-      const response = await api.get(`/users/organization/${orgId}`);
+      const response = await api.get(`/users/organization`);
       return response.data;
     } catch (error) {
       console.error('Error fetching organization users:', error);

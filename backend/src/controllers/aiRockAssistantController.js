@@ -418,7 +418,7 @@ export const getSuggestionHistory = async (req, res) => {
  */
 export const generateFromVision = async (req, res) => {
   const { orgId } = req.params;
-  const { vision, industry, challenges, userId, numberOfOptions = 3 } = req.body;
+  const { vision, industry, challenges, userId, teamId, numberOfOptions = 3 } = req.body;
   const requestUserId = userId || req.user.id;
 
   try {
@@ -432,6 +432,20 @@ export const generateFromVision = async (req, res) => {
     // 2. Enrich context from database
     const orgResult = await query('SELECT name FROM organizations WHERE id = $1', [orgId]);
     const userResult = await query('SELECT first_name, last_name FROM users WHERE id = $1', [requestUserId]);
+    
+    // Get team info if teamId is provided
+    let teamName = null;
+    let teamType = null;
+    if (teamId) {
+      const teamResult = await query(
+        'SELECT name, is_leadership_team FROM teams WHERE id = $1 AND organization_id = $2',
+        [teamId, orgId]
+      );
+      if (teamResult.rows.length > 0) {
+        teamName = teamResult.rows[0].name;
+        teamType = teamResult.rows[0].is_leadership_team ? 'Leadership' : 'Department';
+      }
+    }
 
     const currentQuarter = `Q${Math.floor((new Date().getMonth() + 3) / 3)}`;
     const currentYear = new Date().getFullYear();
@@ -451,6 +465,8 @@ export const generateFromVision = async (req, res) => {
       organizationName: orgResult.rows[0]?.name,
       industry: industry,
       userName: userName,
+      teamName: teamName,
+      teamType: teamType,
       quarter: currentQuarter,
       year: currentYear,
       companyRocks: companyRocksResult.rows.map(r => r.title).join('\n'),

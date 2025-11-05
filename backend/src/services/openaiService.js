@@ -288,6 +288,8 @@ export const generateRocksFromVision = async (vision, context = {}, numberOfOpti
       userName,
       organizationName,
       industry,
+      teamName,
+      teamType,
       quarter,
       year,
       companyRocks,
@@ -300,6 +302,7 @@ CONTEXT:
 - Company: ${organizationName || 'Not specified'}
 - Industry: ${industry || 'Not specified'}
 - User: ${userName || 'Not specified'}
+${teamName ? `- Team: ${teamName} (${teamType})` : ''}
 - Quarter: ${quarter || 'Current Quarter'} ${year || new Date().getFullYear()}
 ${companyRocks ? `- Current Company Rocks this quarter:\n${companyRocks}` : ''}
 ${challenges ? `- Current challenges to solve: ${challenges}` : ''}
