@@ -465,9 +465,9 @@ export const generateFromVision = async (req, res) => {
     console.log('🔍 [VTO] Starting VTO context fetch for org:', orgId);
     let vtoContext = {};
     
-    // Get VTO ID from business_blueprints
+    // Get VTO ID from business_blueprints (org-level only, not team-level)
     const blueprintResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 ORDER BY created_at DESC LIMIT 1',
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL ORDER BY created_at DESC LIMIT 1',
       [orgId]
     );
     
