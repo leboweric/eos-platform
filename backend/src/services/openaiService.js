@@ -287,36 +287,90 @@ export const generateRocksFromVision = async (vision, context = {}, numberOfOpti
     const { 
       userName,
       organizationName,
-      industry,
       teamName,
       teamType,
       quarter,
       year,
       companyRocks,
-      challenges
+      vto
     } = context;
 
-    const prompt = `You are an expert EOS implementer helping ${userName || 'a professional'} at ${organizationName || 'their company'} in the ${industry || 'their industry'} create SMART quarterly Rocks.
+    // Build VTO context sections
+    let vtoSections = '';
+    
+    if (vto) {
+      // Core Focus
+      if (vto.coreFocus && (vto.coreFocus.purpose || vto.coreFocus.niche)) {
+        vtoSections += '\n**CORE FOCUS:**\n';
+        if (vto.coreFocus.purpose) vtoSections += `- Purpose/Passion: ${vto.coreFocus.purpose}\n`;
+        if (vto.coreFocus.niche) vtoSections += `- Niche: ${vto.coreFocus.niche}\n`;
+        if (vto.coreFocus.target_market) vtoSections += `- Target Market: ${vto.coreFocus.target_market}\n`;
+      }
+      
+      // Core Values
+      if (vto.coreValues && vto.coreValues.length > 0) {
+        vtoSections += '\n**CORE VALUES:**\n';
+        vto.coreValues.forEach(cv => {
+          vtoSections += `- ${cv.value}${cv.description ? ': ' + cv.description : ''}\n`;
+        });
+      }
+      
+      // 3-Year Picture
+      if (vto.threeYearPicture) {
+        vtoSections += '\n**3-YEAR PICTURE:**\n';
+        if (vto.threeYearPicture.futureDate) vtoSections += `- Target Date: ${vto.threeYearPicture.futureDate}\n`;
+        if (vto.threeYearPicture.revenue) vtoSections += `- Revenue Target: $${vto.threeYearPicture.revenue}\n`;
+        if (vto.threeYearPicture.profit) vtoSections += `- Profit Target: $${vto.threeYearPicture.profit}\n`;
+        if (vto.threeYearPicture.bullets && vto.threeYearPicture.bullets.length > 0) {
+          vtoSections += '- What does it look like:\n';
+          vto.threeYearPicture.bullets.forEach(bullet => {
+            vtoSections += `  • ${bullet}\n`;
+          });
+        }
+      }
+      
+      // 1-Year Goals
+      if (vto.oneYearGoals && vto.oneYearGoals.length > 0) {
+        vtoSections += '\n**1-YEAR GOALS:**\n';
+        vto.oneYearGoals.forEach(goal => {
+          vtoSections += `- ${goal}\n`;
+        });
+      }
+      
+      // Marketing Strategy
+      if (vto.marketingStrategy && vto.marketingStrategy.unique_value_proposition) {
+        vtoSections += '\n**MARKETING STRATEGY:**\n';
+        vtoSections += `- Unique Value Proposition: ${vto.marketingStrategy.unique_value_proposition}\n`;
+        if (vto.marketingStrategy.target_market) vtoSections += `- Target Market: ${vto.marketingStrategy.target_market}\n`;
+      }
+    }
 
-CONTEXT:
+    const prompt = `You are an expert EOS implementer helping ${userName || 'a professional'} at ${organizationName || 'their company'} create SMART quarterly Rocks that align with their Vision/Traction Organizer (VTO).
+
+**COMPANY CONTEXT:**
 - Company: ${organizationName || 'Not specified'}
-- Industry: ${industry || 'Not specified'}
 - User: ${userName || 'Not specified'}
 ${teamName ? `- Team: ${teamName} (${teamType})` : ''}
 - Quarter: ${quarter || 'Current Quarter'} ${year || new Date().getFullYear()}
-${companyRocks ? `- Current Company Rocks this quarter:\n${companyRocks}` : ''}
-${challenges ? `- Current challenges to solve: ${challenges}` : ''}
+${companyRocks ? `\n**CURRENT COMPANY ROCKS THIS QUARTER:**\n${companyRocks}\n` : ''}
+${vtoSections}
 
-USER'S VISION OF SUCCESS (What great looks like at the end of the quarter):
+**USER'S QUARTERLY GOAL:**
 """
 ${vision}
 """
 
-Based on the user's vision and the provided context, generate ${numberOfOptions} distinct, high-quality SMART Rock options. Each option must be a complete, actionable quarterly priority.
+Based on the user's quarterly goal and the provided VTO context, generate ${numberOfOptions} distinct, high-quality SMART Rock options. Each option must be a complete, actionable quarterly priority that strategically aligns with the company's vision.
+
+**CRITICAL REQUIREMENTS:**
+- Each Rock MUST align with at least one element from the VTO (Core Values, Core Focus, 3-Year Picture, 1-Year Goals)
+- In the description, explicitly reference which VTO elements this Rock supports (e.g., "This Rock advances our 1-Year Goal of..." or "Aligns with our Core Value of...")
+- Ensure the Rock is achievable within one quarter while contributing to longer-term strategic goals
+- Make the Rock specific to the company's industry, niche, and target market from the Core Focus
 
 For each Rock option, provide:
 1.  **title**: A clear, action-oriented title (max 100 characters).
-2.  **description**: A detailed description explaining the Rock and its purpose.
+2.  **description**: A detailed description explaining the Rock, its purpose, and **which specific VTO elements it aligns with**.
 3.  **successCriteria**: A list of 3-5 specific, measurable outcomes that define success.
 4.  **keyMetrics**: A list of 2-4 metrics to track progress.
 5.  **smartScore**: An overall SMART score (0-100).

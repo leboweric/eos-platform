@@ -129,8 +129,6 @@ const SmartRockAssistant = () => {
   
   // Vision-based workflow state
   const [vision, setVision] = useState('');
-  const [challenges, setChallenges] = useState('');
-  const [industry, setIndustry] = useState('');
   const [generatedOptions, setGeneratedOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   
@@ -273,7 +271,7 @@ const SmartRockAssistant = () => {
 
   // New vision-based workflow functions
   const handleGenerateOptions = async () => {
-    if (!vision || !industry) return;
+    if (!vision) return;
     
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -281,8 +279,6 @@ const SmartRockAssistant = () => {
     try {
       const result = await aiRockAssistantService.generateFromVision(orgId, {
         vision,
-        industry,
-        challenges,
         userId: rockData.owner,
         teamId: rockData.teamId
       });
@@ -498,27 +494,10 @@ const SmartRockAssistant = () => {
                 Step 1: Envision Success
               </CardTitle>
               <CardDescription className="text-slate-600 font-medium">
-                Start with the end in mind. What does great look like at the end of the quarter?
+                Describe what you want to accomplish this quarter. Our AI will use your company's VTO to create strategically aligned Rock options.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {/* Industry Input */}
-              <div className="space-y-2">
-                <Label htmlFor="industry" className="text-sm font-semibold text-slate-700">What industry are you in?*</Label>
-                <Input
-                  id="industry"
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                  placeholder="e.g., Software/SaaS, Manufacturing, Healthcare, Real Estate..."
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                  style={{
-                    borderColor: 'rgba(255, 255, 255, 0.2)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
-                />
-              </div>
-
               {/* User/Owner Selection */}
               <div className="space-y-2">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Who will own this Rock? (Optional - defaults to you)</Label>
@@ -534,12 +513,12 @@ const SmartRockAssistant = () => {
 
               {/* Vision Textarea */}
               <div className="space-y-2">
-                <Label htmlFor="vision" className="text-sm font-semibold text-slate-700">Your Vision of Success*</Label>
+                <Label htmlFor="vision" className="text-sm font-semibold text-slate-700">What do you want to accomplish this quarter?*</Label>
                 <Textarea
                   id="vision"
                   value={vision}
                   onChange={(e) => setVision(e.target.value)}
-                  placeholder="Example: We've successfully onboarded 25 new clients, our team is fully trained on the new software, and client satisfaction scores are above 4.5/5..."
+                  placeholder="Example: Launch our new customer onboarding system, train the team, and achieve 90% client satisfaction..."
                   rows={6}
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                   style={{
@@ -548,24 +527,7 @@ const SmartRockAssistant = () => {
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
                   onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
                 />
-                <p className="text-sm text-muted-foreground">Describe the outcome, not the process. Be as detailed as possible.</p>
-              </div>
-
-              {/* Optional Fields */}
-              <div className="space-y-2">
-                <Label htmlFor="challenges" className="text-sm font-semibold text-slate-700">What challenge are you trying to solve? (Optional)</Label>
-                <Textarea
-                  id="challenges"
-                  value={challenges}
-                  onChange={(e) => setChallenges(e.target.value)}
-                  rows={2}
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                  style={{
-                    borderColor: 'rgba(255, 255, 255, 0.2)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
-                />
+                <p className="text-sm text-muted-foreground">Our AI will analyze your company's Core Values, Core Focus, 3-Year Picture, and 1-Year Goals to create Rocks that align with your strategic vision.</p>
               </div>
 
 
@@ -580,18 +542,18 @@ const SmartRockAssistant = () => {
               <div className="flex justify-end">
                 <Button 
                   onClick={handleGenerateOptions}
-                  disabled={!vision || !industry || isAnalyzing}
+                  disabled={!vision || isAnalyzing}
                   className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   style={{
                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                   }}
                   onMouseEnter={(e) => {
-                    if (vision && industry && !isAnalyzing) {
+                    if (vision && !isAnalyzing) {
                       e.currentTarget.style.filter = 'brightness(1.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (vision && industry && !isAnalyzing) {
+                    if (vision && !isAnalyzing) {
                       e.currentTarget.style.filter = 'none';
                     }
                   }}

@@ -418,14 +418,14 @@ export const getSuggestionHistory = async (req, res) => {
  */
 export const generateFromVision = async (req, res) => {
   const { orgId } = req.params;
-  const { vision, industry, challenges, userId, teamId, numberOfOptions = 3 } = req.body;
+  const { vision, userId, teamId, numberOfOptions = 3 } = req.body;
   const requestUserId = userId || req.user.id;
 
   try {
     // 1. Validate input
-    if (!vision || !industry) {
+    if (!vision) {
       return res.status(400).json({
-        error: 'Vision and industry are required'
+        error: 'Vision is required'
       });
     }
 
@@ -461,19 +461,76 @@ export const generateFromVision = async (req, res) => {
       ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`.trim()
       : 'User';
 
+    // 3. Fetch VTO context
+    let vtoContext = {};
+    
+    // Get VTO ID from business_blueprints
+    const blueprintResult = await query(
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [orgId]
+    );
+    
+    if (blueprintResult.rows.length > 0) {
+      const vtoId = blueprintResult.rows[0].id;
+      
+      // Fetch Core Values
+      const coreValuesResult = await query(
+        'SELECT value, description FROM core_values WHERE vto_id = $1 ORDER BY display_order',
+        [vtoId]
+      );
+      vtoContext.coreValues = coreValuesResult.rows;
+      
+      // Fetch Core Focus
+      const coreFocusResult = await query(
+        'SELECT purpose, niche, target_market FROM core_focus WHERE vto_id = $1 LIMIT 1',
+        [vtoId]
+      );
+      vtoContext.coreFocus = coreFocusResult.rows[0] || {};
+      
+      // Fetch Marketing Strategy
+      const marketingResult = await query(
+        'SELECT target_market, unique_value_proposition FROM marketing_strategies WHERE vto_id = $1 LIMIT 1',
+        [vtoId]
+      );
+      vtoContext.marketingStrategy = marketingResult.rows[0] || {};
+      
+      // Fetch 3-Year Picture
+      const threeYearResult = await query(
+        'SELECT future_date, revenue, profit, what_does_it_look_like_completions FROM three_year_pictures WHERE vto_id = $1 LIMIT 1',
+        [vtoId]
+      );
+      if (threeYearResult.rows.length > 0) {
+        const threeYear = threeYearResult.rows[0];
+        vtoContext.threeYearPicture = {
+          futureDate: threeYear.future_date,
+          revenue: threeYear.revenue,
+          profit: threeYear.profit,
+          bullets: threeYear.what_does_it_look_like_completions || []
+        };
+      }
+      
+      // Fetch 1-Year Goals
+      const oneYearResult = await query(
+        'SELECT goals FROM annual_planning_goals WHERE vto_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [vtoId]
+      );
+      if (oneYearResult.rows.length > 0) {
+        vtoContext.oneYearGoals = oneYearResult.rows[0].goals || [];
+      }
+    }
+
     const context = {
       organizationName: orgResult.rows[0]?.name,
-      industry: industry,
       userName: userName,
       teamName: teamName,
       teamType: teamType,
       quarter: currentQuarter,
       year: currentYear,
       companyRocks: companyRocksResult.rows.map(r => r.title).join('\n'),
-      challenges
+      vto: vtoContext
     };
 
-    // 3. Call OpenAI service
+    // 4. Call OpenAI service
     const result = await generateRocksFromVision(vision, context, numberOfOptions);
 
     if (!result.success) {
@@ -482,7 +539,7 @@ export const generateFromVision = async (req, res) => {
       });
     }
 
-    // 4. Return results
+    // 5. Return results
     res.json({
       success: true,
       options: result.data.options
