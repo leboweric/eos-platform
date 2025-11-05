@@ -1529,12 +1529,16 @@ const QuarterlyPrioritiesPageClean = () => {
         attachment = priority.attachments?.find(a => a.id === attachmentId);
       }
       
+      // Convert .md filename to .docx for download (backend converts the file)
+      const fileName = attachment?.fileName || attachment?.file_name || 'attachment';
+      const downloadFileName = fileName.endsWith('.md') ? fileName.replace(/\.md$/, '.docx') : fileName;
+      
       await quarterlyPrioritiesService.downloadAttachment(
         orgId, 
         teamId, 
         priorityId, 
         attachmentId, 
-        attachment?.fileName || attachment?.file_name || 'attachment'
+        downloadFileName
       );
     } catch (error) {
       console.error('Failed to download attachment:', error);
