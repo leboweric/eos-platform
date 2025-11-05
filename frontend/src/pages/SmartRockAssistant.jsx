@@ -475,7 +475,7 @@ const SmartRockAssistant = () => {
         {/* Progress Bar */}
         <div className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-semibold text-slate-600">Step {currentStep + 1} of 6</span>
+            <span className="text-sm font-semibold text-slate-600">Step {currentStep + 1} of 3</span>
             {smartAnalysis && (
               <Badge className={getSmartScoreBadge(smartAnalysis.overallScore)}>
                 SMART Score: {smartAnalysis.overallScore}%
