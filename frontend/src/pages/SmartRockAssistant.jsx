@@ -137,7 +137,7 @@ const SmartRockAssistant = () => {
   const [rockData, setRockData] = useState({
     title: '',
     description: '',
-    owner: '',  // User must select owner from dropdown
+    owner: user?.id || '',  // Pre-populate with current user
     teamId: '',  // Will be set by useEffect when selectedDepartment loads
     quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
     year: new Date().getFullYear(),
