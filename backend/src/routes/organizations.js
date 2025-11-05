@@ -43,10 +43,25 @@ router.get('/current', getOrganization);
 // @access  Private (Admin only)
 router.put('/current', updateOrganization);
 
+// @route   OPTIONS /api/v1/organizations/current/logo
+// @desc    Handle preflight requests for logo upload
+// @access  Public
+router.options('/current/logo', (req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': req.headers.origin || '*',
+    'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true'
+  });
+  res.sendStatus(200);
+});
+
 // @route   POST /api/v1/organizations/current/logo
 // @desc    Upload organization logo
 // @access  Private (Admin only)
 router.post('/current/logo', upload.single('logo'), uploadLogo);
+
+// @route   OPTIONS /api/v1/organizations/current/logo (already handled above for POST)
 
 // @route   DELETE /api/v1/organizations/current/logo
 // @desc    Delete organization logo
