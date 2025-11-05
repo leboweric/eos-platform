@@ -1503,7 +1503,7 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
-  const handleDownloadAttachment = async (attachment) => {
+  const handleDownloadAttachment = async (priorityId, attachmentId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
@@ -1512,12 +1512,23 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or team not found');
       }
       
+      // Find the attachment to get its filename
+      let attachment = null;
+      const allPriorities = [
+        ...companyPriorities,
+        ...Object.values(teamMemberPriorities).flatMap(m => m.priorities || [])
+      ];
+      const priority = allPriorities.find(p => p.id === priorityId);
+      if (priority) {
+        attachment = priority.attachments?.find(a => a.id === attachmentId);
+      }
+      
       await quarterlyPrioritiesService.downloadAttachment(
         orgId, 
         teamId, 
-        attachment.priority_id, 
-        attachment.id, 
-        attachment.fileName || attachment.file_name
+        priorityId, 
+        attachmentId, 
+        attachment?.fileName || attachment?.file_name || 'attachment'
       );
     } catch (error) {
       console.error('Failed to download attachment:', error);
@@ -4701,6 +4712,7 @@ const QuarterlyPrioritiesPageClean = () => {
           onAddMilestone={handleCreateMilestone}
           onEditMilestone={handleEditMilestone}
           onToggleMilestone={handleUpdateMilestone}
+          onDeleteMilestone={handleDeleteMilestone}
           onAddUpdate={handleAddUpdate}
           onEditUpdate={handleEditUpdate}
           onUploadAttachment={handleUploadAttachment}

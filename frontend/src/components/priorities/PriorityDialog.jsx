@@ -225,13 +225,23 @@ const PriorityDialog = ({
   const handleFileUpload = async (filesToUpload) => {
     if (!priority?.id || !onUploadAttachment) return;
     
+    let successCount = 0;
+    let failCount = 0;
+    
     for (const file of filesToUpload) {
       try {
         await onUploadAttachment(priority.id, file);
+        successCount++;
       } catch (error) {
         console.error('Failed to upload file:', error);
         setError(`Failed to upload ${file.name}`);
+        failCount++;
       }
+    }
+    
+    // Show success message
+    if (successCount > 0) {
+      setSuccess(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}`);
     }
   };
 
@@ -444,6 +454,15 @@ const PriorityDialog = ({
                       <Input
                         value={editingMilestone.title}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (onEditMilestone) {
+                              onEditMilestone(priority.id, milestone.id, editingMilestone);
+                            }
+                            setEditingMilestoneId(null);
+                          }
+                        }}
                         placeholder="Milestone title"
                         className="bg-white"
                       />

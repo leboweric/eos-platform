@@ -137,6 +137,27 @@ function RockSidePanel({
     }
   };
 
+  // Delete milestone
+  async function handleDeleteMilestone(milestone) {
+    try {
+      await quarterlyPrioritiesService.deleteMilestone(
+        user?.organizationId,
+        teamId,
+        editedRock.id,
+        milestone.id
+      );
+      
+      const updatedRock = {
+        ...editedRock,
+        milestones: editedRock.milestones.filter(m => m.id !== milestone.id)
+      };
+      setEditedRock(updatedRock);
+      onUpdate(updatedRock);
+    } catch (error) {
+      console.error('Failed to delete milestone:', error);
+    }
+  };
+
   // Add comment/update
   async function handleAddComment() {
     if (comment.trim()) {
@@ -339,6 +360,13 @@ function RockSidePanel({
                       </p>
                     )}
                   </div>
+                  <button
+                    onClick={() => handleDeleteMilestone(milestone)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
+                    title="Delete milestone"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                  </button>
                 </div>
               ))}
               
