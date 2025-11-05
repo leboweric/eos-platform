@@ -7,7 +7,8 @@ import { generateVtoSuggestion } from '../services/openaiService.js';
  */
 export const generateBulletSuggestion = async (req, res) => {
   try {
-    const { organizationId } = req.params;
+    const { orgId } = req.params;
+    const organizationId = orgId;
     const { currentText, bulletIndex } = req.body;
 
     console.log(`[AI VTO Suggestion] Generating suggestion for org ${organizationId}, bullet index ${bulletIndex}`);
