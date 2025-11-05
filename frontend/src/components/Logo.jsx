@@ -33,6 +33,8 @@ const Logo = ({
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [customLogoUrl, setCustomLogoUrl] = useState(null);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     if (useThemeColors) {
@@ -47,6 +49,25 @@ const Logo = ({
       }
     }
   }, [useThemeColors, user]);
+
+  // Load custom organization logo
+  useEffect(() => {
+    const loadCustomLogo = async () => {
+      try {
+        const orgId = user?.organizationId || user?.organization_id;
+        if (orgId) {
+          const logoUrl = organizationService.getLogoUrl(orgId);
+          // Add timestamp to prevent caching
+          setCustomLogoUrl(`${logoUrl}?t=${Date.now()}`);
+        }
+      } catch (error) {
+        console.error('Error loading custom logo:', error);
+        setLogoError(true);
+      }
+    };
+    
+    loadCustomLogo();
+  }, [user]);
   const sizes = {
     hero: 'h-20',
     default: 'h-12',
@@ -65,7 +86,7 @@ const Logo = ({
         
         {/* Main Logo */}
         <img 
-          src="/AXP_logo_upper_left_transparent.png?v=2" 
+          src={customLogoUrl && !logoError ? customLogoUrl : "/AXP_logo_upper_left_transparent.png?v=2"}
           alt="AXP - Adaptive Execution Platform Logo" 
           className={`
             ${sizes[variant]} 
@@ -74,6 +95,10 @@ const Logo = ({
             duration-300
             ${animated ? 'group-hover:scale-105 group-hover:brightness-110' : ''}
           `}
+          onError={() => {
+            console.log('Custom logo failed to load, using default');
+            setLogoError(true);
+          }}
         />
         
         {/* Premium badge for hero variant */}
