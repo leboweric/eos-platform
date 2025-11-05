@@ -1390,6 +1390,69 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
+  const handleSaveActionPlan = async () => {
+    try {
+      if (!actionPlanRock || !actionPlanContent) {
+        throw new Error('No action plan to save');
+      }
+
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
+      const priorityId = actionPlanRock.id;
+
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+
+      // Create a File object from the markdown content
+      const filename = `Action_Plan_${actionPlanRock.title.replace(/[^a-z0-9]/gi, '_')}.md`;
+      const blob = new Blob([actionPlanContent], { type: 'text/markdown' });
+      const file = new File([blob], filename, { type: 'text/markdown' });
+
+      // Upload as attachment
+      const result = await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+
+      // Update local state
+      const newAttachment = {
+        id: result?.id || Date.now().toString(),
+        fileName: filename,
+        fileSize: blob.size,
+        mimeType: 'text/markdown',
+        uploadedBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown',
+        createdAt: new Date().toISOString()
+      };
+
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, attachments: [...(p.attachments || []), newAttachment] }
+          : p
+      ));
+
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, attachments: [...(p.attachments || []), newAttachment] }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+
+      toast.success('Action plan saved to Rock!');
+      setShowActionPlanModal(false);
+
+    } catch (error) {
+      console.error('Failed to save action plan:', error);
+      toast.error('Failed to save action plan');
+    }
+  };
+
   const handleUploadAttachment = async (priorityId, file) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -4708,6 +4771,7 @@ const QuarterlyPrioritiesPageClean = () => {
         rock={actionPlanRock}
         actionPlan={actionPlanContent}
         isLoading={isGeneratingActionPlan}
+        onSave={handleSaveActionPlan}
       />
     </div>
     </div>

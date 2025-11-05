@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { X, Download, Copy, Mail, FileText, Loader } from 'lucide-react';
+import { X, Download, Copy, Mail, FileText, Loader, Save } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-const ActionPlanModal = ({ isOpen, onClose, rock, actionPlan, isLoading }) => {
+const ActionPlanModal = ({ isOpen, onClose, rock, actionPlan, isLoading, onSave }) => {
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!isOpen) return null;
 
@@ -129,6 +130,24 @@ const ActionPlanModal = ({ isOpen, onClose, rock, actionPlan, isLoading }) => {
                 <Mail className="w-4 h-4" />
                 <span>Email</span>
               </button>
+              {onSave && (
+                <button
+                  onClick={async () => {
+                    setIsSaving(true);
+                    await onSave();
+                    setIsSaving(false);
+                  }}
+                  disabled={isSaving}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>{isSaving ? 'Saving...' : 'Save to Rock'}</span>
+                </button>
+              )}
             </div>
             <button
               onClick={onClose}
