@@ -128,7 +128,7 @@ const SmartRockAssistant = () => {
   // Vision-based workflow state
   const [vision, setVision] = useState('');
   const [challenges, setChallenges] = useState('');
-  const [strategicFocus, setStrategicFocus] = useState([]);
+  const [industry, setIndustry] = useState('');
   const [generatedOptions, setGeneratedOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   
@@ -269,7 +269,7 @@ const SmartRockAssistant = () => {
 
   // New vision-based workflow functions
   const handleGenerateOptions = async () => {
-    if (!vision || !rockData.teamId) return;
+    if (!vision || !industry) return;
     
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -277,9 +277,9 @@ const SmartRockAssistant = () => {
     try {
       const result = await aiRockAssistantService.generateFromVision(orgId, {
         vision,
-        teamId: rockData.teamId,
+        industry,
         challenges,
-        strategicFocus
+        userId: user?.id
       });
       
       if (result.success) {
@@ -469,24 +469,21 @@ const SmartRockAssistant = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {/* Team Select Dropdown */}
+              {/* Industry Input */}
               <div className="space-y-2">
-                <Label htmlFor="team" className="text-sm font-semibold text-slate-700">Team*</Label>
-                <Select
-                  value={rockData.teamId}
-                  onValueChange={(value) => setRockData({ ...rockData, teamId: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select team" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name} {team.is_leadership_team && '(Leadership)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="industry" className="text-sm font-semibold text-slate-700">What industry are you in?*</Label>
+                <Input
+                  id="industry"
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  placeholder="e.g., Software/SaaS, Manufacturing, Healthcare, Real Estate..."
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.2)'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+                />
               </div>
 
               {/* Vision Textarea */}
@@ -525,29 +522,7 @@ const SmartRockAssistant = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">Strategic Focus (Optional)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['Growth', 'Efficiency', 'Quality', 'Innovation', 'Customer Experience', 'Team Development'].map((focus) => (
-                    <div key={focus} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={focus}
-                        checked={strategicFocus.includes(focus)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setStrategicFocus([...strategicFocus, focus]);
-                          } else {
-                            setStrategicFocus(strategicFocus.filter(f => f !== focus));
-                          }
-                        }}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={focus} className="text-sm text-slate-600">{focus}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
 
               {analysisError && (
                 <Alert className="border-red-200 bg-red-50">
@@ -559,21 +534,18 @@ const SmartRockAssistant = () => {
               <div className="flex justify-end">
                 <Button 
                   onClick={handleGenerateOptions}
-                  disabled={!vision || !rockData.teamId || isAnalyzing}
+                  disabled={!vision || !industry || isAnalyzing}
                   className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   style={{
-                    background: !vision || !rockData.teamId || isAnalyzing
-                      ? '#9CA3AF'
-                      : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                    filter: !vision || !rockData.teamId || isAnalyzing ? 'none' : undefined
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                   }}
                   onMouseEnter={(e) => {
-                    if (vision && rockData.teamId && !isAnalyzing) {
+                    if (vision && industry && !isAnalyzing) {
                       e.currentTarget.style.filter = 'brightness(1.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (vision && rockData.teamId && !isAnalyzing) {
+                    if (vision && industry && !isAnalyzing) {
                       e.currentTarget.style.filter = 'none';
                     }
                   }}

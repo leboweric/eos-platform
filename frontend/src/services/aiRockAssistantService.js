@@ -90,12 +90,12 @@ export const aiRockAssistantService = {
   /**
    * Generate multiple SMART Rock options from a vision
    */
-  async generateFromVision(orgId, { vision, teamId, challenges, strategicFocus, numberOfOptions = 3 }) {
+  async generateFromVision(orgId, { vision, industry, challenges, userId, numberOfOptions = 3 }) {
     const response = await api.post(`/organizations/${orgId}${AI_BASE_URL}/generate-from-vision`, {
       vision,
-      teamId,
+      industry,
       challenges,
-      strategicFocus,
+      userId,
       numberOfOptions
     });
     return response.data;

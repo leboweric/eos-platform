@@ -285,28 +285,24 @@ Respond in JSON format:
 export const generateRocksFromVision = async (vision, context = {}, numberOfOptions = 3) => {
   try {
     const { 
-      teamName,
-      teamType,
-      teamMemberCount,
+      userName,
       organizationName,
       industry,
       quarter,
       year,
       companyRocks,
-      challenges,
-      strategicFocus
+      challenges
     } = context;
 
-    const prompt = `You are an expert EOS implementer helping a ${teamType || 'team'} at a ${industry || 'company'} create SMART quarterly Rocks.
+    const prompt = `You are an expert EOS implementer helping ${userName || 'a professional'} at ${organizationName || 'their company'} in the ${industry || 'their industry'} create SMART quarterly Rocks.
 
 CONTEXT:
 - Company: ${organizationName || 'Not specified'}
 - Industry: ${industry || 'Not specified'}
-- Team: ${teamName || 'Not specified'} (${teamMemberCount || 'N/A'} members)
+- User: ${userName || 'Not specified'}
 - Quarter: ${quarter || 'Current Quarter'} ${year || new Date().getFullYear()}
 ${companyRocks ? `- Current Company Rocks this quarter:\n${companyRocks}` : ''}
 ${challenges ? `- Current challenges to solve: ${challenges}` : ''}
-${strategicFocus ? `- Strategic focus for this Rock: ${strategicFocus.join(', ')}` : ''}
 
 USER'S VISION OF SUCCESS (What great looks like at the end of the quarter):
 """

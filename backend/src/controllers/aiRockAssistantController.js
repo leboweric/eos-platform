@@ -418,24 +418,20 @@ export const getSuggestionHistory = async (req, res) => {
  */
 export const generateFromVision = async (req, res) => {
   const { orgId } = req.params;
-  const { vision, teamId, challenges, strategicFocus, numberOfOptions = 3 } = req.body;
-  const userId = req.user.id;
+  const { vision, industry, challenges, userId, numberOfOptions = 3 } = req.body;
+  const requestUserId = userId || req.user.id;
 
   try {
     // 1. Validate input
-    if (!vision || !teamId) {
+    if (!vision || !industry) {
       return res.status(400).json({
-        error: 'User vision and teamId are required'
+        error: 'Vision and industry are required'
       });
     }
 
     // 2. Enrich context from database
-    const orgResult = await query('SELECT name, industry FROM organizations WHERE id = $1', [orgId]);
-    const teamResult = await query('SELECT t.name, t.description, t.is_leadership_team, COUNT(tm.user_id) as member_count FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id WHERE t.id = $1 AND t.organization_id = $2 GROUP BY t.id, t.name, t.description, t.is_leadership_team', [teamId, orgId]);
-    
-    if (teamResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
+    const orgResult = await query('SELECT name FROM organizations WHERE id = $1', [orgId]);
+    const userResult = await query('SELECT first_name, last_name FROM users WHERE id = $1', [requestUserId]);
 
     const currentQuarter = `Q${Math.floor((new Date().getMonth() + 3) / 3)}`;
     const currentYear = new Date().getFullYear();
@@ -447,17 +443,18 @@ export const generateFromVision = async (req, res) => {
       [orgId, currentYear, currentQuarter]
     );
 
+    const userName = userResult.rows[0] 
+      ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`.trim()
+      : 'User';
+
     const context = {
       organizationName: orgResult.rows[0]?.name,
-      industry: orgResult.rows[0]?.industry,
-      teamName: teamResult.rows[0]?.name,
-      teamType: teamResult.rows[0]?.is_leadership_team ? 'Leadership' : 'Department',
-      teamMemberCount: teamResult.rows[0]?.member_count,
+      industry: industry,
+      userName: userName,
       quarter: currentQuarter,
       year: currentYear,
       companyRocks: companyRocksResult.rows.map(r => r.title).join('\n'),
-      challenges,
-      strategicFocus
+      challenges
     };
 
     // 3. Call OpenAI service
