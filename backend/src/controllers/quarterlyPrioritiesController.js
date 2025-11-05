@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import { markdownToDocx } from '@md2docx/core';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
 import { isZeroUUID, isLeadershipTeam, getUserTeamScope } from '../utils/teamUtils.js';
@@ -1937,13 +1938,36 @@ export const downloadPriorityAttachment = async (req, res) => {
       });
     }
 
-    // Set headers for file download - exactly like Issues
-    res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
-    res.setHeader('Content-Length', file_data.length);
+    // Check if this is a Markdown file and convert to DOCX
+    let finalFileName = file_name;
+    let finalMimeType = mime_type || 'application/octet-stream';
+    let finalData = file_data;
+
+    if (file_name.endsWith('.md')) {
+      try {
+        // Convert markdown to docx
+        const markdownText = file_data.toString('utf-8');
+        const docxBuffer = await markdownToDocx(markdownText);
+        
+        // Update filename and mime type
+        finalFileName = file_name.replace(/\.md$/, '.docx');
+        finalMimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        finalData = docxBuffer;
+        
+        console.log(`✅ Converted ${file_name} to DOCX for download`);
+      } catch (conversionError) {
+        console.error('Failed to convert MD to DOCX, sending original:', conversionError);
+        // Fall back to original file if conversion fails
+      }
+    }
+
+    // Set headers for file download
+    res.setHeader('Content-Type', finalMimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${finalFileName}"`);
+    res.setHeader('Content-Length', finalData.length);
     
-    // Send the file data - exactly like Issues
-    res.send(file_data);
+    // Send the file data
+    res.send(finalData);
   } catch (error) {
     console.error('Error downloading priority attachment:', error);
     res.status(500).json({

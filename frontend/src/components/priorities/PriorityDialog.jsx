@@ -819,7 +819,13 @@ const PriorityDialog = ({
                 <div key={attachment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Paperclip className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{attachment.fileName || attachment.file_name}</span>
+                    <span className="text-sm">
+                      {(() => {
+                        const fileName = attachment.fileName || attachment.file_name;
+                        // Display .md files as .docx since they're converted on download
+                        return fileName.endsWith('.md') ? fileName.replace(/\.md$/, '.docx') : fileName;
+                      })()}
+                    </span>
                   </div>
                   <div className="flex gap-1">
                     <Button

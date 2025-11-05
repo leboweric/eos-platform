@@ -28,6 +28,7 @@
   "dependencies": {
     "@azure/msal-node": "^3.7.1",
     "@google-cloud/local-auth": "^3.0.1",
+    "@md2docx/core": "^1.7.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sendgrid/mail": "^8.1.5",
     "@sentry/node": "^10.17.0",
