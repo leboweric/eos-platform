@@ -21,8 +21,8 @@ router.post('/trigger', authenticate, async (req, res) => {
     
     res.json({
       success: true,
-      message: `Todo reminders sent to ${result.sent} teams`,
-      details: result.teams
+      message: `Todo reminders sent to ${result.sent} user(s)`,
+      details: result.users
     });
   } catch (error) {
     console.error('Failed to trigger todo reminders:', error);
