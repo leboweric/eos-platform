@@ -647,6 +647,10 @@ export const generateVtoSuggestion = async (vtoContext, currentText = '') => {
       ? `Target Market: ${vtoContext.marketing.target_market || 'Not defined'}\nThree Uniques: ${vtoContext.marketing.three_uniques || 'Not defined'}`
       : 'Not defined';
 
+    const tenYearText = vtoContext.tenYearTarget
+      ? `10-Year Target (${vtoContext.tenYearTarget.target_year || 'Not defined'}): ${vtoContext.tenYearTarget.target_description || 'Not defined'}`
+      : 'Not defined';
+
     const threeYearText = vtoContext.threeYearPicture
       ? `Revenue Target: ${vtoContext.threeYearPicture.revenue_target || 'Not defined'}\nProfit Target: ${vtoContext.threeYearPicture.profit_target || 'Not defined'}`
       : 'Not defined';
@@ -663,6 +667,9 @@ ${coreFocusText}
 
 **Marketing Strategy:**
 ${marketingText}
+
+**Long Range Plan:**
+${tenYearText}
 
 **3-Year Picture Targets:**
 ${threeYearText}
@@ -740,6 +747,10 @@ export const generateOneYearGoalSuggestion = async (vtoContext, currentText = ''
       ? `Revenue Target: ${vtoContext.threeYearPicture.revenue_target || 'Not defined'}\nProfit Target: ${vtoContext.threeYearPicture.profit_target || 'Not defined'}`
       : 'Not defined';
 
+    const tenYearText = vtoContext.tenYearTarget
+      ? `10-Year Target (${vtoContext.tenYearTarget.target_year || 'Not defined'}): ${vtoContext.tenYearTarget.target_description || 'Not defined'}`
+      : 'Not defined';
+
     const threeYearBulletsText = vtoContext.threeYearPicture?.what_does_it_look_like
       ? Array.isArray(vtoContext.threeYearPicture.what_does_it_look_like)
         ? vtoContext.threeYearPicture.what_does_it_look_like.map((b, i) => `${i + 1}. ${b}`).join('\n')
@@ -755,6 +766,9 @@ ${coreValuesText}
 
 **Core Focus:**
 ${coreFocusText}
+
+**Long Range Plan:**
+${tenYearText}
 
 **3-Year Picture:**
 ${threeYearText}

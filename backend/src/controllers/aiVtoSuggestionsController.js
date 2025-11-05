@@ -144,6 +144,15 @@ async function fetchVtoContext(organizationId) {
     [vtoId]
   );
 
+  // Fetch Long Range Plan (10-Year Target)
+  const tenYearResult = await query(
+    `SELECT target_description, target_year, running_total_description, current_running_total 
+     FROM ten_year_targets 
+     WHERE vto_id = $1 
+     LIMIT 1`,
+    [vtoId]
+  );
+
   // Fetch 3-Year Picture
   const threeYearResult = await query(
     `SELECT revenue_target, profit_target, future_date, what_does_it_look_like 
@@ -161,6 +170,7 @@ async function fetchVtoContext(organizationId) {
     })),
     coreFocus: coreFocusResult.rows[0] || null,
     marketing: marketingResult.rows[0] || null,
+    tenYearTarget: tenYearResult.rows[0] || null,
     threeYearPicture: threeYearResult.rows[0] || null
   };
 }
