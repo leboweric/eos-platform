@@ -74,12 +74,12 @@ export const generateActionPlan = async (req, res) => {
       const vtoId = vtoResult.rows[0].id;
       
       // Fetch all VTO components in parallel
-      const [coreValues, coreFocus, marketingStrategy, threeYearPicture, oneYearPlan] = await Promise.all([
+      const [coreValues, coreFocus, marketingStrategy, threeYearPicture, oneYearGoals] = await Promise.all([
         query('SELECT value_text, description FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [vtoId]),
         query('SELECT purpose_cause_passion, niche FROM core_focus WHERE vto_id = $1', [vtoId]),
         query('SELECT target_market, three_uniques, proven_process, guarantee, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5 FROM marketing_strategies WHERE vto_id = $1', [vtoId]),
         query('SELECT future_date, revenue_target, profit_target, vision_description, what_does_it_look_like, what_does_it_look_like_completions FROM three_year_pictures WHERE vto_id = $1', [vtoId]),
-        query('SELECT planning_year, goals FROM annual_planning_goals WHERE organization_id = $1 ORDER BY planning_year DESC LIMIT 1', [orgId])
+        query('SELECT g.goal_text FROM one_year_goals g JOIN one_year_plans p ON g.one_year_plan_id = p.id WHERE p.vto_id = $1 ORDER BY g.sort_order', [vtoId])
       ]);
       
       vtoContext = {
@@ -90,7 +90,7 @@ export const generateActionPlan = async (req, res) => {
         coreFocus: coreFocus.rows[0] || null,
         marketingStrategy: marketingStrategy.rows[0] || null,
         threeYearPicture: threeYearPicture.rows[0] || null,
-        oneYearPlan: oneYearPlan.rows[0] || null
+        oneYearGoals: oneYearGoals.rows.map(g => g.goal_text)
       };
       
       console.log(`[Action Plan] VTO context loaded successfully`);

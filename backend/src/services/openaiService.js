@@ -526,15 +526,11 @@ export const generateRockActionPlan = async ({ rock, milestones, vtoContext }) =
         vtoSection += `\n`;
       }
       
-      if (vtoContext.oneYearPlan) {
-        const oyp = vtoContext.oneYearPlan;
-        vtoSection += `**1-Year Plan (${oyp.planning_year || 'Current Year'}):**\n`;
-        if (oyp.goals && Array.isArray(oyp.goals)) {
-          vtoSection += `- Goals:\n`;
-          oyp.goals.forEach(goal => {
-            if (goal.text) vtoSection += `  • ${goal.text}\n`;
-          });
-        }
+      if (vtoContext.oneYearGoals && vtoContext.oneYearGoals.length > 0) {
+        vtoSection += `**1-Year Goals:**\n`;
+        vtoContext.oneYearGoals.forEach(goal => {
+          vtoSection += `  • ${goal}\n`;
+        });
         vtoSection += `\n`;
       }
     }
