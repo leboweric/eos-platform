@@ -46,10 +46,10 @@ export const generateActionPlan = async (req, res) => {
       `SELECT 
         id,
         title,
-        description,
         due_date,
         completed,
-        owner_id
+        owner_id,
+        status
       FROM priority_milestones
       WHERE priority_id = $1
       ORDER BY due_date ASC`,
