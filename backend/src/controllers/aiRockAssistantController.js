@@ -531,12 +531,19 @@ export const generateFromVision = async (req, res) => {
       
       // Fetch 1-Year Goals
       const oneYearResult = await query(
-        'SELECT goals FROM annual_planning_goals WHERE organization_id = $1 ORDER BY created_at DESC LIMIT 1',
-        [orgId]
+        `SELECT g.goal_text 
+         FROM one_year_goals g
+         JOIN one_year_plans p ON g.one_year_plan_id = p.id
+         WHERE p.vto_id = $1
+         ORDER BY g.sort_order`,
+        [vtoId]
       );
       if (oneYearResult.rows.length > 0) {
-        vtoContext.oneYearGoals = oneYearResult.rows[0].goals || [];
-        console.log('✅ [VTO] 1-Year Goals fetched:', (oneYearResult.rows[0].goals || []).length, 'goals');
+        vtoContext.oneYearGoals = oneYearResult.rows.map(row => row.goal_text);
+        console.log('✅ [VTO] 1-Year Goals fetched:', oneYearResult.rows.length, 'goals');
+        if (oneYearResult.rows.length > 0) {
+          console.log('   Sample:', oneYearResult.rows[0].goal_text.substring(0, 50) + '...');
+        }
       } else {
         console.log('⚠️  [VTO] No 1-Year Goals found');
       }
