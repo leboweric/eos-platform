@@ -497,7 +497,7 @@ const SmartRockAssistant = () => {
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {users.map(user => (
+                    {Array.isArray(users) && users.map(user => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.first_name} {user.last_name}
                       </SelectItem>
