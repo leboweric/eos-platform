@@ -10,7 +10,7 @@ import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueU
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
 import AiSuggestionPopover from './AiSuggestionPopover';
-import axios from 'axios';
+import apiClient from '../../services/axiosConfig';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   const { user } = useAuthStore();
@@ -120,7 +120,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
     const orgId = user?.organizationId || user?.organization_id;
     
     try {
-      const response = await axios.post(
+      const response = await apiClient.post(
         `/organizations/${orgId}/business-blueprint/ai-suggest-bullet`,
         {
           currentText: currentText || '',
