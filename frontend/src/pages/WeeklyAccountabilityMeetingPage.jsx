@@ -5850,11 +5850,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 }
                 
-                const completedCount = todos.filter(todo => todo.status === 'complete' || todo.status === 'completed').length;
+                // Calculate count of completed but not archived todos
+                // For multi-assignee todos, count each completed assignee copy separately
+                const doneNotArchivedCount = todos.reduce((count, t) => {
+                  if (t.archived === true) return count;
+                  
+                  // For single-assignee todos, check main status
+                  if (!t.is_multi_assignee || !t.assignees) {
+                    return count + (t.status === 'complete' ? 1 : 0);
+                  }
+                  
+                  // For multi-assignee todos, count each completed copy as a separate todo
+                  // This matches the behavior of single-assignee todos
+                  const completedCopies = t.assignees.filter(a => a.completed === true).length;
+                  return count + completedCopies;
+                }, 0);
                 
                 return (
                   <div className="space-y-6">
-                    {completedCount > 0 && (
+                    {doneNotArchivedCount > 0 && (
                       <div className="flex justify-end">
                         <Button 
                           variant="outline" 
@@ -5864,7 +5878,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }}
                           onClick={async () => {
                             try {
-                              const count = completedCount;
+                              const count = doneNotArchivedCount;
                               await todosService.archiveDoneTodos();
                               await fetchTodosData();
                               setSuccess(`Successfully archived ${count} completed to-do${count !== 1 ? 's' : ''}`);
@@ -5875,7 +5889,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }}
                         >
                           <Archive className="mr-2 h-4 w-4" />
-                          Archive Done ({completedCount})
+                          Archive Done ({doneNotArchivedCount})
                         </Button>
                       </div>
                     )}
