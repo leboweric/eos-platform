@@ -137,7 +137,7 @@ const SmartRockAssistant = () => {
   const [rockData, setRockData] = useState({
     title: '',
     description: '',
-    owner: user?.id || '',
+    owner: '',  // User must select owner from dropdown
     teamId: '',  // Will be set by useEffect when selectedDepartment loads
     quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
     year: new Date().getFullYear(),
@@ -567,7 +567,7 @@ const SmartRockAssistant = () => {
                     }
                   }}
                 >
-                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 animate-spin" />}
+                  {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   Generate SMART Rock Options
                 </Button>
               </div>
