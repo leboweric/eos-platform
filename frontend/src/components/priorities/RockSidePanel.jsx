@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Archive, Trash2, Paperclip, Plus, Check, Calendar, ChevronDown } from 'lucide-react';
+import { X, Archive, Trash2, Paperclip, Plus, Check, Calendar, ChevronDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { format, addDays } from 'date-fns';
@@ -12,6 +12,7 @@ function RockSidePanel({
   rock, 
   teamId,
   onUpdate,
+  onGenerateActionPlan,
   themeColors = { primary: '#3B82F6', secondary: '#1E40AF' }
 }) {
   const { user } = useAuthStore();
@@ -227,6 +228,17 @@ function RockSidePanel({
             <Archive className="h-4 w-4 mr-1" />
             Archive
           </Button>
+          {onGenerateActionPlan && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onGenerateActionPlan(rock)}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Action Plan
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
             <Trash2 className="h-4 w-4" />
           </Button>

@@ -15,7 +15,8 @@ import {
   Eye,
   Archive,
   Plus,
-  CheckSquare
+  CheckSquare,
+  FileText
 } from 'lucide-react';
 
 export function RockContextMenu({ 
@@ -30,6 +31,7 @@ export function RockContextMenu({
   onDuplicate,
   onCreateLinkedTodo,
   onCreateLinkedIssue,
+  onGenerateActionPlan,
   disabled = false 
 }) {
   // Support both 'rock' and 'priority' prop names
@@ -109,6 +111,14 @@ export function RockContextMenu({
               Add Milestone
             </ContextMenuItem>
           </>
+        )}
+        
+        {/* Generate Action Plan */}
+        {onGenerateActionPlan && (
+          <ContextMenuItem onClick={() => onGenerateActionPlan(item)}>
+            <FileText className="mr-2 h-4 w-4 text-blue-600" />
+            Generate Action Plan
+          </ContextMenuItem>
         )}
         
         {/* Create Linked To-Do */}

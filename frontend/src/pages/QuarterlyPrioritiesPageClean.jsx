@@ -16,6 +16,7 @@ import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingU
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import RockContextMenu from '../components/priorities/RockContextMenu';
 import TeamMemberSelect from '../components/shared/TeamMemberSelect';
+import ActionPlanModal from '../components/ActionPlanModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,6 +174,10 @@ const QuarterlyPrioritiesPageClean = () => {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showActionPlanModal, setShowActionPlanModal] = useState(false);
+  const [actionPlanRock, setActionPlanRock] = useState(null);
+  const [actionPlanContent, setActionPlanContent] = useState('');
+  const [isGeneratingActionPlan, setIsGeneratingActionPlan] = useState(false);
   const [archiveData, setArchiveData] = useState({ 
     priorityId: null, 
     priorityTitle: null, 
@@ -1338,6 +1343,50 @@ const QuarterlyPrioritiesPageClean = () => {
     } catch (error) {
       console.error('Failed to duplicate priority:', error);
       setError('Failed to duplicate priority');
+    }
+  };
+
+  const handleGenerateActionPlan = async (rock) => {
+    try {
+      setActionPlanRock(rock);
+      setShowActionPlanModal(true);
+      setIsGeneratingActionPlan(true);
+      setActionPlanContent('');
+
+      const orgId = user?.organizationId;
+      const rockId = rock.id;
+
+      if (!orgId || !rockId) {
+        throw new Error('Missing organization or rock ID');
+      }
+
+      console.log(`Generating action plan for Rock ${rockId}`);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgId}/rocks/${rockId}/action-plan`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate action plan');
+      }
+
+      const data = await response.json();
+      setActionPlanContent(data.data.actionPlan);
+      toast.success('Action plan generated!');
+
+    } catch (error) {
+      console.error('Failed to generate action plan:', error);
+      toast.error('Failed to generate action plan');
+      setShowActionPlanModal(false);
+    } finally {
+      setIsGeneratingActionPlan(false);
     }
   };
 
@@ -3107,6 +3156,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                         onAddMilestone={handleContextMenuAddMilestone}
                                         onArchive={handleContextMenuArchive}
                                         onDuplicate={handleContextMenuDuplicate}
+                                        onGenerateActionPlan={handleGenerateActionPlan}
                                       >
                                       <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                         {/* Expand Arrow */}
@@ -3493,6 +3543,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                         onAddMilestone={handleContextMenuAddMilestone}
                                         onArchive={handleContextMenuArchive}
                                         onDuplicate={handleContextMenuDuplicate}
+                                        onGenerateActionPlan={handleGenerateActionPlan}
                                       >
                                       <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                         {/* Expand Arrow */}
@@ -3850,6 +3901,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                   onArchive={handleContextMenuArchive}
                                   onDelete={handleContextMenuDelete}
                                   onDuplicate={handleContextMenuDuplicate}
+                                  onGenerateActionPlan={handleGenerateActionPlan}
                                 >
                                 <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                   {/* Expand Arrow - Only show if there are milestones */}
@@ -4647,6 +4699,15 @@ const QuarterlyPrioritiesPageClean = () => {
         message={confirmDialog.message}
         onConfirm={confirmDialog.onConfirm}
         loading={confirmDialog.loading}
+      />
+
+      {/* Action Plan Modal */}
+      <ActionPlanModal
+        isOpen={showActionPlanModal}
+        onClose={() => setShowActionPlanModal(false)}
+        rock={actionPlanRock}
+        actionPlan={actionPlanContent}
+        isLoading={isGeneratingActionPlan}
       />
     </div>
     </div>
