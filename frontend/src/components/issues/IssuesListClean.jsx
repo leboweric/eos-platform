@@ -596,9 +596,18 @@ const IssuesListClean = ({
         // Table view - EXACT COPY from Level 10 Meeting WeeklyAccountabilityMeetingPage.jsx lines 5883-5885
         <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
           <CardContent className="p-0">
+            {enableDragDrop && (
+              <div className="px-3 pt-3 pb-2">
+                <p className="text-sm text-slate-600">
+                  <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
+                  Drag to reorder by priority
+                </p>
+              </div>
+            )}
             <div className="space-y-1">
-            {/* Header Row - EXACT ORDER: Status, #, Issue, Owner, Created */}
+            {/* Header Row - EXACT ORDER: Drag, Status, #, Issue, Owner, Created */}
             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+              {enableDragDrop && <div className="w-8">Drag</div>}
               <div className="w-10">Status</div>
               <div className="w-8 ml-2">#</div>
               <div className="flex-1 ml-3">Issue</div>
@@ -626,7 +635,25 @@ const IssuesListClean = ({
                 >
                   <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
                       {/* Main Issue Row - COPIED from Level 10 Meeting */}
-                      <div className="flex items-center px-3 py-3 group">
+                      <div 
+                        className={`flex items-center px-3 py-3 group ${
+                          draggedIssueIndex === index ? 'opacity-50' : ''
+                        } ${dragOverIssueIndex === index ? 'ring-2 ring-blue-400' : ''}`}
+                        onDragOver={enableDragDrop ? handleDragOver : undefined}
+                        onDragEnter={enableDragDrop ? (e) => handleDragEnter(e, index) : undefined}
+                        onDrop={enableDragDrop ? (e) => handleDrop(e, index) : undefined}
+                      >
+                        {/* Drag Handle */}
+                        {enableDragDrop && (
+                          <div 
+                            className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                            draggable="true"
+                            onDragStart={(e) => handleDragStart(e, issue, index)}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <GripVertical className="h-4 w-4 text-slate-400" />
+                          </div>
+                        )}
                         
                         {/* Status Checkbox - EXACT COPY from Level 10 Meeting */}
                         <div className="w-10 flex items-center relative">

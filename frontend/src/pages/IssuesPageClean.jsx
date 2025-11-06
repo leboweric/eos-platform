@@ -428,6 +428,36 @@ const IssuesPageClean = () => {
     }
   };
 
+  const handleReorderIssues = async (reorderedIssues) => {
+    try {
+      // Update local state optimistically
+      if (activeTab === 'short-term') {
+        setShortTermIssues(reorderedIssues);
+      } else if (activeTab === 'long-term') {
+        setLongTermIssues(reorderedIssues);
+      }
+
+      // Call API to persist the new order
+      const updates = reorderedIssues.map((issue, index) => ({
+        id: issue.id,
+        priority_rank: index
+      }));
+
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(selectedTeamId, user);
+      
+      await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
+      
+      toast.success('Issue order updated successfully');
+    } catch (error) {
+      console.error('Failed to reorder issues:', error);
+      // Refresh to get correct order on error
+      await fetchIssues();
+      toast.error('Failed to update issue order');
+      throw error;
+    }
+  };
+
   const handleUnarchive = async (issueId) => {
     try {
       await issuesService.unarchiveIssue(issueId);
@@ -739,6 +769,8 @@ const IssuesPageClean = () => {
                     onCreateHeadline={handleCreateHeadlineFromIssue}
                     onSendCascadingMessage={handleSendCascadingMessage}
                     onMarkSolved={handleMarkIssueSolved}
+                    onReorder={handleReorderIssues}
+                    enableDragDrop={activeTab !== 'archived'}
                     getStatusColor={getStatusColor}
                     getStatusIcon={getStatusIcon}
                     showVoting={false}
