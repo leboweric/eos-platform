@@ -444,7 +444,7 @@ const IssuesPageClean = () => {
       }));
 
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(selectedTeamId, user);
+      const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
       
