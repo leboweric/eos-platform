@@ -344,9 +344,11 @@ const IssuesListClean = ({
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log('🎯 handleDrop called:', { draggedIssueIndex, dropIndex, draggedIssue: draggedIssue?.title });
     setDragOverIssueIndex(null);
 
     if (draggedIssueIndex === null || draggedIssueIndex === dropIndex || !draggedIssue) {
+      console.log('⚠️ Drop cancelled:', { draggedIssueIndex, dropIndex, hasDraggedIssue: !!draggedIssue });
       return;
     }
 
@@ -376,13 +378,17 @@ const IssuesListClean = ({
 
     // Call the onReorder callback if provided
     if (onReorder) {
+      console.log('✅ Calling onReorder with', updatedIssues.length, 'issues');
       try {
         await onReorder(updatedIssues);
+        console.log('✅ onReorder completed successfully');
       } catch (error) {
-        console.error('Failed to reorder issues:', error);
+        console.error('❌ Failed to reorder issues:', error);
         // Revert on error
         setSortedIssues(sortedIssues);
       }
+    } else {
+      console.warn('⚠️ onReorder callback not provided');
     }
   };
   
@@ -641,6 +647,7 @@ const IssuesListClean = ({
                         } ${dragOverIssueIndex === index ? 'ring-2 ring-blue-400' : ''}`}
                         onDragOver={enableDragDrop ? handleDragOver : undefined}
                         onDragEnter={enableDragDrop ? (e) => handleDragEnter(e, index) : undefined}
+                        onDragLeave={enableDragDrop ? handleDragLeave : undefined}
                         onDrop={enableDragDrop ? (e) => handleDrop(e, index) : undefined}
                       >
                         {/* Drag Handle */}
