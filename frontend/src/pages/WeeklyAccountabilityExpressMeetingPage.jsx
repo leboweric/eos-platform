@@ -2404,7 +2404,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
       await fetchTodosData();
       
-      // No need to broadcast duplicate as it will be picked up by refresh
+      // Broadcast todo creation to other participants
+      if (meetingCode && broadcastTodoUpdate) {
+        broadcastTodoUpdate({
+          action: 'refresh'
+        });
+      }
     } catch (error) {
       console.error('Failed to duplicate todo:', error);
       setError('Failed to duplicate to-do');
@@ -5941,6 +5946,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               const newStatus = isComplete ? 'incomplete' : 'complete';
                                               await todosService.updateTodo(todo.id, { status: newStatus });
                                               await fetchTodosData();
+                                              
+                                              // Broadcast update to other meeting participants
+                                              if (meetingCode && broadcastTodoUpdate) {
+                                                broadcastTodoUpdate({
+                                                  action: 'refresh'
+                                                });
+                                              }
                                             } catch (error) {
                                               console.error('Failed to update todo status:', error);
                                             }
@@ -7455,6 +7467,13 @@ const WeeklyAccountabilityMeetingPage = () => {
               
               // Refresh todos after save
               await fetchTodosData();
+              
+              // Broadcast todo update to other participants
+              if (meetingCode && broadcastTodoUpdate) {
+                broadcastTodoUpdate({
+                  action: 'refresh'
+                });
+              }
             } catch (error) {
               console.error('Failed to save todo:', error);
               setError('Failed to save to-do');
