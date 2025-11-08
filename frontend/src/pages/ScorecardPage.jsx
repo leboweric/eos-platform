@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, startTransition } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { scorecardGroupsService } from '../services/scorecardGroupsService';
@@ -310,20 +310,20 @@ const ScorecardPageClean = () => {
       const scoreType = scoreDialogData.scoreType || 'weekly';
       const setScores = scoreType === 'monthly' ? setMonthlyScores : setWeeklyScores;
       
-      setScores(prevScores => ({
-        ...prevScores,
-        [scoreDialogData.metricId]: {
-          ...(prevScores[scoreDialogData.metricId] || {}),
-          [scoreDialogData.weekDate]: scoreInputValue ? parseFloat(scoreInputValue) : null
-        }
-      }));
-      
+      // Close dialog immediately for responsive feel
       setShowScoreDialog(false);
       setScoreInputValue('');
-      setSuccess('Score updated successfully');
       
-      // Clear success message after 2 seconds
-      setTimeout(() => setSuccess(null), 2000);
+      // Use startTransition to make state update non-blocking and smooth
+      startTransition(() => {
+        setScores(prevScores => ({
+          ...prevScores,
+          [scoreDialogData.metricId]: {
+            ...(prevScores[scoreDialogData.metricId] || {}),
+            [scoreDialogData.weekDate]: scoreInputValue ? parseFloat(scoreInputValue) : null
+          }
+        }));
+      });
     } catch (error) {
       console.error('Failed to save score:', error);
       setError('Failed to save score');
