@@ -5896,9 +5896,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                             
                             {/* To-Do Rows */}
-                            {assignee.todos.map(todo => {
+                            {assignee.todos.map((todo, index) => {
                               const isComplete = todo.status === 'complete' || todo.status === 'completed';
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
+                              const isTopThree = index < 3;  // Top 3 todos get blue border
                               
                               return (
                                 <TodoContextMenu
