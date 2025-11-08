@@ -631,6 +631,7 @@ const IssuesListClean = ({
             {sortedIssues.map((issue, index) => {
               const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
               const isExpanded = selectedIssue?.id === issue.id;
+              const isTopThree = index < 3;  // Top 3 issues get blue border
               
               return (
                 <IssueContextMenu 
@@ -645,7 +646,14 @@ const IssuesListClean = ({
                   onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
                   currentUserId={user?.id}
                 >
-                  <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                  <div 
+                    className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
+                    style={{
+                      borderLeftWidth: isTopThree ? '4px' : '0px',
+                      borderLeftColor: isTopThree ? '#3B82F6' : 'transparent',
+                      borderLeftStyle: 'solid'
+                    }}
+                  >
                       {/* Main Issue Row - COPIED from Level 10 Meeting */}
                       <div 
                         className={`flex items-center px-3 py-3 group ${
