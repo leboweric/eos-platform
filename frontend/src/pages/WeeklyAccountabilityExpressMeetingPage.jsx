@@ -700,6 +700,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Scorecard display options
   const [showScorecardAverage, setShowScorecardAverage] = useState(true);
   const [showScorecardTotal, setShowScorecardTotal] = useState(false);
+  const [scorecardViewType, setScorecardViewType] = useState('weekly'); // 'weekly' or 'monthly'
   const [showScorecardThirteenWeeks, setShowScorecardThirteenWeeks] = useState(false);
 
   // Reference dialogs
@@ -4266,6 +4267,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <span className="text-sm text-gray-600">Show Total</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
+                  <select
+                    value={scorecardViewType}
+                    onChange={(e) => setScorecardViewType(e.target.value)}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                    style={{
+                      accentColor: themeColors.primary
+                    }}
+                  >
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  <span className="text-sm text-gray-600">View</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isRTL}
@@ -4306,7 +4321,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   monthlyScores={monthlyScores}
                   weeklyNotes={weeklyNotes}
                   monthlyNotes={monthlyNotes}
-                  type="weekly"
+                  type={scorecardViewType}
                   readOnly={true}
                   isRTL={isRTL}
                   showTotal={showScorecardTotal}

@@ -306,10 +306,24 @@ const ScorecardPageClean = () => {
         scoreDialogData.scoreType || 'weekly'
       );
       
+      // Update local state instead of refetching to preserve scroll position
+      const scoreType = scoreDialogData.scoreType || 'weekly';
+      const setScores = scoreType === 'monthly' ? setMonthlyScores : setWeeklyScores;
+      
+      setScores(prevScores => ({
+        ...prevScores,
+        [scoreDialogData.metricId]: {
+          ...(prevScores[scoreDialogData.metricId] || {}),
+          [scoreDialogData.weekDate]: scoreInputValue ? parseFloat(scoreInputValue) : null
+        }
+      }));
+      
       setShowScoreDialog(false);
       setScoreInputValue('');
-      await fetchScorecard();
       setSuccess('Score updated successfully');
+      
+      // Clear success message after 2 seconds
+      setTimeout(() => setSuccess(null), 2000);
     } catch (error) {
       console.error('Failed to save score:', error);
       setError('Failed to save score');
