@@ -97,16 +97,10 @@ const IssuesListClean = ({
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
-    // If drag-drop is enabled AND no sort field is selected, preserve the original order (priority_rank)
+    // If drag-drop is enabled AND no sort field is selected, use backend order (manual_sort + created_at DESC)
     if (enableDragDrop && !sortField) {
-      const sorted = [...(issues || [])].sort((a, b) => {
-        // Sort by priority_rank if it exists, otherwise by id
-        if (a.priority_rank !== undefined && b.priority_rank !== undefined) {
-          return a.priority_rank - b.priority_rank;
-        }
-        return 0;
-      });
-      setSortedIssues(sorted);
+      // Backend already provides correct order: manual_sort DESC, priority_rank ASC (for manual), created_at DESC
+      setSortedIssues([...(issues || [])]);
       return;
     }
     

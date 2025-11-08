@@ -6121,6 +6121,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             <div className="w-8 ml-2">#</div>
                             <div className="flex-1 ml-3">Issue</div>
                             <div className="w-32 text-center">Owner</div>
+                            <div className="w-24 text-center">Created</div>
                             <div className="w-20 text-center">Votes</div>
                             <div className="w-8"></div>
                           </div>
@@ -6237,6 +6238,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div className="w-32 text-center">
                                       <span className="text-sm text-slate-600">
                                         {issue.owner_name || issue.owner || 'Unassigned'}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Created Date */}
+                                    <div className="w-24 text-center">
+                                      <span className="text-sm text-slate-600">
+                                        {new Date(issue.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                       </span>
                                     </div>
                                     
