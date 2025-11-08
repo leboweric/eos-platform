@@ -52,6 +52,7 @@ export const getIssues = async (req, res) => {
         i.title,
         i.description,
         i.priority_rank,
+        i.manual_sort,
         i.status,
         i.timeline,
         i.resolution_notes,
@@ -102,7 +103,10 @@ export const getIssues = async (req, res) => {
     // =====================================================================
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
-               ORDER BY i.priority_rank ASC, i.created_at DESC`;
+               ORDER BY 
+                 i.manual_sort DESC NULLS LAST,
+                 CASE WHEN i.manual_sort = true THEN i.priority_rank END ASC,
+                 i.created_at DESC`;
     
     console.log('Issues query:', query);
     console.log('Issues query params:', params);
@@ -173,7 +177,7 @@ export const createIssue = async (req, res) => {
     const nextRank = 0;
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'archived', 'status'];
+    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'manual_sort', 'archived', 'status'];
     let values = [
       orgId,
       teamId || null,
@@ -182,10 +186,11 @@ export const createIssue = async (req, res) => {
       title,
       description,
       nextRank,
+      false,  // New issues are not manually sorted
       false,  // Ensure new issues are not archived
       'open'  // Default status for new issues
     ];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9'];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10'];
     
     if (hasTimelineColumn) {
       columns.push('timeline');
@@ -436,7 +441,7 @@ export const updateIssuePriority = async (req, res) => {
     try {
       for (const update of updates) {
         await db.query(
-          'UPDATE issues SET priority_rank = $1 WHERE id = $2 AND organization_id = $3',
+          'UPDATE issues SET priority_rank = $1, manual_sort = true WHERE id = $2 AND organization_id = $3',
           [update.priority_rank, update.id, orgId]
         );
       }
