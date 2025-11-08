@@ -5994,29 +5994,34 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                            'transparent',
                                             border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
                                           }}
-                                          onContextMenu={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                          }}
                                           onClick={async (e) => {
-                                            e.preventDefault();
                                             e.stopPropagation();
-                                            console.log('🔥🔥🔥 Level 10 Meeting: Checkbox clicked');
-                                            console.log('📋 Todo:', todo);
-                                            console.log('👤 _currentAssignee:', todo._currentAssignee);
+                                            
+                                            console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
+                                            console.log('📋 Todo ID:', todo.id);
+                                            console.log('📊 Current status:', todo.status);
+                                            console.log('🎯 Is multi-assignee?', !!todo._currentAssignee);
+                                            console.log('👤 Current assignee object:', todo._currentAssignee);
+                                            console.log('🔢 Assignees array:', todo.assignees);
                                             
                                             try {
-                                              const newStatus = isComplete ? 'incomplete' : 'complete';
-                                              const updateData = { status: newStatus };
+                                              // For multi-assignee todos, pass the specific assignee ID
+                                              const updateData = { 
+                                                status: isComplete ? 'incomplete' : 'complete'
+                                              };
                                               
-                                              // For multi-assignee todos, pass the assigneeId
+                                              // If this is a multi-assignee todo, include which assignee's copy to mark
                                               if (todo._currentAssignee) {
                                                 updateData.assigneeId = todo._currentAssignee.id;
-                                                console.log('🎯 Adding assigneeId:', todo._currentAssignee.id);
+                                                console.log('✅ Adding assigneeId to request:', updateData.assigneeId);
+                                              } else {
+                                                console.log('⚠️ No _currentAssignee found, not adding assigneeId');
                                               }
                                               
-                                              console.log('📤 Sending update:', updateData);
+                                              console.log('📤 Sending update request with data:', updateData);
                                               await todosService.updateTodo(todo.id, updateData);
+                                              console.log('✅ Update request completed');
+                                              
                                               await fetchTodosData();
                                               
                                               // Broadcast update to other meeting participants
@@ -6026,7 +6031,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 });
                                               }
                                             } catch (error) {
-                                              console.error('Failed to update todo status:', error);
+                                              console.error('Failed to update todo:', error);
                                             }
                                           }}
                                         >
