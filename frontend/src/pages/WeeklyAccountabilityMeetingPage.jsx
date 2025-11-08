@@ -5996,6 +5996,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           }}
                                           onClick={async (e) => {
                                             e.stopPropagation();
+                                            e.preventDefault();
                                             
                                             console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
                                             console.log('📋 Todo ID:', todo.id);
@@ -6031,7 +6032,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 });
                                               }
                                             } catch (error) {
-                                              console.error('Failed to update todo:', error);
+                                              console.error('❌❌❌ ERROR updating todo:', error);
+                                              console.error('❌ Error message:', error.message);
+                                              console.error('❌ Error stack:', error.stack);
+                                              console.error('❌ Full error object:', JSON.stringify(error, null, 2));
                                             }
                                           }}
                                         >
