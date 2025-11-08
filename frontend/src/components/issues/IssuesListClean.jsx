@@ -406,7 +406,7 @@ const IssuesListClean = ({
     const hasVotes = (issue.vote_count || 0) > 0;
     const isTopIssue = index === 0 && hasVotes && showVoting;
     const isDragOver = dragOverIssueIndex === index;
-    const isTopThree = showVoting && index < 3;  // Only highlight top 3 during meetings
+    const isTopThree = index < 3;  // Always highlight top 3 issues
     
     return (
       <div
@@ -442,11 +442,17 @@ const IssuesListClean = ({
           }
         }}
       >
-        {/* Enhanced status indicator */}
+        {/* Enhanced status indicator with top 3 highlighting */}
         <div 
-          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+          className={`absolute left-0 top-0 bottom-0 rounded-l-2xl ${
+            isTopThree ? 'w-1.5' : 'w-1'
+          }`}
           style={{ 
-            background: issue.status === 'open' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
+            background: isTopThree 
+              ? '#3B82F6'  // Blue for top 3
+              : issue.status === 'open' 
+                ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` 
+                : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
           }}
         />
         
@@ -780,7 +786,7 @@ const IssuesListClean = ({
                       const hasVotes = (issue.vote_count || 0) > 0;
                       const isTopIssue = globalIndex === 0 && hasVotes && showVoting;
                       const isDragOver = dragOverIssueIndex === globalIndex;
-                      const isTopThree = showVoting && globalIndex < 3;  // Only highlight top 3 during meetings
+                      const isTopThree = globalIndex < 3;  // Always highlight top 3 issues
                       
                       return (
                         <ContextMenu key={issue.id}>
@@ -791,9 +797,11 @@ const IssuesListClean = ({
                                 ${issue.status === 'closed' ? 'opacity-60' : ''}
                                 ${isDragOver ? 'ring-2 ring-blue-400' : ''}
                                 ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
-                                ${isTopThree ? 'shadow-lg' : ''}
                               `}
-                              style={{ borderLeftColor: themeColors.primary, borderLeftWidth: '3px' }}
+                              style={{ 
+                                borderLeftColor: isTopThree ? '#3B82F6' : themeColors.primary, 
+                                borderLeftWidth: isTopThree ? '4px' : '3px' 
+                              }}
                               onDragOver={handleDragOver}
                               onDragEnter={(e) => handleDragEnter(e, globalIndex)}
                               onDragLeave={handleDragLeave}
