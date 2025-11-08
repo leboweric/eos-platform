@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, startTransition } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { scorecardGroupsService } from '../services/scorecardGroupsService';
@@ -440,11 +440,25 @@ const ScorecardPageClean = () => {
         scoreNotesValue || null
       );
       
+      // Update local state instead of refetching to preserve scroll position
+      const scoreType = scoreDialogData.scoreType || 'weekly';
+      const setScores = scoreType === 'monthly' ? setMonthlyScores : setWeeklyScores;
+      
+      // Close dialog immediately for responsive feel
       setShowScoreDialog(false);
       setScoreInputValue('');
       setScoreNotesValue('');
-      await fetchScorecard();
-      setSuccess('Score updated successfully');
+      
+      // Use startTransition to make state update non-blocking and smooth
+      startTransition(() => {
+        setScores(prevScores => ({
+          ...prevScores,
+          [scoreDialogData.metricId]: {
+            ...(prevScores[scoreDialogData.metricId] || {}),
+            [scoreDialogData.weekDate]: valueToSave
+          }
+        }));
+      });
     } catch (error) {
       console.error('Failed to save score:', error);
       setError('Failed to save score');
