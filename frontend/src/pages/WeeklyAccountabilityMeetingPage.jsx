@@ -983,19 +983,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
       
       if (response && response.data) {
-        // Filter to only show weekly metrics
-        const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
-        console.log('Weekly metrics found:', weeklyMetrics.length, weeklyMetrics);
-        setScorecardMetrics(weeklyMetrics);
+        // Store all metrics (will filter by type in render based on scorecardViewType)
+        const allMetrics = response.data.metrics || [];
+        console.log('All metrics found:', allMetrics.length, allMetrics);
+        setScorecardMetrics(allMetrics);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {});
         setMonthlyNotes(response.data.monthlyNotes || {});
       } else if (response) {
-        // Filter to only show weekly metrics
-        const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
-        console.log('Weekly metrics found (no data wrapper):', weeklyMetrics.length, weeklyMetrics);
-        setScorecardMetrics(weeklyMetrics);
+        // Store all metrics (will filter by type in render based on scorecardViewType)
+        const allMetrics = response.metrics || [];
+        console.log('All metrics found (no data wrapper):', allMetrics.length, allMetrics);
+        setScorecardMetrics(allMetrics);
         setWeeklyScores(response.weeklyScores || {});
         setMonthlyScores(response.monthlyScores || {});
         setWeeklyNotes(response.weeklyNotes || {});
@@ -4350,15 +4350,22 @@ const WeeklyAccountabilityMeetingPage = () => {
               </div>
             ) : (
               <>
-              {console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
-                metricsCount: scorecardMetrics.length,
-                weeklyScoresKeys: Object.keys(weeklyScores),
-                weeklyScoresData: weeklyScores,
-                sampleMetricId: scorecardMetrics[0]?.id,
-                sampleMetricScores: scorecardMetrics[0]?.id ? weeklyScores[scorecardMetrics[0].id] : 'No metrics'
-              })}
-              <ScorecardTableClean 
-                  metrics={scorecardMetrics} 
+              {(() => {
+                // Filter metrics by type based on selected view
+                const filteredMetrics = scorecardMetrics.filter(m => m.type === scorecardViewType);
+                console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
+                  viewType: scorecardViewType,
+                  totalMetrics: scorecardMetrics.length,
+                  filteredMetrics: filteredMetrics.length,
+                  weeklyScoresKeys: Object.keys(weeklyScores),
+                  weeklyScoresData: weeklyScores,
+                  sampleMetricId: filteredMetrics[0]?.id,
+                  sampleMetricScores: filteredMetrics[0]?.id ? weeklyScores[filteredMetrics[0].id] : 'No metrics'
+                });
+                
+                return (
+                  <ScorecardTableClean 
+                      metrics={filteredMetrics} 
                   weeklyScores={weeklyScores}
                   monthlyScores={monthlyScores}
                   weeklyNotes={weeklyNotes}
@@ -4378,7 +4385,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                   maxPeriods={4}
                   meetingMode={true}
                   scorecardTimePeriodPreference={scorecardTimePeriodPreference}
-                />
+                  />
+                );
+              })()}
               </>
             )}
           </div>
