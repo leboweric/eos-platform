@@ -158,17 +158,19 @@ export const createIssue = async (req, res) => {
     // Check if timeline column exists
     const hasTimelineColumn = await checkTimelineColumn();
     
-    // Get the next priority rank
-    let maxRankQuery = 'SELECT MAX(priority_rank) as max_rank FROM issues WHERE organization_id = $1 AND deleted_at IS NULL';
-    let maxRankParams = [orgId];
+    // Increment all existing priority ranks to make room at the top (priority_rank = 0)
+    let incrementQuery = 'UPDATE issues SET priority_rank = priority_rank + 1 WHERE organization_id = $1 AND deleted_at IS NULL';
+    let incrementParams = [orgId];
     
     if (hasTimelineColumn) {
-      maxRankQuery += ' AND timeline = $2';
-      maxRankParams.push(timeline || 'short_term');
+      incrementQuery += ' AND timeline = $2';
+      incrementParams.push(timeline || 'short_term');
     }
     
-    const maxRankResult = await db.query(maxRankQuery, maxRankParams);
-    const nextRank = (maxRankResult.rows[0].max_rank || 0) + 1;
+    await db.query(incrementQuery, incrementParams);
+    
+    // New issues always get priority_rank = 0 (top of the list)
+    const nextRank = 0;
     
     // Build insert query based on available columns
     let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'archived', 'status'];
