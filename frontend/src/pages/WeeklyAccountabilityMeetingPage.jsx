@@ -6023,7 +6023,26 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               await todosService.updateTodo(todo.id, updateData);
                                               console.log('✅ Update request completed');
                                               
-                                              await fetchTodosData();
+                                              // Update local state immediately instead of refetching
+                                              const newStatus = isComplete ? 'incomplete' : 'complete';
+                                              setTodos(prevTodos => 
+                                                prevTodos.map(t => {
+                                                  if (t.id !== todo.id) return t;
+                                                  
+                                                  // For multi-assignee todos, update the specific assignee's completion
+                                                  if (todo._currentAssignee && t.assignees) {
+                                                    const updatedAssignees = t.assignees.map(assignee => 
+                                                      assignee.id === todo._currentAssignee.id
+                                                        ? { ...assignee, completed: !isComplete, completed_at: !isComplete ? new Date().toISOString() : null }
+                                                        : assignee
+                                                    );
+                                                    return { ...t, assignees: updatedAssignees };
+                                                  }
+                                                  
+                                                  // For single-assignee todos, update the main status
+                                                  return { ...t, status: newStatus };
+                                                })
+                                              );
                                               
                                               // Broadcast update to other meeting participants
                                               if (meetingCode && broadcastTodoUpdate) {
