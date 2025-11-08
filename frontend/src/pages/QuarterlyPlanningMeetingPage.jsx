@@ -1308,15 +1308,13 @@ function QuarterlyPlanningMeetingPage() {
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       const response = await issuesService.getIssues(null, false, effectiveTeamId);
-      // Sort issues by vote count (highest first)
-      const sortedIssues = (response.data.issues || []).sort((a, b) => 
-        (b.vote_count || 0) - (a.vote_count || 0)
-      );
-      setIssues(sortedIssues);
+      // Use backend sorting (manual_sort first, then created_at DESC)
+      const issues = response.data.issues || [];
+      setIssues(issues);
       
       // Split into short-term and long-term
-      const shortTerm = sortedIssues.filter(issue => issue.timeline === 'short_term');
-      const longTerm = sortedIssues.filter(issue => issue.timeline === 'long_term');
+      const shortTerm = issues.filter(issue => issue.timeline === 'short_term');
+      const longTerm = issues.filter(issue => issue.timeline === 'long_term');
       setShortTermIssues(shortTerm);
       setLongTermIssues(longTerm);
       
