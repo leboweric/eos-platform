@@ -5941,7 +5941,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                            'transparent',
                                             border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
                                           }}
-                                          onClick={async () => {
+                                          onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                          }}
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            
                                             try {
                                               const newStatus = isComplete ? 'incomplete' : 'complete';
                                               await todosService.updateTodo(todo.id, { status: newStatus });
