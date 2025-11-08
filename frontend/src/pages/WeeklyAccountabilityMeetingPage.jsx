@@ -5954,10 +5954,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                             
                             {/* To-Do Rows */}
                             {assignee.todos.map(todo => {
-                              // For multi-assignee todos, check if THIS assignee's copy is complete
-                              const isComplete = todo._currentAssignee 
-                                ? todo._currentAssignee.completed === true
-                                : (todo.status === 'complete' || todo.status === 'completed');
+                              // Check completion status - use todo.status as source of truth
+                              // For multi-assignee todos, also check if this specific assignee's copy is complete
+                              const isComplete = (todo.status === 'complete' || todo.status === 'completed') ||
+                                (todo._currentAssignee && todo._currentAssignee.completed === true);
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
                               const overdue = isOverdue(todo);
                               
