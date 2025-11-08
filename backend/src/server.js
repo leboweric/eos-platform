@@ -1,6 +1,6 @@
 // Import Sentry for middleware (initialization happens in instrument.js)
 import * as Sentry from '@sentry/node';
-// Build trigger: 2025-10-29 - Annual Planning Goals fix
+// Build trigger: 2025-11-08 - Manual sort flag deployment
 
 import express from 'express';
 import cors from 'cors';
