@@ -5991,7 +5991,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                            'transparent',
                                             border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
                                           }}
+                                          onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                          }}
                                           onClick={async (e) => {
+                                            e.preventDefault();
                                             e.stopPropagation();
                                             console.log('🔥🔥🔥 Level 10 Meeting: Checkbox clicked');
                                             console.log('📋 Todo:', todo);
