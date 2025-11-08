@@ -263,12 +263,26 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 
 ### Scorecard Module
 - **Purpose**: KPI tracking and performance monitoring
+- **Production File**: `frontend/src/pages/ScorecardPageClean.jsx` (imported as `ScorecardPage` in App.jsx)
 - **Key Files**:
-  - `backend/src/controllers/scorecardController.js`
-  - `frontend/src/pages/ScorecardPageClean.jsx`
-  - `frontend/src/components/GoalChart.jsx`
+  - `backend/src/controllers/scorecardController.js` - Main scorecard API controller
+  - `frontend/src/pages/ScorecardPageClean.jsx` - **PRODUCTION PAGE** (active)
+  - `frontend/src/pages/ScorecardPage.jsx` - Legacy/backup version (not used)
+  - `frontend/src/pages/ScorecardPageOriginal.jsx` - Original backup
+  - `frontend/src/components/scorecard/GroupedScorecardView.jsx` - GROUP view component
+  - `frontend/src/components/scorecard/ScorecardTable.jsx` - TABLE view component
+  - `frontend/src/components/GoalChart.jsx` - Chart visualization
+- **View Modes**: 
+  - TABLE view: Traditional spreadsheet-style layout
+  - GROUP view: Grouped by department/owner with collapsible sections
+- **Features**:
+  - Weekly and monthly metrics with toggle
+  - Real-time score updates with startTransition for smooth UX
+  - No screen flash or success toasts on save (Nov 2024 fix)
+  - Scroll position preservation during edits
+  - Metric grouping and RTL support
 - **Dependencies**: Teams, metrics definitions, time-series data
-- **Status**: Complete with charts and goal tracking
+- **Status**: Complete with charts, goal tracking, and optimized save UX
 
 ### Meeting Facilitation
 - **Purpose**: Structured meetings with real-time collaboration
