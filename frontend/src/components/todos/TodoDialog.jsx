@@ -821,7 +821,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
             {/* Auto-save indicator row - only show for existing To-Dos */}
             {todo?.id && (
               <div className="w-full mb-3">
-                {(autoSaving || hasUnsavedChanges) && (
+                {autoSaving && (
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <span>Auto Saving</span>
                     <span className="flex gap-0.5">
@@ -831,9 +831,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                     </span>
                   </div>
                 )}
-                {!autoSaving && !hasUnsavedChanges && lastSaved && (
-                  <span className="text-sm text-gray-500">
-                    Saved {new Date(lastSaved).toLocaleTimeString()}
+                {!autoSaving && lastSaved && (
+                  <span className="text-sm text-green-600">
+                    ✓ Saved
                   </span>
                 )}
               </div>
