@@ -2008,10 +2008,8 @@ const WeeklyAccountabilityMeetingPage = () => {
           setShortTermIssues(prev => updateIssueInList(prev));
           setLongTermIssues(prev => updateIssueInList(prev));
           
-          // Also update the editingIssue to reflect the saved changes
-          if (editingIssue) {
-            setEditingIssue({ ...editingIssue, ...savedIssue.data || savedIssue });
-          }
+          // Don't update editingIssue - it causes dialog to re-render and flash
+          // The dialog maintains its own internal state (formData)
         } else {
           setSuccess('Issue updated successfully');
         }
@@ -7485,8 +7483,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   setShortTermIssues(prev => updateIssueInList(prev));
                   setLongTermIssues(prev => updateIssueInList(prev));
                   
-                  // Also update the editingIssue
-                  setEditingIssue({ ...editingIssue, ...savedIssue.data || savedIssue });
+                  // Don't update editingIssue - causes dialog to re-render and flash
                 }
               } else {
                 savedIssue = await issuesService.createIssue({

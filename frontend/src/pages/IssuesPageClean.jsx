@@ -257,10 +257,8 @@ const IssuesPageClean = () => {
           setLongTermIssues(prev => updateIssueInList(prev));
           setArchivedIssues(prev => updateIssueInList(prev));
           
-          // Also update the editingIssue to reflect the saved changes
-          if (editingIssue) {
-            setEditingIssue({ ...editingIssue, ...savedIssue.data || savedIssue });
-          }
+          // Don't update editingIssue - it causes dialog to re-render and flash
+          // The dialog maintains its own internal state (formData)
         } else {
           setSuccess('Issue updated successfully');
         }
