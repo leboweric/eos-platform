@@ -532,7 +532,18 @@ const MeetingsPage = () => {
             // Use orgId-teamId-meetingId format to match actual meeting room codes
             const orgId = user?.organizationId || user?.organization_id;
             const meetingCode = orgId ? `${orgId}-${selectedTeamId}-${meeting.id}` : `${selectedTeamId}-${meeting.id}`;
-            const activeMeeting = activeMeetings?.[meetingCode];
+            
+            // For weekly-accountability, also check for weekly-express format
+            let activeMeeting = activeMeetings?.[meetingCode];
+            let activeFormat = null;
+            if (meeting.id === 'weekly-accountability' && !activeMeeting) {
+              const expressMeetingCode = orgId ? `${orgId}-${selectedTeamId}-weekly-express` : `${selectedTeamId}-weekly-express`;
+              activeMeeting = activeMeetings?.[expressMeetingCode];
+              if (activeMeeting) {
+                activeFormat = 'express';
+              }
+            }
+            
             const isActive = !!activeMeeting;
             
             return (
@@ -601,12 +612,16 @@ const MeetingsPage = () => {
                         if (meeting.id === 'weekly-accountability') {
                           // If meeting is active, join it directly without format selection
                           if (isActive) {
-                            // Join the active meeting - use saved format or default to standard
-                            const savedFormat = localStorage.getItem(`meetingFormat_${selectedTeamId}`);
-                            if (savedFormat === 'express') {
+                            // Join the active meeting - use detected format or saved preference
+                            if (activeFormat === 'express') {
                               navigate(`/meetings/weekly-express/${selectedTeamId}`);
                             } else {
-                              navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
+                              const savedFormat = localStorage.getItem(`meetingFormat_${selectedTeamId}`);
+                              if (savedFormat === 'express') {
+                                navigate(`/meetings/weekly-express/${selectedTeamId}`);
+                              } else {
+                                navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
+                              }
                             }
                           } else {
                             // Starting a new meeting - check if user has a saved preference
