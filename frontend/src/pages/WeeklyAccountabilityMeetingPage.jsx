@@ -4237,6 +4237,26 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-rating-update', handleRatingUpdate);
     window.addEventListener('meeting-section-change', handleSectionChangeFromLeader);
     
+    // Real-time broadcast handlers
+    const handleIssueCreated = (event) => {
+      console.log('🔔 Real-time: Issue created by', event.detail.createdBy);
+      fetchIssuesData();
+    };
+    
+    const handleTodoCreated = (event) => {
+      console.log('🔔 Real-time: Todo created by', event.detail.createdBy);
+      fetchTodosData();
+    };
+    
+    const handleHeadlineCreated = (event) => {
+      console.log('🔔 Real-time: Headline created by', event.detail.createdBy);
+      fetchHeadlines();
+    };
+    
+    window.addEventListener('meeting-issue-created', handleIssueCreated);
+    window.addEventListener('meeting-todo-created', handleTodoCreated);
+    window.addEventListener('meeting-headline-created', handleHeadlineCreated);
+    
     return () => {
       window.removeEventListener('meeting-vote-update', handleVoteUpdate);
       window.removeEventListener('meeting-issue-update', handleIssueUpdate);
@@ -4247,6 +4267,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
       window.removeEventListener('meeting-rating-update', handleRatingUpdate);
       window.removeEventListener('meeting-section-change', handleSectionChangeFromLeader);
+      window.removeEventListener('meeting-issue-created', handleIssueCreated);
+      window.removeEventListener('meeting-todo-created', handleTodoCreated);
+      window.removeEventListener('meeting-headline-created', handleHeadlineCreated);
       // Cleanup rating timeout timer
       if (ratingTimeoutTimer) {
         clearTimeout(ratingTimeoutTimer);
