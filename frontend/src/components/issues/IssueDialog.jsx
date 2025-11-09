@@ -237,6 +237,9 @@ const IssueDialog = ({
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
+    // Don't auto-save for new issues - only for editing existing issues
+    if (!issue?.id && !createdIssueId) return;
+    
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
     
@@ -815,8 +818,8 @@ const IssueDialog = ({
               Cancel
             </Button>
             <Button 
-              type={issue || createdIssueId ? 'button' : 'submit'}
-              onClick={issue || createdIssueId ? onClose : undefined}
+              type={issue?.id ? 'button' : 'submit'}
+              onClick={issue?.id ? onClose : undefined}
               disabled={loading || uploadingFiles}
               className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
               style={{
@@ -831,7 +834,7 @@ const IssueDialog = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {issue || createdIssueId ? 'Close' : 'Create'}
+                  {issue?.id ? 'Close' : 'Create'}
                 </>
               )}
             </Button>

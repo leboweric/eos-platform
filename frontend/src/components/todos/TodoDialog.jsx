@@ -215,6 +215,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
+    // Don't auto-save for new to-dos - only for editing existing to-dos
+    if (!todo?.id && !createdTodoId) return;
+    
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
     
@@ -839,8 +842,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 Cancel
               </Button>
               <Button 
-                type={todo || createdTodoId ? 'button' : 'submit'}
-                onClick={todo || createdTodoId ? () => onOpenChange(false) : undefined}
+                type={todo?.id ? 'button' : 'submit'}
+                onClick={todo?.id ? () => onOpenChange(false) : undefined}
                 disabled={saving}
                 className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                 style={{
@@ -853,10 +856,10 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                     Saving...
                   </>
                 ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {todo || createdTodoId ? 'Close' : 'Create'} To-Do
-                  </>
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {todo?.id ? 'Close' : 'Create'} To-Do
+                </>
                 )}
               </Button>
             </div>
