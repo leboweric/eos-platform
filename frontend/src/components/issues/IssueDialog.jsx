@@ -818,22 +818,30 @@ const IssueDialog = ({
             </div>
           )}
 
-          <DialogFooter className="pt-6">
-            {/* Auto-save indicator */}
-            <div className="flex-1 flex items-center gap-2 text-sm text-slate-500">
-              {(autoSaving || hasUnsavedChanges) ? (
-                <div className="flex items-center gap-1">
-                  <span>Auto Saving</span>
-                  <span className="flex gap-0.5">
-                    <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+          <DialogFooter className="pt-6 border-t border-white/20 !flex-col !items-stretch">
+            {/* Auto-save indicator row - only show for existing Issues */}
+            {issue?.id && (
+              <div className="w-full mb-3">
+                {autoSaving && (
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    <span>Auto Saving</span>
+                    <span className="flex gap-0.5">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+                    </span>
+                  </div>
+                )}
+                {!autoSaving && lastSaved && (
+                  <span className="text-sm text-green-600">
+                    ✓ Saved
                   </span>
-                </div>
-              ) : lastSaved ? (
-                <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
-              ) : null}
-            </div>
+                )}
+              </div>
+            )}
+            
+            {/* Buttons row */}
+            <div className="w-full flex justify-end gap-2">
             <Button 
               type="button" 
               variant="outline" 
@@ -870,6 +878,7 @@ const IssueDialog = ({
                 </>
               )}
             </Button>
+            </div>
           </DialogFooter>
         </form>
         </div>
