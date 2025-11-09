@@ -7202,6 +7202,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     setShowConcludeDialog(false);
     try {
+      // CRITICAL: Snapshot headlines and cascading messages BEFORE any operations
+      // This ensures they're captured even if archived during the meeting
+      const snapshotHeadlines = {
+        customer: [...(headlines.customer || [])],
+        employee: [...(headlines.employee || [])]
+      };
+      const snapshotCascadedMessages = [...(cascadedMessages || [])];
+      
       // Note: AI recording stop is now handled automatically by the backend during meeting conclusion
                         // Send cascading message if there is one
                         if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
@@ -7293,14 +7301,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                             resolved_at: issue.resolved_at || issue.updated_at
                           })),
                           
-                          // Headlines data
-                          headlines: {
-                            customer: headlines.customer || [],
-                            employee: headlines.employee || []
-                          },
+                          // Headlines data (using snapshot to capture even if archived during meeting)
+                          headlines: snapshotHeadlines,
                           
-                          // Cascading messages (if any were created during meeting)
-                          cascadingMessages: cascadedMessages || [],
+                          // Cascading messages (using snapshot to capture even if archived during meeting)
+                          cascadingMessages: snapshotCascadedMessages,
                           
                           // Meeting rating
                           rating: meetingRating,
@@ -7373,6 +7378,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                               console.error('Failed to archive issue:', error);
                             }
                           }
+                          
+                          // Archive all headlines (both customer and employee)
+                          try {
+                            await headlinesService.archiveHeadlines(effectiveTeamId);
+                          } catch (error) {
+                            console.error('Failed to archive headlines:', error);
+                          }
                         }
                         
                         // Build success message based on what actually happened
@@ -7387,7 +7399,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }
                         }
                         // Show toast with appropriate message based on AI recording state
-                        const archiveMessage = archiveCompleted ? 'Completed items archived.' : '';
+                        const archiveMessage = archiveCompleted ? 'Completed items and headlines archived.' : '';
                         const baseMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
                         
                         toast.success(aiRecordingState.isRecording 

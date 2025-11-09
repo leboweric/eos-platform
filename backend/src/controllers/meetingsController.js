@@ -111,6 +111,8 @@ export const concludeMeeting = async (req, res) => {
       issues,
       notes,
       cascadingMessage,
+      headlines,
+      cascadingMessages,
       sendEmail = true // Default to true for backward compatibility
     } = req.body;
 
@@ -906,6 +908,8 @@ export const concludeMeeting = async (req, res) => {
           metrics: metrics || [],
           summary: summary || '',
           cascadingMessage: cascadingMessage || '',
+          headlines: headlines || { customer: [], employee: [] },
+          cascadingMessages: cascadingMessages || [],
           aiSummary: null  // Fixed: aiSummary was undefined
         };
         
@@ -913,7 +917,10 @@ export const concludeMeeting = async (req, res) => {
           todosAdded: filteredTodos.added?.length || 0,
           todosCompleted: filteredTodos.completed?.length || 0,
           issuesNew: filteredIssues.new?.length || 0,
-          issuesSolved: filteredIssues.solved?.length || 0
+          issuesSolved: filteredIssues.solved?.length || 0,
+          headlinesCustomer: headlines?.customer?.length || 0,
+          headlinesEmployee: headlines?.employee?.length || 0,
+          cascadingMessages: cascadingMessages?.length || 0
         });
         
         // Create snapshot

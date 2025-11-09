@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { processDailyActiveUsersReport } from './dailyActiveUsersService.js';
 import { sendTodoReminders } from './todoReminderService.js';
+import { archiveExpiredCascadingMessages } from './cascadingMessageExpirationService.js';
 
 /**
  * Initialize all scheduled jobs
@@ -47,7 +48,23 @@ export const initializeScheduledJobs = () => {
     timezone: process.env.TZ || 'America/New_York' // Default to EST
   });
   
+  // Schedule cascading message expiration
+  // Runs every day at 2:00 AM server time to archive messages older than 7 days
+  cron.schedule('0 2 * * *', async () => {
+    console.log('Running scheduled cascading message expiration...');
+    try {
+      const result = await archiveExpiredCascadingMessages();
+      console.log('Cascading message expiration completed:', result);
+    } catch (error) {
+      console.error('Failed to archive expired cascading messages:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: process.env.TZ || 'America/New_York' // Default to EST
+  });
+  
   console.log('Scheduled jobs initialized:');
+  console.log('- Cascading message expiration: 2:00 AM daily (7-day auto-archive)');
   console.log('- Daily active users report: 8:00 AM daily');
   console.log('- Todo reminders: 9:00 AM daily (skipping Nov 5, 2025 due to manual trigger)');
   
