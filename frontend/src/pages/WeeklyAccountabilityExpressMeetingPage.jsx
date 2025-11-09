@@ -1533,6 +1533,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       const startTime = sessionStorage.getItem('meetingStartTime');
       
       if (isActive === 'true' && startTime) {
+        // Don't resume if we just concluded a meeting
+        if (meetingConcludedRef.current) {
+          console.log('🚫 Skipping session resume - meeting was just concluded');
+          sessionStorage.removeItem('meetingActive');
+          sessionStorage.removeItem('meetingStartTime');
+          meetingConcludedRef.current = false; // Reset flag
+          return;
+        }
+        
         // Check if there's an active database session
         const orgId = user?.organizationId || user?.organization_id;
         const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
@@ -1670,6 +1679,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   // IMMEDIATE session initialization - don't wait for meeting to start
   useEffect(() => {
     if (user && teamId && !sessionId && !sessionLoading) {
+      // Don't resume if we just concluded a meeting
+      if (meetingConcludedRef.current) {
+        console.log('🚫 Skipping immediate session init - meeting was just concluded');
+        meetingConcludedRef.current = false; // Reset flag
+        return;
+      }
+      
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
       
@@ -7341,7 +7357,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setMeetingRating(null);
                         setRatingSubmitted(false);
                         
-                        // Broadcast meeting end to all participants BEFORE leaving
+                        // End the database session FIRST and wait for completion
+                        // This prevents the old session from being resumed if leader immediately starts new meeting
+                        if (sessionId) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          console.log('🔚 Ending database session before leaving meeting...');
+                          await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
+                            .catch(err => console.error('Failed to end meeting session:', err));
+                          console.log('✅ Database session ended successfully');
+                        }
+                        
+                        // Broadcast meeting end to all participants
                         if (meetingCode && broadcastIssueListUpdate) {
                           if (process.env.NODE_ENV === 'development') {
                             console.log('📢 Broadcasting meeting end to all participants');
@@ -7361,14 +7388,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                           setTimeout(() => {
                             leaveMeeting();
                           }, 100);
-                        }
-                        
-                        // End the database session and wait for completion
-                        if (sessionId) {
-                          const orgId = user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
-                          await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
-                            .catch(err => console.error('Failed to end meeting session:', err));
                         }
                         
                         // Clear meeting state
