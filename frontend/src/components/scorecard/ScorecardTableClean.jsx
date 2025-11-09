@@ -505,7 +505,7 @@ const ScorecardTableClean = ({
                        isLastWeekColumn ? "border-l-2 border-blue-400" : "")
                     }>
                       <div className="flex flex-col items-center gap-1">
-                        {isLastWeekColumn && (
+                        {isLastWeekColumn && type === 'weekly' && (
                           <span className="text-[9px] font-semibold text-blue-600 uppercase tracking-wider">Last Week</span>
                         )}
                         <span className={`font-medium ${isLastWeekColumn ? 'text-gray-800' : 'text-gray-600'} ${meetingMode ? "text-xs" : "text-[11px]"}`}>

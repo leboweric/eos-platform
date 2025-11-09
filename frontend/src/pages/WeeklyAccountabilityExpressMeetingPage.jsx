@@ -5904,7 +5904,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {assignee.todos.map((todo, index) => {
                               const isComplete = todo.status === 'complete' || todo.status === 'completed';
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
-                              const isTopThree = index < 3;  // Top 3 todos get blue border
+                              const overdue = isOverdue(todo);
                               
                               return (
                                 <TodoContextMenu
@@ -5921,14 +5921,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   hidePriorityOptions={true}
                                   hideDeleteOption={true}
                                 >
-                                  <div 
-                                  className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
-                                  style={{
-                                    borderLeftWidth: isTopThree ? '4px' : '0px',
-                                    borderLeftColor: isTopThree ? '#3B82F6' : 'transparent',
-                                    borderLeftStyle: 'solid'
-                                  }}
-                                >
+                                  <div className={`border-b border-slate-100 last:border-0 cursor-context-menu transition-colors rounded ${
+                                    overdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'
+                                  }`}>
                                     {/* Main To-Do Row */}
                                     <div className="flex items-center px-3 py-3 group">
                                       {/* Status Indicator */}
