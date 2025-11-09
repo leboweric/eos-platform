@@ -612,32 +612,17 @@ const MeetingsPage = () => {
                         if (meeting.id === 'weekly-accountability') {
                           // If meeting is active, join it directly without format selection
                           if (isActive) {
-                            // Join the active meeting - use detected format or saved preference
+                            // Join the active meeting - use detected format
                             if (activeFormat === 'express') {
                               navigate(`/meetings/weekly-express/${selectedTeamId}`);
                             } else {
-                              const savedFormat = localStorage.getItem(`meetingFormat_${selectedTeamId}`);
-                              if (savedFormat === 'express') {
-                                navigate(`/meetings/weekly-express/${selectedTeamId}`);
-                              } else {
-                                navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
-                              }
+                              // Default to standard format if not detected as express
+                              navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
                             }
                           } else {
-                            // Starting a new meeting - check if user has a saved preference
-                            const savedFormat = localStorage.getItem(`meetingFormat_${selectedTeamId}`);
-                            
-                            if (savedFormat === 'express') {
-                              // Go directly to Express
-                              navigate(`/meetings/weekly-express/${selectedTeamId}`);
-                            } else if (savedFormat === 'standard') {
-                              // Go directly to Standard
-                              handleStartMeeting(meeting.id);
-                            } else {
-                              // Show format selector
-                              setPendingMeetingTeamId(selectedTeamId);
-                              setShowFormatSelector(true);
-                            }
+                            // Starting a new meeting - always show format selector
+                            setPendingMeetingTeamId(selectedTeamId);
+                            setShowFormatSelector(true);
                           }
                         } else {
                           // For all other meeting types, use normal handler
