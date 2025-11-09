@@ -7441,6 +7441,19 @@ const WeeklyAccountabilityMeetingPage = () => {
               <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
             </div>
             <div className="flex items-center gap-4">
+              {/* Follow Leader Toggle - Standalone for Testing */}
+              {!isLeader && participants.length > 1 && (
+                <button
+                  onClick={toggleFollow}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    isFollowing
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'border-2 border-slate-300 text-slate-700 hover:border-slate-400'
+                  }`}
+                >
+                  {isFollowing ? '✓ Following Leader' : 'Not Following'}
+                </button>
+              )}
               {/* Removed redundant timers - using FloatingTimer only */}
               {currentTeam && (
                 <div className="text-right">
