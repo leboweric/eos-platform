@@ -198,8 +198,12 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
 
   // Auto-save function
   const performAutoSave = useCallback(async () => {
+    console.log('📦 performAutoSave called!', { title: formData.title });
     // Require at least a title to auto-save
-    if (!formData.title.trim()) return;
+    if (!formData.title.trim()) {
+      console.log('⚠️ No title, skipping auto-save');
+      return;
+    }
     
     try {
       setAutoSaving(true);
@@ -248,7 +252,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
     }
     
     // Set new timeout for auto-save
+    console.log('⏱️ Setting auto-save timeout...');
     autoSaveTimeoutRef.current = setTimeout(() => {
+      console.log('🚀 Auto-save timeout fired! Calling performAutoSave...');
       performAutoSave();
     }, 2000); // 2 second debounce
     
