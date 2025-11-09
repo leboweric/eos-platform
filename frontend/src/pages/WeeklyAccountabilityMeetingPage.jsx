@@ -7527,6 +7527,8 @@ const WeeklyAccountabilityMeetingPage = () => {
             onBroadcastRating={broadcastRating}
             meetingStartTime={meetingStartTime}
             meetingStarted={meetingStarted}
+            isFollowing={isFollowing}
+            toggleFollow={toggleFollow}
           />
         )}
 

@@ -391,7 +391,10 @@ const useMeeting = () => {
     setIsLeader(false);
     setIsFollowing(true);
     setCurrentLeader(null);
-  }, [socket]);
+    
+    // Redirect to meetings page
+    navigate('/meetings');
+  }, [socket, navigate]);
 
   // Toggle follow mode
   const toggleFollow = useCallback(() => {

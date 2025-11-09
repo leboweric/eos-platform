@@ -30,13 +30,13 @@ const MeetingBar = ({
   currentLeader,
   onNavigate,
   meetingStartTime, 
-  meetingStarted 
+  meetingStarted,
+  isFollowing,
+  toggleFollow
 }) => {
   const {
     isEnabled,
-    isConnected,
-    isFollowing,
-    toggleFollow
+    isConnected
   } = useMeeting();
   
   // Use onLeave prop as leaveMeeting function
@@ -217,16 +217,18 @@ const MeetingBar = ({
                 </div>
               )}
 
-              {/* Leave meeting */}
-              <Button
-                onClick={leaveMeeting}
-                variant="destructive"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <VideoOff className="h-4 w-4" />
-                Leave Meeting
-              </Button>
+              {/* Leave meeting - only for non-leaders */}
+              {!isLeader && (
+                <Button
+                  onClick={leaveMeeting}
+                  variant="destructive"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <VideoOff className="h-4 w-4" />
+                  Leave Meeting
+                </Button>
+              )}
             </>
           )}
 
