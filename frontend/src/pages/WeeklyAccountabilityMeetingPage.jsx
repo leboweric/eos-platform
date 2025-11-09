@@ -4011,11 +4011,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         setIsRTL(newRTL);
         localStorage.setItem('scorecardRTL', newRTL.toString());
       } else if (action === 'scroll-sync') {
-        // Sync scroll position from leader
-        const { scrollY } = event.detail;
-        if (isFollowing && scrollY !== undefined) {
-          console.log('📜 Syncing scroll to:', scrollY);
-          window.scrollTo({ top: scrollY, behavior: 'smooth' });
+        // Sync scroll position from leader using percentage
+        const { scrollPercentage } = event.detail;
+        if (isFollowing && scrollPercentage !== undefined) {
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const targetScrollY = (scrollPercentage / 100) * maxScroll;
+          console.log('📜 Syncing scroll to:', scrollPercentage.toFixed(1) + '%', '→', targetScrollY + 'px');
+          window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
         }
       } else if (action === 'priority-updated') {
         // Update rock/priority status or other fields
@@ -4202,10 +4204,12 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Scroll sync handler
     const handleScrollSync = (event) => {
-      const { scrollY } = event.detail;
-      if (isFollowing && scrollY !== undefined) {
-        console.log('📜 Syncing scroll to:', scrollY);
-        window.scrollTo({ top: scrollY, behavior: 'smooth' });
+      const { scrollPercentage } = event.detail;
+      if (isFollowing && scrollPercentage !== undefined) {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const targetScrollY = (scrollPercentage / 100) * maxScroll;
+        console.log('📜 Syncing scroll to:', scrollPercentage.toFixed(1) + '%', '→', targetScrollY + 'px');
+        window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
       }
     };
     
@@ -4242,10 +4246,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         const scrollY = window.scrollY || window.pageYOffset;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercentage = maxScroll > 0 ? (scrollY / maxScroll) * 100 : 0;
+        
         if (broadcastIssueListUpdate) {
           broadcastIssueListUpdate({
             action: 'scroll-sync',
-            scrollY: scrollY
+            scrollPercentage: scrollPercentage
           });
         }
       }, 100); // Throttle to 100ms
