@@ -3890,7 +3890,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Emit navigation event if leader
     if (isLeader && navigateToSection) {
-      navigateToSection(sectionId);
+      navigateToSection(sectionId, Date.now());
     }
   };
   
@@ -4212,8 +4212,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
     
     const handleSectionChangeFromLeader = (event) => {
-      const { section } = event.detail;
+      const { section, sectionStartTime } = event.detail;
       console.log('📍 Received section change from leader:', section);
+      console.log('📍 Section start time from leader:', sectionStartTime);
       
       // Only follow if not the leader
       if (!isLeader) {
@@ -4223,7 +4224,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         const newSectionConfig = agendaItems.find(item => item.id === section);
         if (newSectionConfig) {
           setSectionConfig(newSectionConfig);
-          setCurrentSectionStartTime(Date.now());
+          // Use the leader's section start time instead of local time
+          setCurrentSectionStartTime(sectionStartTime || Date.now());
           setSectionElapsedTime(0);
         }
       }

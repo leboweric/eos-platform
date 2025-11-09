@@ -152,9 +152,13 @@ const useMeeting = () => {
         if (data.section) {
           setTimeout(() => {
             console.log('📍 Triggering section change to:', data.section);
+            console.log('📍 Section start time:', data.sectionStartTime);
             // Try to trigger section change in the UI
             const sectionChangeEvent = new CustomEvent('meeting-section-change', { 
-              detail: { section: data.section } 
+              detail: { 
+                section: data.section,
+                sectionStartTime: data.sectionStartTime
+              } 
             });
             window.dispatchEvent(sectionChangeEvent);
             
@@ -419,10 +423,11 @@ const useMeeting = () => {
   }, [isLeader, socket, meetingCode, navigate, location]);
   
   // Navigate to section only (leader only)
-  const navigateToSection = useCallback((section) => {
+  const navigateToSection = useCallback((section, sectionStartTime) => {
     if (!isLeader || !socket || !meetingCode) return;
     
     console.log('📍 Leader navigating to section:', section);
+    console.log('📍 Section start time:', sectionStartTime);
     console.log('📍 Current location.pathname:', location.pathname);
     
     // Defensive check: Don't emit navigation with invalid routes
@@ -434,6 +439,7 @@ const useMeeting = () => {
     socket.emit('navigate', {
       route: location.pathname,
       section,
+      sectionStartTime,
       scrollPosition: window.scrollY
     });
   }, [isLeader, socket, meetingCode, location]);
