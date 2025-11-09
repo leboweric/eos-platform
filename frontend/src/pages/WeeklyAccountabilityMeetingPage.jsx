@@ -1982,7 +1982,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     setShowTodoDialog(true);
   };
 
-  const handleSaveIssue = async (issueData) => {
+  const handleSaveIssue = async (issueData, options = {}) => {
+    const { isAutoSave = false } = options;
+    
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       let savedIssue;
@@ -1993,7 +1995,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       if (isEditing && issueId) {
         savedIssue = await issuesService.updateIssue(issueId, issueData);
-        setSuccess('Issue updated successfully');
+        // Only show success message for manual saves
+        if (!isAutoSave) {
+          setSuccess('Issue updated successfully');
+        }
         
         // Broadcast issue update to other participants
         if (meetingCode && broadcastIssueListUpdate) {
@@ -2009,7 +2014,10 @@ const WeeklyAccountabilityMeetingPage = () => {
           timeline: issueTimeline,
           department_id: effectiveTeamId
         });
-        setSuccess('Issue created successfully');
+        // Only show success message for manual saves
+        if (!isAutoSave) {
+          setSuccess('Issue created successfully');
+        }
         
         // Broadcast new issue to other participants
         if (meetingCode && broadcastIssueListUpdate) {
@@ -2020,9 +2028,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       }
       
-      await fetchIssuesData();
-      setShowIssueDialog(false);
-      setEditingIssue(null);
+      // Only refresh and close dialog for manual saves
+      if (!isAutoSave) {
+        await fetchIssuesData();
+        setShowIssueDialog(false);
+        setEditingIssue(null);
+      }
+      
       return savedIssue; // Return the actual created/updated issue
     } catch (error) {
       console.error('Failed to save issue:', error);

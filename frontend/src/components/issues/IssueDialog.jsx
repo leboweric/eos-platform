@@ -211,7 +211,7 @@ const IssueDialog = ({
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline
-      });
+      }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       setLastSaved(new Date());
       
       // If this was a new issue, update the issue object with the returned ID

@@ -231,7 +231,9 @@ const IssuesPageClean = () => {
     setShowIssueDialog(true);
   };
 
-  const handleSaveIssue = async (issueData) => {
+  const handleSaveIssue = async (issueData, options = {}) => {
+    const { isAutoSave = false } = options;
+    
     try {
       let savedIssue;
       
@@ -241,7 +243,10 @@ const IssuesPageClean = () => {
       
       if (isEditing && issueId) {
         savedIssue = await issuesService.updateIssue(issueId, issueData);
-        setSuccess('Issue updated successfully');
+        // Only show success message for manual saves
+        if (!isAutoSave) {
+          setSuccess('Issue updated successfully');
+        }
       } else {
         // Get effective team ID for creating the issue
         const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
@@ -251,11 +256,18 @@ const IssuesPageClean = () => {
           timeline: activeTab,
           department_id: effectiveTeamId  // This will be handled by issuesService
         });
-        setSuccess('Issue created successfully');
+        // Only show success message for manual saves
+        if (!isAutoSave) {
+          setSuccess('Issue created successfully');
+        }
       }
       
-      await fetchIssues();
-      setShowIssueDialog(false);
+      // Only refresh and close dialog for manual saves
+      if (!isAutoSave) {
+        await fetchIssues();
+        setShowIssueDialog(false);
+      }
+      
       return savedIssue; // Return the saved issue for attachment uploads
     } catch (error) {
       console.error('Failed to save issue:', error);
