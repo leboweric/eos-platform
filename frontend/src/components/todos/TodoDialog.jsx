@@ -229,6 +229,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
+    console.log('🔄 Auto-save effect triggered:', { todoId: todo?.id, createdTodoId, hasTitle: !!formData.title, isInitialized: isInitializedRef.current });
     // Don't auto-save for new to-dos - only for editing existing to-dos
     if (!todo?.id && !createdTodoId) return;
     
@@ -819,6 +820,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
 
           <DialogFooter className="pt-6 border-t border-white/20 !flex-col !items-stretch">
             {/* Auto-save indicator row - only show for existing To-Dos */}
+            {console.log('🔍 TodoDialog Footer Render:', { todoId: todo?.id, autoSaving, lastSaved, hasUnsavedChanges })} 
             {todo?.id && (
               <div className="w-full mb-3">
                 {autoSaving && (
