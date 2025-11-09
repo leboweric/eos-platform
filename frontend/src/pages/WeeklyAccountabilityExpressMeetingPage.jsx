@@ -2182,7 +2182,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     await fetchIssuesData();
   };
 
-  const handleSaveTodo = async (todoData) => {
+  const handleSaveTodo = async (todoData, options = {}) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -2193,7 +2193,10 @@ const WeeklyAccountabilityMeetingPage = () => {
           ...todoData,
           department_id: effectiveTeamId
         });
-        setSuccess('To-do updated successfully');
+        // Only show success message for manual saves, not auto-saves
+        if (!options.isAutoSave) {
+          setSuccess('To-do updated successfully');
+        }
         
         // Broadcast todo update to other participants
         if (meetingCode && broadcastTodoUpdate) {
@@ -2209,7 +2212,10 @@ const WeeklyAccountabilityMeetingPage = () => {
           organization_id: orgId,
           department_id: effectiveTeamId
         });
-        setSuccess('To-do created successfully');
+        // Only show success message for manual saves, not auto-saves
+        if (!options.isAutoSave) {
+          setSuccess('To-do created successfully');
+        }
         
         // Broadcast new todo to other participants
         if (meetingCode && broadcastTodoUpdate) {

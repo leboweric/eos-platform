@@ -149,22 +149,30 @@ const TodosPage = () => {
     setShowTodoDialog(true);
   };
 
-  const handleSaveTodo = async (todoData) => {
+  const handleSaveTodo = async (todoData, options = {}) => {
     try {
       let savedTodo;
       if (editingTodo) {
         savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
-        setSuccess(`${labels.todos_label.slice(0, -1)} updated successfully`);
+        // Only show success message for manual saves, not auto-saves
+        if (!options.isAutoSave) {
+          setSuccess(`${labels.todos_label.slice(0, -1)} updated successfully`);
+        }
       } else {
         savedTodo = await todosService.createTodo({
           ...todoData,
           department_id: selectedDepartment?.id
         });
-        setSuccess('To-do created successfully');
+        if (!options.isAutoSave) {
+          setSuccess('To-do created successfully');
+        }
       }
       
       await fetchTodos();
-      setShowTodoDialog(false);
+      // Only close dialog for manual saves, not auto-saves
+      if (!options.isAutoSave) {
+        setShowTodoDialog(false);
+      }
       return savedTodo;
     } catch (error) {
       console.error('Failed to save todo:', error);
