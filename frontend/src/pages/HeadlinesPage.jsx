@@ -411,12 +411,8 @@ const HeadlinesPage = () => {
                     <span className="ml-2 text-sm opacity-80">({archivedHeadlines.customer.length + archivedHeadlines.employee.length})</span>
                   </TabsTrigger>
                 </TabsList>
-              </Tabs>
-            </div>
-          </div>
-          <div>
 
-            <TabsContent value="active" className="mt-0">
+                <TabsContent value="active" className="mt-0">
               <div className="space-y-8">
                 {/* Customer Headlines */}
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
@@ -706,7 +702,8 @@ const HeadlinesPage = () => {
                 </div>
               </div>
             </TabsContent>
-          </Tabs>
+              </Tabs>
+            </div>
           </div>
         </div>
       </div>
