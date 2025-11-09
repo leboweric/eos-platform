@@ -60,6 +60,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   const [lastSaved, setLastSaved] = useState(null);
   const [createdTodoId, setCreatedTodoId] = useState(null); // Track ID of auto-created todo
   const autoSaveTimeoutRef = useRef(null);
+  const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -92,6 +93,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   }, [showAssigneeDropdown]);
 
   useEffect(() => {
+    // Reset initialization flag when todo changes (dialog opens)
+    isInitializedRef.current = false;
+    
     if (todo) {
       // Check if it's a multi-assignee todo
       const isMulti = todo.is_multi_assignee || (todo.assignees && todo.assignees.length > 0);
@@ -113,6 +117,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         loadAttachments(todo.id);
         loadUpdates(todo.id);
       }
+      
+      // Mark as initialized after form data is set (next tick)
+      setTimeout(() => {
+        isInitializedRef.current = true;
+      }, 0);
     } else {
       // Clear all fields and set default due date for new todos, default to current user
       setFormData({
@@ -126,6 +135,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         linkedPriorityId: null
       });
       setExistingAttachments([]);
+      
+      // Mark as initialized after form data is set (next tick)
+      setTimeout(() => {
+        isInitializedRef.current = true;
+      }, 0);
     }
     setFiles([]);
     setCreatedTodoId(null); // Reset auto-created todo ID
@@ -221,6 +235,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
     
+    // Don't trigger auto-save during initial form load
+    if (!isInitializedRef.current) return;
+    
     // Mark as having unsaved changes when user types
     setHasUnsavedChanges(true);
     
@@ -240,7 +257,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [formData.title, formData.description, formData.assignedToId, formData.assignedToIds, formData.dueDate, performAutoSave, todo]);
+  }, [formData.title, formData.description, formData.assignedToId, formData.assignedToIds, formData.dueDate, performAutoSave, todo?.id, createdTodoId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

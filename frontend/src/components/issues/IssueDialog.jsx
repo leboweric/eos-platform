@@ -85,6 +85,7 @@ const IssueDialog = ({
   const [lastSaved, setLastSaved] = useState(null);
   const [createdIssueId, setCreatedIssueId] = useState(null); // Track ID of auto-created issue
   const autoSaveTimeoutRef = useRef(null);
+  const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -101,6 +102,9 @@ const IssueDialog = ({
   }, [user]);
 
   useEffect(() => {
+    // Reset initialization flag when issue changes (dialog opens)
+    isInitializedRef.current = false;
+    
     if (issue) {
       setFormData({
         title: issue.title || '',
@@ -112,6 +116,11 @@ const IssueDialog = ({
       // Load existing attachments and updates if editing
       fetchAttachments(issue.id);
       fetchUpdates(issue.id);
+      
+      // Mark as initialized after form data is set (next tick)
+      setTimeout(() => {
+        isInitializedRef.current = true;
+      }, 0);
     } else {
       // Default to current user for new issues
       setFormData({
@@ -123,6 +132,11 @@ const IssueDialog = ({
       });
       setExistingAttachments([]);
       setUpdates([]);
+      
+      // Mark as initialized after form data is set (next tick)
+      setTimeout(() => {
+        isInitializedRef.current = true;
+      }, 0);
     }
     setNewAttachments([]);
     setUpdateText('');
@@ -243,6 +257,9 @@ const IssueDialog = ({
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
     
+    // Don't trigger auto-save during initial form load
+    if (!isInitializedRef.current) return;
+    
     // Mark as having unsaved changes when user types
     setHasUnsavedChanges(true);
     
@@ -262,7 +279,7 @@ const IssueDialog = ({
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [formData.title, formData.description, formData.ownerId, formData.status, performAutoSave, issue]);
+  }, [formData.title, formData.description, formData.ownerId, formData.status, performAutoSave, issue?.id, createdIssueId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
