@@ -22,19 +22,25 @@ import {
 } from 'lucide-react';
 import useMeeting from '../../hooks/useMeeting';
 
-const MeetingBar = ({ meetingStartTime, meetingStarted }) => {
+const MeetingBar = ({ 
+  meetingCode,
+  participants,
+  onLeave,
+  isLeader,
+  currentLeader,
+  onNavigate,
+  meetingStartTime, 
+  meetingStarted 
+}) => {
   const {
     isEnabled,
     isConnected,
-    meetingCode,
-    participants,
-    isLeader,
-    currentLeader,
     isFollowing,
-    joinMeeting,
-    leaveMeeting,
     toggleFollow
   } = useMeeting();
+  
+  // Use onLeave prop as leaveMeeting function
+  const leaveMeeting = onLeave;
 
   console.log('🟢 MeetingBar Component Render:', {
     isEnabled,
