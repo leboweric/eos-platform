@@ -863,28 +863,36 @@ export const concludeMeeting = async (req, res) => {
         }
         
         // Filter issues to only include items created/resolved during meeting
-        let filteredIssues = issues || [];
+        // Separate into 'new' and 'solved' categories like todos
+        let filteredIssues = { new: [], solved: [] };
         if (meetingStartTime && issues && Array.isArray(issues)) {
           const meetingStart = new Date(meetingStartTime);
           const originalCount = issues.length;
           
-          filteredIssues = issues.filter(issue => {
-            // Include if created during meeting
+          issues.forEach(issue => {
+            let includedAsNew = false;
+            let includedAsSolved = false;
+            
+            // Check if created during meeting
             if (issue.created_at) {
               const issueCreated = new Date(issue.created_at);
-              if (issueCreated >= meetingStart) return true;
+              if (issueCreated >= meetingStart) {
+                filteredIssues.new.push(issue);
+                includedAsNew = true;
+              }
             }
             
-            // Include if resolved during meeting
-            if (issue.is_solved && issue.resolved_at) {
+            // Check if resolved during meeting (only if not already added as new)
+            if (!includedAsNew && issue.is_solved && issue.resolved_at) {
               const issueResolved = new Date(issue.resolved_at);
-              if (issueResolved >= meetingStart) return true;
+              if (issueResolved >= meetingStart) {
+                filteredIssues.solved.push(issue);
+                includedAsSolved = true;
+              }
             }
-            
-            return false; // Exclude if neither created nor resolved during meeting
           });
           
-          console.log(`🔍 [Snapshot Filter] Issues: ${originalCount} → ${filteredIssues.length} (filtered by created_at or resolved_at >= ${meetingStart.toISOString()})`);
+          console.log(`🔍 [Snapshot Filter] Issues: ${originalCount} → ${filteredIssues.new.length} new + ${filteredIssues.solved.length} solved (filtered by created_at or resolved_at >= ${meetingStart.toISOString()})`);
         } else {
           console.warn('⚠️ [Snapshot Filter] No meeting start time available - cannot filter issues by date');
         }
@@ -904,7 +912,8 @@ export const concludeMeeting = async (req, res) => {
         console.log('✅ [Snapshot Filter] Final snapshot data:', {
           todosAdded: filteredTodos.added?.length || 0,
           todosCompleted: filteredTodos.completed?.length || 0,
-          issues: filteredIssues.length
+          issuesNew: filteredIssues.new?.length || 0,
+          issuesSolved: filteredIssues.solved?.length || 0
         });
         
         // Create snapshot
