@@ -3905,11 +3905,16 @@ const WeeklyAccountabilityMeetingPage = () => {
           setLongTermIssues(issues);
         }
       } else if (action === 'archive-closed') {
-        // Remove all closed issues for the specified timeline
+        // Remove all closed/solved/resolved/completed issues for the specified timeline
+        const isNotClosed = (i) => {
+          return i.status !== 'closed' && i.status !== 'solved' && 
+                 i.status !== 'resolved' && i.status !== 'completed';
+        };
+        
         if (timeline === 'short_term') {
-          setShortTermIssues(prev => prev.filter(i => i.status !== 'closed'));
+          setShortTermIssues(prev => prev.filter(isNotClosed));
         } else if (timeline === 'long_term') {
-          setLongTermIssues(prev => prev.filter(i => i.status !== 'closed'));
+          setLongTermIssues(prev => prev.filter(isNotClosed));
         }
       } else if (action === 'meeting-ended') {
         // Meeting has been concluded by presenter
@@ -6278,6 +6283,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                               await issuesService.archiveClosedIssues(issueTimeline);
                               await fetchIssuesData();
                               setSuccess(`Successfully archived ${count} closed issue${count !== 1 ? 's' : ''}`);
+                              
+                              // Broadcast archive-closed action to other meeting participants
+                              if (meetingCode && broadcastIssueListUpdate) {
+                                broadcastIssueListUpdate({
+                                  action: 'archive-closed',
+                                  timeline: issueTimeline
+                                });
+                              }
                             } catch (error) {
                               console.error('Failed to archive issues:', error);
                               setError('Failed to archive closed issues');

@@ -248,12 +248,29 @@ export const createIssue = async (req, res) => {
     );
     
     const newIssue = result.rows[0];
+    
+    // Fetch the full issue with owner details populated
+    const enrichedResult = await db.query(
+      `SELECT 
+        i.*,
+        owner.first_name || ' ' || owner.last_name as owner_name,
+        creator.first_name || ' ' || creator.last_name as created_by_name,
+        t.name as team_name
+      FROM issues i
+      LEFT JOIN users owner ON i.owner_id = owner.id
+      LEFT JOIN users creator ON i.created_by_id = creator.id
+      LEFT JOIN teams t ON i.team_id = t.id
+      WHERE i.id = $1`,
+      [newIssue.id]
+    );
+    
+    const enrichedIssue = enrichedResult.rows[0];
 
     // Broadcast to meeting participants if created during a meeting
     try {
       if (meeting_id && meetingSocketService) {
         await meetingSocketService.broadcastToMeetingById(meeting_id, 'issue-created', {
-          issue: newIssue,
+          issue: enrichedIssue,
           createdBy: req.user.first_name + ' ' + req.user.last_name
         });
       }
@@ -263,7 +280,7 @@ export const createIssue = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: newIssue
+      data: enrichedIssue
     });
   } catch (error) {
     console.error('Error creating issue:', error);
