@@ -85,6 +85,7 @@ import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
 import HeadlineItem from '../components/headlines/HeadlineItem';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
+import CascadingMessageDialog from '../components/cascadingMessages/CascadingMessageDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { Label } from '@/components/ui/label';
@@ -7670,69 +7671,26 @@ const WeeklyAccountabilityMeetingPage = () => {
         />
         
         {/* Cascading Message Dialog */}
-        <Dialog open={showCascadeDialog} onOpenChange={setShowCascadeDialog}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Send Cascading Message</DialogTitle>
-              <DialogDescription>
-                Share important updates with teams across the organization
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label htmlFor="cascade-message">Message</Label>
-                <Textarea
-                  id="cascade-message"
-                  value={cascadeMessage}
-                  onChange={(e) => setCascadeMessage(e.target.value)}
-                  placeholder="Enter your message to cascade to teams..."
-                  className="min-h-[120px] mt-2"
-                />
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="cascade-all"
-                    checked={cascadeToAll}
-                    onCheckedChange={setCascadeToAll}
-                  />
-                  <Label htmlFor="cascade-all">Send to all teams</Label>
-                </div>
-                {!cascadeToAll && availableTeams.length > 0 && (
-                  <div>
-                    <Label>Select Teams</Label>
-                    <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                      {availableTeams.map((team) => (
-                        <div key={team.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`team-${team.id}`}
-                            checked={selectedTeams.includes(team.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedTeams([...selectedTeams, team.id]);
-                              } else {
-                                setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={`team-${team.id}`}>{team.name}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCascadeDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSendCascade} disabled={!cascadeMessage || (!cascadeToAll && selectedTeams.length === 0)}>
-                Send Message
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <CascadingMessageDialog
+          open={showCascadeDialog}
+          onOpenChange={setShowCascadeDialog}
+          onSave={async (messageData) => {
+            try {
+              const effectiveTeamId = getEffectiveTeamId(teamId, user);
+              await cascadingMessagesService.createCascadingMessage(
+                orgId,
+                effectiveTeamId,
+                messageData
+              );
+              setSuccess('Cascading message sent successfully!');
+              setTimeout(() => setSuccess(null), 3000);
+            } catch (error) {
+              console.error('Failed to send cascading message:', error);
+              setError('Failed to send cascading message');
+              setTimeout(() => setError(null), 3000);
+            }
+          }}
+        />
 
         {showPriorityDialog && (
           <PriorityDialog
