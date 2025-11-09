@@ -2247,23 +2247,39 @@ const WeeklyAccountabilityMeetingPage = () => {
           });
         }
       } else {
-        savedTodo = await todosService.createTodo({
+        const response = await todosService.createTodo({
           meeting_id: sessionId,
           ...todoData,
           organization_id: orgId,
           department_id: effectiveTeamId
         });
-        // Only show success message for manual saves, not auto-saves
-        if (!options.isAutoSave) {
-          setSuccess('To-do created successfully');
-        }
         
-        // Broadcast new todo to other participants
-        if (meetingCode && broadcastTodoUpdate) {
-          broadcastTodoUpdate({
-            action: 'create',
-            todo: savedTodo.data || savedTodo
-          });
+        // Handle multi-assignee response (array of To-Dos)
+        if (response.isGroup && Array.isArray(response.data)) {
+          savedTodo = response;
+          if (!options.isAutoSave) {
+            setSuccess(`${response.data.length} To-Dos created successfully`);
+          }
+          
+          // Broadcast refresh action to sync all participants
+          if (meetingCode && broadcastTodoUpdate) {
+            broadcastTodoUpdate({
+              action: 'refresh'
+            });
+          }
+        } else {
+          savedTodo = response;
+          if (!options.isAutoSave) {
+            setSuccess('To-do created successfully');
+          }
+          
+          // Broadcast new todo to other participants
+          if (meetingCode && broadcastTodoUpdate) {
+            broadcastTodoUpdate({
+              action: 'create',
+              todo: savedTodo.data || savedTodo
+            });
+          }
         }
       }
       

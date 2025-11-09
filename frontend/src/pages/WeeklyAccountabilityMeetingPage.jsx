@@ -2253,23 +2253,41 @@ const WeeklyAccountabilityMeetingPage = () => {
           });
         }
       } else {
-        savedTodo = await todosService.createTodo({
+        const response = await todosService.createTodo({
           ...todoData,
           organization_id: orgId,
           department_id: effectiveTeamId,
           meeting_id: sessionId  // Link todo to current meeting session
         });
-        // Only show success message for manual saves, not auto-saves
-        if (!options.isAutoSave) {
-          setSuccess('To-do created successfully');
-        }
         
-        // Broadcast new todo to other participants
-        if (meetingCode && broadcastTodoUpdate) {
-          broadcastTodoUpdate({
-            action: 'create',
-            todo: savedTodo.data || savedTodo
-          });
+        // Handle multi-assignee response (array of To-Dos)
+        if (response.isGroup && Array.isArray(response.data)) {
+          savedTodo = response;
+          if (!options.isAutoSave) {
+            setSuccess(`${response.data.length} To-Dos created successfully`);
+          }
+          
+          // Broadcast each todo creation (backend already broadcasts via socket)
+          // Frontend broadcast is for real-time UI sync
+          if (meetingCode && broadcastTodoUpdate) {
+            // Broadcast a refresh action to sync all participants
+            broadcastTodoUpdate({
+              action: 'refresh'
+            });
+          }
+        } else {
+          savedTodo = response;
+          if (!options.isAutoSave) {
+            setSuccess('To-do created successfully');
+          }
+          
+          // Broadcast new todo to other participants
+          if (meetingCode && broadcastTodoUpdate) {
+            broadcastTodoUpdate({
+              action: 'create',
+              todo: savedTodo.data || savedTodo
+            });
+          }
         }
       }
       

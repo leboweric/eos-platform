@@ -159,12 +159,23 @@ const TodosPage = () => {
           setSuccess(`${labels.todos_label.slice(0, -1)} updated successfully`);
         }
       } else {
-        savedTodo = await todosService.createTodo({
+        const response = await todosService.createTodo({
           ...todoData,
           department_id: selectedDepartment?.id
         });
-        if (!options.isAutoSave) {
-          setSuccess('To-do created successfully');
+        
+        // Handle multi-assignee response (array of To-Dos)
+        if (response.isGroup && Array.isArray(response.data)) {
+          savedTodo = response; // Keep the full response for now
+          if (!options.isAutoSave) {
+            setSuccess(`${response.data.length} To-Dos created successfully`);
+          }
+        } else {
+          savedTodo = response;
+          if (!options.isAutoSave) {
+            setSuccess('To-do created successfully');
+          }
+        }
         }
       }
       
