@@ -3973,6 +3973,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('➡️ RTL setting changed to:', newRTL);
         setIsRTL(newRTL);
         localStorage.setItem('scorecardRTL', newRTL.toString());
+      } else if (action === 'scroll-sync') {
+        // Sync scroll position from leader
+        const { scrollY } = event.detail;
+        if (isFollowing && scrollY !== undefined) {
+          console.log('📜 Syncing scroll to:', scrollY);
+          window.scrollTo({ top: scrollY, behavior: 'smooth' });
+        }
       } else if (action === 'priority-updated') {
         // Update rock/priority status or other fields
         const { priorityId, updates } = event.detail;
@@ -4156,6 +4163,17 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-todo-created', handleTodoCreated);
     window.addEventListener('meeting-headline-created', handleHeadlineCreated);
     
+    // Scroll sync handler
+    const handleScrollSync = (event) => {
+      const { scrollY } = event.detail;
+      if (isFollowing && scrollY !== undefined) {
+        console.log('📜 Syncing scroll to:', scrollY);
+        window.scrollTo({ top: scrollY, behavior: 'smooth' });
+      }
+    };
+    
+    window.addEventListener('meeting-scroll-sync', handleScrollSync);
+    
     return () => {
       window.removeEventListener('meeting-vote-update', handleVoteUpdate);
       window.removeEventListener('meeting-issue-update', handleIssueUpdate);
@@ -4169,12 +4187,40 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-issue-created', handleIssueCreated);
       window.removeEventListener('meeting-todo-created', handleTodoCreated);
       window.removeEventListener('meeting-headline-created', handleHeadlineCreated);
+      window.removeEventListener('meeting-scroll-sync', handleScrollSync);
       // Cleanup rating timeout timer
       if (ratingTimeoutTimer) {
         clearTimeout(ratingTimeoutTimer);
       }
     };
   }, [user?.id, isLeader, ratingTimeoutTimer]);
+
+  // Scroll sync: Broadcast scroll position when leader scrolls
+  useEffect(() => {
+    if (!isLeader || !meetingCode) return;
+
+    let scrollTimeout;
+    const handleScroll = () => {
+      // Throttle scroll events to avoid spam
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const scrollY = window.scrollY || window.pageYOffset;
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'scroll-sync',
+            scrollY: scrollY
+          });
+        }
+      }, 100); // Throttle to 100ms
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [isLeader, meetingCode, broadcastIssueListUpdate]);
 
   const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
@@ -4319,6 +4365,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <input
                     type="checkbox"
                     checked={isRTL}
+                    disabled={isFollowing}  // Disable when following leader
                     onChange={(e) => {
                       const newRTL = e.target.checked;
                       setIsRTL(newRTL);
@@ -6070,7 +6117,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               // Broadcast update to other meeting participants
                                               if (meetingCode && broadcastTodoUpdate) {
                                                 broadcastTodoUpdate({
-                                                  action: 'refresh'
+                                                  action: 'status',
+                                                  todoId: todo.id,
+                                                  status: newStatus,
+                                                  completed: newStatus === 'complete',
+                                                  assigneeId: todo._currentAssignee?.id
                                                 });
                                               }
                                             } catch (error) {
