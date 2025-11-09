@@ -333,39 +333,26 @@ export const generateMeetingSummaryHTML = (meetingData) => {
       ` : ''}
 
       <!-- HEADLINES -->
-      ${(headlines.customer?.length > 0 || headlines.employee?.length > 0) ? `
-        <div class="section">
-          <h2 class="section-title">Headlines</h2>
-          
-          ${headlines.customer?.length > 0 ? `
-            <div class="subsection">
-              <div class="subsection-title">Customer/External Headlines</div>
-              <ul class="list">
-                ${headlines.customer.map(headline => `
-                  <li>
-                    <div class="list-item-title">${headline.title || headline.text || headline}</div>
-                    ${headline.description ? `<div class="list-item-meta">${headline.description}</div>` : ''}
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          ${headlines.employee?.length > 0 ? `
-            <div class="subsection">
-              <div class="subsection-title">Employee/Internal Headlines</div>
-              <ul class="list">
-                ${headlines.employee.map(headline => `
-                  <li>
-                    <div class="list-item-title">${headline.title || headline.text || headline}</div>
-                    ${headline.description ? `<div class="list-item-meta">${headline.description}</div>` : ''}
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
+      ${(() => {
+        // Combine customer and employee headlines into single list (matches Meeting History snapshot)
+        const allHeadlines = [
+          ...(headlines.customer || []),
+          ...(headlines.employee || [])
+        ];
+        
+        return allHeadlines.length > 0 ? `
+          <div class="section">
+            <h2 class="section-title">Headlines</h2>
+            <ul class="list">
+              ${allHeadlines.map(headline => `
+                <li>
+                  <div class="list-item-title">${headline.headline || headline.title || headline.text || headline}</div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : '';
+      })()}
 
       <!-- CASCADING MESSAGES -->
       ${cascadingMessages?.length > 0 ? `
@@ -468,16 +455,7 @@ export const generateMeetingSummaryHTML = (meetingData) => {
         </div>
       ` : ''}
 
-      <!-- MEETING RATING -->
-      ${rating ? `
-        <div class="section">
-          <h2 class="section-title">Meeting Rating</h2>
-          <div class="rating-display">
-            <span class="rating-stars">${'★'.repeat(Math.round(rating / 2))}${'☆'.repeat(5 - Math.round(rating / 2))}</span>
-            <strong>${rating}/10</strong>
-          </div>
-        </div>
-      ` : ''}
+      <!-- MEETING RATING - Removed to match Meeting History snapshot display -->
     </div>
   </div>
 </body>
