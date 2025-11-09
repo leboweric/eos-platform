@@ -885,7 +885,7 @@ export const concludeMeeting = async (req, res) => {
           cascadingMessage: cascadingMessage || '',
           headlines: headlines || { customer: [], employee: [] },
           cascadingMessages: cascadingMessages || [],
-          aiSummary: null  // Fixed: aiSummary was undefined
+          aiSummary: aiSummary  // Include AI summary in snapshot (matches email)
         };
         
         console.log('✅ [Snapshot Filter] Final snapshot data:', {
