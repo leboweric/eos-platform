@@ -191,8 +191,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     fetchCurrentTeam();
   }, [teamId, user]);
+  
   const { 
-    meetingCode, 
+    meetingCode,
     participants, 
     joinMeeting,
     leaveMeeting, 
