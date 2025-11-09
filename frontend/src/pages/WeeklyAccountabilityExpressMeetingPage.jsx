@@ -365,10 +365,20 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Toggle expansion for a priority
   const togglePriorityExpansion = (priorityId, e) => {
     e.stopPropagation();
+    const newExpandedState = !expandedPriorities[priorityId];
     setExpandedPriorities(prev => ({
       ...prev,
-      [priorityId]: !prev[priorityId]
+      [priorityId]: newExpandedState
     }));
+    
+    // Broadcast expansion state to other meeting participants
+    if (meetingCode && broadcastIssueListUpdate) {
+      broadcastIssueListUpdate({
+        action: 'priority-expanded',
+        priorityId: priorityId,
+        expanded: newExpandedState
+      });
+    }
   };
 
   // Toggle expansion for individual person sections  
@@ -3993,6 +4003,16 @@ const WeeklyAccountabilityMeetingPage = () => {
           const targetScrollY = (scrollPercentage / 100) * maxScroll;
           console.log('📜 Syncing scroll to:', scrollPercentage.toFixed(1) + '%', '→', targetScrollY + 'px');
           window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+        }
+      } else if (action === 'priority-expanded') {
+        // Sync Rock expansion state from leader
+        const { priorityId, expanded } = event.detail;
+        if (isFollowing && priorityId !== undefined) {
+          console.log('📂 Syncing Rock expansion:', priorityId, expanded ? 'expanded' : 'collapsed');
+          setExpandedPriorities(prev => ({
+            ...prev,
+            [priorityId]: expanded
+          }));
         }
       } else if (action === 'priority-updated') {
         // Update rock/priority status or other fields
