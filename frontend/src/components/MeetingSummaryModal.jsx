@@ -344,7 +344,7 @@ export const MeetingSummaryModal = ({
               <DocumentSection 
                 title="Cascading Messages" 
                 collapsible={true}
-                defaultOpen={false}
+                defaultOpen={cascadingMessages.length > 0}
                 isEmpty={cascadingMessages.length === 0}
               >
                 {cascadingMessages.length === 0 ? (
