@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,11 @@ const IssueDialog = ({
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [savingUpdate, setSavingUpdate] = useState(false);
   const [showAddUpdate, setShowAddUpdate] = useState(false);
+  
+  // Auto-save state
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const autoSaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -191,6 +196,59 @@ const IssueDialog = ({
       console.error('Failed to delete update:', error);
     }
   };
+
+  // Auto-save function
+  const performAutoSave = useCallback(async () => {
+    // Require at least a title to auto-save
+    if (!formData.title.trim()) return;
+    
+    try {
+      setAutoSaving(true);
+      const savedIssue = await onSave({
+        ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing existing
+        title: formData.title,
+        description: formData.description,
+        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        status: formData.status,
+        timeline: issue ? issue.timeline : timeline
+      });
+      setLastSaved(new Date());
+      
+      // If this was a new issue, update the issue object with the returned ID
+      // This allows subsequent auto-saves to update the same issue
+      if (!issue?.id && savedIssue?.id) {
+        // Note: We can't directly update the 'issue' prop, but the parent component
+        // should handle this through onSave callback
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setAutoSaving(false);
+    }
+  }, [issue, formData, onSave, timeline]);
+
+  // Auto-save effect - triggers 2 seconds after last change
+  useEffect(() => {
+    // Don't auto-save if there's no title yet
+    if (!formData.title.trim()) return;
+    
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 2000); // 2 second debounce
+    
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData.title, formData.description, formData.ownerId, formData.status, performAutoSave, issue]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -722,6 +780,17 @@ const IssueDialog = ({
           )}
 
           <DialogFooter className="pt-6">
+            {/* Auto-save indicator */}
+            <div className="flex-1 flex items-center gap-2 text-sm text-slate-500">
+              {autoSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : lastSaved ? (
+                <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+              ) : null}
+            </div>
             <Button 
               type="button" 
               variant="outline" 

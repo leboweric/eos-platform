@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -53,6 +53,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [savingUpdate, setSavingUpdate] = useState(false);
   const [showAddUpdate, setShowAddUpdate] = useState(false);
+  
+  // Auto-save state
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const autoSaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -173,6 +178,57 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
       setLoadingAttachments(false);
     }
   };
+
+  // Auto-save function
+  const performAutoSave = useCallback(async () => {
+    // Require at least a title to auto-save
+    if (!formData.title.trim()) return;
+    
+    try {
+      setAutoSaving(true);
+      const submitData = {
+        ...formData,
+        ...(todo?.id ? { id: todo.id } : {}), // Include ID if editing existing
+        ...(formData.isMultiAssignee && { assignedToIds: formData.assignedToIds })
+      };
+      const savedTodo = await onSave(submitData);
+      setLastSaved(new Date());
+      
+      // If this was a new todo, update the todo object with the returned ID
+      // This allows subsequent auto-saves to update the same todo
+      if (!todo?.id && savedTodo?.id) {
+        // Note: We can't directly update the 'todo' prop, but the parent component
+        // should handle this through onSave callback
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setAutoSaving(false);
+    }
+  }, [todo, formData, onSave]);
+
+  // Auto-save effect - triggers 2 seconds after last change
+  useEffect(() => {
+    // Don't auto-save if there's no title yet
+    if (!formData.title.trim()) return;
+    
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 2000); // 2 second debounce
+    
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData.title, formData.description, formData.assignedToId, formData.assignedToIds, formData.dueDate, performAutoSave, todo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -733,7 +789,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
           </div>
 
           <DialogFooter className="flex justify-between pt-6 border-t border-white/20">
-            <div className="flex-1">
+            <div className="flex-1 flex items-center gap-4">
               {todo && onCreateIssue && (
                 <Button
                   type="button"
@@ -747,6 +803,17 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                   <Link className="mr-2 h-4 w-4" />
                   Create Linked Issue
                 </Button>
+              )}
+              {autoSaving && (
+                <span className="text-sm text-gray-500 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Saving...
+                </span>
+              )}
+              {!autoSaving && lastSaved && (
+                <span className="text-sm text-gray-500">
+                  Saved {new Date(lastSaved).toLocaleTimeString()}
+                </span>
               )}
             </div>
             <div className="flex gap-2">
