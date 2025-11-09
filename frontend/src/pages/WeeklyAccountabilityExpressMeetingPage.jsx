@@ -7729,12 +7729,15 @@ const WeeklyAccountabilityMeetingPage = () => {
               setSuccess('Headline saved successfully');
               
               // Broadcast headline creation to other meeting participants
+              console.log('📰 Headline saved, checking broadcast:', { meetingCode, hasBroadcast: !!broadcastIssueListUpdate, newHeadline });
               if (meetingCode && broadcastIssueListUpdate) {
                 console.log('📡 Broadcasting headline creation:', newHeadline);
                 broadcastIssueListUpdate({
                   action: 'headline-created',
                   headline: newHeadline.data || newHeadline
                 });
+              } else {
+                console.warn('⚠️ Headline broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
               }
             } catch (error) {
               console.error('Failed to save headline:', error);
