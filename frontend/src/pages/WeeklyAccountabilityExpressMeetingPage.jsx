@@ -7085,7 +7085,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       className="h-5 w-5"
                     />
                     <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
-                      Archive all completed To-Dos and solved Issues
+                      Archive all completed To-Dos, solved Issues, and Headlines
                     </label>
                   </div>
                 </div>

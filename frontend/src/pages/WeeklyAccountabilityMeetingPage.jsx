@@ -7100,7 +7100,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       className="h-5 w-5"
                     />
                     <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
-                      Archive all completed To-Dos and solved Issues
+                      Archive all completed To-Dos, solved Issues, and Headlines
                     </label>
                   </div>
                 </div>
@@ -7323,6 +7323,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                           added: meetingData.todos?.added
                         });
                         console.log('🔍 [Debug] Issues being sent:', meetingData.issues);
+                        console.log('🔍 [Debug] Headlines being sent:', meetingData.headlines);
+                        console.log('🔍 [Debug] Cascading Messages being sent:', meetingData.cascadingMessages);
 
                         // ALWAYS conclude the meeting session in database
                         let emailResult = null;
