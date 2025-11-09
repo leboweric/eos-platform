@@ -34,7 +34,7 @@ export const getHeadlines = async (req, res) => {
     paramIndex++;
 
     // Get headlines with creator information
-    const result = await query(
+    const result = await db.query(
       `SELECT 
         h.*,
         u.first_name as created_by_first_name,
@@ -101,7 +101,7 @@ export const createHeadline = async (req, res) => {
     }
 
     const headlineId = uuidv4();
-    const result = await query(
+    const result = await db.query(
       `INSERT INTO headlines (
         id, organization_id, team_id, type, text, created_by, meeting_id
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -110,7 +110,7 @@ export const createHeadline = async (req, res) => {
     );
 
     // Fetch the complete headline with user information
-    const headlineResult = await query(
+    const headlineResult = await db.query(
       `SELECT 
         h.*,
         u.first_name as created_by_first_name,
@@ -164,7 +164,7 @@ export const updateHeadline = async (req, res) => {
     const userId = req.user.id;
 
     // Check if headline exists and belongs to the organization
-    const existingHeadline = await query(
+    const existingHeadline = await db.query(
       'SELECT * FROM headlines WHERE id = $1 AND organization_id = $2',
       [headlineId, orgId]
     );
@@ -188,7 +188,7 @@ export const updateHeadline = async (req, res) => {
       });
     }
 
-    const result = await query(
+    const result = await db.query(
       `UPDATE headlines 
        SET text = $1, updated_at = NOW()
        WHERE id = $2 AND organization_id = $3
@@ -218,7 +218,7 @@ export const deleteHeadline = async (req, res) => {
     const userId = req.user.id;
 
     // Check if headline exists and user has permission to delete
-    const existingHeadline = await query(
+    const existingHeadline = await db.query(
       'SELECT * FROM headlines WHERE id = $1 AND organization_id = $2',
       [headlineId, orgId]
     );
@@ -231,7 +231,7 @@ export const deleteHeadline = async (req, res) => {
     }
 
     // Only allow the creator or admin to delete
-    const userResult = await query(
+    const userResult = await db.query(
       'SELECT role FROM users WHERE id = $1',
       [userId]
     );
@@ -243,7 +243,7 @@ export const deleteHeadline = async (req, res) => {
       });
     }
 
-    await query(
+    await db.query(
       'DELETE FROM headlines WHERE id = $1 AND organization_id = $2',
       [headlineId, orgId]
     );
@@ -270,7 +270,7 @@ export const archiveHeadline = async (req, res) => {
     const userId = req.user.id;
 
     // Check if headline exists and belongs to the organization
-    const existingHeadline = await query(
+    const existingHeadline = await db.query(
       'SELECT * FROM headlines WHERE id = $1 AND organization_id = $2',
       [headlineId, orgId]
     );
@@ -295,7 +295,7 @@ export const archiveHeadline = async (req, res) => {
     }
 
     // Archive the headline
-    const result = await query(
+    const result = await db.query(
       `UPDATE headlines 
        SET archived = true, archived_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND organization_id = $2
@@ -337,7 +337,7 @@ export const archiveHeadlines = async (req, res) => {
       params.push(teamId);
     }
 
-    const result = await query(
+    const result = await db.query(
       `UPDATE headlines 
        SET archived = true, archived_at = NOW()
        WHERE ${conditions.join(' AND ')}
