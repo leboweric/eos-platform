@@ -5653,11 +5653,31 @@ const WeeklyAccountabilityMeetingPage = () => {
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
               <div className="space-y-4">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center">
                   <p className="text-slate-600 text-lg leading-relaxed">
                     Share critical information about customers and employees that the team needs to know.
                   </p>
-                  {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
+                  <div className="flex items-center gap-3">
+                    {/* Add Headline Button */}
+                    <Button
+                      onClick={() => setShowHeadlineDialog(true)}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Headline
+                    </Button>
+                    
+                    {/* Send Cascading Message Button */}
+                    <Button
+                      onClick={() => setShowCascadeDialog(true)}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      Send Cascading Message
+                    </Button>
+                    {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
                     <Button
                       variant="outline"
                       className="text-white border-0 hover:opacity-90 transition-opacity"
@@ -5681,6 +5701,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       Archive Headlines ({headlines.customer.length + headlines.employee.length})
                     </Button>
                   )}
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -6122,9 +6143,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </p>
               </div>
               
-              {/* Timeline Tabs */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 inline-flex shadow-sm mb-4">
-                <div className="flex gap-1">
+              {/* Timeline Tabs and Send Cascading Message Button */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 inline-flex shadow-sm">
+                  <div className="flex gap-1">
                   <button
                     onClick={() => setIssueTimeline('short_term')}
                     className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
@@ -6159,7 +6181,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                     Long Term
                     <span className="text-sm opacity-80">({longTermIssues?.length || 0})</span>
                   </button>
+                  </div>
                 </div>
+                
+                {/* Send Cascading Message Button */}
+                <Button
+                  onClick={() => setShowCascadeDialog(true)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  Send Cascading Message
+                </Button>
               </div>
 
 {(() => {
