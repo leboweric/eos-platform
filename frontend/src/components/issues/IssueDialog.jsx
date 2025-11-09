@@ -789,7 +789,7 @@ const IssueDialog = ({
             <div className="flex-1 flex items-center gap-2 text-sm text-slate-500">
               {(autoSaving || hasUnsavedChanges) ? (
                 <div className="flex items-center gap-1">
-                  <span>Saving</span>
+                  <span>Auto Saving</span>
                   <span className="flex gap-0.5">
                     <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
                     <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>

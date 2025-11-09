@@ -811,7 +811,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
               )}
               {(autoSaving || hasUnsavedChanges) && (
                 <div className="text-sm text-gray-500 flex items-center gap-1">
-                  <span>Saving</span>
+                  <span>Auto Saving</span>
                   <span className="flex gap-0.5">
                     <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
                     <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
