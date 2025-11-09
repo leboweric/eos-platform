@@ -151,7 +151,7 @@ export const getCascadingMessages = async (req, res) => {
        WHERE cmr.to_team_id = $1
          AND cm.organization_id = $2
          AND cm.meeting_date BETWEEN $3 AND $4
-         ${includeArchived === 'true' ? '' : 'AND cmr.deleted_at IS NULL'}
+          ${includeArchived === 'true' ? 'AND cmr.deleted_at IS NOT NULL' : 'AND cmr.deleted_at IS NULL'}
        ORDER BY cm.created_at DESC`;
       queryParams = [teamId, orgId, startDate, endDate];
     } else {
@@ -168,8 +168,7 @@ export const getCascadingMessages = async (req, res) => {
        JOIN users u ON cm.created_by = u.id
        WHERE cmr.to_team_id = $1
          AND cm.organization_id = $2
-         ${includeArchived === 'true' ? '' : 'AND cmr.deleted_at IS NULL'}
-         AND (cmr.is_read = false OR cm.created_at > NOW() - INTERVAL '30 days')
+          ${includeArchived === 'true' ? 'AND cmr.deleted_at IS NOT NULL' : 'AND cmr.deleted_at IS NULL AND (cmr.is_read = false OR cm.created_at > NOW() - INTERVAL \'30 days\')'}
        ORDER BY cm.created_at DESC
        LIMIT 20`;
       queryParams = [teamId, orgId];
