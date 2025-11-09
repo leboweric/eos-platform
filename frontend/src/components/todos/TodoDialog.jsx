@@ -817,22 +817,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between pt-6 border-t border-white/20">
-            <div className="flex-1 flex items-center gap-4">
-              {todo && onCreateIssue && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    onCreateIssue(todo);
-                    onOpenChange(false);
-                  }}
-                  className="mr-auto bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
-                >
-                  <Link className="mr-2 h-4 w-4" />
-                  Create Linked Issue
-                </Button>
-              )}
+          <DialogFooter className="pt-6 border-t border-white/20">
+            {/* Auto-save indicator row */}
+            <div className="w-full mb-3">
               {(autoSaving || hasUnsavedChanges) && (
                 <div className="text-sm text-gray-500 flex items-center gap-1">
                   <span>Auto Saving</span>
@@ -849,7 +836,26 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            
+            {/* Buttons row */}
+            <div className="w-full flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                {todo && onCreateIssue && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      onCreateIssue(todo);
+                      onOpenChange(false);
+                    }}
+                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+                  >
+                    <Link className="mr-2 h-4 w-4" />
+                    Create Linked Issue
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -875,10 +881,11 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {todo?.id ? 'Close' : 'Create'} To-Do
+                  {todo?.id ? 'Close' : 'Create'}
                 </>
                 )}
               </Button>
+              </div>
             </div>
           </DialogFooter>
         </form>
