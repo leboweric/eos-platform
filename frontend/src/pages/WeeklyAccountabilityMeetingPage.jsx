@@ -4121,6 +4121,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         const { viewType } = event.detail;
         console.log('📊 Scorecard view changed to:', viewType);
         setScorecardViewType(viewType);
+      } else if (action === 'scorecard-rtl-change') {
+        // Update RTL setting when leader changes it
+        const { isRTL: newRTL } = event.detail;
+        console.log('➡️ RTL setting changed to:', newRTL);
+        setIsRTL(newRTL);
+        localStorage.setItem('scorecardRTL', newRTL.toString());
       } else if (action === 'priority-updated') {
         // Update rock/priority status or other fields
         const { priorityId, updates } = event.detail;
@@ -4466,8 +4472,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                     type="checkbox"
                     checked={isRTL}
                     onChange={(e) => {
-                      setIsRTL(e.target.checked);
-                      localStorage.setItem('scorecardRTL', e.target.checked.toString());
+                      const newRTL = e.target.checked;
+                      setIsRTL(newRTL);
+                      localStorage.setItem('scorecardRTL', newRTL.toString());
+                      // Broadcast RTL setting change to other participants
+                      if (meetingCode && broadcastIssueListUpdate) {
+                        broadcastIssueListUpdate({
+                          action: 'scorecard-rtl-change',
+                          isRTL: newRTL
+                        });
+                      }
                     }}
                     className="rounded border-gray-300"
                     style={{
