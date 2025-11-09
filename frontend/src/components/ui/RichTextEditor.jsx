@@ -109,7 +109,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
   };
 
   return (
-    <div className={`border rounded-xl overflow-hidden bg-white/80 backdrop-blur-sm ${className}`}>
+    <div className={`h-full flex flex-col border rounded-xl overflow-hidden bg-white/80 backdrop-blur-sm ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 border-b bg-slate-50/50">
         <ToolbarButton icon={Bold} command="bold" title="Bold (Ctrl+B)" />
@@ -160,7 +160,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
       <div
         ref={editorRef}
         contentEditable
-        className="min-h-[120px] p-3 focus:outline-none rich-text-content"
+        className="flex-1 p-3 focus:outline-none rich-text-content overflow-y-auto"
         onInput={handleChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
