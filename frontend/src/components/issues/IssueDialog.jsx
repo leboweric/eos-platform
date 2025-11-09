@@ -815,7 +815,8 @@ const IssueDialog = ({
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type={issue || createdIssueId ? 'button' : 'submit'}
+              onClick={issue || createdIssueId ? onClose : undefined}
               disabled={loading || uploadingFiles}
               className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
               style={{
