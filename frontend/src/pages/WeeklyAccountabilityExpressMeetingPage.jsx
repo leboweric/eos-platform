@@ -5663,7 +5663,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <Button
                       onClick={() => setShowHeadlineDialog(true)}
                       variant="outline"
-                      className="flex items-center gap-2"
+                      className="text-white border-0 hover:opacity-90 transition-opacity flex items-center gap-2"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Plus className="h-4 w-4" />
                       Add Headline
@@ -5673,7 +5676,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <Button
                       onClick={() => setShowCascadeDialog(true)}
                       variant="outline"
-                      className="flex items-center gap-2"
+                      className="text-white border-0 hover:opacity-90 transition-opacity flex items-center gap-2"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Send className="h-4 w-4" />
                       Send Cascading Message
@@ -6189,7 +6195,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <Button
                   onClick={() => setShowCascadeDialog(true)}
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="text-white border-0 hover:opacity-90 transition-opacity flex items-center gap-2"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
                 >
                   <Send className="h-4 w-4" />
                   Send Cascading Message
