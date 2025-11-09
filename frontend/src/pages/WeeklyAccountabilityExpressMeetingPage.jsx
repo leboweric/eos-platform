@@ -6124,7 +6124,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                             
                             {/* To-Do Rows */}
-                            {assignee.todos.map((todo, index) => {
+                            {assignee.todos.map(todo => {
+                              // Check completion status - use todo.status as ONLY source of truth
                               const isComplete = todo.status === 'complete' || todo.status === 'completed';
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
                               const overdue = isOverdue(todo);
@@ -6158,10 +6159,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                            todo.status === 'in-progress' ? themeColors.primary : 
                                                            'transparent',
                                             border: `2px solid ${isComplete ? themeColors.primary : '#E2E8F0'}`
-                                          }}
-                                          onContextMenu={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
                                           }}
                                           onClick={async (e) => {
                                             e.stopPropagation();
@@ -6232,7 +6229,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           setShowTodoDialog(true);
                                         }}
                                       >
-                                        <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
+                                        <div className={`font-semibold leading-tight ${
+                                          isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                                        }`}>
                                           {todo.title}
                                           {todo.isMultiAssignee && (
                                             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
@@ -6253,7 +6252,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       {/* Due Date */}
                                       <div className="w-20 text-right">
                                         {todo.due_date && (
-                                          <span className="text-sm text-slate-600">
+                                          <span className="text-sm font-medium text-slate-600">
                                             {formatDateSafe(todo.due_date, 'MMM d')}
                                           </span>
                                         )}
@@ -6562,7 +6561,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     {/* Created Date */}
                                     <div className="w-24 text-center">
                                       <span className="text-sm text-slate-600">
-                                        {new Date(issue.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        {issue.created_at ? new Date(issue.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
                                       </span>
                                     </div>
                                     
@@ -7108,7 +7107,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             Recording is still active
                           </div>
                           <p className="text-yellow-700 text-sm">
-                            Please click "Stop Recording" first to generate the AI summary and include it in your meeting recap.
+                            Please click "Stop Note Taking" first to generate the AI summary and include it in your meeting recap.
                           </p>
                         </div>
                       )}
@@ -7120,7 +7119,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                       )}
                       
                       <Button
-                        type="button"
                         className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
                           aiRecordingState.isRecording 
                             ? "bg-gray-400 cursor-not-allowed opacity-50" 
@@ -7131,37 +7129,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                             ? undefined 
                             : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
-                        onClick={(e) => {
-                          console.log('🔴 MAIN CONCLUDE BUTTON CLICKED', {
-                            timestamp: new Date().toISOString(),
-                            event: e,
-                            target: e.target,
-                            currentTarget: e.currentTarget,
-                            aiRecordingState,
-                            disabled: aiRecordingState.isRecording,
-                            meetingCode,
-                            isLeader,
-                            sessionId,
-                            user: user ? { id: user.id, email: user.email } : null,
-                            showConcludeDialog
-                          });
-                          
-                          console.log('🔴 [1.5] Button state check:', {
-                            buttonDisabled: aiRecordingState.isRecording,
-                            hasAccessToButton: !meetingCode || (meetingCode && isLeader),
-                            currentDialogState: showConcludeDialog
-                          });
-                          
-                          e.preventDefault();
-                          e.stopPropagation();
-                          
-                          console.log('🔴 [2] Event handling complete, checking AI recording state');
+                        onClick={() => {
                           if (!aiRecordingState.isRecording) {
-                            console.log('🔴 [3] AI not recording - opening conclude dialog');
                             setShowConcludeDialog(true);
-                            console.log('🔴 [4] Dialog state set to true');
-                          } else {
-                            console.log('🔴 [3] AI IS RECORDING - button should be disabled');
                           }
                         }}
                         disabled={aiRecordingState.isRecording}
@@ -7171,7 +7141,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             <svg className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
-                            Stop Recording First
+                            Stop Note Taking First
                           </>
                         ) : (
                           <>
@@ -7304,30 +7274,66 @@ const WeeklyAccountabilityMeetingPage = () => {
                             };
                           }) : [];
                         
-                        // Calculate average rating from participant ratings
-                        const validRatings = allParticipantRatings.filter(r => r.rating > 0);
-                        const averageRating = validRatings.length > 0 
-                          ? validRatings.reduce((sum, r) => sum + r.rating, 0) / validRatings.length
-                          : meetingRating || 8;
-                        
-                        // Prepare comprehensive meeting data
+                        // Collect all meeting data for AI summary integration
                         const meetingData = {
-                          meetingType: 'Level 10 Meeting',
-                          duration: durationMinutes,
-                          rating: averageRating,
-                          individualRatings: allParticipantRatings,
-                          summary: `Meeting completed with ${allIssues.length} issues tracked and meeting activities recorded.`,
-                          attendees: allParticipantRatings.map(r => r.userName).filter(Boolean),
+                          // Todos data - with timestamp fields for backend filtering
+                          // Include ALL todos since there's no selection UI - backend will filter by date
                           todos: {
-                            completed: todos.filter(todo => todo.completed),
-                            added: todos.filter(todo => !todo.id)
+                            completed: todos.filter(todo => 
+                              todo.status === 'complete' || todo.status === 'completed' || todo.completed
+                            ).map(todo => ({
+                              title: todo.title || todo.todo,
+                              id: todo.id,
+                              assigned_to_name: todo.assigned_to_name || 
+                                                todo.assignee || 
+                                                (todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null) ||
+                                                (todo.assignees && todo.assignees.length > 0 ? todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ') : null),
+                              created_at: todo.created_at,
+                              completed_at: todo.completed_at || todo.updated_at
+                            })),
+                            added: todos.filter(todo => 
+                              todo.status !== 'complete' && todo.status !== 'completed' && !todo.completed
+                            ).map(todo => ({
+                              title: todo.title || todo.todo,
+                              id: todo.id,
+                              assigned_to_name: todo.assigned_to_name || 
+                                                todo.assignee || 
+                                                (todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null) ||
+                                                (todo.assignees && todo.assignees.length > 0 ? todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ') : null),
+                              created_at: todo.created_at,
+                              due_date: todo.due_date
+                            }))
                           },
-                          issues: {
-                            discussed: allIssues,
-                            created: allIssues.filter(issue => !issue.id)
+                          
+                          // Issues data - with timestamp fields for backend filtering  
+                          // Include ALL issues since there's no selection UI - backend will filter by date
+                          issues: [...(shortTermIssues || []), ...(longTermIssues || [])].map(issue => ({
+                            title: issue.title || issue.issue,
+                            id: issue.id,
+                            is_solved: issue.status === 'closed' || issue.status === 'resolved' || issue.status === 'solved' || issue.status === 'completed',
+                            owner_name: issue.owner_name || issue.owner,
+                            timeline: issue.timeline,
+                            created_at: issue.created_at,
+                            resolved_at: issue.resolved_at || issue.updated_at
+                          })),
+                          
+                          // Headlines data
+                          headlines: {
+                            customer: headlines.customer || [],
+                            employee: headlines.employee || []
                           },
-                          notes: cascadeMessage || '',
-                          cascadingMessage: cascadeMessage
+                          
+                          // Cascading messages (if any were created during meeting)
+                          cascadingMessages: cascadedMessages || [],
+                          
+                          // Meeting rating
+                          rating: meetingRating,
+                          
+                          // Meeting duration
+                          duration: durationMinutes,
+                          
+                          // Participant ratings
+                          participantRatings: allParticipantRatings
                         };
                         
                         // ALWAYS conclude the meeting session in database
