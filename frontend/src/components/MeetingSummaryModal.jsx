@@ -334,7 +334,7 @@ export const MeetingSummaryModal = ({
                 ) : (
                   <div>
                     {headlines.map((headline, idx) => (
-                      <ListItem key={idx}>{headline}</ListItem>
+                      <ListItem key={idx}>{typeof headline === 'string' ? headline : headline.text}</ListItem>
                     ))}
                   </div>
                 )}
@@ -352,7 +352,7 @@ export const MeetingSummaryModal = ({
                 ) : (
                   <div>
                     {cascadingMessages.map((message, idx) => (
-                      <ListItem key={idx}>{message}</ListItem>
+                      <ListItem key={idx}>{typeof message === 'string' ? message : (message.message || message.text)}</ListItem>
                     ))}
                   </div>
                 )}
