@@ -2039,12 +2039,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
         
         // Broadcast issue update to other participants
+        console.log('📡 Attempting to broadcast issue update...', { meetingCode, hasBroadcast: !!broadcastIssueListUpdate, issueId });
         if (meetingCode && broadcastIssueListUpdate) {
+          console.log('📡 Broadcasting issue update:', { action: 'update', issueId, issue: savedIssue.data || savedIssue });
           broadcastIssueListUpdate({
             action: 'update',
             issueId: issueId,
             issue: savedIssue.data || savedIssue
           });
+        } else {
+          console.warn('⚠️ Broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
         }
       } else {
         savedIssue = await issuesService.createIssue({
