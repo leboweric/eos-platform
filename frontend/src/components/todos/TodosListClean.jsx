@@ -185,7 +185,14 @@ const TodosListClean = ({
       return format(new Date(todo.archived_at), 'MMM d');
     }
     if (todo.due_date) {
-      return format(parseDateLocal(todo.due_date), 'MMM d');
+      const parsedDate = parseDateLocal(todo.due_date);
+      console.log('📅 formatDueDate:', {
+        raw: todo.due_date,
+        parsed: parsedDate,
+        formatted: format(parsedDate, 'MMM d'),
+        title: todo.title
+      });
+      return format(parsedDate, 'MMM d');
     }
     return '';
   };
