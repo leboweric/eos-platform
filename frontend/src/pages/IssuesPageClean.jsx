@@ -272,8 +272,17 @@ const IssuesPageClean = () => {
           department_id: effectiveTeamId  // This will be handled by issuesService
         });
         
-        // Only show success message for manual saves
-        if (!isAutoSave) {
+        // For auto-save, optimistically add to local state without full refresh
+        if (isAutoSave) {
+          const newIssue = savedIssue.data || savedIssue;
+          const timeline = newIssue.timeline || activeTab;
+          
+          if (timeline === 'short_term') {
+            setShortTermIssues(prev => [newIssue, ...prev]);
+          } else if (timeline === 'long_term') {
+            setLongTermIssues(prev => [newIssue, ...prev]);
+          }
+        } else {
           setSuccess('Issue created successfully');
         }
       }

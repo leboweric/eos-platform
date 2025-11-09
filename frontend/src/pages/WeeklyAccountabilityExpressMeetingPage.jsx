@@ -2028,8 +2028,18 @@ const WeeklyAccountabilityMeetingPage = () => {
           timeline: issueTimeline,
           department_id: effectiveTeamId
         });
-        // Only show success message for manual saves
-        if (!isAutoSave) {
+        
+        // For auto-save, optimistically add to local state without full refresh
+        if (isAutoSave) {
+          const newIssue = savedIssue.data || savedIssue;
+          const timeline = newIssue.timeline || issueTimeline;
+          
+          if (timeline === 'short_term') {
+            setShortTermIssues(prev => [newIssue, ...prev]);
+          } else if (timeline === 'long_term') {
+            setLongTermIssues(prev => [newIssue, ...prev]);
+          }
+        } else {
           setSuccess('Issue created successfully');
         }
         
@@ -7492,6 +7502,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                   organization_id: user?.organizationId || user?.organization_id,
                   team_id: effectiveTeamId
                 });
+                
+                // For auto-save, optimistically add to local state
+                if (isAutoSave) {
+                  const newIssue = savedIssue.data || savedIssue;
+                  const timeline = newIssue.timeline || issueTimeline;
+                  
+                  if (timeline === 'short_term') {
+                    setShortTermIssues(prev => [newIssue, ...prev]);
+                  } else if (timeline === 'long_term') {
+                    setLongTermIssues(prev => [newIssue, ...prev]);
+                  }
+                }
               }
               
               // Only refresh and close dialog for manual saves
