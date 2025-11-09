@@ -2182,7 +2182,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     await fetchIssuesData();
   };
 
-  const handleSaveTodo = async (todoData, options = {}) => {
+  const handleSaveTodo = useCallback(async (todoData, options = {}) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -2247,7 +2247,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to save to-do');
       throw error; // Re-throw so TodoDialog can handle it
     }
-  };
+  }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
   const handleReorderIssues = async (reorderedIssues) => {
     try {
