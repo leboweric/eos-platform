@@ -83,6 +83,7 @@ const IssueDialog = ({
   const [autoSaving, setAutoSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [createdIssueId, setCreatedIssueId] = useState(null); // Track ID of auto-created issue
   const autoSaveTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -126,6 +127,7 @@ const IssueDialog = ({
     setNewAttachments([]);
     setUpdateText('');
     setShowAddUpdate(false);
+    setCreatedIssueId(null); // Reset auto-created issue ID
   }, [issue]);
 
   // Clear form when dialog opens without an issue
@@ -205,8 +207,10 @@ const IssueDialog = ({
     
     try {
       setAutoSaving(true);
+      // Use createdIssueId if we've already created this issue via auto-save
+      const issueId = issue?.id || createdIssueId;
       const savedIssue = await onSave({
-        ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing existing
+        ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
         title: formData.title,
         description: formData.description,
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
@@ -216,18 +220,16 @@ const IssueDialog = ({
       setLastSaved(new Date());
       setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
       
-      // If this was a new issue, update the issue object with the returned ID
-      // This allows subsequent auto-saves to update the same issue
-      if (!issue?.id && savedIssue?.id) {
-        // Note: We can't directly update the 'issue' prop, but the parent component
-        // should handle this through onSave callback
+      // If this was a new issue, store the ID so subsequent auto-saves update instead of create
+      if (!issueId && savedIssue?.id) {
+        setCreatedIssueId(savedIssue.id);
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
     } finally {
       setAutoSaving(false);
     }
-  }, [issue, formData, onSave, timeline]);
+  }, [issue, formData, onSave, timeline, createdIssueId]);
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
@@ -494,12 +496,12 @@ const IssueDialog = ({
             {/* Second row: Summary full width */}
             <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
-              <div className="min-h-[120px] max-h-[400px] overflow-y-auto border rounded-xl shadow-sm resize-y">
+              <div className="h-[200px] max-h-[400px] overflow-hidden border rounded-xl shadow-sm resize-y">
                 <RichTextEditor
                   value={formData.description}
                   onChange={(value) => setFormData({ ...formData, description: value })}
                   placeholder="Provide a brief summary of the issue..."
-                  className="border-0 shadow-none"
+                  className="border-0 shadow-none h-full"
                 />
               </div>
             </div>
