@@ -211,7 +211,8 @@ const WeeklyAccountabilityMeetingPage = () => {
     syncTimer,
     updateNotes,
     claimPresenter,
-    activeMeetings 
+    activeMeetings,
+    concludeMeeting
   } = useMeeting();
   
   // Debug logging for participants
@@ -7449,12 +7450,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                         // Mark meeting as concluded to prevent auto-rejoin
                         meetingConcludedRef.current = true;
                         
+                        // Emit conclude-meeting event to backend to delete meeting
+                        if (meetingCode && concludeMeeting) {
+                          console.log('🏁 Concluding meeting in backend...');
+                          concludeMeeting();
+                        }
+                        
                         // Leave the collaborative meeting if active
+                        // Call immediately (not in setTimeout) to ensure socket event is sent before navigation
                         if (meetingCode && leaveMeeting) {
-                          // Small delay to ensure broadcast is sent
-                          setTimeout(() => {
-                            leaveMeeting();
-                          }, 100);
+                          console.log('🚪 Leaving meeting immediately to ensure cleanup...');
+                          leaveMeeting();
+                          // Small delay to ensure socket event is sent
+                          await new Promise(resolve => setTimeout(resolve, 200));
+                          console.log('✅ Leave meeting event sent');
                         }
                         
                         // Clear meeting state

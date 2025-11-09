@@ -243,6 +243,36 @@ class MeetingSocketService {
         this.handleUserDisconnect(socket);
       });
 
+      // Handle concluding meeting (leader ends meeting for everyone)
+      socket.on('conclude-meeting', (data) => {
+        const { meetingCode } = data;
+        
+        if (!meetingCode) {
+          console.error('❌ conclude-meeting: No meeting code provided');
+          return;
+        }
+        
+        const meeting = meetings.get(meetingCode);
+        if (!meeting) {
+          console.log(`🗑️ Meeting ${meetingCode} already deleted`);
+          return;
+        }
+        
+        console.log(`🏁 Concluding meeting ${meetingCode} - removing all participants`);
+        
+        // Remove all participants from socket rooms
+        meeting.participants.forEach((participant, userId) => {
+          console.log(`  👋 Removing participant: ${participant.name}`);
+        });
+        
+        // Delete the meeting from the map
+        meetings.delete(meetingCode);
+        console.log(`✅ Meeting ${meetingCode} deleted from active meetings`);
+        
+        // Broadcast updated active meetings to all connected clients
+        this.broadcastActiveMeetings();
+      });
+
       // Handle issue voting
       socket.on('vote-issue', (data) => {
         const { issueId, voteCount, userHasVoted } = data;

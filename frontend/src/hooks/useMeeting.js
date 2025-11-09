@@ -535,6 +535,16 @@ const useMeeting = () => {
     setIsLeader(true);
     setCurrentLeader(user?.id);
   }, [socket, meetingCode, user]);
+  
+  // Conclude meeting (leader only - removes meeting from backend)
+  const concludeMeeting = useCallback(() => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('🏁 Emitting conclude-meeting event to backend');
+    socket.emit('conclude-meeting', {
+      meetingCode
+    });
+  }, [socket, meetingCode]);
 
   return {
     // Connection status
@@ -562,7 +572,8 @@ const useMeeting = () => {
     broadcastRating,
     syncTimer,
     updateNotes,
-    claimPresenter
+    claimPresenter,
+    concludeMeeting
   };
 };
 
