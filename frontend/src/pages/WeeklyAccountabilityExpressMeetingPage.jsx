@@ -7669,7 +7669,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
               await headlinesService.createHeadline({
                 ...headlineData,
-                teamId: effectiveTeamId
+                teamId: effectiveTeamId,
+                meeting_id: sessionId  // Link headline to current meeting session
               });
               await fetchHeadlines();
               setShowHeadlineDialog(false);

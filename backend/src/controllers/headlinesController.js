@@ -72,7 +72,7 @@ export const getHeadlines = async (req, res) => {
 export const createHeadline = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { type, text, teamId } = req.body;
+    const { type, text, teamId, meeting_id } = req.body;
     const userId = req.user.id;
 
     // Validate type
@@ -102,10 +102,10 @@ export const createHeadline = async (req, res) => {
     const headlineId = uuidv4();
     const result = await query(
       `INSERT INTO headlines (
-        id, organization_id, team_id, type, text, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        id, organization_id, team_id, type, text, created_by, meeting_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *`,
-      [headlineId, orgId, teamId, type, text.trim(), userId]
+      [headlineId, orgId, teamId, type, text.trim(), userId, meeting_id || null]
     );
 
     // Fetch the complete headline with user information

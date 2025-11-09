@@ -492,6 +492,21 @@ export const createMeetingSnapshot = async (req, res) => {
       todayStart, now, meeting.team_id, orgId
     ]);
 
+    // Get headlines created during meeting (with creator name)
+    const headlinesCreatedQuery = `
+      SELECT 
+        h.id,
+        h.type,
+        h.text,
+        h.created_at,
+        u.first_name || ' ' || u.last_name as created_by_name
+      FROM headlines h
+      LEFT JOIN users u ON h.created_by = u.id
+      WHERE h.meeting_id = $1 AND h.organization_id = $2 AND h.archived_at IS NULL
+      ORDER BY h.created_at DESC
+    `;
+    const headlinesCreated = await client.query(headlinesCreatedQuery, [meetingId, orgId]);
+
     // Fetch AI summary if available
     const aiSummaryQuery = `
       SELECT mas.executive_summary
@@ -509,6 +524,10 @@ export const createMeetingSnapshot = async (req, res) => {
       attendees: attendeesResult.rows,
       notes: meeting.notes || '',
       ai_summary: aiSummary,  // Add AI summary (using snake_case for consistency)
+      headlines: {
+        customer: headlinesCreated.rows.filter(h => h.type === 'customer'),
+        employee: headlinesCreated.rows.filter(h => h.type === 'employee')
+      },
       issues: {
         new: issuesCreated.rows,      // Renamed from 'created' to match template
         discussed: issuesDiscussed.rows,
