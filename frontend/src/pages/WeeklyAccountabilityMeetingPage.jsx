@@ -7584,71 +7584,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           teamId={teamId}
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
-          onSave={async (issueData, options = {}) => {
-            const { isAutoSave = false } = options;
-            
-            try {
-              const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              let savedIssue;
-              
-              if (editingIssue) {
-                savedIssue = await issuesService.updateIssue(editingIssue.id, {
-                  ...issueData,
-                  organization_id: user?.organizationId || user?.organization_id,
-                  team_id: effectiveTeamId
-                });
-                
-                // For auto-save, optimistically update the local state
-                if (isAutoSave) {
-                  const updateIssueInList = (issues) => 
-                    issues.map(issue => 
-                      issue.id === editingIssue.id 
-                        ? { ...issue, ...savedIssue.data || savedIssue }
-                        : issue
-                    );
-                  
-                  setShortTermIssues(prev => updateIssueInList(prev));
-                  setLongTermIssues(prev => updateIssueInList(prev));
-                  
-                  // Don't update editingIssue - causes dialog to re-render and flash
-                }
-              } else {
-                savedIssue = await issuesService.createIssue({
-                  ...issueData,
-                  organization_id: user?.organizationId || user?.organization_id,
-                  team_id: effectiveTeamId,
-                  meeting_id: sessionId  // Link issue to current meeting session
-                });
-                
-                // For auto-save, optimistically add to local state
-                if (isAutoSave) {
-                  const newIssue = savedIssue.data || savedIssue;
-                  const timeline = newIssue.timeline || issueTimeline;
-                  
-                  if (timeline === 'short_term') {
-                    setShortTermIssues(prev => [newIssue, ...prev]);
-                  } else if (timeline === 'long_term') {
-                    setLongTermIssues(prev => [newIssue, ...prev]);
-                  }
-                }
-              }
-              
-              // Only refresh and close dialog for manual saves
-              if (!isAutoSave) {
-                await fetchIssuesData();
-                setShowIssueDialog(false);
-                setEditingIssue(null);
-                setSuccess('Issue saved successfully');
-              }
-              
-              return savedIssue;
-            } catch (error) {
-              console.error('Failed to save issue:', error);
-              if (!isAutoSave) {
-                setError('Failed to save issue');
-              }
-            }
-          }}
+          onSave={handleSaveIssue}
         />
         
         <TodoDialog
