@@ -243,8 +243,25 @@ const IssuesPageClean = () => {
       
       if (isEditing && issueId) {
         savedIssue = await issuesService.updateIssue(issueId, issueData);
-        // Only show success message for manual saves
-        if (!isAutoSave) {
+        
+        // For auto-save, optimistically update the local state without full refresh
+        if (isAutoSave) {
+          const updateIssueInList = (issues) => 
+            issues.map(issue => 
+              issue.id === issueId 
+                ? { ...issue, ...savedIssue.data || savedIssue }
+                : issue
+            );
+          
+          setShortTermIssues(prev => updateIssueInList(prev));
+          setLongTermIssues(prev => updateIssueInList(prev));
+          setArchivedIssues(prev => updateIssueInList(prev));
+          
+          // Also update the editingIssue to reflect the saved changes
+          if (editingIssue) {
+            setEditingIssue({ ...editingIssue, ...savedIssue.data || savedIssue });
+          }
+        } else {
           setSuccess('Issue updated successfully');
         }
       } else {
@@ -256,6 +273,7 @@ const IssuesPageClean = () => {
           timeline: activeTab,
           department_id: effectiveTeamId  // This will be handled by issuesService
         });
+        
         // Only show success message for manual saves
         if (!isAutoSave) {
           setSuccess('Issue created successfully');
