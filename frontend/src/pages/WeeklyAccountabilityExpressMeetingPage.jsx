@@ -408,7 +408,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         related_headline_id: headline.id
       };
       
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Update the headline to show it has an issue
       setHeadlines(prev => ({
@@ -2026,6 +2026,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else {
         savedIssue = await issuesService.createIssue({
+          meeting_id: sessionId,
           ...issueData,
           timeline: issueTimeline,
           department_id: effectiveTeamId
@@ -2209,6 +2210,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else {
         savedTodo = await todosService.createTodo({
+          meeting_id: sessionId,
           ...todoData,
           organization_id: orgId,
           department_id: effectiveTeamId
@@ -2349,7 +2351,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Create the issue
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Refresh issues data
       await fetchIssuesData();
@@ -2814,7 +2816,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           
           console.log('Creating issue with data:', issueData);
           
-          await issuesService.createIssue(issueData);
+          await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
           
           // Show success message with visual feedback
           setSuccess(
@@ -2862,7 +2864,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         related_priority_id: priority.id
       };
       
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Show success message with visual feedback
       setSuccess(
@@ -3016,7 +3018,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Create the to-do
-      await todosService.createTodo(todoData);
+      await todosService.createTodo({ ...todoData, meeting_id: sessionId });
       
       // Dismiss loading toast and show success
       toast.dismiss('create-todo-loading');
@@ -3088,7 +3090,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🔍 [CreateLinkedIssue] Calling issuesService.createIssue...');
       
       // Create the issue
-      const result = await issuesService.createIssue(issueData);
+      const result = await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       console.log('✅ [CreateLinkedIssue] Success! Result:', result);
       console.log('🔴 SUCCESS');
@@ -7548,6 +7550,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 }
               } else {
                 savedIssue = await issuesService.createIssue({
+          meeting_id: sessionId,
                   ...issueData,
                   organization_id: user?.organizationId || user?.organization_id,
                   team_id: effectiveTeamId

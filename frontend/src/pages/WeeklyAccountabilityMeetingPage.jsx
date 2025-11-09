@@ -405,10 +405,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: 'normal',
         organization_id: orgId,
         department_id: effectiveTeamId,
-        related_headline_id: headline.id
+        related_headline_id: headline.id,
+        meeting_id: sessionId  // Link issue to current meeting session
       };
       
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Update the headline to show it has an issue
       setHeadlines(prev => ({
@@ -1960,7 +1961,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: isOffTrack ? 'high' : 'normal',
         ownerId: metric.ownerId || null,
         department_id: effectiveTeamId,
-        teamId: effectiveTeamId  // Add both fields to ensure compatibility
+        teamId: effectiveTeamId,  // Add both fields to ensure compatibility
+        meeting_id: sessionId  // Link issue to current meeting session
       });
       
       setSuccess(
@@ -2028,7 +2030,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: issueTimeline,
-          department_id: effectiveTeamId
+          department_id: effectiveTeamId,
+          meeting_id: sessionId  // Link issue to current meeting session
         });
         
         // For auto-save, optimistically add to local state without full refresh
@@ -2211,7 +2214,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         savedTodo = await todosService.createTodo({
           ...todoData,
           organization_id: orgId,
-          department_id: effectiveTeamId
+          department_id: effectiveTeamId,
+          meeting_id: sessionId  // Link todo to current meeting session
         });
         // Only show success message for manual saves, not auto-saves
         if (!options.isAutoSave) {
@@ -2356,7 +2360,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Create the issue
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Refresh issues data
       await fetchIssuesData();
@@ -2464,7 +2468,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         id: undefined,
         title: `${todo.title} (Copy)`,
         organization_id: orgId,
-        department_id: effectiveTeamId
+        department_id: effectiveTeamId,
+        meeting_id: sessionId  // Link todo to current meeting session
       });
       await fetchTodosData();
       
@@ -2832,7 +2837,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           
           console.log('Creating issue with data:', issueData);
           
-          await issuesService.createIssue(issueData);
+          await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
           
           // Show success message with visual feedback
           setSuccess(
@@ -2880,7 +2885,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         related_priority_id: priority.id
       };
       
-      await issuesService.createIssue(issueData);
+      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       // Show success message with visual feedback
       setSuccess(
@@ -3034,7 +3039,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Create the to-do
-      await todosService.createTodo(todoData);
+      await todosService.createTodo({ ...todoData, meeting_id: sessionId });
       
       // Dismiss loading toast and show success
       toast.dismiss('create-todo-loading');
@@ -3106,7 +3111,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🔍 [CreateLinkedIssue] Calling issuesService.createIssue...');
       
       // Create the issue
-      const result = await issuesService.createIssue(issueData);
+      const result = await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
       
       console.log('✅ [CreateLinkedIssue] Success! Result:', result);
       console.log('🔴 SUCCESS');
@@ -7602,7 +7607,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 savedIssue = await issuesService.createIssue({
                   ...issueData,
                   organization_id: user?.organizationId || user?.organization_id,
-                  team_id: effectiveTeamId
+                  team_id: effectiveTeamId,
+                  meeting_id: sessionId  // Link issue to current meeting session
                 });
                 
                 // For auto-save, optimistically add to local state

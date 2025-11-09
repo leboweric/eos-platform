@@ -156,7 +156,7 @@ async function checkTimelineColumn() {
 export const createIssue = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level } = req.body;
+    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id } = req.body;
     const createdById = req.user.id;
     
     // Check if timeline column exists
@@ -229,6 +229,13 @@ export const createIssue = async (req, res) => {
     if (related_priority_id) {
       columns.push('related_priority_id');
       values.push(related_priority_id);
+      placeholders.push(`$${values.length}`);
+    }
+    
+    // Add meeting_id if provided (for tracking issues created during meetings)
+    if (meeting_id) {
+      columns.push('meeting_id');
+      values.push(meeting_id);
       placeholders.push(`$${values.length}`);
     }
     

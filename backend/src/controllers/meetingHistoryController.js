@@ -381,6 +381,11 @@ export const createMeetingSnapshot = async (req, res) => {
     const now = new Date();
     const startTime = new Date(meeting.started_at);
     const duration = Math.round((now - startTime) / (1000 * 60)); // minutes
+    
+    // For filtering items, use today's date (start of day) instead of meeting start time
+    // This ensures we only show items created/completed TODAY
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);  // Start of today
 
     // Get attendees with ratings
     const attendeesQuery = `
@@ -447,7 +452,7 @@ export const createMeetingSnapshot = async (req, res) => {
         AND i.deleted_at IS NULL
     `;
     const issuesSolved = await client.query(issuesSolvedQuery, [
-      startTime, now, meeting.team_id, orgId
+      todayStart, now, meeting.team_id, orgId
     ]);
 
     // Get todos created during meeting (with consistent field names for email template)
@@ -484,7 +489,7 @@ export const createMeetingSnapshot = async (req, res) => {
         AND t.deleted_at IS NULL
     `;
     const todosCompleted = await client.query(todosCompletedQuery, [
-      startTime, now, meeting.team_id, orgId
+      todayStart, now, meeting.team_id, orgId
     ]);
 
     // Fetch AI summary if available
