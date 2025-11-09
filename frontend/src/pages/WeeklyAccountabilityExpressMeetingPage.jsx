@@ -5784,7 +5784,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <p className="text-slate-600 text-lg leading-relaxed">
-                    Share critical information about customers and employees that the team needs to know.
+                    Headlines should be brief updates and archived upon conclusion of the meeting. If they require discussion they should be added to the Issues list for prioritization.
                   </p>
                   <div className="flex items-center gap-3">
                     {/* Add Headline Button */}
