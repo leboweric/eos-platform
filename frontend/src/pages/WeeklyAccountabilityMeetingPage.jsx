@@ -4261,7 +4261,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         clearTimeout(ratingTimeoutTimer);
       }
     };
-  }, [user?.id, isLeader, ratingTimeoutTimer]);
+  }, [user?.id, isLeader, isFollowing, ratingTimeoutTimer]);
 
   // Scroll sync: Broadcast scroll position when leader scrolls
   useEffect(() => {
