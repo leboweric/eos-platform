@@ -4066,6 +4066,51 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         // Update UI
         window.dispatchEvent(new Event('meetingStateChanged'));
+      } else if (action === 'scorecard-view-change') {
+        // Update scorecard view when leader changes it
+        const { viewType } = event.detail;
+        console.log('📊 Scorecard view changed to:', viewType);
+        setScorecardViewType(viewType);
+      } else if (action === 'priority-updated') {
+        // Update rock/priority status or other fields
+        const { priorityId, updates } = event.detail;
+        console.log('🎯 Priority updated:', priorityId, updates);
+        setPriorities(prev => prev.map(p => p.id === priorityId ? { ...p, ...updates } : p));
+      } else if (action === 'milestone-toggled') {
+        // Update milestone completion status
+        const { priorityId, milestoneId, completed } = event.detail;
+        console.log('✅ Milestone toggled:', priorityId, milestoneId, completed);
+        
+        // Update local state with milestone change and recalculate progress
+        setPriorities(prev => prev.map(p => {
+          if (p.id !== priorityId) return p;
+          
+          const updatedMilestones = p.milestones?.map(m => 
+            m.id === milestoneId ? { ...m, completed } : m
+          ) || [];
+          
+          // Calculate new progress
+          const completedCount = updatedMilestones.filter(m => m.completed).length;
+          const totalCount = updatedMilestones.length;
+          const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+          
+          // Auto-update status based on milestone completion
+          let newStatus = p.status;
+          if (totalCount > 0) {
+            if (completedCount === totalCount && totalCount > 0) {
+              newStatus = 'complete';
+            } else if (newStatus === 'complete' && completedCount < totalCount) {
+              newStatus = 'on-track';
+            }
+          }
+          
+          return {
+            ...p,
+            milestones: updatedMilestones,
+            progress: newProgress,
+            status: newStatus
+          };
+        }));
       } else if (action === 'refresh') {
         fetchIssuesData();
       }
@@ -4345,7 +4390,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <select
                     value={scorecardViewType}
-                    onChange={(e) => setScorecardViewType(e.target.value)}
+                    onChange={(e) => {
+                      const newView = e.target.value;
+                      setScorecardViewType(newView);
+                      // Broadcast scorecard view change to other participants
+                      if (meetingCode && broadcastIssueListUpdate) {
+                        broadcastIssueListUpdate({
+                          action: 'scorecard-view-change',
+                          viewType: newView
+                        });
+                      }
+                    }}
                     className="text-sm border border-gray-300 rounded px-2 py-1"
                     style={{
                       accentColor: themeColors.primary
