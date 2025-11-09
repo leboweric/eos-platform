@@ -3,7 +3,6 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext, isZeroUUID, getUserTeamScope } from '../utils/teamUtils.js';
 import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
-import meetingSocketService from '../services/meetingSocketService.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -246,45 +245,8 @@ export const createIssue = async (req, res) => {
        RETURNING *`,
       values
     );
-
-    const newIssue = result.rows[0];
-
-    // Broadcast to meeting participants if this issue was created during a meeting
-    try {
-      if (meeting_id && meetingSocketService) {
-        await meetingSocketService.broadcastToMeetingById(meeting_id, 'issue-created', {
-          issue: newIssue,
-          createdBy: req.user.first_name + ' ' + req.user.last_name
-        });
-      }
-    } catch (broadcastError) {
-      console.error('Failed to broadcast issue-created:', broadcastError.message);
-    }
-
+    
     res.status(201).json({
-      success: true,
-      data: newIssue
-    });
-    return;
-  } catch (error) {
-    console.error('Error creating issue:', error);
-    
-    // Check for unique constraint violation on related_todo_id
-    if (error.code === '23505' && error.constraint === 'unique_todo_issue') {
-      return res.status(409).json({
-        success: false,
-        message: 'An issue already exists for this todo'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create issue'
-    });
-  }
-};
-// Update an issue
-export const updateIssue
       success: true,
       data: result.rows[0]
     });
@@ -362,20 +324,6 @@ export const updateIssue = async (req, res) => {
       });
     }
     
-    const updatedIssue = result.rows[0];
-
-    // Broadcast to meeting participants
-    try {
-      if (updatedIssue.meeting_id && meetingSocketService) {
-        await meetingSocketService.broadcastToMeetingById(updatedIssue.meeting_id, 'issue-updated', {
-          issue: updatedIssue,
-          updatedBy: req.user.first_name + ' ' + req.user.last_name
-        });
-      }
-    } catch (broadcastError) {
-      console.error('Failed to broadcast issue-updated:', broadcastError.message);
-    }
-
     res.json({
       success: true,
       data: result.rows[0]
