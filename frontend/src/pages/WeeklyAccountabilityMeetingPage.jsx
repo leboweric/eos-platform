@@ -2612,9 +2612,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Broadcast issue archive to other participants
       if (meetingCode && broadcastIssueListUpdate) {
         broadcastIssueListUpdate({
-          action: 'archive',
-          issueId: issue.id,
-          issue: { ...issue, archived: true }
+          action: 'delete',
+          issueId: issue.id
         });
       }
     } catch (error) {
@@ -3908,11 +3907,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('📝 Received issue list update:', event.detail);
       
       if (action === 'create' && issue) {
-        // Add new issue to the appropriate list
+        // Add new issue to the beginning of the appropriate list
         if (issue.timeline === 'short_term') {
-          setShortTermIssues(prev => [...prev, issue]);
+          setShortTermIssues(prev => [issue, ...prev]);
         } else {
-          setLongTermIssues(prev => [...prev, issue]);
+          setLongTermIssues(prev => [issue, ...prev]);
         }
       } else if (action === 'update' && issue) {
         // Update existing issue - replace entire issue with updated one
@@ -5990,6 +5989,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                               await todosService.archiveDoneTodos();
                               await fetchTodosData();
                               setSuccess(`Successfully archived ${count} completed to-do${count !== 1 ? 's' : ''}`);
+                              
+                              // Broadcast archive-done action to other meeting participants
+                              if (meetingCode && broadcastTodoUpdate) {
+                                broadcastTodoUpdate({
+                                  action: 'archive-done'
+                                });
+                              }
                             } catch (error) {
                               console.error('Failed to archive todos:', error);
                               setError('Failed to archive completed to-dos');
