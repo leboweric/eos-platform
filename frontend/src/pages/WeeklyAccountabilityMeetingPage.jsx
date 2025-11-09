@@ -699,7 +699,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [sectionElapsedTime, setSectionElapsedTime] = useState(0);
   const [sectionCumulativeTimes, setSectionCumulativeTimes] = useState({}); // Track cumulative time per section
   const [meetingPace, setMeetingPace] = useState('on-track');
-  const [showFloatingTimer, setShowFloatingTimer] = useState(true);
+  const [showFloatingTimer, setShowFloatingTimer] = useState(false); // Hidden by default - MeetingBar has timer
   const [sectionConfig, setSectionConfig] = useState(null);
   
   // Full-screen mode state
@@ -7498,20 +7498,6 @@ const WeeklyAccountabilityMeetingPage = () => {
               <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
             </div>
             <div className="flex items-center gap-4">
-              {/* Follow Leader Toggle - Standalone for Testing */}
-              {!isLeader && participants.length > 1 && (
-                <button
-                  onClick={toggleFollow}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    isFollowing
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'border-2 border-slate-300 text-slate-700 hover:border-slate-400'
-                  }`}
-                >
-                  {isFollowing ? '✓ Following Leader' : 'Not Following'}
-                </button>
-              )}
-              {/* Removed redundant timers - using FloatingTimer only */}
               {currentTeam && (
                 <div className="text-right">
                   <p className="text-sm text-slate-600">Team</p>

@@ -126,7 +126,7 @@ const MeetingBar = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Video className="h-4 w-4 text-green-600" />
-            <span className="font-medium">Meeting: {meetingCode}</span>
+            <span className="font-medium text-green-600">Live Meeting</span>
           </div>
 
           {isExpanded && (
@@ -155,18 +155,18 @@ const MeetingBar = ({
               </div>
 
               {/* Participant avatars */}
-              <div className="flex -space-x-2">
+              <div className="flex gap-1">
                 {participants.slice(0, 5).map((participant) => (
                   <div
                     key={participant.id}
-                    className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center relative"
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white flex items-center justify-center relative shadow-sm"
                     title={`${participant.name}${participant.id === currentLeader ? ' (Leader)' : ''}${participant.isFollowing ? ' - Following' : ' - Not following'}`}
                   >
-                    <span className="text-xs font-medium">
+                    <span className="text-sm font-semibold text-white">
                       {participant.name.split(' ').map(n => n[0]).join('')}
                     </span>
                     {participant.id === currentLeader && (
-                      <Crown className="absolute -top-1 -right-1 h-3 w-3 text-yellow-500" />
+                      <Crown className="absolute -top-2 -right-2 h-5 w-5 text-yellow-400 drop-shadow-lg" fill="currentColor" />
                     )}
                     {!participant.isFollowing && (
                       <EyeOff className="absolute -bottom-1 -right-1 h-3 w-3 text-gray-400" />
