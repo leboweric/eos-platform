@@ -380,23 +380,41 @@ const HeadlinesPage = () => {
 
         {/* Headlines and Messages Display with Tabs */}
         <div className="mt-12">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-transparent border-0 p-0 h-auto mb-8 border-b border-gray-100">
-              <TabsTrigger 
-                value="active" 
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
-              >
-                Active
-                <span className="ml-2 text-sm text-gray-500">({headlines.customer.length + headlines.employee.length})</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="archived" 
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
-              >
-                Archived
-                <span className="ml-2 text-sm text-gray-500">({archivedHeadlines.customer.length + archivedHeadlines.employee.length})</span>
-              </TabsTrigger>
-            </TabsList>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
+                <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                  <TabsTrigger 
+                    value="active" 
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'active' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Active
+                    <span className="ml-2 text-sm opacity-80">({headlines.customer.length + headlines.employee.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="archived" 
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'archived' ? {
+                        background: `linear-gradient(135deg, ${themeColors.secondary} 0%, ${themeColors.accent} 100%)`
+                      } : {})
+                    }}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archived
+                    <span className="ml-2 text-sm opacity-80">({archivedHeadlines.customer.length + archivedHeadlines.employee.length})</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+          <div>
 
             <TabsContent value="active" className="mt-0">
               <div className="space-y-8">
@@ -689,6 +707,7 @@ const HeadlinesPage = () => {
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </div>
 

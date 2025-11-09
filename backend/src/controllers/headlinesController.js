@@ -16,8 +16,12 @@ export const getHeadlines = async (req, res) => {
     let params = [orgId];
     let paramIndex = 2;
 
-    // Filter by archived status - by default, exclude archived
-    if (!includeArchived || includeArchived === 'false') {
+    // Filter by archived status
+    if (includeArchived === 'true') {
+      // When includeArchived is true, return ONLY archived headlines
+      conditions.push('h.archived = true');
+    } else {
+      // By default, exclude archived headlines
       conditions.push('(h.archived = false OR h.archived IS NULL)');
     }
 
