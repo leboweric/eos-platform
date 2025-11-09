@@ -5,24 +5,15 @@ import { Clock, Zap, Users, Building2 } from 'lucide-react';
 
 const MeetingFormatSelector = ({ open, onClose, onSelect, teamId }) => {
   const [selectedFormat, setSelectedFormat] = useState('standard');
-  const [rememberChoice, setRememberChoice] = useState(false);
 
-  // Load saved preference for this team
+  // Reset to default when dialog opens
   useEffect(() => {
-    if (open && teamId) {
-      const savedFormat = localStorage.getItem(`meetingFormat_${teamId}`);
-      if (savedFormat === 'express' || savedFormat === 'standard') {
-        setSelectedFormat(savedFormat);
-      }
+    if (open) {
+      setSelectedFormat('standard');
     }
-  }, [open, teamId]);
+  }, [open]);
 
   const handleSelect = () => {
-    // Save preference if checkbox is checked
-    if (rememberChoice && teamId) {
-      localStorage.setItem(`meetingFormat_${teamId}`, selectedFormat);
-    }
-    
     onSelect(selectedFormat);
     onClose();
   };
@@ -147,19 +138,7 @@ const MeetingFormatSelector = ({ open, onClose, onSelect, teamId }) => {
           </button>
         </div>
 
-        {/* Remember choice checkbox */}
-        <div className="flex items-center gap-2 mt-4 p-4 bg-slate-50 rounded-lg">
-          <input
-            type="checkbox"
-            id="rememberChoice"
-            checked={rememberChoice}
-            onChange={(e) => setRememberChoice(e.target.checked)}
-            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-          />
-          <label htmlFor="rememberChoice" className="text-sm text-slate-700 cursor-pointer">
-            Remember my choice for this team
-          </label>
-        </div>
+
 
         {/* Action buttons */}
         <div className="flex gap-3 mt-6">
