@@ -76,9 +76,14 @@ async function getAISummaryForMeeting(meetingId, organizationId) {
 export const generateMeetingSummaryHTML = (meetingData) => {
   // Debug logging to track what the template receives
   console.log('📧 ===== EMAIL TEMPLATE DEBUG =====');
-  console.log('📧 Raw meetingData received:', JSON.stringify(meetingData, null, 2));
-  console.log('📧 Issues in meetingData:', meetingData.issues);
-  console.log('📧 Todos in meetingData:', meetingData.todos);
+  console.log('📧 Meeting data summary:', { 
+    teamName: meetingData.teamName,
+    meetingType: meetingData.meetingType,
+    hasIssues: !!meetingData.issues,
+    hasTodos: !!meetingData.todos,
+    hasHeadlines: !!meetingData.headlines,
+    hasCascadingMessages: !!meetingData.cascadingMessages
+  });
   
   const {
     teamName,
@@ -97,17 +102,14 @@ export const generateMeetingSummaryHTML = (meetingData) => {
     attendees = []
   } = meetingData;
   
-  console.log('📧 After destructuring - Issues:', issues);
-  console.log('📧 After destructuring - Todos:', todos);
-  console.log('📧 Issues rendering check:', {
-    solvedLength: issues.solved?.length,
-    newLength: issues.new?.length,
-    willRender: (issues.solved?.length > 0 || issues.new?.length > 0)
-  });
-  console.log('📧 Todos rendering check:', {
-    completedLength: todos.completed?.length,
-    newLength: todos.new?.length,
-    willRender: (todos.completed?.length > 0 || todos.new?.length > 0)
+  console.log('📧 Content counts:', {
+    issuesSolved: issues.solved?.length || 0,
+    issuesNew: issues.new?.length || 0,
+    todosCompleted: todos.completed?.length || 0,
+    todosNew: todos.new?.length || 0,
+    headlinesCustomer: headlines.customer?.length || 0,
+    headlinesEmployee: headlines.employee?.length || 0,
+    cascadingMessages: cascadingMessages?.length || 0
   });
   console.log('📧 ===== END EMAIL TEMPLATE DEBUG =====');
 

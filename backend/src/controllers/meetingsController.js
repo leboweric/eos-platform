@@ -806,8 +806,8 @@ export const concludeMeeting = async (req, res) => {
         const meetingStartTime = meetingToSnapshot?.created_at || meetingToSnapshot?.actual_start_time;
         
         console.log('🔍 [Snapshot Filter] Meeting start time:', meetingStartTime);
-        console.log('🔍 [Snapshot Filter] Raw todos received:', todos);
-        console.log('🔍 [Snapshot Filter] Raw issues received:', issues);
+        console.log('🔍 [Snapshot Filter] Raw todos received:', { added: todos?.added?.length || 0, completed: todos?.completed?.length || 0 });
+        console.log('🔍 [Snapshot Filter] Raw issues received:', { count: issues?.length || 0 });
         
         // Filter todos to only include items from this meeting session
         let filteredTodos = todos || {};

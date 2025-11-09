@@ -835,22 +835,15 @@ export const getMeetingSummaryHTML = async (req, res) => {
 
     // Detailed debug logging to track data flow to template
     console.log('📄 ===== DETAILED DEBUG: Data being sent to template =====');
-    console.log('📄 Issues data:', JSON.stringify({
-      solved: formattedData.issues.solved,
-      new: formattedData.issues.new,
+    console.log('📄 Issues data:', {
       solvedCount: formattedData.issues.solved?.length || 0,
       newCount: formattedData.issues.new?.length || 0
-    }, null, 2));
+    });
     
-    console.log('📄 Todos data:', JSON.stringify({
-      completed: formattedData.todos.completed,
-      new: formattedData.todos.new,
+    console.log('📄 Todos data:', {
       completedCount: formattedData.todos.completed?.length || 0,
       newCount: formattedData.todos.new?.length || 0
-    }, null, 2));
-    
-    console.log('📄 First issue sample:', formattedData.issues.new?.[0]);
-    console.log('📄 First todo sample:', formattedData.todos.new?.[0]);
+    });
     
     console.log('📄 Summary data:', {
       hasAISummary: !!formattedData.aiSummary && formattedData.aiSummary !== 'No detailed summary available for this meeting.',
