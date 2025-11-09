@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
+import { parseDateLocal } from '../utils/dateUtils';
   CheckSquare, 
   Plus, 
   Calendar,

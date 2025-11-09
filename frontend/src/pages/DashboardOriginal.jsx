@@ -36,6 +36,7 @@ import {
   X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { parseDateLocal } from '../utils/dateUtils';
 
 const Dashboard = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
@@ -158,7 +159,7 @@ const Dashboard = () => {
       
       const overdueTodos = userTodos.filter(todo => {
         if (!todo.due_date) return false;
-        const dueDate = new Date(todo.due_date);
+        const dueDate = parseDateLocal(todo.due_date);
         return dueDate < today;
       }).length;
       
@@ -542,7 +543,7 @@ const Dashboard = () => {
                         {priority.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? new Date(priority.dueDate).toLocaleDateString() : 'No due date'}
+                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? parseDateLocal(priority.dueDate).toLocaleDateString() : 'No due date'}
                       </p>
                     </div>
                     <div className="text-sm text-gray-500">

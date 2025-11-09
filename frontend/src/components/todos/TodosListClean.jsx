@@ -24,6 +24,7 @@ import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 import { TodoContextMenu } from '../TodoContextMenu';
+import { parseDateLocal } from '../../utils/dateUtils';
 
 const TodosListClean = ({ 
   todos, 
@@ -184,7 +185,7 @@ const TodosListClean = ({
       return format(new Date(todo.archived_at), 'MMM d');
     }
     if (todo.due_date) {
-      return format(new Date(todo.due_date), 'MMM d');
+      return format(parseDateLocal(todo.due_date), 'MMM d');
     }
     return '';
   };

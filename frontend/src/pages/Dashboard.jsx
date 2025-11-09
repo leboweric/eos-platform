@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { parseDateLocal } from '../utils/dateUtils';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
@@ -124,7 +125,7 @@ const DashboardClean = () => {
     if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
       return false;
     }
-    const dueDate = new Date(todo.due_date);
+    const dueDate = parseDateLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     dueDate.setHours(0, 0, 0, 0);
@@ -253,7 +254,7 @@ const DashboardClean = () => {
       
       const overdueTodos = userTodos.filter(todo => {
         if (!todo.due_date) return false;
-        const dueDate = new Date(todo.due_date);
+        const dueDate = parseDateLocal(todo.due_date);
         return dueDate < today;
       }).length;
       
@@ -627,7 +628,7 @@ const DashboardClean = () => {
                         {priority.title}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : 'No date'}
                       </p>
                     </div>
                     <span className="text-sm text-gray-500">{priority.progress || 0}%</span>

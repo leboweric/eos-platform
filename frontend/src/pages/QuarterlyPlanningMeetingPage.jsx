@@ -73,6 +73,7 @@ import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
+import { parseDateLocal } from '../utils/dateUtils';
 
 function QuarterlyPlanningMeetingPage() {
   const { user } = useAuthStore();
@@ -2536,7 +2537,7 @@ function QuarterlyPlanningMeetingPage() {
                                     
                                     {/* Due Date */}
                                     <div className="w-20 text-right text-sm text-slate-600">
-                                      {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                      {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : '-'}
                                     </div>
                                     
                                     {/* Menu */}
@@ -2873,7 +2874,7 @@ function QuarterlyPlanningMeetingPage() {
                                         </span>
                                         <span className="flex items-center gap-1">
                                           <Calendar className="h-3 w-3" />
-                                          Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                          Due {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : 'No date'}
                                         </span>
                                         {daysUntil !== null && (
                                           <span 
@@ -3604,7 +3605,7 @@ function QuarterlyPlanningMeetingPage() {
                                       {/* Due Date */}
                                       <div className="w-20 text-right">
                                         <span className="text-sm text-slate-600">
-                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                          {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : '-'}
                                         </span>
                                       </div>
                                       
@@ -3803,7 +3804,7 @@ function QuarterlyPlanningMeetingPage() {
                                   <>
                                     {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
                                     <span className="text-xs text-gray-600">
-                                      Due: {new Date(todo.due_date).toLocaleDateString()}
+                                      Due: {parseDateLocal(todo.due_date).toLocaleDateString()}
                                     </span>
                                   </>
                                 )}

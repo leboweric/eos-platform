@@ -4,6 +4,7 @@ import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
+import { parseDateLocal } from '../utils/dateUtils';
 import { exportTodosToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,7 +76,7 @@ const TodosPage = () => {
     if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
       return false;
     }
-    const dueDate = new Date(todo.due_date);
+    const dueDate = parseDateLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     dueDate.setHours(0, 0, 0, 0);
@@ -285,7 +286,7 @@ const TodosPage = () => {
 
     try {
       // Format the due date for display
-      const dueDate = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'Not set';
+      const dueDate = todo.due_date ? parseDateLocal(todo.due_date).toLocaleDateString() : 'Not set';
       const assigneeName = todo.assigned_to 
         ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
         : 'Unassigned';

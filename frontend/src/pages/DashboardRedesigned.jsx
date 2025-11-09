@@ -29,6 +29,7 @@ import TodaysFocus from '../components/dashboard/TodaysFocus';
 // Import original components for backward compatibility
 import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
+import { parseDateLocal } from '../utils/dateUtils';
 
 // Error Boundary Component (unchanged)
 class ErrorBoundary extends Component {
@@ -190,7 +191,7 @@ const DashboardRedesigned = () => {
       
       const overdueTodos = userTodos.filter(todo => {
         if (!todo.due_date) return false;
-        const dueDate = new Date(todo.due_date);
+        const dueDate = parseDateLocal(todo.due_date);
         return dueDate < today;
       });
       
@@ -412,7 +413,7 @@ const DashboardRedesigned = () => {
                       <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
                         <span>{priority.progress}% complete</span>
                         <span>•</span>
-                        <span>{priority.dueDate ? new Date(priority.dueDate).toLocaleDateString() : 'No due date'}</span>
+                        <span>{priority.dueDate ? parseDateLocal(priority.dueDate).toLocaleDateString() : 'No due date'}</span>
                       </div>
                     </div>
                     <Badge 

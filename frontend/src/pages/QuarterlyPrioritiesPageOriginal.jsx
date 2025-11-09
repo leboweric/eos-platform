@@ -48,6 +48,7 @@ import {
   Brain
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
+import { parseDateLocal } from '../utils/dateUtils';
 
 // Error Boundary Component
 class ErrorBoundary extends Component {

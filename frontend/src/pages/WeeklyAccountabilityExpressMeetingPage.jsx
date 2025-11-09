@@ -100,6 +100,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
+import { parseDateLocal } from '../utils/dateUtils';
 
 // Helper function to parse date string as local date
 const parseDateAsLocal = (dateStr) => {
@@ -2324,15 +2325,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
       
       // Calculate if the todo is overdue
-      const isOverdue = todo.due_date && new Date(todo.due_date) < new Date();
+      const isOverdue = todo.due_date && parseDateLocal(todo.due_date) < new Date();
       const daysOverdue = isOverdue ? 
-        Math.floor((new Date() - new Date(todo.due_date)) / (1000 * 60 * 60 * 24)) : 0;
+        Math.floor((new Date() - parseDateLocal(todo.due_date)) / (1000 * 60 * 60 * 24)) : 0;
       
       // Create issue data
       const issueData = {
         title: isOverdue ? `Overdue: ${todo.title}` : `Issue: ${todo.title}`,
         description: isOverdue ? 
-          `This to-do is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.\n\nOriginal due date: ${new Date(todo.due_date).toLocaleDateString()}\n\n${todo.description || ''}` :
+          `This to-do is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.\n\nOriginal due date: ${parseDateLocal(todo.due_date).toLocaleDateString()}\n\n${todo.description || ''}` :
           `Created from to-do: ${todo.title}\n\n${todo.description || ''}`,
         timeline: 'short_term',
         priority_level: isOverdue && daysOverdue > 7 ? 'high' : 'normal',

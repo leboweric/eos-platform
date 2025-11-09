@@ -85,6 +85,7 @@ import { teamsService } from '../services/teamsService';
 import { formatDateSafe } from '../utils/dateUtils';
 import RockContextMenu from '../components/priorities/RockContextMenu';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
+import { parseDateLocal } from '../utils/dateUtils';
 
 function AnnualPlanningMeetingPage() {
   const { user } = useAuthStore();
@@ -3714,7 +3715,7 @@ function AnnualPlanningMeetingPage() {
                                       {/* Due Date */}
                                       <div className="w-20 text-right">
                                         <span className="text-sm text-slate-600">
-                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                          {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : '-'}
                                         </span>
                                       </div>
                                       
@@ -4087,7 +4088,7 @@ function AnnualPlanningMeetingPage() {
                                   <>
                                     {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
                                     <span className="text-xs text-gray-600">
-                                      Due: {new Date(todo.due_date).toLocaleDateString()}
+                                      Due: {parseDateLocal(todo.due_date).toLocaleDateString()}
                                     </span>
                                   </>
                                 )}

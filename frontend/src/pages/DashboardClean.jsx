@@ -60,6 +60,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { parseDateLocal } from '../utils/dateUtils';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
@@ -443,7 +444,7 @@ const DashboardClean = () => {
       
       const overdueTodos = userTodos.filter(todo => {
         if (!todo.due_date) return false;
-        const dueDate = new Date(todo.due_date);
+        const dueDate = parseDateLocal(todo.due_date);
         return dueDate < today;
       }).length;
       
@@ -1166,7 +1167,7 @@ const DashboardClean = () => {
                                           {priority.title}
                                         </span>
                                         <p className="text-xs text-slate-500 mt-0.5">
-                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                          {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : 'No date'}
                                         </p>
                                       </div>
                                       
@@ -1560,7 +1561,7 @@ const DashboardClean = () => {
                         {todos.map((todo) => {
                           const isComplete = todo.status === 'complete' || todo.status === 'completed';
                           const overdue = isOverdue(todo);
-                          const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
+                          const dueDate = todo.due_date ? format(parseDateLocal(todo.due_date), 'MMM d') : '';
                           
                           return (
                             <TodoContextMenu
@@ -1719,7 +1720,7 @@ const DashboardClean = () => {
                   {dashboardData.todos.map((todo) => {
                     const isComplete = todo.status === 'complete' || todo.status === 'completed';
                     const overdue = isOverdue(todo);
-                    const dueDate = todo.due_date ? format(new Date(todo.due_date), 'MMM d') : '';
+                    const dueDate = todo.due_date ? format(parseDateLocal(todo.due_date), 'MMM d') : '';
                     
                     return (
                       <TodoContextMenu
