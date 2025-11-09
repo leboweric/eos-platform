@@ -49,7 +49,23 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
     // Handle Tab key for indentation
     if (e.key === 'Tab') {
       e.preventDefault();
-      document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+      
+      // Check if we're in a list (bullet or numbered)
+      const inList = document.queryCommandState('insertUnorderedList') || 
+                     document.queryCommandState('insertOrderedList');
+      
+      if (inList) {
+        // Use indent/outdent for list items
+        if (e.shiftKey) {
+          document.execCommand('outdent', false, null);
+        } else {
+          document.execCommand('indent', false, null);
+        }
+      } else {
+        // For regular text, insert spaces
+        document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
+      }
+      
       handleChange();
     }
   };
@@ -180,10 +196,28 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
           margin: 0.5rem 0;
         }
         
+        .rich-text-content ul ul {
+          list-style-type: circle;
+          margin: 0.25rem 0;
+        }
+        
+        .rich-text-content ul ul ul {
+          list-style-type: square;
+        }
+        
         .rich-text-content ol {
           list-style-type: decimal;
           padding-left: 1.5rem;
           margin: 0.5rem 0;
+        }
+        
+        .rich-text-content ol ol {
+          list-style-type: lower-alpha;
+          margin: 0.25rem 0;
+        }
+        
+        .rich-text-content ol ol ol {
+          list-style-type: lower-roman;
         }
         
         .rich-text-content a {
