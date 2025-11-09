@@ -264,7 +264,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [formData.title, formData.description, formData.assignedToId, formData.assignedToIds, formData.dueDate, performAutoSave, todo?.id, createdTodoId]);
+  }, [formData.title, formData.description, formData.assignedToId, formData.assignedToIds, formData.dueDate, todo?.id, createdTodoId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

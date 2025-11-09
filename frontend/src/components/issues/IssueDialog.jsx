@@ -279,7 +279,7 @@ const IssueDialog = ({
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [formData.title, formData.description, formData.ownerId, formData.status, performAutoSave, issue?.id, createdIssueId]);
+  }, [formData.title, formData.description, formData.ownerId, formData.status, issue?.id, createdIssueId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
