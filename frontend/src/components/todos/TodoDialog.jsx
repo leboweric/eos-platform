@@ -56,6 +56,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   
   // Auto-save state
   const [autoSaving, setAutoSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const autoSaveTimeoutRef = useRef(null);
 
@@ -193,6 +194,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
       };
       const savedTodo = await onSave(submitData, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       setLastSaved(new Date());
+      setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
       
       // If this was a new todo, update the todo object with the returned ID
       // This allows subsequent auto-saves to update the same todo
@@ -211,6 +213,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   useEffect(() => {
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
+    
+    // Mark as having unsaved changes when user types
+    setHasUnsavedChanges(true);
     
     // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
@@ -804,13 +809,13 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                   Create Linked Issue
                 </Button>
               )}
-              {autoSaving && (
+              {(autoSaving || hasUnsavedChanges) && (
                 <span className="text-sm text-gray-500 flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Saving...
                 </span>
               )}
-              {!autoSaving && lastSaved && (
+              {!autoSaving && !hasUnsavedChanges && lastSaved && (
                 <span className="text-sm text-gray-500">
                   Saved {new Date(lastSaved).toLocaleTimeString()}
                 </span>

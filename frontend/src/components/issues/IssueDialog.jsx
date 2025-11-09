@@ -81,6 +81,7 @@ const IssueDialog = ({
   
   // Auto-save state
   const [autoSaving, setAutoSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const autoSaveTimeoutRef = useRef(null);
 
@@ -213,6 +214,7 @@ const IssueDialog = ({
         timeline: issue ? issue.timeline : timeline
       }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       setLastSaved(new Date());
+      setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
       
       // If this was a new issue, update the issue object with the returned ID
       // This allows subsequent auto-saves to update the same issue
@@ -231,6 +233,9 @@ const IssueDialog = ({
   useEffect(() => {
     // Don't auto-save if there's no title yet
     if (!formData.title.trim()) return;
+    
+    // Mark as having unsaved changes when user types
+    setHasUnsavedChanges(true);
     
     // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
@@ -782,7 +787,7 @@ const IssueDialog = ({
           <DialogFooter className="pt-6">
             {/* Auto-save indicator */}
             <div className="flex-1 flex items-center gap-2 text-sm text-slate-500">
-              {autoSaving ? (
+              {(autoSaving || hasUnsavedChanges) ? (
                 <>
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>Saving...</span>
