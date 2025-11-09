@@ -214,7 +214,7 @@ const IssueDialog = ({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
         title: formData.title,
         description: formData.description,
-        owner_id: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline
       }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
@@ -276,17 +276,25 @@ const IssueDialog = ({
     setError(null);
 
     try {
+      // Debug: Log what we're sending
+      console.log('=== IssueDialog handleSubmit ===');
+      console.log('formData.ownerId:', formData.ownerId);
+      console.log('user?.id:', user?.id);
+      
       // Save the issue first - include the ID if editing an existing issue
-      const savedIssue = await onSave({
+      const issueData = {
         ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing
         title: formData.title,
         description: formData.description,
-        owner_id: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline,
         // Include headline ID if this issue is being created from a headline
-        ...(issue?.headlineId ? { related_headline_id: issue.headlineId } : {})
-      });
+        ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
+      };
+      
+      console.log('Sending to onSave:', issueData);
+      const savedIssue = await onSave(issueData);
       
       // Upload new attachments if any
       if (newAttachments.length > 0 && (issue || savedIssue)) {
