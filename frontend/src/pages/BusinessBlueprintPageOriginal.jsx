@@ -1148,7 +1148,7 @@ const BusinessBlueprintPage = () => {
                               {(() => {
                                 // Parse date string manually to avoid timezone issues
                                 const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
-                                const date = new Date(year, month - 1, day);
+                                const date = new Date(year, month - 1, day, 12, 0, 0);
                                 return date.toLocaleDateString('en-US', { 
                                   year: 'numeric', 
                                   month: 'long', 

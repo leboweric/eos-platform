@@ -106,7 +106,7 @@ import { parseDateLocal } from '../utils/dateUtils';
 const parseDateAsLocal = (dateStr) => {
   if (!dateStr) return null;
   const [year, month, day] = dateStr.split("-").map(num => parseInt(num));
-  return new Date(year, month - 1, day);
+  return new Date(year, month - 1, day, 12, 0, 0);
 };
 
 // Helper function to determine if a To-Do is overdue
@@ -1460,7 +1460,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // If the date string is in YYYY-MM-DD format, parse it as local date
       if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dueDate.split('-').map(Number);
-        due = new Date(year, month - 1, day);
+        due = new Date(year, month - 1, day, 12, 0, 0);
       } else {
         // Otherwise parse normally (handles ISO timestamps)
         due = new Date(dueDate);

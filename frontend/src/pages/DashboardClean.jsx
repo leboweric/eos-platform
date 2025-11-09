@@ -87,7 +87,7 @@ const DashboardClean = () => {
   const parseDateAsLocal = (dateStr) => {
     if (!dateStr) return null;
     const [year, month, day] = dateStr.split("-").map(num => parseInt(num));
-    return new Date(year, month - 1, day);
+    return new Date(year, month - 1, day, 12, 0, 0);
   };
 
   const isOverdue = (todo) => {

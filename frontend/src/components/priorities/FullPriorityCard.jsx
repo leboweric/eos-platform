@@ -336,7 +336,7 @@ const FullPriorityCard = ({
     try {
       if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
+        const date = new Date(year, month - 1, day, 12, 0, 0);
         return format(date, 'MMM d, yyyy');
       }
       
@@ -360,7 +360,7 @@ const FullPriorityCard = ({
     let due;
     if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = dueDate.split('-').map(Number);
-      due = new Date(year, month - 1, day);
+      due = new Date(year, month - 1, day, 12, 0, 0);
     } else {
       due = new Date(dueDate);
     }

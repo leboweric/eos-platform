@@ -49,7 +49,8 @@ const TodosList = ({
   const parseDateAsLocal = (dateStr) => {
     if (!dateStr) return null;
     const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
-    return new Date(year, month - 1, day); // month is 0-indexed in JS
+    // Create at noon to avoid DST/timezone issues
+    return new Date(year, month - 1, day, 12, 0, 0);
   };
   
 

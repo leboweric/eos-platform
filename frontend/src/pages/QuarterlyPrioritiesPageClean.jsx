@@ -30,8 +30,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
 import { parseDateLocal } from '../utils/dateUtils';
+import { 
   CheckSquare, 
   Plus, 
   Calendar,
@@ -524,7 +524,7 @@ const QuarterlyPrioritiesPageClean = () => {
       // If the date string is already in YYYY-MM-DD format, parse it as local date
       if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
+        const date = new Date(year, month - 1, day, 12, 0, 0);
         return format(date, 'MMM d, yyyy');
       }
       
@@ -532,7 +532,7 @@ const QuarterlyPrioritiesPageClean = () => {
       if (typeof dateString === 'string' && dateString.includes('T')) {
         const datePart = dateString.split('T')[0];
         const [year, month, day] = datePart.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
+        const date = new Date(year, month - 1, day, 12, 0, 0);
         return format(date, 'MMM d, yyyy');
       }
       
@@ -560,7 +560,7 @@ const QuarterlyPrioritiesPageClean = () => {
       // If the date string is in YYYY-MM-DD format, parse it as local date
       if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dueDate.split('-').map(Number);
-        due = new Date(year, month - 1, day);
+        due = new Date(year, month - 1, day, 12, 0, 0);
       } else {
         due = new Date(dueDate);
         // Reset to start of day in local timezone
