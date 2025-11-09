@@ -3,6 +3,7 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext, isZeroUUID, getUserTeamScope } from '../utils/teamUtils.js';
 import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
+import meetingSocketService from '../services/meetingSocketService.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -246,9 +247,23 @@ export const createIssue = async (req, res) => {
       values
     );
     
+    const newIssue = result.rows[0];
+
+    // Broadcast to meeting participants if created during a meeting
+    try {
+      if (meeting_id && meetingSocketService) {
+        await meetingSocketService.broadcastToMeetingById(meeting_id, 'issue-created', {
+          issue: newIssue,
+          createdBy: req.user.first_name + ' ' + req.user.last_name
+        });
+      }
+    } catch (broadcastError) {
+      console.error('Failed to broadcast issue-created:', broadcastError.message);
+    }
+
     res.status(201).json({
       success: true,
-      data: result.rows[0]
+      data: newIssue
     });
   } catch (error) {
     console.error('Error creating issue:', error);

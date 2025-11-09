@@ -930,6 +930,38 @@ class MeetingSocketService {
     
     return rms > minRmsThreshold;
   }
+
+  // Broadcast to a specific meeting room by meeting code
+  broadcastToMeeting(meetingCode, event, data) {
+    if (!this.io) {
+      console.error('Socket.IO not initialized');
+      return;
+    }
+    this.io.to(meetingCode).emit(event, data);
+  }
+
+  // Get meeting code from meeting ID (database lookup)
+  async getMeetingCodeByMeetingId(meetingId) {
+    try {
+      const { query } = await import('../config/database.js');
+      const result = await query(
+        'SELECT meeting_code FROM meetings WHERE id = $1',
+        [meetingId]
+      );
+      return result.rows[0]?.meeting_code || null;
+    } catch (error) {
+      console.error('Error getting meeting code:', error.message);
+      return null;
+    }
+  }
+
+  // Broadcast to a meeting using meeting ID instead of code
+  async broadcastToMeetingById(meetingId, event, data) {
+    const meetingCode = await this.getMeetingCodeByMeetingId(meetingId);
+    if (meetingCode) {
+      this.broadcastToMeeting(meetingCode, event, data);
+    }
+  }
 }
 
 export default new MeetingSocketService();

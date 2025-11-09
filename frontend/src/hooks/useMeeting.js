@@ -284,6 +284,22 @@ const useMeeting = () => {
       console.error('❌ Meeting error:', data.message);
     });
 
+    // Handle real-time content broadcasts
+    newSocket.on('issue-created', (data) => {
+      console.log('📝 Issue created:', data.issue.title, 'by', data.createdBy);
+      window.dispatchEvent(new CustomEvent('meeting-issue-created', { detail: data }));
+    });
+
+    newSocket.on('todo-created', (data) => {
+      console.log('✅ Todo created:', data.todo.title, 'by', data.createdBy);
+      window.dispatchEvent(new CustomEvent('meeting-todo-created', { detail: data }));
+    });
+
+    newSocket.on('headline-created', (data) => {
+      console.log('📰 Headline created:', data.headline.text, 'by', data.createdBy);
+      window.dispatchEvent(new CustomEvent('meeting-headline-created', { detail: data }));
+    });
+
     setSocket(newSocket);
     
     // Set up periodic refresh of active meetings every 5 seconds

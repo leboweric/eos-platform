@@ -1,5 +1,6 @@
-import { query } from '../config/database.js';
+import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import meetingSocketService from '../services/meetingSocketService.js';
 
 // @desc    Get headlines for an organization/team
 // @route   GET /api/v1/organizations/:orgId/headlines
@@ -122,6 +123,19 @@ export const createHeadline = async (req, res) => {
     );
 
     const headline = headlineResult.rows[0];
+
+    // Broadcast to meeting participants if created during a meeting
+    try {
+      if (meeting_id && meetingSocketService) {
+        await meetingSocketService.broadcastToMeetingById(meeting_id, 'headline-created', {
+          headline: headline,
+          createdBy: req.user.first_name + ' ' + req.user.last_name
+        });
+      }
+    } catch (broadcastError) {
+      console.error('Failed to broadcast headline-created:', broadcastError.message);
+    }
+
     res.status(201).json({
       success: true,
       data: {
