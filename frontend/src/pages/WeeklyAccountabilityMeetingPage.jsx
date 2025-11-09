@@ -2018,7 +2018,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       const issueId = editingIssue?.id || issueData.id;
       
       if (isEditing && issueId) {
-        savedIssue = await issuesService.updateIssue(issueId, issueData);
+        savedIssue = await issuesService.updateIssue(issueId, {
+          ...issueData,
+          organization_id: user?.organizationId || user?.organization_id,
+          team_id: effectiveTeamId
+        });
         
         // For auto-save, optimistically update the local state without full refresh
         if (isAutoSave) {
