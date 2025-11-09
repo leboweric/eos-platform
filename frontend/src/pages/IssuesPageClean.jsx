@@ -969,6 +969,7 @@ const IssuesPageClean = () => {
           teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
           timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
+          onCreateTodo={handleCreateTodoFromIssue}
         />
         
         {/* Archive confirmation dialog */}

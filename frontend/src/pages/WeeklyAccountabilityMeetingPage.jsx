@@ -7502,6 +7502,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           teamMembers={teamMembers || []}
           teamId={teamId}
           onTimelineChange={handleTimelineChange}
+          onCreateTodo={handleCreateTodoFromIssue}
           onSave={async (issueData, options = {}) => {
             const { isAutoSave = false } = options;
             

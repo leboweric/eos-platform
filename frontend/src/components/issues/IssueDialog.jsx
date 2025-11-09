@@ -751,7 +751,7 @@ const IssueDialog = ({
                   Send to Team
                 </Button>
               )}
-              {onCreateTodo && (
+              {onCreateTodo && issue && (
                 <Button
                   type="button"
                   variant="outline"
