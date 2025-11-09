@@ -209,6 +209,7 @@ const IssueDialog = ({
       setAutoSaving(true);
       // Use createdIssueId if we've already created this issue via auto-save
       const issueId = issue?.id || createdIssueId;
+      
       const savedIssue = await onSave({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
         title: formData.title,
@@ -217,12 +218,15 @@ const IssueDialog = ({
         status: formData.status,
         timeline: issue ? issue.timeline : timeline
       }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
+      
       setLastSaved(new Date());
       setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
       
       // If this was a new issue, store the ID so subsequent auto-saves update instead of create
-      if (!issueId && savedIssue?.id) {
-        setCreatedIssueId(savedIssue.id);
+      // Extract ID from savedIssue (might be savedIssue.id or savedIssue.data.id)
+      const newId = savedIssue?.id || savedIssue?.data?.id;
+      if (!issueId && newId) {
+        setCreatedIssueId(newId);
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
@@ -826,7 +830,7 @@ const IssueDialog = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {issue ? 'Close' : 'Create'}
+                  {issue || createdIssueId ? 'Close' : 'Create'}
                 </>
               )}
             </Button>
