@@ -763,7 +763,7 @@ const IssueDialog = ({
                   className="text-sm whitespace-nowrap"
                 >
                   <ListTodo className="mr-1 h-3 w-3" />
-                  Create To-Do
+                  Create Linked To-Do
                 </Button>
               )}
               {isQuarterlyMeeting && onConvertToRock && (
