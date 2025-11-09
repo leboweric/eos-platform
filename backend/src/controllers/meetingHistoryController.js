@@ -16,29 +16,12 @@ export const getMeetingHistory = async (req, res) => {
       offset = 0 
     } = req.query;
     
-    // Log all received parameters for debugging
-    console.log('📥 Received query parameters:', {
-      team_id,
-      meeting_type,
-      start_date,
-      end_date,
-      search_query,
-      limit,
-      offset
-    });
-
     // Ensure user has access to this organization
-    console.log('Meeting history access check:', {
-      userOrgId: req.user.organization_id,
-      requestedOrgId: orgId,
-      userId: req.user.id
-    });
     
     // Allow access if user's organization matches OR if user is accessing their own org
     // Some users might have organization_id while others have organizationId
     const userOrgId = req.user.organization_id || req.user.organizationId;
     if (userOrgId !== orgId) {
-      console.log('Access denied - organization mismatch');
       return res.status(403).json({ 
         error: 'Access denied to this organization',
         debug: {
@@ -50,7 +33,6 @@ export const getMeetingHistory = async (req, res) => {
     
     // CRITICAL SECURITY: Require team_id for access control
     if (!team_id) {
-      console.log('🔒 Access denied - team_id is required for security');
       return res.status(400).json({
         error: 'Team selection required',
         message: 'You must specify a team to view meeting history'
@@ -58,8 +40,6 @@ export const getMeetingHistory = async (req, res) => {
     }
     
     // CRITICAL SECURITY: Verify user has access to the requested team
-    console.log('🔒 Verifying team access for user:', req.user.id, 'team:', team_id);
-    
     const teamAccessQuery = `
       SELECT tm.id, t.name, t.is_leadership_team
       FROM team_members tm
@@ -69,14 +49,9 @@ export const getMeetingHistory = async (req, res) => {
         AND t.organization_id = $3
     `;
     
-    console.log('🎯 About to execute TEAM ACCESS query');
-    console.log('Team access query:', teamAccessQuery);
-    console.log('Team access params:', [team_id, req.user.id, orgId]);
     const teamAccessResult = await db.query(teamAccessQuery, [team_id, req.user.id, orgId]);
-    console.log('✅ TEAM ACCESS query executed successfully');
     
     if (teamAccessResult.rows.length === 0) {
-      console.log('🚫 Access denied - user is not a member of team:', team_id);
       return res.status(403).json({
         error: 'Access denied',
         message: 'You do not have access to view this team\'s meeting history'
@@ -84,7 +59,6 @@ export const getMeetingHistory = async (req, res) => {
     }
     
     const userTeam = teamAccessResult.rows[0];
-    console.log('✅ Access granted - user is member of:', userTeam.name);
 
     let query = `
       SELECT 
@@ -110,30 +84,15 @@ export const getMeetingHistory = async (req, res) => {
     const params = [orgId, team_id];
     let paramCount = 3;
 
-    // Filter by meeting type
-    // TEMPORARY DEBUG: Checking if meeting_type filter causes t_1 error
-    if (meeting_type) {
-      console.log('🚨 DEBUG: Meeting type filter requested:', meeting_type);
-      console.log('🚨 DEBUG: TEMPORARILY DISABLED to debug t_1 error');
-      // COMMENTED OUT FOR DEBUGGING
-      /*
-      // Sanitize meeting_type to prevent any SQL injection or weird characters
-      const sanitizedMeetingType = String(meeting_type).trim();
-      console.log('🔍 Meeting type filter:', {
-        original: meeting_type,
-        sanitized: sanitizedMeetingType,
-        length: sanitizedMeetingType.length
-      });
-      
-      query += ` AND ms.meeting_type = $${paramCount}::text`;
-      params.push(sanitizedMeetingType);
-      paramCount++;
-      */
-    }
+    // Filter by meeting type (currently disabled)
+    // if (meeting_type) {
+    //   query += ` AND ms.meeting_type = $${paramCount}::text`;
+    //   params.push(String(meeting_type).trim());
+    //   paramCount++;
+    // }
 
     // Filter by start date
     if (start_date) {
-      console.log('📅 Adding start_date filter:', start_date);
       query += ` AND ms.meeting_date::date >= $${paramCount}::date`;
       params.push(start_date);
       paramCount++;
@@ -141,7 +100,6 @@ export const getMeetingHistory = async (req, res) => {
 
     // Filter by end date
     if (end_date) {
-      console.log('📅 Adding end_date filter:', end_date);
       query += ` AND ms.meeting_date::date <= $${paramCount}::date`;
       params.push(end_date);
       paramCount++;
@@ -158,57 +116,7 @@ export const getMeetingHistory = async (req, res) => {
     query += ` ORDER BY ms.meeting_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(parseInt(limit), parseInt(offset));
 
-    console.log('🔍 === FULL SQL QUERY ===');
-    console.log('Query string:', query);
-    console.log('Parameters:', params);
-    console.log('Parameter mapping:');
-    params.forEach((param, index) => {
-      console.log(`  $${index + 1} = '${param}'`);
-    });
-    console.log('========================');
-
-    console.log('🎯 About to execute MAIN meeting history query');
     const result = await db.query(query, params);
-    console.log('✅ MAIN query executed successfully');
-    
-    console.log(`Meeting history query returned ${result.rows.length} rows`);
-    
-    // DIAGNOSTIC: If no results, check what dates exist for this team
-    if (result.rows.length === 0 && (start_date || end_date)) {
-      console.log('🔍 DIAGNOSTIC: Checking actual dates in database for this team...');
-      const diagnosticQuery = `
-        SELECT 
-          COUNT(*) as total,
-          MIN(meeting_date) as earliest_date,
-          MAX(meeting_date) as latest_date,
-          COUNT(CASE WHEN meeting_date IS NULL THEN 1 END) as null_dates
-        FROM meeting_snapshots
-        WHERE organization_id = $1 AND team_id = $2
-      `;
-      console.log('🎯 About to execute DIAGNOSTIC query 1');
-      const diagnosticResult = await db.query(diagnosticQuery, [orgId, team_id]);
-      console.log('✅ DIAGNOSTIC query 1 executed successfully');
-      console.log('📊 Date range in database:', diagnosticResult.rows[0]);
-      
-      // Also check without date filters
-      const withoutDatesQuery = `
-        SELECT COUNT(*) as count_without_date_filters
-        FROM meeting_snapshots
-        WHERE organization_id = $1 AND team_id = $2
-      `;
-      console.log('🎯 About to execute DIAGNOSTIC query 2');
-      const withoutDatesResult = await db.query(withoutDatesQuery, [orgId, team_id]);
-      console.log('✅ DIAGNOSTIC query 2 executed successfully');
-      console.log('📊 Total meetings without date filters:', withoutDatesResult.rows[0].count_without_date_filters);
-    }
-    if (result.rows.length > 0) {
-      console.log('First row sample:', {
-        id: result.rows[0].id,
-        meeting_type: result.rows[0].meeting_type,
-        team_name: result.rows[0].team_name,
-        meeting_date: result.rows[0].meeting_date
-      });
-    }
 
     res.json({
       meetings: result.rows,
@@ -218,21 +126,7 @@ export const getMeetingHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Failed to get meeting history:', error);
-    console.error('Full error details:', {
-      message: error.message,
-      detail: error.detail,
-      hint: error.hint,
-      position: error.position,
-      where: error.where,
-      file: error.file,
-      line: error.line,
-      routine: error.routine
-    });
-    
-    // Log the exact query that failed
-    console.error('Failed query was:', query);
-    console.error('With parameters:', params);
+    console.error('Failed to get meeting history:', error.message);
     
     res.status(500).json({ 
       error: 'Failed to get meeting history',
@@ -261,7 +155,6 @@ export const getMeetingSnapshot = async (req, res) => {
     // Some users might have organization_id while others have organizationId
     const userOrgId = req.user.organization_id || req.user.organizationId;
     if (userOrgId !== orgId) {
-      console.log('Access denied - organization mismatch');
       return res.status(403).json({ 
         error: 'Access denied to this organization',
         debug: {
@@ -335,7 +228,6 @@ export const createMeetingSnapshot = async (req, res) => {
     // Some users might have organization_id while others have organizationId
     const userOrgId = req.user.organization_id || req.user.organizationId;
     if (userOrgId !== orgId) {
-      console.log('Access denied - organization mismatch');
       return res.status(403).json({ 
         error: 'Access denied to this organization',
         debug: {
@@ -623,7 +515,6 @@ export const updateMeetingNotes = async (req, res) => {
     // Some users might have organization_id while others have organizationId
     const userOrgId = req.user.organization_id || req.user.organizationId;
     if (userOrgId !== orgId) {
-      console.log('Access denied - organization mismatch');
       return res.status(403).json({ 
         error: 'Access denied to this organization',
         debug: {
@@ -686,7 +577,6 @@ export const exportMeetingHistoryCSV = async (req, res) => {
     // Some users might have organization_id while others have organizationId
     const userOrgId = req.user.organization_id || req.user.organizationId;
     if (userOrgId !== orgId) {
-      console.log('Access denied - organization mismatch');
       return res.status(403).json({ 
         error: 'Access denied to this organization',
         debug: {

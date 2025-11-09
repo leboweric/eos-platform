@@ -99,10 +99,6 @@ export const createMeeting = async (req, res) => {
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
   try {
-    logger.debug('Request params:', req.params);
-    logger.debug('Request URL:', req.url);
-    logger.debug('Request baseUrl:', req.baseUrl);
-    
     const { 
       meetingType,
       duration,
@@ -444,8 +440,7 @@ export const concludeMeeting = async (req, res) => {
       );
       
       if (isLeadershipResult.rows[0]?.is_leadership_team) {
-        console.log('WARNING: Leadership team has no explicit members');
-        console.log('SAFETY: Only sending to meeting concluder to prevent spam');
+        logger.warn('Leadership team has no explicit members - sending only to concluder to prevent spam');
         
         // CRITICAL CHANGE: Only send to the person who concluded the meeting
         // This prevents accidentally emailing 100+ employees
@@ -456,14 +451,13 @@ export const concludeMeeting = async (req, res) => {
         
         if (concluderResult.rows[0]?.email) {
           attendeeEmails = [concluderResult.rows[0].email];
-          console.log('Meeting summary will only be sent to concluder:', concluderResult.rows[0].email);
+          logger.debug('Meeting summary sent to concluder only:', concluderResult.rows[0].email);
         } else {
           attendeeEmails = [];
-          console.log('No valid email for concluder, not sending summary');
+          logger.warn('No valid email for concluder, not sending summary');
         }
       } else {
-        console.log('No team members found for team:', teamId);
-        console.log('SAFETY: Not sending email summary');
+        logger.warn('No team members found for team:', teamId);
         attendeeEmails = [];
       }
     } else {
@@ -592,9 +586,9 @@ export const concludeMeeting = async (req, res) => {
         rockCompletionPercentage = Math.round((completedRocks / totalRocks) * 100);
       }
       
-      console.log(`Rock completion: ${completedRocks} of ${totalRocks} (${rockCompletionPercentage}%)`);
+      logger.debug(`Rock completion: ${completedRocks}/${totalRocks} (${rockCompletionPercentage}%)`);
     } catch (rockError) {
-      console.error('Failed to fetch quarterly priorities:', rockError);
+      logger.error('Failed to fetch quarterly priorities:', rockError);
       // Continue without rock data
     }
     
@@ -622,14 +616,12 @@ export const concludeMeeting = async (req, res) => {
       
       const cascadeResult = await db.query(cascadeQuery, [organizationId, teamId]);
       
-      console.log(`Found ${cascadeResult.rows.length} cascading messages from today for team ${teamId}`);
-      
       cascadingMessages = cascadeResult.rows.map(msg => ({
         message: msg.message,
         recipientTeams: msg.recipient_teams
       }));
     } catch (cascadeError) {
-      console.error('Failed to fetch cascading messages:', cascadeError);
+      logger.error('Failed to fetch cascading messages:', cascadeError);
       // Continue without cascading messages
     }
     
@@ -668,7 +660,7 @@ export const concludeMeeting = async (req, res) => {
         };
       });
     } catch (todoError) {
-      console.error('Failed to fetch open todos:', todoError);
+      logger.error('Failed to fetch open todos:', todoError);
       // Continue with empty todos rather than failing
     }
 
@@ -772,26 +764,17 @@ export const concludeMeeting = async (req, res) => {
     // Send email to attendees only if requested (sendEmail parameter)
     let emailsSent = 0;
     if (sendEmail) {
-      console.log('🔍 [Backend] Email requested, proceeding with email sending...');
       if (attendeeEmails.length > 0) {
         try {
-          console.log('Attempting to send email to', attendeeEmails.length, 'recipients');
-          console.log('Recipients:', attendeeEmails);
-          console.log('Email data formatted for unified template:', {
-            teamName: emailData.teamName,
-            themeColor: emailData.themeColor,
-            hasIssues: emailData.issues.solved.length + emailData.issues.new.length,
-            hasTodos: emailData.todos.completed.length + emailData.todos.new.length
-          });
+          logger.info(`Sending meeting summary to ${attendeeEmails.length} recipients`);
           
           // Send using the unified template
           await emailService.sendMeetingSummary(attendeeEmails, emailData);
           
           emailsSent = attendeeEmails.length;
-          console.log('Meeting summary emails sent successfully using unified template');
+          logger.info('Meeting summary emails sent successfully');
         } catch (emailError) {
-          console.error('Failed to send meeting summary email:', emailError);
-          console.error('Email error details:', emailError.message, emailError.stack);
+          logger.error('Failed to send meeting summary email:', emailError.message);
           // Continue with successful conclusion even if email fails
           // Note: Response already sent to user, this is background processing
           // Record meeting conclusion for reminder scheduling
@@ -804,10 +787,8 @@ export const concludeMeeting = async (req, res) => {
           // Don't return - continue with snapshot creation
         }
       } else {
-        console.warn('No email addresses found for team members');
+        logger.warn('No email addresses found for team members');
       }
-    } else {
-      console.log('🔍 [Backend] Email not requested, skipping email sending');
     }
 
     // Record meeting conclusion for reminder scheduling
@@ -856,15 +837,6 @@ export const concludeMeeting = async (req, res) => {
           aiSummary: null  // Fixed: aiSummary was undefined
         };
         
-        console.log('📊 Snapshot data prepared:', {
-          hasIssues: (issues || []).length > 0,
-          hasTodos: (todos || []).length > 0,
-          attendeeCount: (individualRatings || attendees || []).length,
-          hasNotes: !!(notes || meetingToSnapshot?.notes),
-          rating,
-          metricsCount: (metrics || []).length
-        });
-
         // Create snapshot
         const snapshotParams = [
           meetingToSnapshot?.id || null,  // Can be null for informal meetings
@@ -878,18 +850,6 @@ export const concludeMeeting = async (req, res) => {
           JSON.stringify(snapshotData)
         ];
         
-        console.log('💾 About to INSERT snapshot with params:', {
-          meeting_id: snapshotParams[0],
-          organization_id: snapshotParams[1],
-          team_id: snapshotParams[2],
-          meeting_type: snapshotParams[3],
-          meeting_date: snapshotParams[4],
-          duration_minutes: snapshotParams[5],
-          average_rating: snapshotParams[6],
-          facilitator_id: snapshotParams[7],
-          snapshot_data_length: snapshotParams[8]?.length
-        });
-        
         const snapshotResult = await db.query(
           `INSERT INTO meeting_snapshots 
            (meeting_id, organization_id, team_id, meeting_type, meeting_date, 
@@ -901,33 +861,28 @@ export const concludeMeeting = async (req, res) => {
         );
         
         if (snapshotResult.rows.length > 0) {
-          console.log('✅✅✅ Meeting snapshot created successfully! ID:', snapshotResult.rows[0].id);
-          logger.info('✅ Meeting snapshot created successfully');
+          logger.info('Meeting snapshot created successfully:', snapshotResult.rows[0].id);
         } else {
-          console.log('⚠️ Snapshot INSERT returned 0 rows - likely ON CONFLICT triggered (duplicate)');
+          logger.debug('Snapshot already exists (ON CONFLICT)');
         }
       }
     } catch (snapshotError) {
-      console.error('❌❌❌ SNAPSHOT CREATION FAILED ❌❌❌');
-      console.error('❌ Error:', snapshotError.message);
-      console.error('❌ Stack:', snapshotError.stack);
-      logger.error('Error creating meeting snapshot:', snapshotError);
+      logger.error('Error creating meeting snapshot:', snapshotError.message);
       // Don't fail the entire conclusion if snapshot creation fails
     }
 
     // Response already sent immediately after marking meeting complete
     // This background processing completes asynchronously
-    logger.info('✅ Background processing complete for meeting:', updatedMeetingId);
-    logger.info('📧 Emails sent:', emailsSent, '| Used fallback summary:', usedFallbackSummary);
+    logger.info(`Background processing complete - Emails sent: ${emailsSent}`);
       
       } catch (bgError) {
-        logger.error('❌ Error in background processing:', bgError);
+        logger.error('Error in background processing:', bgError.message);
         // Don't crash - user already got success response
       }
     }); // End of setImmediate
 
   } catch (error) {
-    console.error('Error concluding meeting:', error);
+    logger.error('Error concluding meeting:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to conclude meeting',
@@ -993,7 +948,7 @@ async function getAISummaryForTranscript(transcriptId) {
     return null;
     
   } catch (error) {
-    console.error('Error fetching AI summary:', error);
+    logger.error('Error fetching AI summary:', error.message);
     return null;
   }
 }
