@@ -2234,6 +2234,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         await fetchTodaysTodos();
       }
       
+      // Only close dialog for manual saves, not auto-saves
+      if (!options.isAutoSave) {
+        setShowTodoDialog(false);
+        setEditingTodo(null);
+        setTodoFromIssue(null);
+      }
+      
       return savedTodo;
     } catch (error) {
       console.error('Failed to save todo:', error);
@@ -7588,72 +7595,19 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         <TodoDialog
           open={showTodoDialog}
-          onOpenChange={setShowTodoDialog}
+          onOpenChange={(open) => {
+            setShowTodoDialog(open);
+            if (!open) {
+              setEditingTodo(null);
+              setTodoFromIssue(null);
+            }
+          }}
           todo={editingTodo}
           todoFromIssue={todoFromIssue}
           teamMembers={teamMembers || []}
           teamId={teamId}
-          onSave={async (todoData, options = {}) => {
-            const { isAutoSave = false } = options;
-            
-            try {
-              const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              const todoDataWithOrgInfo = {
-                ...todoData,
-                organization_id: user?.organizationId || user?.organization_id,
-                team_id: effectiveTeamId,
-                department_id: effectiveTeamId
-              };
-
-              let savedTodo;
-              if (editingTodo) {
-                savedTodo = await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
-              } else {
-                savedTodo = await todosService.createTodo(todoDataWithOrgInfo);
-              }
-              
-              // Only refresh and close dialog for manual saves
-              if (!isAutoSave) {
-                setShowTodoDialog(false);
-                setEditingTodo(null);
-                setTodoFromIssue(null);
-                setSuccess('To-do saved successfully');
-                
-                // Refresh todos after save
-                await fetchTodosData();
-                
-                // Broadcast todo update to other participants
-                if (meetingCode && broadcastTodoUpdate) {
-                  broadcastTodoUpdate({
-                    action: 'refresh'
-                  });
-                }
-              } else {
-                // For auto-save, optimistically update local state
-                if (editingTodo) {
-                  // Update existing todo
-                  setTodos(prev => prev.map(t => t.id === editingTodo.id ? savedTodo : t));
-                } else {
-                  // Add new todo
-                  setTodos(prev => [...prev, savedTodo]);
-                }
-                
-                // Broadcast to other participants
-                if (meetingCode && broadcastTodoUpdate) {
-                  broadcastTodoUpdate({
-                    action: 'refresh'
-                  });
-                }
-              }
-              
-              return savedTodo;
-            } catch (error) {
-              console.error('Failed to save todo:', error);
-              if (!isAutoSave) {
-                setError('Failed to save to-do');
-              }
-            }
-          }}
+          onSave={handleSaveTodo}
+          onCreateIssue={handleCreateIssueFromTodo}
         />
         
         <HeadlineDialog
