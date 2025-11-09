@@ -58,6 +58,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   const [autoSaving, setAutoSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [createdTodoId, setCreatedTodoId] = useState(null); // Track ID of auto-created todo
   const autoSaveTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -127,6 +128,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
       setExistingAttachments([]);
     }
     setFiles([]);
+    setCreatedTodoId(null); // Reset auto-created todo ID
   }, [todo]);
 
   // Clear form when dialog opens without a todo or set from issue
@@ -187,27 +189,29 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
     
     try {
       setAutoSaving(true);
+      // Use createdTodoId if we've already created this todo via auto-save
+      const todoId = todo?.id || createdTodoId;
       const submitData = {
         ...formData,
-        ...(todo?.id ? { id: todo.id } : {}), // Include ID if editing existing
+        ...(todoId ? { id: todoId } : {}), // Include ID if editing existing or previously auto-created
         ...(formData.isMultiAssignee && { assignedToIds: formData.assignedToIds })
       };
       const savedTodo = await onSave(submitData, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       setLastSaved(new Date());
       setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
       
-      // If this was a new todo, update the todo object with the returned ID
-      // This allows subsequent auto-saves to update the same todo
-      if (!todo?.id && savedTodo?.id) {
-        // Note: We can't directly update the 'todo' prop, but the parent component
-        // should handle this through onSave callback
+      // If this was a new todo, store the ID so subsequent auto-saves update instead of create
+      // Extract ID from savedTodo (might be savedTodo.id or savedTodo.data.id)
+      const newId = savedTodo?.id || savedTodo?.data?.id;
+      if (!todoId && newId) {
+        setCreatedTodoId(newId);
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
     } finally {
       setAutoSaving(false);
     }
-  }, [todo, formData, onSave]);
+  }, [todo, formData, onSave, createdTodoId]);
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
@@ -835,7 +839,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 Cancel
               </Button>
               <Button 
-                type="submit" 
+                type={todo || createdTodoId ? 'button' : 'submit'}
+                onClick={todo || createdTodoId ? () => onOpenChange(false) : undefined}
                 disabled={saving}
                 className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                 style={{
@@ -850,7 +855,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    {todo ? 'Close' : 'Create'} To-Do
+                    {todo || createdTodoId ? 'Close' : 'Create'} To-Do
                   </>
                 )}
               </Button>
