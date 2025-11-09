@@ -827,7 +827,14 @@ const IssueDialog = ({
             </Button>
             <Button 
               type={issue?.id ? 'button' : 'submit'}
-              onClick={issue?.id ? onClose : undefined}
+              onClick={issue?.id ? async () => {
+                // If there are unsaved changes, save before closing
+                if (hasUnsavedChanges) {
+                  await handleSubmit(new Event('submit'));
+                } else {
+                  onClose();
+                }
+              } : undefined}
               disabled={loading || uploadingFiles}
               className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
               style={{
