@@ -797,7 +797,7 @@ export const getMeetingSummaryHTML = async (req, res) => {
       themeColor: orgData?.theme_primary_color || '#6366f1', // Use org theme
       
       aiSummary: snapshotData.ai_summary || snapshotData.aiSummary || snapshotData.meetingSummary || 
-                 'No detailed summary available for this meeting.',
+                 'No detailed AI summary available for this meeting.',
       headlines: snapshotData.headlines || { customer: [], employee: [] },
       cascadingMessages: snapshotData.cascading_messages || snapshotData.cascadingMessages || [],
       
@@ -846,7 +846,7 @@ export const getMeetingSummaryHTML = async (req, res) => {
     });
     
     console.log('📄 Summary data:', {
-      hasAISummary: !!formattedData.aiSummary && formattedData.aiSummary !== 'No detailed summary available for this meeting.',
+      hasAISummary: !!formattedData.aiSummary && formattedData.aiSummary !== 'No detailed AI summary available for this meeting.',
       aiSummaryLength: formattedData.aiSummary?.length,
       teamName: formattedData.teamName,
       hasIssuesSection: (formattedData.issues.solved?.length > 0 || formattedData.issues.new?.length > 0),
