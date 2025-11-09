@@ -850,7 +850,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    {todo ? 'Update' : 'Create'} To-Do
+                    {todo ? 'Close' : 'Create'} To-Do
                   </>
                 )}
               </Button>

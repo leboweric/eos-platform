@@ -824,7 +824,7 @@ const IssueDialog = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {issue ? 'Update' : 'Create'}
+                  {issue ? 'Close' : 'Create'}
                 </>
               )}
             </Button>
