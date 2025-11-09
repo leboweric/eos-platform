@@ -423,7 +423,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: 'normal',
         organization_id: orgId,
         department_id: effectiveTeamId,
-        related_headline_id: headline.id
+        related_headline_id: headline.id,
+        meeting_id: sessionId  // Link issue to current meeting session
       };
       
       await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
@@ -1249,7 +1250,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }
                     console.log('📊 New meeting session started:', result.session.id);
                     
-                    // Create meeting record in database (NEW - fixes conclude 404 error)
+                    // Create meeting record in database (fixes conclude 404 error)
                     try {
                       console.log('📝 Creating meeting record in database...');
                       const meetingResult = await meetingsService.createMeeting(
@@ -1378,7 +1379,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 }
                 console.log('📊 New meeting session started:', result.session.id);
                 
-                // Create meeting record in database (NEW - fixes conclude 404 error)
+                // Create meeting record in database (fixes conclude 404 error)
                 try {
                   console.log('📝 Creating meeting record in database (immediate path)...');
                   const meetingResult = await meetingsService.createMeeting(
@@ -1660,7 +1661,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 setTotalPausedTime(result.session.total_paused_duration || 0);
               }
               
-              // Create meeting record in database (NEW - fixes conclude 404 error)
+              // Create meeting record in database (fixes conclude 404 error)
               try {
                 console.log('📝 Creating meeting record in database (fallback path)...');
                 const meetingResult = await meetingsService.createMeeting(
@@ -1895,7 +1896,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               console.log('📊 Session created for leader:', result.session.id);
               setSessionId(result.session.id);
               
-              // Create meeting record in database (NEW - fixes conclude 404 error)
+              // Create meeting record in database (fixes conclude 404 error)
               try {
                 console.log('📝 Creating meeting record in database (leader path)...');
                 const meetingResult = await meetingsService.createMeeting(
@@ -1994,7 +1995,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: isOffTrack ? 'high' : 'normal',
         ownerId: metric.ownerId || null,
         department_id: effectiveTeamId,
-        teamId: effectiveTeamId  // Add both fields to ensure compatibility
+        teamId: effectiveTeamId,  // Add both fields to ensure compatibility
+        meeting_id: sessionId  // Link issue to current meeting session
       });
       
       setSuccess(
@@ -2055,19 +2057,23 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
         
         // Broadcast issue update to other participants
+        console.log('📡 Attempting to broadcast issue update...', { meetingCode, hasBroadcast: !!broadcastIssueListUpdate, issueId });
         if (meetingCode && broadcastIssueListUpdate) {
+          console.log('📡 Broadcasting issue update:', { action: 'update', issueId, issue: savedIssue.data || savedIssue });
           broadcastIssueListUpdate({
             action: 'update',
             issueId: issueId,
             issue: savedIssue.data || savedIssue
           });
+        } else {
+          console.warn('⚠️ Broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
         }
       } else {
         savedIssue = await issuesService.createIssue({
-          meeting_id: sessionId,
           ...issueData,
           timeline: issueTimeline,
-          department_id: effectiveTeamId
+          department_id: effectiveTeamId,
+          meeting_id: sessionId  // Link issue to current meeting session
         });
         
         // For auto-save, optimistically add to local state without full refresh
@@ -2104,7 +2110,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to save issue:', error);
       setError('Failed to save issue');
-       throw error;
+      throw error;
     }
   }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue]);
 
@@ -2248,10 +2254,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else {
         const response = await todosService.createTodo({
-          meeting_id: sessionId,
           ...todoData,
           organization_id: orgId,
-          department_id: effectiveTeamId
+          department_id: effectiveTeamId,
+          meeting_id: sessionId  // Link todo to current meeting session
         });
         
         // Handle multi-assignee response (array of To-Dos)
@@ -2261,8 +2267,10 @@ const WeeklyAccountabilityMeetingPage = () => {
             setSuccess(`${response.data.length} To-Dos created successfully`);
           }
           
-          // Broadcast refresh action to sync all participants
+          // Broadcast each todo creation (backend already broadcasts via socket)
+          // Frontend broadcast is for real-time UI sync
           if (meetingCode && broadcastTodoUpdate) {
+            // Broadcast a refresh action to sync all participants
             broadcastTodoUpdate({
               action: 'refresh'
             });
@@ -2291,13 +2299,20 @@ const WeeklyAccountabilityMeetingPage = () => {
         await fetchTodaysTodos();
       }
       
+      // Only close dialog for manual saves, not auto-saves
+      if (!options.isAutoSave) {
+        setShowTodoDialog(false);
+        setEditingTodo(null);
+        setTodoFromIssue(null);
+      }
+      
       return savedTodo;
     } catch (error) {
       console.error('Failed to save todo:', error);
       setError('Failed to save to-do');
       throw error; // Re-throw so TodoDialog can handle it
     }
-  }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError]);
+  }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
   const handleReorderIssues = async (reorderedIssues) => {
     try {
@@ -2427,17 +2442,28 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleToggleTodoComplete = async (todo) => {
+    console.log('🚀🚀🚀 handleToggleTodoComplete CALLED in Level 10 Meeting');
+    console.log('📦 Todo object:', todo);
+    console.log('👤 _currentAssignee:', todo._currentAssignee);
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
-      await todosService.updateTodo(todo.id, {
+      const updateData = {
         ...todo,
         organization_id: orgId,
         department_id: effectiveTeamId,
         completed: !todo.completed,
         status: !todo.completed ? 'completed' : 'pending'
-      });
+      };
+      
+      // For multi-assignee todos, pass the assigneeId to mark specific copy
+      if (todo._currentAssignee) {
+        updateData.assigneeId = todo._currentAssignee.id;
+        console.log('🎯 Level 10 Meeting: Marking multi-assignee todo for assignee:', todo._currentAssignee.id);
+      }
+      
+      await todosService.updateTodo(todo.id, updateData);
       await fetchTodosData();
       
       // Broadcast todo status update to other participants
@@ -2502,7 +2528,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         id: undefined,
         title: `${todo.title} (Copy)`,
         organization_id: orgId,
-        department_id: effectiveTeamId
+        department_id: effectiveTeamId,
+        meeting_id: sessionId  // Link todo to current meeting session
       });
       await fetchTodosData();
       
@@ -5970,7 +5997,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                       todosByAssignee[assigneeId].todos.push({
                         ...todo,
                         isMultiAssignee: todo.assignees.length > 1,
-                        allAssignees: todo.assignees
+                        allAssignees: todo.assignees,
+                        _currentAssignee: assignee  // Store which assignee's copy this is
                       });
                     });
                   } else {
@@ -6010,11 +6038,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 }
                 
-                const completedCount = todos.filter(todo => todo.status === 'complete' || todo.status === 'completed').length;
+                // Calculate count of completed but not archived todos
+                // For multi-assignee todos, count each completed assignee copy separately
+                const doneNotArchivedCount = todos.reduce((count, t) => {
+                  if (t.archived === true) return count;
+                  
+                  // For single-assignee todos, check main status
+                  if (!t.is_multi_assignee || !t.assignees) {
+                    return count + (t.status === 'complete' ? 1 : 0);
+                  }
+                  
+                  // For multi-assignee todos, count each completed copy as a separate todo
+                  // This matches the behavior of single-assignee todos
+                  const completedCopies = t.assignees.filter(a => a.completed === true).length;
+                  return count + completedCopies;
+                }, 0);
                 
                 return (
                   <div className="space-y-6">
-                    {completedCount > 0 && (
+                    {doneNotArchivedCount > 0 && (
                       <div className="flex justify-end">
                         <Button 
                           variant="outline" 
@@ -6022,27 +6064,27 @@ const WeeklyAccountabilityMeetingPage = () => {
                           style={{
                             background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                           }}
-                           onClick={async () => {
-                             try {
-                               const count = completedCount;
-                               await todosService.archiveDoneTodos();
-                               await fetchTodosData();
-                               setSuccess(`Successfully archived ${count} completed to-do${count !== 1 ? 's' : ''}`);
-                               
-                               // Broadcast archive-done action to other meeting participants
-                               if (meetingCode && broadcastTodoUpdate) {
-                                 broadcastTodoUpdate({
-                                   action: 'archive-done'
-                                 });
-                               }
-                             } catch (error) {
-                               console.error('Failed to archive todos:', error);
-                               setError('Failed to archive completed to-dos');
-                             }
-                           }}
+                          onClick={async () => {
+                            try {
+                              const count = doneNotArchivedCount;
+                              await todosService.archiveDoneTodos();
+                              await fetchTodosData();
+                              setSuccess(`Successfully archived ${count} completed to-do${count !== 1 ? 's' : ''}`);
+                              
+                              // Broadcast archive-done action to other meeting participants
+                              if (meetingCode && broadcastTodoUpdate) {
+                                broadcastTodoUpdate({
+                                  action: 'archive-done'
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Failed to archive todos:', error);
+                              setError('Failed to archive completed to-dos');
+                            }
+                          }}
                         >
                           <Archive className="mr-2 h-4 w-4" />
-                          Archive Done ({completedCount})
+                          Archive Done ({doneNotArchivedCount})
                         </Button>
                       </div>
                     )}
@@ -6126,8 +6168,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             e.preventDefault();
                                             
                                             try {
+                                              // For multi-assignee todos, pass the specific assignee ID
+                                              const updateData = { 
+                                                status: isComplete ? 'incomplete' : 'complete'
+                                              };
+                                              
+                                              // If this is a multi-assignee todo, include which assignee's copy to mark
+                                              if (todo._currentAssignee) {
+                                                updateData.assigneeId = todo._currentAssignee.id;
+                                              }
+                                              
+                                              await todosService.updateTodo(todo.id, updateData);
                                               const newStatus = isComplete ? 'incomplete' : 'complete';
-                                              await todosService.updateTodo(todo.id, { status: newStatus });
                                               
                                               // Update local state immediately instead of refetching
                                               setTodos(prevTodos => 
@@ -6635,7 +6687,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                             acc[assigneeName].push({
                               ...todo,
                               isMultiAssignee: todo.assignees.length > 1,
-                              allAssignees: todo.assignees
+                              allAssignees: todo.assignees,
+                              _currentAssignee: assignee  // Store which assignee's copy this is
                             });
                           });
                         } else {
