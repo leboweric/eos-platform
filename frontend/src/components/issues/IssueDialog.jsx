@@ -494,7 +494,7 @@ const IssueDialog = ({
             {/* Second row: Summary full width */}
             <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
-              <div className="max-h-[200px] overflow-y-auto border rounded-xl shadow-sm">
+              <div className="min-h-[120px] max-h-[400px] overflow-y-auto border rounded-xl shadow-sm resize-y">
                 <RichTextEditor
                   value={formData.description}
                   onChange={(value) => setFormData({ ...formData, description: value })}
