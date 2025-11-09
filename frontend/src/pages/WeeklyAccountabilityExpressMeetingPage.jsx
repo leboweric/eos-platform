@@ -7443,31 +7443,41 @@ const WeeklyAccountabilityMeetingPage = () => {
           teamMembers={teamMembers || []}
           teamId={teamId}
           onTimelineChange={handleTimelineChange}
-          onSave={async (issueData) => {
+          onSave={async (issueData, options = {}) => {
+            const { isAutoSave = false } = options;
+            
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
+              let savedIssue;
               
               if (editingIssue) {
-                await issuesService.updateIssue(editingIssue.id, {
+                savedIssue = await issuesService.updateIssue(editingIssue.id, {
                   ...issueData,
                   organization_id: user?.organizationId || user?.organization_id,
                   team_id: effectiveTeamId
                 });
               } else {
-                await issuesService.createIssue({
+                savedIssue = await issuesService.createIssue({
                   ...issueData,
                   organization_id: user?.organizationId || user?.organization_id,
                   team_id: effectiveTeamId
                 });
               }
               
-              await fetchIssuesData();
-              setShowIssueDialog(false);
-              setEditingIssue(null);
-              setSuccess('Issue saved successfully');
+              // Only refresh and close dialog for manual saves
+              if (!isAutoSave) {
+                await fetchIssuesData();
+                setShowIssueDialog(false);
+                setEditingIssue(null);
+                setSuccess('Issue saved successfully');
+              }
+              
+              return savedIssue;
             } catch (error) {
               console.error('Failed to save issue:', error);
-              setError('Failed to save issue');
+              if (!isAutoSave) {
+                setError('Failed to save issue');
+              }
             }
           }}
         />
@@ -7479,7 +7489,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           todoFromIssue={todoFromIssue}
           teamMembers={teamMembers || []}
           teamId={teamId}
-          onSave={async (todoData) => {
+          onSave={async (todoData, options = {}) => {
+            const { isAutoSave = false } = options;
+            
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
               const todoDataWithOrgInfo = {
@@ -7489,29 +7501,44 @@ const WeeklyAccountabilityMeetingPage = () => {
                 department_id: effectiveTeamId
               };
 
+              let savedTodo;
               if (editingTodo) {
-                await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
+                savedTodo = await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
               } else {
-                await todosService.createTodo(todoDataWithOrgInfo);
+                savedTodo = await todosService.createTodo(todoDataWithOrgInfo);
               }
               
-              setShowTodoDialog(false);
-              setEditingTodo(null);
-              setTodoFromIssue(null);
-              setSuccess('To-do saved successfully');
-              
-              // Refresh todos after save
-              await fetchTodosData();
-              
-              // Broadcast todo update to other participants
-              if (meetingCode && broadcastTodoUpdate) {
-                broadcastTodoUpdate({
-                  action: 'refresh'
-                });
+              // Only refresh and close dialog for manual saves
+              if (!isAutoSave) {
+                setShowTodoDialog(false);
+                setEditingTodo(null);
+                setTodoFromIssue(null);
+                setSuccess('To-do saved successfully');
+                
+                // Refresh todos after save
+                await fetchTodosData();
+                
+                // Broadcast todo update to other participants
+                if (meetingCode && broadcastTodoUpdate) {
+                  broadcastTodoUpdate({
+                    action: 'refresh'
+                  });
+                }
+              } else {
+                // For auto-save, still broadcast but don't refresh or close
+                if (meetingCode && broadcastTodoUpdate) {
+                  broadcastTodoUpdate({
+                    action: 'refresh'
+                  });
+                }
               }
+              
+              return savedTodo;
             } catch (error) {
               console.error('Failed to save todo:', error);
-              setError('Failed to save to-do');
+              if (!isAutoSave) {
+                setError('Failed to save to-do');
+              }
             }
           }}
         />

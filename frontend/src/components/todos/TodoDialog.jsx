@@ -191,7 +191,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
         ...(todo?.id ? { id: todo.id } : {}), // Include ID if editing existing
         ...(formData.isMultiAssignee && { assignedToIds: formData.assignedToIds })
       };
-      const savedTodo = await onSave(submitData);
+      const savedTodo = await onSave(submitData, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       setLastSaved(new Date());
       
       // If this was a new todo, update the todo object with the returned ID
