@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, Edit2, Trash2, Check, X, Loader2, Archive, Building2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useDepartment } from '../contexts/DepartmentContext';
@@ -30,7 +31,7 @@ const HeadlinesPage = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageText, setEditingMessageText] = useState('');
   const [deletingMessageId, setDeletingMessageId] = useState(null);
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('active');
   const [archivedHeadlines, setArchivedHeadlines] = useState({ customer: [], employee: [] });
   const [archivedMessages, setArchivedMessages] = useState([]);
   
@@ -57,6 +58,13 @@ const HeadlinesPage = () => {
       fetchCascadedMessages();
     }
   }, [selectedDepartment, user]);
+  
+  // Fetch archived items when switching to archived tab
+  useEffect(() => {
+    if (activeTab === 'archived' && (selectedDepartment || user?.teams?.[0])) {
+      fetchArchivedItems();
+    }
+  }, [activeTab, selectedDepartment, user]);
 
   const fetchHeadlines = async () => {
     try {
@@ -104,6 +112,28 @@ const HeadlinesPage = () => {
       setCascadedMessages(response.data || []);
     } catch (error) {
       console.error('Failed to fetch cascaded messages:', error);
+    }
+  };
+  
+  const fetchArchivedItems = async () => {
+    try {
+      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
+      if (!teamId) return;
+      
+      // Fetch archived headlines
+      const headlinesResponse = await headlinesService.getHeadlines(teamId, true);
+      const archived = headlinesResponse.data || [];
+      setArchivedHeadlines({
+        customer: archived.filter(h => h.type === 'customer'),
+        employee: archived.filter(h => h.type === 'employee')
+      });
+      
+      // Fetch archived cascading messages
+      const messagesResponse = await cascadingMessagesService.getCascadingMessages(orgId, teamId, null, null, true);
+      setArchivedMessages(messagesResponse.data || []);
+    } catch (error) {
+      console.error('Failed to fetch archived items:', error);
+      toast.error('Failed to load archived items');
     }
   };
 
@@ -267,8 +297,8 @@ const HeadlinesPage = () => {
           </div>
         )}
 
-        {/* Three Cards Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Two Cards Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Create Headline Card */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/50 
                           hover:shadow-xl transition-shadow duration-300">
@@ -346,76 +376,32 @@ const HeadlinesPage = () => {
               </Button>
             </div>
           </div>
-
-          {/* View Archive Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/50 
-                          hover:shadow-xl transition-shadow duration-300">
-            <div className="flex flex-col items-center text-center space-y-6">
-              {/* Icon */}
-              <div 
-                className="p-4 rounded-xl"
-                style={{ 
-                  background: `linear-gradient(135deg, ${themeColors.accent}20, ${themeColors.primary}20)` 
-                }}
-              >
-                <Archive 
-                  className="h-12 w-12" 
-                  style={{ color: themeColors.accent }}
-                />
-              </div>
-              
-              {/* Title and Description */}
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">View Archive</h2>
-                <p className="text-gray-600 text-sm">
-                  View archived headlines and cascading messages
-                </p>
-              </div>
-              
-              {/* Button */}
-              <Button
-                onClick={async () => {
-                  try {
-                    const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
-                    if (!teamId) {
-                      toast.error('No team selected');
-                      return;
-                    }
-                    
-                    // Fetch archived headlines
-                    const headlinesResponse = await headlinesService.getHeadlines(teamId, true);
-                    const archived = headlinesResponse.data || [];
-                    setArchivedHeadlines({
-                      customer: archived.filter(h => h.type === 'customer'),
-                      employee: archived.filter(h => h.type === 'employee')
-                    });
-                    
-                    // Fetch archived cascading messages
-                    const messagesResponse = await cascadingMessagesService.getCascadingMessages(orgId, teamId, null, null, true);
-                    setArchivedMessages(messagesResponse.data || []);
-                    
-                    setShowArchiveModal(true);
-                  } catch (error) {
-                    console.error('Failed to fetch archived items:', error);
-                    toast.error('Failed to load archived items');
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2"
-                style={{
-                  background: `linear-gradient(135deg, ${themeColors.accent}, ${themeColors.primary})`,
-                }}
-              >
-                <Archive className="h-5 w-5" />
-                View Archive
-              </Button>
-            </div>
-          </div>
         </div>
 
-        {/* Headlines and Messages Display */}
-        <div className="mt-12 space-y-8">
-          {/* Customer Headlines */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+        {/* Headlines and Messages Display with Tabs */}
+        <div className="mt-12">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-transparent border-0 p-0 h-auto mb-8 border-b border-gray-100">
+              <TabsTrigger 
+                value="active" 
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+              >
+                Active
+                <span className="ml-2 text-sm text-gray-500">({headlines.customer.length + headlines.employee.length})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="archived" 
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+              >
+                Archived
+                <span className="ml-2 text-sm text-gray-500">({archivedHeadlines.customer.length + archivedHeadlines.employee.length})</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="active" className="mt-0">
+              <div className="space-y-8">
+                {/* Customer Headlines */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Users className="h-5 w-5 text-slate-600" />
               Customer Headlines ({headlines.customer.length})
@@ -615,6 +601,94 @@ const HeadlinesPage = () => {
               <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>
             )}
           </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="archived" className="mt-0">
+              <div className="space-y-8">
+                {/* Archived Customer Headlines */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-slate-600" />
+                    Archived Customer Headlines ({archivedHeadlines.customer.length})
+                  </h3>
+                  {archivedHeadlines.customer.length > 0 ? (
+                    <div className="space-y-3">
+                      {archivedHeadlines.customer.map(headline => (
+                        <HeadlineItem
+                          key={headline.id}
+                          headline={headline}
+                          teamId={selectedDepartment?.id || user?.teams?.[0]?.id}
+                          orgId={orgId}
+                          onIssueCreated={fetchArchivedItems}
+                          themeColors={themeColors}
+                          type="Customer"
+                          showEditDelete={false}
+                          user={user}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No archived customer headlines</p>
+                  )}
+                </div>
+
+                {/* Archived Employee Headlines */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Users2 className="h-5 w-5 text-slate-600" />
+                    Archived Employee Headlines ({archivedHeadlines.employee.length})
+                  </h3>
+                  {archivedHeadlines.employee.length > 0 ? (
+                    <div className="space-y-3">
+                      {archivedHeadlines.employee.map(headline => (
+                        <HeadlineItem
+                          key={headline.id}
+                          headline={headline}
+                          teamId={selectedDepartment?.id || user?.teams?.[0]?.id}
+                          orgId={orgId}
+                          onIssueCreated={fetchArchivedItems}
+                          themeColors={themeColors}
+                          type="Employee"
+                          showEditDelete={false}
+                          user={user}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No archived employee headlines</p>
+                  )}
+                </div>
+
+                {/* Archived Cascading Messages */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-slate-600" />
+                    Archived Cascading Messages ({archivedMessages.length})
+                  </h3>
+                  {archivedMessages.length > 0 ? (
+                    <div className="space-y-3">
+                      {archivedMessages.map(message => (
+                        <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
+                          <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <p className="text-xs text-slate-600">
+                              From: {message.from_team_name || 'Unknown Team'}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No archived cascading messages</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -636,118 +710,6 @@ const HeadlinesPage = () => {
       {/* Confirmation dialogs */}
       <archiveConfirmation.ConfirmationDialog />
       <deleteConfirmation.ConfirmationDialog />
-      
-      {/* Archive Modal */}
-      {showArchiveModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Archive className="h-5 w-5" style={{ color: themeColors.primary }} />
-                Archive
-              </h3>
-              <button
-                onClick={() => setShowArchiveModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Archived Headlines */}
-              <div>
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">Archived Headlines</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Customer Headlines */}
-                  <div>
-                    <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                      <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      Customer Headlines ({archivedHeadlines.customer.length})
-                    </h5>
-                    {archivedHeadlines.customer.length > 0 ? (
-                      <div className="space-y-2">
-                        {archivedHeadlines.customer.map(headline => (
-                          <div key={headline.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-sm text-slate-900">{headline.headline}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {format(new Date(headline.created_at), 'MMM d, yyyy h:mm a')}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 italic">No archived customer headlines</p>
-                    )}
-                  </div>
-                  
-                  {/* Employee Headlines */}
-                  <div>
-                    <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                      <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      Employee Headlines ({archivedHeadlines.employee.length})
-                    </h5>
-                    {archivedHeadlines.employee.length > 0 ? (
-                      <div className="space-y-2">
-                        {archivedHeadlines.employee.map(headline => (
-                          <div key={headline.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-sm text-slate-900">{headline.headline}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {format(new Date(headline.created_at), 'MMM d, yyyy h:mm a')}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 italic">No archived employee headlines</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Archived Cascading Messages */}
-              <div className="pt-6 border-t border-slate-200">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
-                  Archived Cascading Messages ({archivedMessages.length})
-                </h4>
-                {archivedMessages.length > 0 ? (
-                  <div className="space-y-2">
-                    {archivedMessages.map(message => (
-                      <div key={message.id} className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
-                        <p className="text-sm font-medium text-slate-900">{message.message}</p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <p className="text-xs text-slate-600">
-                            From: {message.from_team_name || 'Unknown Team'}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {format(new Date(message.created_at), 'MMM d, yyyy h:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 italic">No archived cascading messages</p>
-                )}
-              </div>
-            </div>
-            
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-              <Button
-                onClick={() => setShowArchiveModal(false)}
-                variant="outline"
-                className="text-slate-700 border-slate-300 hover:bg-slate-50"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
