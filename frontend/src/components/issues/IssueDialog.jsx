@@ -214,7 +214,7 @@ const IssueDialog = ({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
         title: formData.title,
         description: formData.description,
-        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        owner_id: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline
       }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
@@ -278,7 +278,7 @@ const IssueDialog = ({
         ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing
         title: formData.title,
         description: formData.description,
-        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        owner_id: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline,
         // Include headline ID if this issue is being created from a headline
