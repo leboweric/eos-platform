@@ -36,6 +36,17 @@ const MeetingBar = ({ meetingStartTime, meetingStarted }) => {
     toggleFollow
   } = useMeeting();
 
+  console.log('🟢 MeetingBar Component Render:', {
+    isEnabled,
+    isConnected,
+    meetingCode,
+    participantsCount: participants?.length,
+    isLeader,
+    currentLeader,
+    meetingStartTime,
+    meetingStarted
+  });
+
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinAsLeader, setJoinAsLeader] = useState(false);
@@ -70,7 +81,10 @@ const MeetingBar = ({ meetingStartTime, meetingStarted }) => {
   };
 
   // Don't render if feature is disabled
-  if (!isEnabled) return null;
+  if (!isEnabled) {
+    console.log('❌ MeetingBar: Feature disabled (isEnabled=false)');
+    return null;
+  }
 
   const handleJoinMeeting = () => {
     if (joinCode.trim()) {
@@ -90,8 +104,11 @@ const MeetingBar = ({ meetingStartTime, meetingStarted }) => {
 
   // Not in a meeting - don't show anything
   if (!meetingCode) {
+    console.log('❌ MeetingBar: No meeting code');
     return null;
   }
+
+  console.log('✅ MeetingBar: Rendering bar with', participants?.length, 'participants');
 
   // In a meeting - show meeting bar
   return (

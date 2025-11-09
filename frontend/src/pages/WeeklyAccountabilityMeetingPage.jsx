@@ -7523,6 +7523,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         </div>
 
         {/* Meeting Bar - for collaborative meetings */}
+        {console.log('🔍 MeetingBar Check:', { meetingCode, participantsCount: participants?.length, isLeader, currentLeader })}
         {meetingCode && (
           <MeetingBar
             meetingCode={meetingCode}
