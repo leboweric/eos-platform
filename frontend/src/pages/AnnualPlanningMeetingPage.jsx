@@ -4376,33 +4376,7 @@ function AnnualPlanningMeetingPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Claim Presenter button */}
-                    {!isLeader && meetingCode && (
-                      <Button
-                        onClick={() => {
-                          if (claimPresenter) {
-                            claimPresenter();
-                          }
-                        }}
-                        className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                        style={{
-                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                          ':hover': {
-                            filter: 'brightness(1.1)'
-                          }
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.filter = 'brightness(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.filter = 'brightness(1)';
-                        }}
-                        size="sm"
-                      >
-                        Claim Presenter
-                      </Button>
-                    )}
+
                     
                     {/* Current presenter indicator */}
                     {isLeader && (
