@@ -168,100 +168,144 @@ export const createTodo = async (req, res) => {
     // Calculate default due date (7 days from now) if not provided
     const finalDueDate = dueDate || getDateDaysFromNow(7);
 
-    const todoId = uuidv4();
-    
-    // Handle multi-assignees
+    // NEW APPROACH: Create separate To-Do records for multi-assignee
     const isMultiAssignee = assignedToIds && assignedToIds.length > 0;
-    const singleAssignee = isMultiAssignee ? null : (assignedToId || userId);
     
-    const result = await query(
-      `INSERT INTO todos (
-        id, organization_id, team_id, owner_id, assigned_to_id, 
-        title, description, due_date, priority, status, is_multi_assignee, related_priority_id, meeting_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      RETURNING *`,
-      [
-        todoId, orgId, teamId || null, userId, singleAssignee,
-        title, description, finalDueDate, priority || 'medium', 'incomplete', isMultiAssignee, relatedPriorityId || null, meeting_id || null
-      ]
-    );
-    
-    // If multi-assignee, insert into junction table
-    if (isMultiAssignee && assignedToIds.length > 0) {
-      const assigneeValues = assignedToIds.map((assigneeId, index) => 
-        `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
-      ).join(', ');
-      
-      const assigneeParams = assignedToIds.flatMap(assigneeId => 
-        [todoId, assigneeId, userId]
-      );
-      
-      await query(
-        `INSERT INTO todo_assignees (todo_id, user_id, assigned_by) 
-         VALUES ${assigneeValues}`,
-        assigneeParams
-      );
-    }
-
-    // Fetch the complete todo with user information
-    const todoResult = await query(
-      `SELECT 
-        t.*,
-        owner.id as owner_id,
-        owner.first_name as owner_first_name,
-        owner.last_name as owner_last_name,
-        owner.email as owner_email,
-        assignee.id as assignee_id,
-        assignee.first_name as assignee_first_name,
-        assignee.last_name as assignee_last_name,
-        assignee.email as assignee_email
-      FROM todos t
-      LEFT JOIN users owner ON t.owner_id = owner.id
-      LEFT JOIN users assignee ON t.assigned_to_id = assignee.id
-      WHERE t.id = $1`,
-      [todoId]
-    );
-    
-    // If multi-assignee, fetch all assignees
-    let multiAssignees = [];
     if (isMultiAssignee) {
-      const assigneesResult = await query(
-        `SELECT u.id, u.first_name, u.last_name, u.email
-         FROM todo_assignees ta
-         JOIN users u ON ta.user_id = u.id
-         WHERE ta.todo_id = $1`,
+      // Create a group ID to link all related To-Dos
+      const todoGroupId = uuidv4();
+      const createdTodos = [];
+      
+      // Create one To-Do for each assignee
+      for (const assigneeId of assignedToIds) {
+        const todoId = uuidv4();
+        
+        const result = await query(
+          `INSERT INTO todos (
+            id, organization_id, team_id, owner_id, assigned_to_id, 
+            title, description, due_date, priority, status, todo_group_id, related_priority_id, meeting_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          RETURNING *`,
+          [
+            todoId, orgId, teamId || null, userId, assigneeId,
+            title, description, finalDueDate, priority || 'medium', 'incomplete', todoGroupId, relatedPriorityId || null, meeting_id || null
+          ]
+        );
+        
+        // Fetch complete todo with user information
+        const todoResult = await query(
+          `SELECT 
+            t.*,
+            owner.id as owner_id,
+            owner.first_name as owner_first_name,
+            owner.last_name as owner_last_name,
+            owner.email as owner_email,
+            assignee.id as assignee_id,
+            assignee.first_name as assignee_first_name,
+            assignee.last_name as assignee_last_name,
+            assignee.email as assignee_email
+          FROM todos t
+          LEFT JOIN users owner ON t.owner_id = owner.id
+          LEFT JOIN users assignee ON t.assigned_to_id = assignee.id
+          WHERE t.id = $1`,
+          [todoId]
+        );
+        
+        const todo = todoResult.rows[0];
+        createdTodos.push({
+          ...todo,
+          assigned_to: {
+            id: todo.assignee_id,
+            first_name: todo.assignee_first_name,
+            last_name: todo.assignee_last_name,
+            email: todo.assignee_email
+          }
+        });
+        
+        // Broadcast each todo creation if in a meeting
+        try {
+          if (meeting_id && meetingSocketService) {
+            await meetingSocketService.broadcastToMeetingById(meeting_id, 'todo-created', {
+              todo: todo,
+              createdBy: req.user.first_name + ' ' + req.user.last_name,
+              todoGroupId: todoGroupId
+            });
+          }
+        } catch (broadcastError) {
+          console.error('Failed to broadcast todo-created:', broadcastError.message);
+        }
+      }
+      
+      // Return all created To-Dos with group info
+      res.status(201).json({
+        success: true,
+        data: createdTodos,
+        todoGroupId: todoGroupId,
+        isGroup: true
+      });
+    } else {
+      // Single assignee - create one To-Do (original logic)
+      const todoId = uuidv4();
+      const singleAssignee = assignedToId || userId;
+      
+      const result = await query(
+        `INSERT INTO todos (
+          id, organization_id, team_id, owner_id, assigned_to_id, 
+          title, description, due_date, priority, status, todo_group_id, related_priority_id, meeting_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *`,
+        [
+          todoId, orgId, teamId || null, userId, singleAssignee,
+          title, description, finalDueDate, priority || 'medium', 'incomplete', null, relatedPriorityId || null, meeting_id || null
+        ]
+      );
+
+      // Fetch the complete todo with user information
+      const todoResult = await query(
+        `SELECT 
+          t.*,
+          owner.id as owner_id,
+          owner.first_name as owner_first_name,
+          owner.last_name as owner_last_name,
+          owner.email as owner_email,
+          assignee.id as assignee_id,
+          assignee.first_name as assignee_first_name,
+          assignee.last_name as assignee_last_name,
+          assignee.email as assignee_email
+        FROM todos t
+        LEFT JOIN users owner ON t.owner_id = owner.id
+        LEFT JOIN users assignee ON t.assigned_to_id = assignee.id
+        WHERE t.id = $1`,
         [todoId]
       );
-      multiAssignees = assigneesResult.rows;
-    }
 
-    const todo = todoResult.rows[0];
+      const todo = todoResult.rows[0];
 
-    // Broadcast to meeting participants if created during a meeting
-    try {
-      if (meeting_id && meetingSocketService) {
-        await meetingSocketService.broadcastToMeetingById(meeting_id, 'todo-created', {
-          todo: todo,
-          createdBy: req.user.first_name + ' ' + req.user.last_name
-        });
+      // Broadcast to meeting participants if created during a meeting
+      try {
+        if (meeting_id && meetingSocketService) {
+          await meetingSocketService.broadcastToMeetingById(meeting_id, 'todo-created', {
+            todo: todo,
+            createdBy: req.user.first_name + ' ' + req.user.last_name
+          });
+        }
+      } catch (broadcastError) {
+        console.error('Failed to broadcast todo-created:', broadcastError.message);
       }
-    } catch (broadcastError) {
-      console.error('Failed to broadcast todo-created:', broadcastError.message);
-    }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        ...todo,
-        assigned_to: todo.assignee_id ? {
-          id: todo.assignee_id,
-          first_name: todo.assignee_first_name,
-          last_name: todo.assignee_last_name,
-          email: todo.assignee_email
-        } : null,
-        assignees: multiAssignees // New field for multi-assignees
-      }
-    });
+      res.status(201).json({
+        success: true,
+        data: {
+          ...todo,
+          assigned_to: todo.assignee_id ? {
+            id: todo.assignee_id,
+            first_name: todo.assignee_first_name,
+            last_name: todo.assignee_last_name,
+            email: todo.assignee_email
+          } : null
+        }
+      });
+    }
   } catch (error) {
     console.error('Error creating todo:', error);
     res.status(500).json({
