@@ -311,6 +311,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [editingHeadline, setEditingHeadline] = useState(null);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archivedHeadlines, setArchivedHeadlines] = useState({ customer: [], employee: [] });
+  const [archivedMessages, setArchivedMessages] = useState([]);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
@@ -5812,6 +5815,38 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <Send className="h-4 w-4" />
                       Send Cascading Message
                     </Button>
+                    
+                    {/* View Archive Button */}
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          const orgId = user?.organizationId || user?.organization_id;
+                          
+                          // Fetch archived headlines
+                          const headlinesResponse = await headlinesService.getHeadlines(effectiveTeamId, true);
+                          const archived = headlinesResponse.data || [];
+                          setArchivedHeadlines({
+                            customer: archived.filter(h => h.type === 'customer'),
+                            employee: archived.filter(h => h.type === 'employee')
+                          });
+                          
+                          // Fetch archived cascading messages
+                          const messagesResponse = await cascadingMessagesService.getCascadingMessages(orgId, effectiveTeamId, null, null, true);
+                          setArchivedMessages(messagesResponse.data || []);
+                          
+                          setShowArchiveModal(true);
+                        } catch (error) {
+                          console.error('Failed to fetch archived items:', error);
+                          setError('Failed to load archived items');
+                        }
+                      }}
+                      variant="outline"
+                      className="text-slate-700 border-slate-300 hover:bg-slate-50 transition-colors flex items-center gap-2"
+                    >
+                      <Archive className="h-4 w-4" />
+                      View Archive
+                    </Button>
                     {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
                     <Button
                       variant="outline"
@@ -5951,6 +5986,118 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </div>
                 )}
               </div>
+              
+              {/* Archive Modal */}
+              {showArchiveModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+                    {/* Modal Header */}
+                    <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <Archive className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        Archive
+                      </h3>
+                      <button
+                        onClick={() => setShowArchiveModal(false)}
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    
+                    {/* Modal Content */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      {/* Archived Headlines */}
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-900 mb-4">Archived Headlines</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Customer Headlines */}
+                          <div>
+                            <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                              <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                              Customer Headlines ({archivedHeadlines.customer.length})
+                            </h5>
+                            {archivedHeadlines.customer.length > 0 ? (
+                              <div className="space-y-2">
+                                {archivedHeadlines.customer.map(headline => (
+                                  <div key={headline.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p className="text-sm text-slate-900">{headline.headline}</p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      {format(new Date(headline.created_at), 'MMM d, yyyy h:mm a')}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-500 italic">No archived customer headlines</p>
+                            )}
+                          </div>
+                          
+                          {/* Employee Headlines */}
+                          <div>
+                            <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                              <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                              Employee Headlines ({archivedHeadlines.employee.length})
+                            </h5>
+                            {archivedHeadlines.employee.length > 0 ? (
+                              <div className="space-y-2">
+                                {archivedHeadlines.employee.map(headline => (
+                                  <div key={headline.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p className="text-sm text-slate-900">{headline.headline}</p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      {format(new Date(headline.created_at), 'MMM d, yyyy h:mm a')}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-500 italic">No archived employee headlines</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Archived Cascading Messages */}
+                      <div className="pt-6 border-t border-slate-200">
+                        <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                          <MessageSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                          Archived Cascading Messages ({archivedMessages.length})
+                        </h4>
+                        {archivedMessages.length > 0 ? (
+                          <div className="space-y-2">
+                            {archivedMessages.map(message => (
+                              <div key={message.id} className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
+                                <p className="text-sm font-medium text-slate-900">{message.message}</p>
+                                <div className="mt-2 flex items-center justify-between">
+                                  <p className="text-xs text-slate-600">
+                                    From: {message.from_team_name || 'Unknown Team'}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    {format(new Date(message.created_at), 'MMM d, yyyy h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-500 italic">No archived cascading messages</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Modal Footer */}
+                    <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                      <Button
+                        onClick={() => setShowArchiveModal(false)}
+                        variant="outline"
+                        className="text-slate-700 border-slate-300 hover:bg-slate-50"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         );
@@ -6751,7 +6898,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div className="flex items-center gap-3 mt-1">
                                       {todo.due_date && (
                                         <span className={`text-xs font-medium ${
-                                          isOverdue(todo.due_date) ? 'text-red-600' : 'text-blue-600'
+                                          isOverdue(todo) ? 'text-red-600' : 'text-blue-600'
                                         }`}>
                                           Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
                                         </span>
@@ -6795,7 +6942,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 )}
                                 {todo.due_date && (
                                   <span className={`text-xs font-medium ${
-                                    isOverdue(todo.due_date) ? 'text-red-600' : 'text-blue-600'
+                                    isOverdue(todo) ? 'text-red-600' : 'text-blue-600'
                                   }`}>
                                     Due: {formatDateSafe(todo.due_date, 'MMM d, yyyy')}
                                   </span>

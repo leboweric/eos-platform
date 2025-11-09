@@ -11,10 +11,11 @@ export const cascadingMessagesService = {
   },
 
   // Get cascading messages for a team (received messages)
-  async getCascadingMessages(orgId, teamId, startDate = null, endDate = null) {
+  async getCascadingMessages(orgId, teamId, startDate = null, endDate = null, includeArchived = false) {
     const params = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    if (includeArchived) params.includeArchived = 'true';
     
     const response = await axios.get(
       `/organizations/${orgId}/teams/${teamId}/cascading-messages`,
