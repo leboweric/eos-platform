@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const DepartmentContext = createContext();
 
@@ -9,6 +10,8 @@ export const DepartmentProvider = ({ children }) => {
   const [isLeadershipMember, setIsLeadershipMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (user) {
@@ -55,17 +58,32 @@ export const DepartmentProvider = ({ children }) => {
         setAvailableDepartments(data.departments || []);
         setIsLeadershipMember(data.is_leadership_member || false);
         
-        // Set default department
+        // Set default department - prioritize URL param, then localStorage, then default
+        const urlParams = new URLSearchParams(location.search);
+        const departmentIdFromUrl = urlParams.get('department');
         const savedDepartmentId = localStorage.getItem('selectedDepartmentId');
         let defaultDepartment;
         
-        if (savedDepartmentId && data.departments) {
-          defaultDepartment = data.departments.find(d => d.id === savedDepartmentId);
+        // Priority 1: URL parameter (highest priority - survives refresh)
+        if (departmentIdFromUrl && data.departments) {
+          defaultDepartment = data.departments.find(d => d.id === departmentIdFromUrl);
+          if (defaultDepartment) {
+            console.log('[DepartmentContext] Using department from URL:', defaultDepartment.name);
+          }
         }
         
+        // Priority 2: localStorage (fallback if URL not present)
+        if (!defaultDepartment && savedDepartmentId && data.departments) {
+          defaultDepartment = data.departments.find(d => d.id === savedDepartmentId);
+          if (defaultDepartment) {
+            console.log('[DepartmentContext] Using department from localStorage:', defaultDepartment.name);
+          }
+        }
+        
+        // Priority 3: Default to Leadership Team or first department
         if (!defaultDepartment && data.departments && data.departments.length > 0) {
-          // Default to Leadership Team if available, otherwise first department
           defaultDepartment = data.departments.find(d => d.is_leadership_team) || data.departments[0];
+          console.log('[DepartmentContext] Using default department:', defaultDepartment.name);
         }
         
         if (defaultDepartment) {
@@ -106,6 +124,13 @@ export const DepartmentProvider = ({ children }) => {
       setSelectedDepartment(department);
       localStorage.setItem('selectedDepartmentId', departmentId);
       localStorage.setItem('selectedDepartment', JSON.stringify(department));
+      
+      // Update URL to persist department selection across refreshes
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('department', departmentId);
+      navigate(`${newUrl.pathname}${newUrl.search}`, { replace: true });
+      
+      console.log('[DepartmentContext] Changed department to:', department.name, '- URL updated');
     }
   };
   
