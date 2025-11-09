@@ -176,7 +176,6 @@ const TodosPage = () => {
             setSuccess('To-do created successfully');
           }
         }
-        }
       }
       
       await fetchTodos();
