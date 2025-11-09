@@ -818,24 +818,26 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
           </div>
 
           <DialogFooter className="pt-6 border-t border-white/20">
-            {/* Auto-save indicator row */}
-            <div className="w-full mb-3">
-              {(autoSaving || hasUnsavedChanges) && (
-                <div className="text-sm text-gray-500 flex items-center gap-1">
-                  <span>Auto Saving</span>
-                  <span className="flex gap-0.5">
-                    <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+            {/* Auto-save indicator row - only show for existing To-Dos */}
+            {todo?.id && (
+              <div className="w-full mb-3">
+                {(autoSaving || hasUnsavedChanges) && (
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    <span>Auto Saving</span>
+                    <span className="flex gap-0.5">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+                    </span>
+                  </div>
+                )}
+                {!autoSaving && !hasUnsavedChanges && lastSaved && (
+                  <span className="text-sm text-gray-500">
+                    Saved {new Date(lastSaved).toLocaleTimeString()}
                   </span>
-                </div>
-              )}
-              {!autoSaving && !hasUnsavedChanges && lastSaved && (
-                <span className="text-sm text-gray-500">
-                  Saved {new Date(lastSaved).toLocaleTimeString()}
-                </span>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             
             {/* Buttons row */}
             <div className="w-full flex justify-between items-center">
