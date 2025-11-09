@@ -116,6 +116,10 @@ export const concludeMeeting = async (req, res) => {
       sendEmail = true // Default to true for backward compatibility
     } = req.body;
 
+    console.log('📦 [Backend] Received cascadingMessages:', cascadingMessages);
+    console.log('📦 [Backend] cascadingMessages type:', typeof cascadingMessages);
+    console.log('📦 [Backend] cascadingMessages length:', cascadingMessages?.length);
+    
     const userId = req.user.id;
     // CRITICAL: Use organizationId from URL params, NOT from user's JWT token
     // This ensures meeting summaries go to the correct organization
