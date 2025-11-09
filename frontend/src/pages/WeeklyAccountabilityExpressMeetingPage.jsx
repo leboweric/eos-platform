@@ -372,12 +372,16 @@ const WeeklyAccountabilityMeetingPage = () => {
     }));
     
     // Broadcast expansion state to other meeting participants
+    console.log('📂 Toggle Rock expansion:', { priorityId, expanded: newExpandedState, meetingCode, hasBroadcast: !!broadcastIssueListUpdate });
     if (meetingCode && broadcastIssueListUpdate) {
+      console.log('📡 Broadcasting Rock expansion:', { priorityId, expanded: newExpandedState });
       broadcastIssueListUpdate({
         action: 'priority-expanded',
         priorityId: priorityId,
         expanded: newExpandedState
       });
+    } else {
+      console.warn('⚠️ Rock expansion broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
     }
   };
 
