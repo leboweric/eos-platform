@@ -4,6 +4,8 @@ class MeetingSessionsService {
   constructor() {
     this.sessionCache = null;
     this.autoSaveInterval = null;
+    this.orgId = null;
+    this.teamId = null;
   }
 
   // Start a new meeting session or resume existing
@@ -210,10 +212,14 @@ class MeetingSessionsService {
   startAutoSave(orgId, teamId) {
     this.stopAutoSave(); // Clear any existing interval
     
+    // Store orgId and teamId for use in interval
+    this.orgId = orgId;
+    this.teamId = teamId;
+    
     this.autoSaveInterval = setInterval(() => {
       if (this.sessionCache && !this.sessionCache.is_paused) {
         const elapsedSeconds = this.calculateElapsedSeconds();
-        this.saveTimerState(orgId, teamId, this.sessionCache.id, elapsedSeconds);
+        this.saveTimerState(this.orgId, this.teamId, this.sessionCache.id, elapsedSeconds);
       }
     }, 30000); // Save every 30 seconds
   }
@@ -255,6 +261,8 @@ class MeetingSessionsService {
   // Clear session cache
   clearCache() {
     this.sessionCache = null;
+    this.orgId = null;
+    this.teamId = null;
     this.stopAutoSave();
   }
 
