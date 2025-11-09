@@ -25,7 +25,8 @@ export const parseDateLocal = (dateStr) => {
   // Handle dates that might have time component
   const dateOnly = dateStr.split('T')[0];
   const [year, month, day] = dateOnly.split('-').map(num => parseInt(num));
-  return new Date(year, month - 1, day);
+  // Create date at noon to avoid DST/timezone issues (same as formatDateSafe)
+  return new Date(year, month - 1, day, 12, 0, 0);
 };
 
 /**
