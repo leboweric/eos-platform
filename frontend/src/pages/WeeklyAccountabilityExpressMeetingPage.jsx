@@ -101,17 +101,19 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
+// Helper function to parse date string as local date
+const parseDateAsLocal = (dateStr) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-").map(num => parseInt(num));
+  return new Date(year, month - 1, day);
+};
+
 // Helper function to determine if a To-Do is overdue
-const isOverdue = (dueDate) => {
-  if (!dueDate) return false;
-  
+const isOverdue = (todo) => {
+  const dueDate = parseDateAsLocal(todo.due_date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const due = new Date(dueDate);
-  due.setHours(0, 0, 0, 0);
-  
-  return due < today; // True if past due date
+  return dueDate && dueDate < today && todo.status !== 'complete' && todo.status !== 'completed';
 };
 
 const WeeklyAccountabilityMeetingPage = () => {
