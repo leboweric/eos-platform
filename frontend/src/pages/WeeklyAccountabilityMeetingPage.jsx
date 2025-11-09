@@ -409,11 +409,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: 'normal',
         organization_id: orgId,
         department_id: effectiveTeamId,
-        related_headline_id: headline.id,
-        meeting_id: sessionId  // Link issue to current meeting session
+        related_headline_id: headline.id
       };
       
-      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
+      await issuesService.createIssue(issueData);
       
       // Update the headline to show it has an issue
       setHeadlines(prev => ({
@@ -1981,8 +1980,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_level: isOffTrack ? 'high' : 'normal',
         ownerId: metric.ownerId || null,
         department_id: effectiveTeamId,
-        teamId: effectiveTeamId,  // Add both fields to ensure compatibility
-        meeting_id: sessionId  // Link issue to current meeting session
+        teamId: effectiveTeamId  // Add both fields to ensure compatibility
       });
       
       setSuccess(
@@ -2058,8 +2056,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: issueTimeline,
-          department_id: effectiveTeamId,
-          meeting_id: sessionId  // Link issue to current meeting session
+          department_id: effectiveTeamId
         });
         
         // For auto-save, optimistically add to local state without full refresh
@@ -2242,8 +2239,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         savedTodo = await todosService.createTodo({
           ...todoData,
           organization_id: orgId,
-          department_id: effectiveTeamId,
-          meeting_id: sessionId  // Link todo to current meeting session
+          department_id: effectiveTeamId
         });
         // Only show success message for manual saves, not auto-saves
         if (!options.isAutoSave) {
@@ -2388,7 +2384,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Create the issue
-      await issuesService.createIssue({ ...issueData, meeting_id: sessionId });
+      await issuesService.createIssue(issueData);
       
       // Refresh issues data
       await fetchIssuesData();
