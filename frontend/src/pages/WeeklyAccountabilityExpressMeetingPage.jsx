@@ -6754,7 +6754,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         <h5 className="text-sm font-medium text-slate-700">
                           Rating Status ({participantRatings.length} of {participants.length} completed)
                         </h5>
-                        {isLeader && ratingAverage > 0 && (
+                        {ratingAverage > 0 && (
                           <span className="text-sm font-medium text-blue-600">
                             Average: {ratingAverage.toFixed(1)}
                           </span>
@@ -6795,7 +6795,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   )}
                                 </span>
                               </div>
-                              {isLeader && hasRated && (
+                              {hasRated && (
                                 <span className="text-sm font-medium text-slate-700">{rating.toFixed(1)}/10</span>
                               )}
                             </div>
