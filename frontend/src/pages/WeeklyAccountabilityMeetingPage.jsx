@@ -3979,6 +3979,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         } else if (timeline === 'long_term') {
           setLongTermIssues(prev => prev.filter(isNotClosed));
         }
+      } else if (action === 'headline-created') {
+        // New headline created by another participant
+        console.log('📰 Headline created by another participant');
+        fetchHeadlines();
       } else if (action === 'meeting-ended') {
         // Meeting has been concluded by presenter
         console.log('📍 Meeting ended by presenter');
@@ -7692,7 +7696,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           onSave={async (headlineData) => {
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              await headlinesService.createHeadline({
+              const newHeadline = await headlinesService.createHeadline({
                 ...headlineData,
                 teamId: effectiveTeamId,
                 meeting_id: sessionId  // Link headline to current meeting session
@@ -7701,6 +7705,15 @@ const WeeklyAccountabilityMeetingPage = () => {
               setShowHeadlineDialog(false);
               setEditingHeadline(null);
               setSuccess('Headline saved successfully');
+              
+              // Broadcast headline creation to other meeting participants
+              if (meetingCode && broadcastIssueListUpdate) {
+                console.log('📡 Broadcasting headline creation:', newHeadline);
+                broadcastIssueListUpdate({
+                  action: 'headline-created',
+                  headline: newHeadline.data || newHeadline
+                });
+              }
             } catch (error) {
               console.error('Failed to save headline:', error);
               setError('Failed to save headline');
