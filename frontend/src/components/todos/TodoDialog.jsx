@@ -817,7 +817,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-white/20">
+          <DialogFooter className="pt-6 border-t border-white/20 flex-col items-stretch">
             {/* Auto-save indicator row - only show for existing To-Dos */}
             {todo?.id && (
               <div className="w-full mb-3">
