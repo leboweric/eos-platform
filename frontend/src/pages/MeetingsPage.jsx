@@ -529,8 +529,9 @@ const MeetingsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {meetings.map((meeting) => {
             const Icon = meeting.icon;
-            // Use teamId-meetingId format to match actual meeting room codes
-            const meetingCode = `${selectedTeamId}-${meeting.id}`;
+            // Use orgId-teamId-meetingId format to match actual meeting room codes
+            const orgId = user?.organizationId || user?.organization_id;
+            const meetingCode = orgId ? `${orgId}-${selectedTeamId}-${meeting.id}` : `${selectedTeamId}-${meeting.id}`;
             const activeMeeting = activeMeetings?.[meetingCode];
             const isActive = !!activeMeeting;
             
