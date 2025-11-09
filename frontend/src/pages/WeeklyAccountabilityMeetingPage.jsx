@@ -663,9 +663,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   }
 
   const [isRTL, setIsRTL] = useState(() => {
-    // Load RTL preference from localStorage
+    // Load RTL preference from localStorage, default to true (Right-to-Left)
     const saved = localStorage.getItem('scorecardRTL');
-    return saved === 'true';
+    return saved === null ? true : saved === 'true';
   });
   const [showTotal, setShowTotal] = useState(() => {
     // Load showTotal preference from localStorage
@@ -3883,7 +3883,31 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('✅ Received todo update:', event.detail);
       
       if (action === 'create') {
-        setTodos(prev => [...prev, todo]);
+        // Insert new todo in correct position sorted by due_date, then priority, then created_at
+        setTodos(prev => {
+          const newTodos = [...prev, todo];
+          return newTodos.sort((a, b) => {
+            // Sort by due_date first (ASC - earliest first)
+            const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+            const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+            if (dateA.getTime() !== dateB.getTime()) {
+              return dateA.getTime() - dateB.getTime();
+            }
+            
+            // Then by priority (DESC - high priority first)
+            const priorityOrder = { high: 3, medium: 2, low: 1 };
+            const priorityA = priorityOrder[a.priority] || 0;
+            const priorityB = priorityOrder[b.priority] || 0;
+            if (priorityA !== priorityB) {
+              return priorityB - priorityA;
+            }
+            
+            // Finally by created_at (DESC - newest first)
+            const createdA = new Date(a.created_at || 0);
+            const createdB = new Date(b.created_at || 0);
+            return createdB.getTime() - createdA.getTime();
+          });
+        });
       } else if (action === 'update') {
         // Handle todo edits - replace the entire todo with the updated one
         setTodos(prev => prev.map(t => t.id === todoId ? (todo.id ? todo : { ...t, ...todo }) : t));

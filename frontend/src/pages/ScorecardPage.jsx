@@ -52,9 +52,9 @@ const ScorecardPageClean = () => {
   }); // 'table' or 'groups'
   const [showOptions, setShowOptions] = useState(false);
   const [isRTL, setIsRTL] = useState(() => {
-    // Load RTL preference from localStorage
+    // Load RTL preference from localStorage, default to true (Right-to-Left)
     const savedRTL = localStorage.getItem('scorecardRTL');
-    return savedRTL === 'true';
+    return savedRTL === null ? true : savedRTL === 'true';
   }); // Add RTL state
   
   // Filter metrics by type
