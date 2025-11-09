@@ -725,9 +725,16 @@ class MeetingSocketService {
     meetings.forEach((meeting, code) => {
       if (meeting.participants.size > 0) {
         // Parse the meeting code to get team and type
-        const lastDashIndex = code.lastIndexOf('-');
-        const teamId = code.substring(0, lastDashIndex);
-        const meetingType = code.substring(lastDashIndex + 1);
+        // Meeting code format: teamId-meetingType where meetingType can be multi-part (e.g., weekly-accountability)
+        // teamId is a UUID with hyphens, so we need to split correctly
+        const [teamId, meetingType] = code.split('-').reduce((acc, part, index, arr) => {
+          if (index < arr.length - 2) {
+            acc[0] = acc[0] ? `${acc[0]}-${part}` : part;
+          } else {
+            acc[1] = acc[1] ? `${acc[1]}-${part}` : part;
+          }
+          return acc;
+        }, ['', '']);
         
         activeMeetings[code] = {
           code,
