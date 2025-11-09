@@ -458,6 +458,16 @@ const ScorecardPageClean = () => {
             [scoreDialogData.weekDate]: valueToSave
           }
         }));
+        
+        // Also update notes state
+        const setNotes = scoreType === 'monthly' ? setMonthlyNotes : setWeeklyNotes;
+        setNotes(prevNotes => ({
+          ...prevNotes,
+          [scoreDialogData.metricId]: {
+            ...(prevNotes[scoreDialogData.metricId] || {}),
+            [scoreDialogData.weekDate]: scoreNotesValue || null
+          }
+        }));
       });
     } catch (error) {
       console.error('Failed to save score:', error);
