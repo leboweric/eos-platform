@@ -6075,8 +6075,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         }}
                                       >
                                         <div className={`font-semibold leading-tight ${
-                                          isComplete ? 'line-through text-slate-400' : 
-                                          overdue ? 'text-red-700' : 'text-slate-900'
+                                          isComplete ? 'line-through text-slate-400' : 'text-slate-900'
                                         }`}>
                                           {todo.title}
                                           {todo.isMultiAssignee && (
@@ -6098,9 +6097,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       {/* Due Date */}
                                       <div className="w-20 text-right">
                                         {todo.due_date && (
-                                          <span className={`text-sm font-medium ${
-                                            isOverdue(todo) ? 'text-red-600' : 'text-slate-600'
-                                          }`}>
+                                          <span className="text-sm font-medium text-slate-600">
                                             {formatDateSafe(todo.due_date, 'MMM d')}
                                           </span>
                                         )}

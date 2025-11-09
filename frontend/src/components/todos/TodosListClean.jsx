@@ -457,8 +457,7 @@ const TodosListClean = ({
                               onClick={() => onEdit && onEdit(todo)}
                             >
                               <div className={`text-sm font-medium ${
-                                isComplete ? 'text-slate-400 line-through' : 
-                                overdue ? 'text-red-700' : 'text-slate-900'
+                                isComplete ? 'text-slate-400 line-through' : 'text-slate-900'
                               }`}>
                                 {todo.title}
                               </div>
@@ -503,7 +502,6 @@ const TodosListClean = ({
                               <div className="text-right">
                                 {todo.due_date && (
                                   <span className={`text-xs ${
-                                    overdue ? 'text-red-600 font-medium' : 
                                     daysUntilDue === 0 ? 'text-orange-600 font-medium' :
                                     daysUntilDue === 1 ? 'text-yellow-600' :
                                     'text-slate-500'
