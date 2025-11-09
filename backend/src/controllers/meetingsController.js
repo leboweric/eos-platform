@@ -374,7 +374,7 @@ export const concludeMeeting = async (req, res) => {
         }
       }
     } else {
-      logger.debug('No active or recent recording found');
+      logger.debug('No active or recent recording found - AI note taking was not enabled');
     }
     
     // Get user details BEFORE fallback summary (needed for userName)
@@ -386,9 +386,10 @@ export const concludeMeeting = async (req, res) => {
     const userEmail = user?.email;
     const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
     
-    // RESILIENCE: If AI summary failed or is not available, generate fallback summary
-    if (!aiSummary) {
-      logger.info('📝 Generating fallback summary (AI summary not available)');
+    // RESILIENCE: If AI summary failed (but AI note taking WAS enabled), generate fallback summary
+    // Only generate fallback if a transcript exists (meaning AI was turned on)
+    if (!aiSummary && transcriptCheck.rows.length > 0) {
+      logger.info('📝 Generating fallback summary (AI was enabled but summary generation failed)');
       usedFallbackSummary = true;
       aiSummary = generateFallbackSummary({
         meetingType,
@@ -401,6 +402,7 @@ export const concludeMeeting = async (req, res) => {
         userName
       });
     }
+    // If no transcript exists, aiSummary remains null and Executive Summary won't be shown
 
     // Get organization details
     const orgResult = await db.query(
