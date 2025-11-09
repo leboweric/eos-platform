@@ -91,6 +91,7 @@ const UsersPage = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [invitationLink, setInvitationLink] = useState(null);
   const [temporaryPassword, setTemporaryPassword] = useState(null);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrgId, setSelectedOrgId] = useState(null);
@@ -242,11 +243,9 @@ const UsersPage = () => {
       setInviteDialogOpen(false);
       fetchInvitations();
 
-      // Show invitation link for copying
+      // Store invitation link for manual copying (Safari blocks auto-copy after async API calls)
       if (data.data.invitation_link) {
-        navigator.clipboard.writeText(data.data.invitation_link);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 3000);
+        setInvitationLink(data.data.invitation_link);
       }
     } catch (error) {
       setError(error.message);
@@ -615,18 +614,22 @@ const UsersPage = () => {
                               <p>User created successfully. Temporary password:</p>
                               <div className="flex items-center gap-2">
                                 <code className="bg-gray-100 px-2 py-1 rounded">{temporaryPassword}</code>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(temporaryPassword);
-                                    setCopiedLink(true);
-                                    setTimeout(() => setCopiedLink(false), 3000);
-                                  }}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(temporaryPassword);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 3000);
+                      } catch (err) {
+                        toast.error('Please manually copy the password above');
+                      }
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                               </div>
                               <p className="text-sm text-gray-600">Share this password securely with the user.</p>
                             </div>
@@ -842,14 +845,58 @@ const UsersPage = () => {
       {successMessage && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{successMessage}</AlertDescription>
-        </Alert>
-      )}
-
-      {copiedLink && (
-        <Alert>
-          <Copy className="h-4 w-4" />
-          <AlertDescription>Invitation link copied to clipboard!</AlertDescription>
+          <AlertDescription>
+            {successMessage}
+            {invitationLink && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium">Invitation link:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-xs break-all">
+                    {invitationLink}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(invitationLink);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 3000);
+                      } catch (err) {
+                        // Fallback for Safari or when clipboard permission denied
+                        toast.error('Please manually copy the link above');
+                      }
+                    }}
+                  >
+                    {copiedLink ? (
+                      <>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSuccessMessage(null);
+                      setInvitationLink(null);
+                      setCopiedLink(false);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 
