@@ -3886,9 +3886,10 @@ const WeeklyAccountabilityMeetingPage = () => {
           setLongTermIssues(prev => [...prev, issue]);
         }
       } else if (action === 'update' && issue) {
-        // Update existing issue
-        setShortTermIssues(prev => prev.map(i => i.id === issueId ? issue : i));
-        setLongTermIssues(prev => prev.map(i => i.id === issueId ? issue : i));
+        // Update existing issue - replace entire issue with updated one
+        console.log('📝 Updating issue:', issueId, 'with data:', issue);
+        setShortTermIssues(prev => prev.map(i => i.id === issueId ? (issue.id ? issue : { ...i, ...issue }) : i));
+        setLongTermIssues(prev => prev.map(i => i.id === issueId ? (issue.id ? issue : { ...i, ...issue }) : i));
       } else if (action === 'delete' && issueId) {
         // Remove deleted/archived issue
         setShortTermIssues(prev => prev.filter(i => i.id !== issueId));
