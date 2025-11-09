@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 import { getUserTeamContext, getUserTeamScope } from '../utils/teamUtils.js';
+import meetingSocketService from '../services/meetingSocketService.js';
 import { getDateDaysFromNow } from '../utils/dateUtils.js';
 
 // @desc    Get all todos for an organization
@@ -235,6 +236,36 @@ export const createTodo = async (req, res) => {
     }
 
     const todo = todoResult.rows[0];
+
+    const newTodo = result.rows[0];
+
+    // Broadcast to meeting participants
+    try {
+      if (meeting_id && meetingSocketService) {
+        await meetingSocketService.broadcastToMeetingById(meeting_id, 'todo-created', {
+          todo: newTodo,
+          createdBy: req.user.first_name + ' ' + req.user.last_name
+        });
+      }
+    } catch (broadcastError) {
+      console.error('Failed to broadcast todo-created:', broadcastError.message);
+    }
+
+
+    const newTodo = result.rows[0];
+
+    // Broadcast to meeting participants
+    try {
+      if (meeting_id && meetingSocketService) {
+        await meetingSocketService.broadcastToMeetingById(meeting_id, 'todo-created', {
+          todo: newTodo,
+          createdBy: req.user.first_name + ' ' + req.user.last_name
+        });
+      }
+    } catch (broadcastError) {
+      console.error('Failed to broadcast todo-created:', broadcastError.message);
+    }
+
     res.status(201).json({
       success: true,
       data: {

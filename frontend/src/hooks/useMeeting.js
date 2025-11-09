@@ -284,6 +284,40 @@ const useMeeting = () => {
       console.error('❌ Meeting error:', data.message);
     });
 
+    // Real-time content creation listeners
+    newSocket.on('issue-created', (data) => {
+      console.log('📝 Issue created:', data.issue.title, 'by', data.createdBy);
+      // Trigger a refresh of the issues list
+      window.dispatchEvent(new CustomEvent('meeting-issue-created', { detail: data }));
+    });
+
+    newSocket.on('todo-created', (data) => {
+      console.log('✅ Todo created:', data.todo.title, 'by', data.createdBy);
+      // Trigger a refresh of the todos list
+      window.dispatchEvent(new CustomEvent('meeting-todo-created', { detail: data }));
+    });
+
+    newSocket.on('headline-created', (data) => {
+      console.log('📰 Headline created:', data.headline.text, 'by', data.createdBy);
+      // Trigger a refresh of the headlines list
+      window.dispatchEvent(new CustomEvent('meeting-headline-created', { detail: data }));
+    });
+
+    newSocket.on('issue-updated', (data) => {
+      console.log('📝 Issue updated:', data.issue.title);
+      window.dispatchEvent(new CustomEvent('meeting-issue-updated', { detail: data }));
+    });
+
+    newSocket.on('todo-completed', (data) => {
+      console.log('✅ Todo completed:', data.todo.title);
+      window.dispatchEvent(new CustomEvent('meeting-todo-completed', { detail: data }));
+    });
+
+    newSocket.on('headline-updated', (data) => {
+      console.log('📰 Headline updated:', data.headline.text);
+      window.dispatchEvent(new CustomEvent('meeting-headline-updated', { detail: data }));
+    });
+
     setSocket(newSocket);
     
     // Set up periodic refresh of active meetings every 5 seconds
