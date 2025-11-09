@@ -3956,10 +3956,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else if (action === 'headline-created') {
         // New headline created by another participant
-        console.log('📰 Headline created by another participant');
-        alert('DEBUG RECEIVER: Headline broadcast received! Fetching headlines...');
         fetchHeadlines();
-        alert('DEBUG RECEIVER: fetchHeadlines() called');
       } else if (action === 'meeting-ended') {
         // Meeting has been concluded by presenter
         console.log('📍 Meeting ended by presenter');
@@ -7731,18 +7728,11 @@ const WeeklyAccountabilityMeetingPage = () => {
               setSuccess('Headline saved successfully');
               
               // Broadcast headline creation to other meeting participants
-              console.log('📰 Headline saved, checking broadcast:', { meetingCode, hasBroadcast: !!broadcastIssueListUpdate, newHeadline });
-              alert('DEBUG: About to check broadcast - meetingCode: ' + meetingCode + ', hasBroadcast: ' + !!broadcastIssueListUpdate);
               if (meetingCode && broadcastIssueListUpdate) {
-                console.log('📡 Broadcasting headline creation:', newHeadline);
-                alert('DEBUG: Broadcasting headline!');
                 broadcastIssueListUpdate({
                   action: 'headline-created',
                   headline: newHeadline.data || newHeadline
                 });
-              } else {
-                console.warn('⚠️ Headline broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
-                alert('DEBUG: Broadcast SKIPPED - meetingCode: ' + meetingCode + ', hasBroadcast: ' + !!broadcastIssueListUpdate);
               }
             } catch (error) {
               console.error('Failed to save headline:', error);
