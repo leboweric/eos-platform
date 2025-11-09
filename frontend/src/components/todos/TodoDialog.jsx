@@ -810,10 +810,14 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 </Button>
               )}
               {(autoSaving || hasUnsavedChanges) && (
-                <span className="text-sm text-gray-500 flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Saving...
-                </span>
+                <div className="text-sm text-gray-500 flex items-center gap-1">
+                  <span>Saving</span>
+                  <span className="flex gap-0.5">
+                    <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+                  </span>
+                </div>
               )}
               {!autoSaving && !hasUnsavedChanges && lastSaved && (
                 <span className="text-sm text-gray-500">

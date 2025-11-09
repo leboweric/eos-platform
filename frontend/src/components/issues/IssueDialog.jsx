@@ -788,10 +788,14 @@ const IssueDialog = ({
             {/* Auto-save indicator */}
             <div className="flex-1 flex items-center gap-2 text-sm text-slate-500">
               {(autoSaving || hasUnsavedChanges) ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Saving...</span>
-                </>
+                <div className="flex items-center gap-1">
+                  <span>Saving</span>
+                  <span className="flex gap-0.5">
+                    <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '200ms', animationDuration: '1.4s' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '400ms', animationDuration: '1.4s' }}>.</span>
+                  </span>
+                </div>
               ) : lastSaved ? (
                 <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
               ) : null}
