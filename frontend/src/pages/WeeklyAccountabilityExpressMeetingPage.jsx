@@ -3957,7 +3957,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       } else if (action === 'headline-created') {
         // New headline created by another participant
         console.log('📰 Headline created by another participant');
+        alert('DEBUG RECEIVER: Headline broadcast received! Fetching headlines...');
         fetchHeadlines();
+        alert('DEBUG RECEIVER: fetchHeadlines() called');
       } else if (action === 'meeting-ended') {
         // Meeting has been concluded by presenter
         console.log('📍 Meeting ended by presenter');
