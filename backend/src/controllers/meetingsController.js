@@ -825,9 +825,73 @@ export const concludeMeeting = async (req, res) => {
           : duration || null;
 
         // Build snapshot data from meeting conclusion data
+        // CRITICAL: Filter todos and issues to only include items created/modified during this meeting
+        const meetingStartTime = meetingToSnapshot?.created_at || meetingToSnapshot?.actual_start_time;
+        
+        console.log('🔍 [Snapshot Filter] Meeting start time:', meetingStartTime);
+        console.log('🔍 [Snapshot Filter] Raw todos received:', todos);
+        console.log('🔍 [Snapshot Filter] Raw issues received:', issues);
+        
+        // Filter todos to only include items from this meeting session
+        let filteredTodos = todos || {};
+        if (meetingStartTime && todos) {
+          const meetingStart = new Date(meetingStartTime);
+          
+          // Filter "added" todos - only include items created during meeting
+          if (todos.added && Array.isArray(todos.added)) {
+            const originalCount = todos.added.length;
+            filteredTodos.added = todos.added.filter(todo => {
+              if (!todo.created_at) return false; // No timestamp = exclude
+              const todoCreated = new Date(todo.created_at);
+              return todoCreated >= meetingStart;
+            });
+            console.log(`🔍 [Snapshot Filter] Todos added: ${originalCount} → ${filteredTodos.added.length} (filtered by created_at >= ${meetingStart.toISOString()})`);
+          }
+          
+          // Filter "completed" todos - only include items completed during meeting
+          if (todos.completed && Array.isArray(todos.completed)) {
+            const originalCount = todos.completed.length;
+            filteredTodos.completed = todos.completed.filter(todo => {
+              if (!todo.completed_at) return false; // No timestamp = exclude
+              const todoCompleted = new Date(todo.completed_at);
+              return todoCompleted >= meetingStart;
+            });
+            console.log(`🔍 [Snapshot Filter] Todos completed: ${originalCount} → ${filteredTodos.completed.length} (filtered by completed_at >= ${meetingStart.toISOString()})`);
+          }
+        } else {
+          console.warn('⚠️ [Snapshot Filter] No meeting start time available - cannot filter todos by date');
+        }
+        
+        // Filter issues to only include items created/resolved during meeting
+        let filteredIssues = issues || [];
+        if (meetingStartTime && issues && Array.isArray(issues)) {
+          const meetingStart = new Date(meetingStartTime);
+          const originalCount = issues.length;
+          
+          filteredIssues = issues.filter(issue => {
+            // Include if created during meeting
+            if (issue.created_at) {
+              const issueCreated = new Date(issue.created_at);
+              if (issueCreated >= meetingStart) return true;
+            }
+            
+            // Include if resolved during meeting
+            if (issue.is_solved && issue.resolved_at) {
+              const issueResolved = new Date(issue.resolved_at);
+              if (issueResolved >= meetingStart) return true;
+            }
+            
+            return false; // Exclude if neither created nor resolved during meeting
+          });
+          
+          console.log(`🔍 [Snapshot Filter] Issues: ${originalCount} → ${filteredIssues.length} (filtered by created_at or resolved_at >= ${meetingStart.toISOString()})`);
+        } else {
+          console.warn('⚠️ [Snapshot Filter] No meeting start time available - cannot filter issues by date');
+        }
+        
         const snapshotData = {
-          issues: issues || [],
-          todos: todos || [],
+          issues: filteredIssues,
+          todos: filteredTodos,
           attendees: individualRatings || attendees || [],
           notes: notes || meetingToSnapshot?.notes || '',
           rating: rating || meetingToSnapshot?.rating,
@@ -836,6 +900,12 @@ export const concludeMeeting = async (req, res) => {
           cascadingMessage: cascadingMessage || '',
           aiSummary: null  // Fixed: aiSummary was undefined
         };
+        
+        console.log('✅ [Snapshot Filter] Final snapshot data:', {
+          todosAdded: filteredTodos.added?.length || 0,
+          todosCompleted: filteredTodos.completed?.length || 0,
+          issues: filteredIssues.length
+        });
         
         // Create snapshot
         const snapshotParams = [
