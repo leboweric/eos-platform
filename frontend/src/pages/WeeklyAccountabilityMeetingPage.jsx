@@ -8135,6 +8135,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                     📧 Meeting summary will be emailed to participants.
                   </p>
                 )}
+                {!sendSummaryEmail && aiRecordingState.transcriptionStatus !== 'not_started' && (
+                  <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 font-semibold">
+                    ⚠️ Warning: AI note taking was used, but email summary is disabled. The AI summary will NOT be sent to participants.
+                  </p>
+                )}
               </div>
             </DialogDescription>
           </DialogHeader>

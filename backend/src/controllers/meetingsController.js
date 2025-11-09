@@ -335,13 +335,13 @@ export const concludeMeeting = async (req, res) => {
       if (transcript.status === 'completed') {
         logger.info('Recording already completed, checking for AI summary...');
         // Skip stopping, go straight to waiting for AI summary with SHORT timeout
-        try {
-          aiSummary = await Promise.race([
-            waitForAISummary(transcript.id, 0.17), // 10 seconds for better UX
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('AI summary timeout')), 10000) // 10 second timeout
-            )
-          ]);
+          try {
+            aiSummary = await Promise.race([
+              waitForAISummary(transcript.id, 0.5), // 30 seconds - AI processing can take time
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('AI summary timeout')), 30000) // 30 second timeout
+              )
+            ]);
         } catch (error) {
           logger.error('❌ AI summary generation failed for completed recording:', error.message);
           // Continue without AI summary - will use fallback later
@@ -360,9 +360,9 @@ export const concludeMeeting = async (req, res) => {
           // If AI isn't ready in 10 seconds, use fallback summary instead of making user wait
           try {
             aiSummary = await Promise.race([
-              waitForAISummary(transcript.id, 0.17), // 10 seconds (0.17 minutes)
+              waitForAISummary(transcript.id, 0.5), // 30 seconds (0.5 minutes) - AI processing can take time
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('AI summary timeout')), 10000) // 10 second timeout
+                setTimeout(() => reject(new Error('AI summary timeout')), 30000) // 30 second timeout
               )
             ]);
           } catch (aiError) {
