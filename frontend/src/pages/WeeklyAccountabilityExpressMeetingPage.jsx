@@ -1983,7 +1983,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     setShowTodoDialog(true);
   };
 
-  const handleSaveIssue = async (issueData, options = {}) => {
+  const handleSaveIssue = useCallback(async (issueData, options = {}) => {
     const { isAutoSave = false } = options;
     
     try {
@@ -2064,9 +2064,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to save issue:', error);
       setError('Failed to save issue');
-      throw error;
+       throw error;
     }
-  };
+  }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue]);
 
   const handleEditIssue = (issue) => {
     setEditingIssue(issue);
@@ -2182,7 +2182,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     await fetchIssuesData();
   };
 
-  const handleSaveTodo = async (todoData, options = {}) => {
+  const handleSaveTodo = useCallback(async (todoData, options = {}) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -2240,7 +2240,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to save to-do');
       throw error; // Re-throw so TodoDialog can handle it
     }
-  };
+  }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError]);
 
   const handleReorderIssues = async (reorderedIssues) => {
     try {

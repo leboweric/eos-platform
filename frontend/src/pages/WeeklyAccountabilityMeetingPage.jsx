@@ -1983,7 +1983,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     setShowTodoDialog(true);
   };
 
-  const handleSaveIssue = async (issueData, options = {}) => {
+  const handleSaveIssue = useCallback(async (issueData, options = {}) => {
     const { isAutoSave = false } = options;
     
     try {
@@ -2066,7 +2066,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to save issue');
       throw error;
     }
-  };
+  }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue]);
 
   const handleEditIssue = (issue) => {
     setEditingIssue(issue);
