@@ -7216,30 +7216,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                           });
                         }
                         
-                        // Archive completed items if requested
-                        if (archiveCompleted) {
-                          const orgId = user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
-                          
-                          // Archive completed todos
-                          try {
-                            await todosService.archiveDoneTodos();
-                          } catch (error) {
-                            console.error('Failed to archive todos:', error);
-                          }
-                          
-                          // Archive solved issues
-                          const solvedIssues = [...(shortTermIssues || []), ...(longTermIssues || [])]
-                            .filter(i => i.status === 'closed' || i.status === 'resolved' || i.status === 'solved' || i.status === 'completed');
-                          for (const issue of solvedIssues) {
-                            try {
-                              await issuesService.archiveIssue(issue.id);
-                            } catch (error) {
-                              console.error('Failed to archive issue:', error);
-                            }
-                          }
-                        }
-                        
                         // CRITICAL FIX: Always conclude meeting in database, regardless of email option
                         console.log('🔍 [Frontend] About to conclude meeting in database...');
                         const orgId = user?.organizationId || user?.organization_id;
@@ -7387,6 +7363,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                           } else {
                             // Re-throw for real errors
                             throw emailError;
+                          }
+                        }
+                        
+                        // Archive completed items if requested (AFTER snapshot is saved)
+                        if (archiveCompleted) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          
+                          // Archive completed todos
+                          try {
+                            await todosService.archiveDoneTodos();
+                          } catch (error) {
+                            console.error('Failed to archive todos:', error);
+                          }
+                          
+                          // Archive solved issues
+                          const solvedIssues = [...(shortTermIssues || []), ...(longTermIssues || [])]
+                            .filter(i => i.status === 'closed' || i.status === 'resolved' || i.status === 'solved' || i.status === 'completed');
+                          for (const issue of solvedIssues) {
+                            try {
+                              await issuesService.archiveIssue(issue.id);
+                            } catch (error) {
+                              console.error('Failed to archive issue:', error);
+                            }
                           }
                         }
                         
