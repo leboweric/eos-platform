@@ -7578,7 +7578,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                   });
                 }
               } else {
-                // For auto-save, still broadcast but don't refresh or close
+                // For auto-save, optimistically update local state
+                if (editingTodo) {
+                  // Update existing todo
+                  setTodos(prev => prev.map(t => t.id === editingTodo.id ? savedTodo : t));
+                } else {
+                  // Add new todo
+                  setTodos(prev => [...prev, savedTodo]);
+                }
+                
+                // Broadcast to other participants
                 if (meetingCode && broadcastTodoUpdate) {
                   broadcastTodoUpdate({
                     action: 'refresh'
