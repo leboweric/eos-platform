@@ -299,6 +299,7 @@ export const createMeetingSnapshot = async (req, res) => {
       : null;
 
     // Get issues created during meeting (with owner name for email template)
+    // Filter by created_at to only include issues created TODAY, not just linked to this meeting
     const issuesCreatedQuery = `
       SELECT 
         i.id, 
@@ -309,9 +310,13 @@ export const createMeetingSnapshot = async (req, res) => {
         u.first_name || ' ' || u.last_name as owner
       FROM issues i
       LEFT JOIN users u ON i.owner_id = u.id
-      WHERE i.meeting_id = $1 AND i.organization_id = $2 AND i.deleted_at IS NULL
+      WHERE i.created_at >= $1
+        AND i.created_at <= $2
+        AND i.team_id = $3
+        AND i.organization_id = $4
+        AND i.deleted_at IS NULL
     `;
-    const issuesCreated = await client.query(issuesCreatedQuery, [meetingId, orgId]);
+    const issuesCreated = await client.query(issuesCreatedQuery, [todayStart, now, meeting.team_id, orgId]);
 
     // Get issues discussed (from junction table if it exists, otherwise approximate)
     const issuesDiscussedQuery = `
