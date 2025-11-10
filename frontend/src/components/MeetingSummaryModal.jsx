@@ -316,7 +316,13 @@ export const MeetingSummaryModal = ({
                 <DocumentSection title="Executive Summary" collapsible={false}>
                   <div className="bg-gray-50 border-l-4 border-gray-900 p-6 mb-6">
                     <p className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap">
-                      {aiSummary}
+                      {typeof aiSummary === 'string' ? aiSummary : (
+                        typeof aiSummary === 'object' ? (
+                          aiSummary.executive_summary || 
+                          aiSummary.summary || 
+                          JSON.stringify(aiSummary, null, 2)
+                        ) : String(aiSummary)
+                      )}
                     </p>
                   </div>
                 </DocumentSection>
