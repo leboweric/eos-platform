@@ -126,6 +126,22 @@ class TranscriptionService {
           // Universal Streaming API v3 - no session config needed, parameters are in URL
           console.log('🔧 [TranscriptionService] Universal Streaming API connected - ready to receive audio');
           
+          // Set up keepalive to prevent WebSocket timeout
+          const keepaliveInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              // Send periodic keepalive ping (AssemblyAI ignores unknown message types)
+              ws.send(JSON.stringify({ type: 'keepalive', timestamp: Date.now() }));
+              console.log(`💓 [Keepalive] Sent ping for ${transcriptId}`);
+            } else {
+              console.warn(`⚠️ [Keepalive] WebSocket not open for ${transcriptId}, clearing interval`);
+              clearInterval(keepaliveInterval);
+            }
+          }, 30000); // Every 30 seconds
+          
+          // Store interval for cleanup
+          connectionData.keepaliveInterval = keepaliveInterval;
+          console.log(`💓 [Keepalive] Started interval for ${transcriptId} (every 30s)`);
+          
           resolve({
             sessionId: transcriptId,
             status: 'connected'
@@ -236,6 +252,13 @@ class TranscriptionService {
         
         ws.on('close', (code, reason) => {
           clearTimeout(timeout);
+          
+          // Clean up keepalive interval
+          if (connectionData.keepaliveInterval) {
+            clearInterval(connectionData.keepaliveInterval);
+            console.log(`🧹 [Keepalive] Cleared interval for ${transcriptId}`);
+          }
+          
           console.log('🔌 [WebSocket] CLOSE event fired:', {
             transcriptId,
             code,
@@ -505,6 +528,12 @@ class TranscriptionService {
 
       // Mark as inactive
       connection.isActive = false;
+      
+      // Clean up keepalive interval
+      if (connection.keepaliveInterval) {
+        clearInterval(connection.keepaliveInterval);
+        console.log(`🧹 [Keepalive] Cleared interval for ${transcriptId} (manual stop)`);
+      }
 
       // Close the WebSocket connection
       if (connection.websocket) {
