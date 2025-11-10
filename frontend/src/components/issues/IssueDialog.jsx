@@ -853,6 +853,8 @@ const IssueDialog = ({
             <Button 
               type={issue?.id ? 'button' : 'submit'}
               onClick={issue?.id ? async () => {
+                // Clear any validation errors first
+                setError(null);
                 // If there are unsaved changes, save before closing
                 if (hasUnsavedChanges && formData.title.trim()) {
                   await performAutoSave();
