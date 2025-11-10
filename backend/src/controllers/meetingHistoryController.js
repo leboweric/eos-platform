@@ -353,6 +353,7 @@ export const createMeetingSnapshot = async (req, res) => {
     ]);
 
     // Get todos created during meeting (with consistent field names for email template)
+    // Filter by created_at to only include todos created TODAY, not just linked to this meeting
     const todosCreatedQuery = `
       SELECT 
         t.id, 
@@ -364,9 +365,13 @@ export const createMeetingSnapshot = async (req, res) => {
         t.created_at
       FROM todos t
       LEFT JOIN users u ON t.assigned_to_id = u.id
-      WHERE t.meeting_id = $1 AND t.organization_id = $2 AND t.deleted_at IS NULL
+      WHERE t.created_at >= $1
+        AND t.created_at <= $2
+        AND t.team_id = $3
+        AND t.organization_id = $4
+        AND t.deleted_at IS NULL
     `;
-    const todosCreated = await client.query(todosCreatedQuery, [meetingId, orgId]);
+    const todosCreated = await client.query(todosCreatedQuery, [todayStart, now, meeting.team_id, orgId]);
 
     // Get todos completed during meeting (with assignee name for email template)
     const todosCompletedQuery = `
