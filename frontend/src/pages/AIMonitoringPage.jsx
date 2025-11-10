@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 import axios from 'axios';
 import {
   Activity,
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 
 const AIMonitoringPage = () => {
-  const { orgId } = useParams();
+  const { user } = useAuthStore();
+  const orgId = user?.organization_id;
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
