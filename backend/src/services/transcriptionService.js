@@ -250,7 +250,7 @@ class TranscriptionService {
           }
         });
         
-        ws.on('close', (code, reason) => {
+        ws.on('close', async (code, reason) => {
           clearTimeout(timeout);
           
           // Clean up keepalive interval
@@ -265,8 +265,72 @@ class TranscriptionService {
             reason: reason?.toString(),
             wasClean: code === 1000,
             wasActive: connectionData.isActive,
-            readyState: ws.readyState
+            readyState: ws.readyState,
+            chunksCollected: connectionData.transcriptChunks?.length || 0
           });
+          
+          // CRITICAL FIX: Save transcript before closing, even if connection failed
+          // This ensures we don't lose partial transcripts when WebSocket disconnects
+          try {
+            const endTime = Date.now();
+            const startTime = connectionData.startTime || endTime;
+            const durationSeconds = Math.floor((endTime - startTime) / 1000);
+            
+            // Build full transcript from chunks
+            let fullTranscript = '';
+            if (connectionData.transcriptChunks && connectionData.transcriptChunks.length > 0) {
+              fullTranscript = connectionData.transcriptChunks
+                .map(chunk => `${chunk.speaker || 'Speaker'}: ${chunk.text}`)
+                .join('\n');
+              console.log('📝 [CloseHandler] Built transcript from chunks:', {
+                transcriptId,
+                chunksCount: connectionData.transcriptChunks.length,
+                transcriptLength: fullTranscript.length
+              });
+            } else if (connectionData.latestTranscriptText) {
+              fullTranscript = `Speaker: ${connectionData.latestTranscriptText}`;
+              console.log('📝 [CloseHandler] Using latest transcript text:', {
+                transcriptId,
+                textLength: connectionData.latestTranscriptText.length
+              });
+            }
+            
+            // Save transcript if we have any content
+            if (fullTranscript && fullTranscript.trim().length > 0) {
+              const wordCount = fullTranscript.split(' ').length;
+              console.log('💾 [CloseHandler] Saving transcript before close:', {
+                transcriptId,
+                wordCount,
+                durationSeconds,
+                transcriptLength: fullTranscript.length
+              });
+              
+              await this.saveTranscriptContent(transcriptId, {
+                rawTranscript: fullTranscript,
+                structuredTranscript: connectionData.transcriptChunks || [],
+                wordCount,
+                durationSeconds
+              });
+              
+              console.log(`✅ [CloseHandler] Transcript saved successfully for ${transcriptId}`);
+            } else {
+              console.warn(`⚠️ [CloseHandler] No transcript content to save for ${transcriptId}`);
+              // Mark as failed if no content
+              await this.updateTranscriptStatus(transcriptId, 'failed', {
+                error_message: 'WebSocket closed with no transcript content'
+              });
+            }
+          } catch (error) {
+            console.error(`❌ [CloseHandler] Failed to save transcript for ${transcriptId}:`, error);
+            // Still update status to failed
+            try {
+              await this.updateTranscriptStatus(transcriptId, 'failed', {
+                error_message: `Failed to save transcript: ${error.message}`
+              });
+            } catch (updateError) {
+              console.error(`❌ [CloseHandler] Failed to update status:`, updateError);
+            }
+          }
           
           // STEP 3: Update connection status instead of just marking inactive
           if (code === 1000) {
