@@ -854,11 +854,10 @@ const IssueDialog = ({
               type={issue?.id ? 'button' : 'submit'}
               onClick={issue?.id ? async () => {
                 // If there are unsaved changes, save before closing
-                if (hasUnsavedChanges) {
-                  await handleSubmit(new Event('submit'));
-                } else {
-                  onClose();
+                if (hasUnsavedChanges && formData.title.trim()) {
+                  await performAutoSave();
                 }
+                onClose();
               } : undefined}
               disabled={loading || uploadingFiles}
               className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"

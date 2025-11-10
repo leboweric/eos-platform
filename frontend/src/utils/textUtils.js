@@ -6,9 +6,12 @@
 export const stripHtml = (html) => {
   if (!html) return '';
   
+  // First, convert <br> tags to newlines
+  let text = html.replace(/<br\s*\/?>/gi, '\n');
+  
   // Create a temporary element to parse HTML
   const temp = document.createElement('div');
-  temp.innerHTML = html;
+  temp.innerHTML = text;
   
   // Get text content and clean up
   return temp.textContent || temp.innerText || '';

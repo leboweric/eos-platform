@@ -14,7 +14,6 @@ export const getOnlineUsers = async (req, res) => {
         u.email,
         u.role,
         o.name as organization_name,
-        t.name as team_name,
         us.last_activity_at,
         us.created_at as session_started_at,
         EXTRACT(EPOCH FROM (NOW() - us.created_at))/60 as session_duration_minutes,
@@ -23,7 +22,6 @@ export const getOnlineUsers = async (req, res) => {
       FROM user_sessions us
       JOIN users u ON us.user_id = u.id
       JOIN organizations o ON us.organization_id = o.id
-      LEFT JOIN teams t ON u.team_id = t.id
       WHERE us.is_active = true
         AND us.expires_at > NOW()
         AND us.last_activity_at > NOW() - INTERVAL '5 minutes'
