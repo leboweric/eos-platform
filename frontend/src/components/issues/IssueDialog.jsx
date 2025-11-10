@@ -445,7 +445,13 @@ const IssueDialog = ({
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    // Clear validation error when user starts typing
+                    if (error && error.includes('title')) {
+                      setError(null);
+                    }
+                  }}
                   onFocus={(e) => {
                     // Prevent text selection by immediately collapsing selection to cursor position
                     setTimeout(() => {
