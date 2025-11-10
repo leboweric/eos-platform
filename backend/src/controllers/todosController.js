@@ -406,6 +406,16 @@ export const updateTodo = async (req, res) => {
       );
       console.log(`🔍 Existing assignees for todo:`, existingAssignees.rows);
       
+      // Check if the target assignee exists before attempting update
+      const assigneeExists = existingAssignees.rows.some(a => a.user_id === targetUserId);
+      if (!assigneeExists) {
+        console.log(`⚠️ Assignee ${targetUserId} not found in todo_assignees table`);
+        return res.status(404).json({
+          success: false,
+          error: `You are not assigned to this to-do. It may have been reassigned to someone else.`
+        });
+      }
+      
       if (status === 'complete') {
         // Mark the target assignee's copy as complete
         console.log('🛠️ EXECUTING UPDATE QUERY:');
@@ -424,6 +434,12 @@ export const updateTodo = async (req, res) => {
           console.log('❌❌❌ UPDATE FAILED - NO ROWS AFFECTED ❌❌❌');
           console.log('   This means the WHERE clause did not match any rows');
           console.log('   Either todo_id or user_id does not exist in todo_assignees table');
+          
+          // Return error to frontend instead of silently failing
+          return res.status(404).json({
+            success: false,
+            error: `Assignee record not found for user ${targetUserId} on todo ${todoId}. The assignee may have been removed.`
+          });
         }
       } else if (status === 'incomplete') {
         // Unmark the target assignee's copy
@@ -443,6 +459,12 @@ export const updateTodo = async (req, res) => {
           console.log('❌❌❌ UPDATE FAILED - NO ROWS AFFECTED ❌❌❌');
           console.log('   This means the WHERE clause did not match any rows');
           console.log('   Either todo_id or user_id does not exist in todo_assignees table');
+          
+          // Return error to frontend instead of silently failing
+          return res.status(404).json({
+            success: false,
+            error: `Assignee record not found for user ${targetUserId} on todo ${todoId}. The assignee may have been removed.`
+          });
         }
       }
       
