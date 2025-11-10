@@ -64,6 +64,7 @@ import todosImportRoutes from './routes/todos-import.js';
 import meetingHistoryRoutes from './routes/meetingHistory.js';
 import aiMeetingRoutes from './routes/aiMeeting.js';
 import transcriptionRoutes from './routes/transcription.js';
+import aiMonitoringRoutes from './routes/aiMonitoring.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -401,6 +402,10 @@ if (process.env.LOG_LEVEL === 'debug') {
 app.use('/api/v1/transcription', transcriptionRoutes);
 if (process.env.LOG_LEVEL === 'debug') {
   console.log('✅ [Server] Transcription routes mounted successfully');
+}
+app.use('/api/v1', aiMonitoringRoutes);
+if (process.env.LOG_LEVEL === 'debug') {
+  console.log('✅ [Server] AI Monitoring routes mounted successfully');
 }
 app.use('/api/v1/organizations/:orgId/teams/:teamId/cascading-messages', cascadingMessagesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
