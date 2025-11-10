@@ -419,26 +419,51 @@ class TranscriptionService {
     }
 
     if (connection.status === 'connecting') {
-      // Buffer audio data while connecting
-      console.log(`🔄 [sendAudioData] Connection still connecting, buffering audio for ${transcriptId}`);
+      // Buffer audio data while connecting (with size limit)
+      const MAX_BUFFER_SIZE = 100; // ~25 seconds of audio at 4 chunks/sec
+      
       if (!connection.audioBuffer) {
         connection.audioBuffer = [];
       }
+      
+      // Check buffer size before adding
+      if (connection.audioBuffer.length >= MAX_BUFFER_SIZE) {
+        console.warn(`⚠️ [sendAudioData] Audio buffer full for ${transcriptId}, dropping oldest chunk`);
+        connection.audioBuffer.shift(); // Remove oldest chunk
+      }
+      
       connection.audioBuffer.push(audioBuffer);
       console.log(`📦 [sendAudioData] Buffered audio chunk, total buffered: ${connection.audioBuffer.length}`);
+      
+      // Warn if buffer is getting large
+      if (connection.audioBuffer.length > MAX_BUFFER_SIZE * 0.8) {
+        console.warn(`⚠️ [sendAudioData] Audio buffer is ${connection.audioBuffer.length}/${MAX_BUFFER_SIZE} - connection may be slow`);
+      }
+      
       return true; // Return true to indicate audio was handled (buffered)
     }
 
     if (connection.status === 'active' && connection.websocket && connection.websocket.readyState === WebSocket.OPEN) {
       try {
-        // STEP 4: Send any buffered audio first
+        // STEP 4: Send any buffered audio first (with rate limiting)
         if (connection.audioBuffer && connection.audioBuffer.length > 0) {
-          console.log(`📤 [sendAudioData] Sending ${connection.audioBuffer.length} buffered audio chunks for ${transcriptId}`);
-          for (const bufferedChunk of connection.audioBuffer) {
-            connection.websocket.send(bufferedChunk);
+          const MAX_CHUNKS_PER_SEND = 50; // Limit chunks sent at once to prevent overwhelming
+          const chunksToSend = Math.min(connection.audioBuffer.length, MAX_CHUNKS_PER_SEND);
+          
+          console.log(`📤 [sendAudioData] Sending ${chunksToSend} of ${connection.audioBuffer.length} buffered audio chunks for ${transcriptId}`);
+          
+          for (let i = 0; i < chunksToSend; i++) {
+            connection.websocket.send(connection.audioBuffer[i]);
           }
-          connection.audioBuffer = []; // Clear buffer after sending
-          console.log(`✅ [sendAudioData] Sent all buffered audio for ${transcriptId}`);
+          
+          // Remove sent chunks from buffer
+          connection.audioBuffer.splice(0, chunksToSend);
+          
+          if (connection.audioBuffer.length > 0) {
+            console.log(`📦 [sendAudioData] ${connection.audioBuffer.length} chunks still buffered, will send in next batch`);
+          } else {
+            console.log(`✅ [sendAudioData] Sent all buffered audio for ${transcriptId}`);
+          }
         }
 
         // Send current audio data
