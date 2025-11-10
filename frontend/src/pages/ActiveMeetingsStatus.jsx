@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import OnlineUsersPanel from '../components/OnlineUsersPanel';
 import { useAuthStore } from '../stores/authStore';
 
 export default function ActiveMeetingsStatus() {
@@ -265,6 +266,11 @@ export default function ActiveMeetingsStatus() {
           <p className="text-sm text-gray-500 mt-3">
             Dashboard automatically refreshes every 30 seconds
           </p>
+        </div>
+
+        {/* Online Users Panel */}
+        <div className="mt-8">
+          <OnlineUsersPanel />
         </div>
 
         {/* Deployment Guidelines */}

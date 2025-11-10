@@ -7,6 +7,7 @@ import {
   bulkImport 
 } from '../controllers/bulkImportController.js';
 import { getActiveMeetings } from '../controllers/adminController.js';
+import { getOnlineUsers, updateHeartbeat, cleanupExpiredSessions } from '../controllers/onlineUsersController.js';
 import systemHealthController from '../controllers/systemHealthController.js';
 import failedOperationsController from '../controllers/failedOperationsController.js';
 import userActivityController from '../controllers/userActivityController.js';
@@ -74,6 +75,11 @@ router.get('/isolation/tables', dataIsolationController.getMultiTenantTables);
 
 // Active meetings dashboard
 router.get('/active-meetings', getActiveMeetings);
+
+// Online users monitoring
+router.get('/users/online', getOnlineUsers);
+router.post('/users/heartbeat', updateHeartbeat);
+router.post('/users/cleanup-sessions', cleanupExpiredSessions);
 
 // Bulk user import routes
 router.get('/users/bulk-import/template', downloadTemplate);
