@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthStore } from '../stores/authStore';
 import axios from 'axios';
 import {
   Activity,
@@ -10,12 +9,11 @@ import {
   TrendingUp,
   FileText,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Building2
 } from 'lucide-react';
 
 const AIMonitoringPage = () => {
-  const { user } = useAuthStore();
-  const orgId = user?.organization_id;
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +24,7 @@ const AIMonitoringPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${orgId}/ai-monitoring/health`
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/ai-monitoring/health`
       );
       setMetrics(response.data.data);
       setLastUpdated(new Date());
@@ -40,14 +38,14 @@ const AIMonitoringPage = () => {
   };
 
   const handleCleanup = async () => {
-    if (!window.confirm('This will mark all stuck transcripts (>2 hours) as failed. Continue?')) {
+    if (!window.confirm('This will mark all stuck transcripts (>2 hours) as failed across the entire platform. Continue?')) {
       return;
     }
 
     try {
       setCleaningUp(true);
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${orgId}/ai-monitoring/cleanup`
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/ai-monitoring/cleanup`
       );
       
       alert(`Successfully cleaned up ${response.data.data.cleanedCount} stuck transcripts`);
@@ -66,14 +64,14 @@ const AIMonitoringPage = () => {
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchMetrics, 30000);
     return () => clearInterval(interval);
-  }, [orgId]);
+  }, []);
 
   if (loading && !metrics) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading AI monitoring metrics...</p>
+          <p className="mt-4 text-gray-600">Loading platform AI monitoring metrics...</p>
         </div>
       </div>
     );
@@ -96,7 +94,7 @@ const AIMonitoringPage = () => {
     );
   }
 
-  const { overview, summaries, activeTranscriptions, recentCompletions, failureReasons, trends } = metrics || {};
+  const { overview, summaries, activeTranscriptions, recentCompletions, failureReasons, trends, organizationBreakdown } = metrics || {};
 
   // Calculate health status
   const getHealthStatus = () => {
@@ -124,10 +122,10 @@ const AIMonitoringPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <Activity className="h-8 w-8 text-blue-600" />
-              AI Transcription Monitoring
+              AI Transcription Monitoring (Platform-Wide)
             </h1>
             <p className="text-gray-600 mt-1">
-              Real-time health metrics and status for AI transcription and summary generation
+              Real-time health metrics and status for AI transcription and summary generation across all organizations
             </p>
           </div>
           <div className="flex gap-2">
@@ -250,9 +248,9 @@ const AIMonitoringPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">AI Summaries Generated</p>
-                <p className="text-2xl font-bold text-gray-900">{summaries?.totalSummaries || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{summaries?.total || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {summaries?.summaries24h || 0} in last 24h
+                  {summaries?.last24h || 0} in last 24h
                 </p>
               </div>
               <TrendingUp className="h-10 w-10 text-indigo-500" />
@@ -274,6 +272,71 @@ const AIMonitoringPage = () => {
           </div>
         </div>
 
+        {/* Organization Breakdown */}
+        {organizationBreakdown && organizationBreakdown.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              Top Organizations by Transcript Volume (Last 30 Days)
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Organization
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Failed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Processing
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Success Rate
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {organizationBreakdown.map((org, idx) => {
+                    const successRate = org.totalTranscripts > 0 
+                      ? ((org.completed / org.totalTranscripts) * 100).toFixed(1)
+                      : 0;
+                    return (
+                      <tr key={idx}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {org.organizationName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {org.totalTranscripts}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                          {org.completed}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                          {org.failed}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                          {org.processing}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {successRate}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Active Transcriptions */}
         {activeTranscriptions && activeTranscriptions.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow mb-6">
@@ -283,28 +346,44 @@ const AIMonitoringPage = () => {
             </h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead>
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Organization
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Team
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Started
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Duration
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {activeTranscriptions.map((transcript) => (
                     <tr key={transcript.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900">{transcript.teamName}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transcript.organizationName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transcript.teamName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                           {transcript.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {Math.floor(transcript.durationSeconds / 60)}m {Math.floor(transcript.durationSeconds % 60)}s
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(transcript.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {Math.floor(transcript.durationSeconds / 60)}m {Math.floor(transcript.durationSeconds % 60)}s
                       </td>
                     </tr>
                   ))}
@@ -317,25 +396,45 @@ const AIMonitoringPage = () => {
         {/* Recent Completions */}
         {recentCompletions && recentCompletions.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Completions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Recent Completions
+            </h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead>
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Words</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">AI Summary</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Processing Time</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Organization
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Team
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Processing Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      AI Summary
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {recentCompletions.slice(0, 10).map((transcript) => (
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentCompletions.map((transcript) => (
                     <tr key={transcript.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900">{transcript.teamName}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs ${
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transcript.organizationName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transcript.teamName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           transcript.status === 'completed' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
@@ -343,19 +442,18 @@ const AIMonitoringPage = () => {
                           {transcript.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{transcript.wordCount || 0}</td>
-                      <td className="px-4 py-3 text-sm">
-                        {transcript.hasSummary ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {transcript.processingSeconds ? `${Math.floor(transcript.processingSeconds / 60)}m` : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {transcript.completedAt ? new Date(transcript.completedAt).toLocaleString() : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {transcript.processingSeconds ? `${Math.floor(transcript.processingSeconds / 60)}m ${Math.floor(transcript.processingSeconds % 60)}s` : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {transcript.hasSummary ? (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-gray-300" />
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -369,14 +467,14 @@ const AIMonitoringPage = () => {
         {failureReasons && failureReasons.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <XCircle className="h-5 w-5 text-red-600" />
               Failure Reasons (Last 7 Days)
             </h3>
-            <div className="space-y-2">
-              {failureReasons.map((reason, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded">
-                  <p className="text-sm text-gray-900">{reason.reason}</p>
-                  <span className="px-3 py-1 bg-red-200 text-red-800 rounded-full text-xs font-semibold">
+            <div className="space-y-3">
+              {failureReasons.map((reason, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded">
+                  <p className="text-sm text-gray-900 flex-1">{reason.message}</p>
+                  <span className="ml-4 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
                     {reason.count}
                   </span>
                 </div>
@@ -385,7 +483,7 @@ const AIMonitoringPage = () => {
           </div>
         )}
 
-        {/* Trends */}
+        {/* 7-Day Trends */}
         {trends && trends.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -394,26 +492,42 @@ const AIMonitoringPage = () => {
             </h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead>
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Failed</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg Words</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg Processing</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Failed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Avg Processing
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {trends.map((trend, index) => (
-                    <tr key={index}>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(trend.date).toLocaleDateString()}
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {trends.map((day, idx) => (
+                    <tr key={idx}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(day.date).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-green-600 font-semibold">{trend.completed}</td>
-                      <td className="px-4 py-3 text-sm text-red-600 font-semibold">{trend.failed}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{trend.avgWords}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {trend.avgProcessingSeconds ? `${Math.floor(trend.avgProcessingSeconds / 60)}m` : 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {day.total}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                        {day.completed}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                        {day.failed}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {day.avgProcessingSeconds ? `${Math.floor(day.avgProcessingSeconds / 60)}m ${Math.floor(day.avgProcessingSeconds % 60)}s` : 'N/A'}
                       </td>
                     </tr>
                   ))}

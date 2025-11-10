@@ -403,7 +403,7 @@ app.use('/api/v1/transcription', transcriptionRoutes);
 if (process.env.LOG_LEVEL === 'debug') {
   console.log('✅ [Server] Transcription routes mounted successfully');
 }
-app.use('/api/v1', aiMonitoringRoutes);
+app.use('/api/v1/admin/ai-monitoring', aiMonitoringRoutes);
 if (process.env.LOG_LEVEL === 'debug') {
   console.log('✅ [Server] AI Monitoring routes mounted successfully');
 }

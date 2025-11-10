@@ -1,21 +1,17 @@
 import express from 'express';
 import aiMonitoringController from '../controllers/aiMonitoringController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get AI health metrics
-router.get(
-  '/organizations/:orgId/ai-monitoring/health',
-  authenticate,
-  aiMonitoringController.getAIHealthMetrics
-);
+// All AI monitoring routes require authentication and admin role
+router.use(authenticate);
+router.use(authorize('admin'));
 
-// Cleanup stuck transcripts
-router.post(
-  '/organizations/:orgId/ai-monitoring/cleanup',
-  authenticate,
-  aiMonitoringController.cleanupStuckTranscripts
-);
+// Get AI health metrics (platform-wide)
+router.get('/health', aiMonitoringController.getAIHealthMetrics);
+
+// Cleanup stuck transcripts (platform-wide)
+router.post('/cleanup', aiMonitoringController.cleanupStuckTranscripts);
 
 export default router;

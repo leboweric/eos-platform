@@ -196,7 +196,6 @@ const Layout = ({ children }) => {
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
     { name: 'Users', href: '/users', icon: Users, requiresAdmin: true },
     { name: 'Admin Tools', href: '/admin/tools', icon: Upload, requiresAdmin: true },
-    { name: 'AI Monitoring', href: '/admin/ai-monitoring', icon: Activity, requiresAdmin: true },
     { name: 'Organization', href: '/organization-settings', icon: Settings, requiresAdmin: true },
     { name: 'Storage Config', href: '/organization-settings/storage', icon: Cloud, requiresAdmin: true },
     { name: 'Terminology', href: '/terminology-settings', icon: Settings, requiresAdmin: true },
