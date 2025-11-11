@@ -123,7 +123,7 @@ export const scorecardService = {
   },
 
   // Update a weekly or monthly score
-  updateScore: async (orgId, teamId, metricId, period, value, scoreType = 'weekly', notes = null) => {
+  updateScore: async (orgId, teamId, metricId, period, value, scoreType = 'weekly', notes = null, customGoalData = {}) => {
     const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/scores`,
@@ -138,7 +138,8 @@ export const scorecardService = {
           week: period, // Keep as 'week' for backward compatibility
           value,
           scoreType,
-          notes
+          notes,
+          ...customGoalData
         }),
       }
     );

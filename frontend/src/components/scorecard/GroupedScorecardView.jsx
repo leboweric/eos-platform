@@ -22,6 +22,8 @@ import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
 import { useAuthStore } from '../../stores/authStore';
+import CustomGoalModal from './CustomGoalModal';
+import { Target } from 'lucide-react';
 
 const GroupedScorecardView = ({ 
   metrics, 
@@ -29,6 +31,7 @@ const GroupedScorecardView = ({
   monthlyScores,
   weeklyNotes,
   monthlyNotes,
+  customGoals = {},
   teamMembers,
   orgId,
   teamId,
@@ -73,6 +76,7 @@ const GroupedScorecardView = ({
   const [dragOverGroupIndex, setDragOverGroupIndex] = useState(null);
   const [draggedMetricIndex, setDraggedMetricIndex] = useState(null);
   const [dragOverMetricIndex, setDragOverMetricIndex] = useState(null);
+  const [customGoalModal, setCustomGoalModal] = useState({ isOpen: false, metric: null, periodDate: null });
 
   // Fetch organization theme
   const fetchOrganizationTheme = async () => {
@@ -593,9 +597,18 @@ const GroupedScorecardView = ({
           
           const noteValue = notes[periodDate] || '';
           const hasNotes = noteValue && noteValue.length > 0;
-          const goal = parseFloat(metric.goal) || 0;
+          
+          // Check if this cell has a custom goal
+          const hasCustomGoal = customGoals[metric.id]?.[periodDate];
+          
+          // Use custom goal if available, otherwise use metric's default goal
+          const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
+            ? hasCustomGoal.goal 
+            : metric.goal;
+          
+          const goal = parseFloat(effectiveGoal) || 0;
           const actual = value === 0 ? 0 : (value !== null && value !== undefined ? parseFloat(value) : null);
-          const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
+          const isOnTrack = isGoalMet(actual, effectiveGoal, metric.comparison_operator);
           
           // Check if this is the current period (most recent date)
           const isCurrentPeriod = periodIndex === (isRTL ? 0 : periodsOriginal.length - 1);
@@ -610,18 +623,32 @@ const GroupedScorecardView = ({
           });
           
           return (
-            <td key={periodDate} className={`p-2 text-center w-28 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
-              <button
-                onClick={() => onScoreUpdate(metric, periodDate, value)}
-                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative whitespace-nowrap
-                  ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
-                title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
-              >
-                <span>{displayValue}</span>
-                {hasNotes && (
-                  <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
+            <td key={periodDate} className={`p-2 text-center w-28 relative ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+              <div className="relative">
+                <button
+                  onClick={() => onScoreUpdate(metric, periodDate, value)}
+                  className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative whitespace-nowrap
+                    ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                  title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
+                >
+                  <span>{displayValue}</span>
+                  {hasNotes && (
+                    <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
+                  )}
+                </button>
+                {hasCustomGoal && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCustomGoalModal({ isOpen: true, metric, periodDate });
+                    }}
+                    className="absolute -top-1 -right-1 p-0.5 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors"
+                    title={`Custom goal: ${hasCustomGoal.goal || `${hasCustomGoal.min}-${hasCustomGoal.max}`}${hasCustomGoal.notes ? `\n${hasCustomGoal.notes}` : ''}`}
+                  >
+                    <Target className="h-3 w-3 text-white" />
+                  </button>
                 )}
-              </button>
+              </div>
             </td>
           );
         })}
@@ -1044,8 +1071,22 @@ const GroupedScorecardView = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CustomGoalModal
+        isOpen={customGoalModal.isOpen}
+        onClose={() => setCustomGoalModal({ isOpen: false, metric: null, periodDate: null })}
+        metric={customGoalModal.metric}
+        periodDate={customGoalModal.periodDate}
+        currentGoal={customGoalModal.metric && customGoalModal.periodDate ? customGoals[customGoalModal.metric.id]?.[customGoalModal.periodDate] : null}
+        onSave={(goalData) => {
+          // Call onScoreUpdate with the custom goal data
+          const currentValue = type === 'monthly' 
+            ? monthlyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate]
+            : weeklyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate];
+          onScoreUpdate(customGoalModal.metric, customGoalModal.periodDate, currentValue, goalData);
+        }}
+      />
     </div>
   );
 };
-
-export default GroupedScorecardView;
+export default GroupedScorecardView;;

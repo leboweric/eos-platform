@@ -64,6 +64,7 @@ const ScorecardPageClean = () => {
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
   const [weeklyScores, setWeeklyScores] = useState({});
+  const [customGoals, setCustomGoals] = useState({});
   const [weeklyNotes, setWeeklyNotes] = useState({}); // Add notes state
   const [monthlyNotes, setMonthlyNotes] = useState({}); // Add notes state
   const [editingMetric, setEditingMetric] = useState(null);
@@ -168,6 +169,7 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
+        setCustomGoals(response.data.customGoals || {}); // Load custom goals
         setUsers(response.data.teamMembers || []);
       } else if (response) {
         // Check for zero values in scores
@@ -185,6 +187,7 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.monthlyScores || {});
         setWeeklyNotes(response.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.monthlyNotes || {}); // Load notes
+        setCustomGoals(response.customGoals || {}); // Load custom goals
         setUsers(response.teamMembers || []);
       }
     } catch (error) {
@@ -390,7 +393,7 @@ const ScorecardPageClean = () => {
     await fetchScorecard();
   };
 
-  const handleScoreEdit = (metric, weekDate, scoreType = 'weekly') => {
+  const handleScoreEdit = (metric, weekDate, scoreType = 'weekly', customGoalData = null) => {
     const scores = scoreType === 'monthly' ? monthlyScores : weeklyScores;
     const notes = scoreType === 'monthly' ? monthlyNotes : weeklyNotes;
     const scoreValue = scores[metric.id]?.[weekDate];
@@ -407,7 +410,8 @@ const ScorecardPageClean = () => {
       metricName: metric.name,
       currentValue: currentValue,
       currentNotes: currentNotes,
-      scoreType: scoreType
+      scoreType: scoreType,
+      customGoalData: customGoalData
     });
     setScoreInputValue(currentValue.toString());
     setScoreNotesValue(currentNotes);
@@ -436,7 +440,8 @@ const ScorecardPageClean = () => {
         scoreDialogData.weekDate, 
         valueToSave,
         scoreDialogData.scoreType || 'weekly',
-        scoreNotesValue || null
+        scoreNotesValue || null,
+        scoreDialogData.customGoalData || {}
       );
       
       // Update local state instead of refetching to preserve scroll position
@@ -853,6 +858,7 @@ const ScorecardPageClean = () => {
                 monthlyScores={monthlyScores}
                 weeklyNotes={weeklyNotes}
                 monthlyNotes={monthlyNotes}
+                customGoals={customGoals}
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
@@ -912,6 +918,7 @@ const ScorecardPageClean = () => {
                 monthlyScores={monthlyScores}
                 weeklyNotes={weeklyNotes}
                 monthlyNotes={monthlyNotes}
+                customGoals={customGoals}
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}

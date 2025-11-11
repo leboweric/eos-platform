@@ -104,7 +104,8 @@ export const getScorecard = async (req, res) => {
     
     // Get all scores for these metrics
     const scoresQuery = `
-      SELECT ss.metric_id, ss.week_date, ss.value, ss.notes, sm.type
+      SELECT ss.metric_id, ss.week_date, ss.value, ss.notes, sm.type,
+             ss.custom_goal, ss.custom_goal_min, ss.custom_goal_max, ss.custom_goal_notes
       FROM scorecard_scores ss
       JOIN scorecard_metrics sm ON ss.metric_id = sm.id
       WHERE ss.metric_id IN (
@@ -119,6 +120,7 @@ export const getScorecard = async (req, res) => {
     const monthlyScores = {};
     const weeklyNotes = {}; // SEPARATE notes storage
     const monthlyNotes = {}; // SEPARATE notes storage
+    const customGoals = {}; // Store custom goals per metric/date
     
     scores.rows.forEach(score => {
       // Format date as YYYY-MM-DD
@@ -136,6 +138,19 @@ export const getScorecard = async (req, res) => {
           numericValue: numericValue,
           type: score.type
         });
+      }
+      
+      // Store custom goals if they exist
+      if (score.custom_goal !== null || score.custom_goal_min !== null || score.custom_goal_max !== null) {
+        if (!customGoals[score.metric_id]) {
+          customGoals[score.metric_id] = {};
+        }
+        customGoals[score.metric_id][scoreDate] = {
+          goal: score.custom_goal,
+          min: score.custom_goal_min,
+          max: score.custom_goal_max,
+          notes: score.custom_goal_notes
+        };
       }
       
       // Determine if this is a monthly score based on metric type
@@ -199,6 +214,7 @@ export const getScorecard = async (req, res) => {
         monthlyScores,
         weeklyNotes,  // Send notes separately
         monthlyNotes, // Send notes separately
+        customGoals,  // Send custom goals per metric/date
         teamMembers
       }
     });
@@ -389,7 +405,7 @@ export const deleteMetric = async (req, res) => {
 // Update a weekly or monthly score
 export const updateScore = async (req, res) => {
   try {
-    const { metricId, week, value, notes, scoreType = 'weekly' } = req.body;
+    const { metricId, week, value, notes, scoreType = 'weekly', customGoal, customGoalMin, customGoalMax, customGoalNotes } = req.body;
     const { orgId } = req.params;
     
     // Validate required fields
@@ -409,16 +425,33 @@ export const updateScore = async (req, res) => {
     
     console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue, 'OrgId:', orgId);
     
-    // Upsert the score with notes and organization_id
+    // Upsert the score with notes, organization_id, and custom goals
     const query = `
-      INSERT INTO scorecard_scores (metric_id, week_date, value, notes, organization_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO scorecard_scores (metric_id, week_date, value, notes, organization_id, custom_goal, custom_goal_min, custom_goal_max, custom_goal_notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (metric_id, week_date)
-      DO UPDATE SET value = EXCLUDED.value, notes = EXCLUDED.notes, updated_at = CURRENT_TIMESTAMP
-      RETURNING metric_id, week_date, value, notes, organization_id
+      DO UPDATE SET 
+        value = EXCLUDED.value, 
+        notes = EXCLUDED.notes, 
+        custom_goal = EXCLUDED.custom_goal,
+        custom_goal_min = EXCLUDED.custom_goal_min,
+        custom_goal_max = EXCLUDED.custom_goal_max,
+        custom_goal_notes = EXCLUDED.custom_goal_notes,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING metric_id, week_date, value, notes, organization_id, custom_goal, custom_goal_min, custom_goal_max, custom_goal_notes
     `;
     
-    const result = await db.query(query, [metricId, scoreDate, scoreValue, notes || null, orgId]);
+    const result = await db.query(query, [
+      metricId, 
+      scoreDate, 
+      scoreValue, 
+      notes || null, 
+      orgId,
+      customGoal !== undefined ? customGoal : null,
+      customGoalMin !== undefined ? customGoalMin : null,
+      customGoalMax !== undefined ? customGoalMax : null,
+      customGoalNotes || null
+    ]);
     
     console.log('Backend updateScore - Database returned:', result.rows[0]);
     
