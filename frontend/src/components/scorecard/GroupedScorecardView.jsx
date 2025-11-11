@@ -862,7 +862,7 @@ const GroupedScorecardView = ({
                 <button
                   onClick={onCustomGoalSelectorOpen}
                   className="hover:bg-orange-100 rounded p-0.5 transition-colors"
-                  title="Set custom weekly goals"
+                  title="Custom Goal"
                 >
                   <Target className="h-3 w-3 text-orange-500" />
                 </button>

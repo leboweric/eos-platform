@@ -140,7 +140,7 @@ const CustomGoalSelectorModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
           {/* Metric Selection */}
           <div className="space-y-2">
             <Label htmlFor="metric">Select Metric</Label>
@@ -203,7 +203,6 @@ const CustomGoalSelectorModal = ({
                       value={customGoalMin}
                       onChange={(e) => setCustomGoalMin(e.target.value)}
                       placeholder={`Default: ${selectedMetric.goal?.split('-')[0]?.trim() || ''}`}
-                      disabled={!selectedWeekDate}
                     />
                   </div>
                   <div className="space-y-2">
@@ -215,7 +214,6 @@ const CustomGoalSelectorModal = ({
                       value={customGoalMax}
                       onChange={(e) => setCustomGoalMax(e.target.value)}
                       placeholder={`Default: ${selectedMetric.goal?.split('-')[1]?.trim() || ''}`}
-                      disabled={!selectedWeekDate}
                     />
                   </div>
                 </>
@@ -229,7 +227,6 @@ const CustomGoalSelectorModal = ({
                     value={customGoal}
                     onChange={(e) => setCustomGoal(e.target.value)}
                     placeholder={`Default: ${selectedMetric.goal || ''}`}
-                    disabled={!selectedWeekDate}
                   />
                 </div>
               )}
@@ -242,7 +239,6 @@ const CustomGoalSelectorModal = ({
                   onChange={(e) => setCustomGoalNotes(e.target.value)}
                   placeholder="Why does this week have a custom goal?"
                   rows={3}
-                  disabled={!selectedWeekDate}
                 />
               </div>
             </>

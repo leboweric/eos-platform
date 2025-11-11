@@ -477,7 +477,7 @@ const ScorecardTableClean = ({
                             </button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Set custom weekly goals</p>
+                            <p>Custom Goal</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
