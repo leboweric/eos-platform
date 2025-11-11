@@ -63,6 +63,7 @@ const MetricsManagerPage = () => {
   });
   
   const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [ownerSearchTerm, setOwnerSearchTerm] = useState('');
 
   useEffect(() => {
@@ -77,8 +78,9 @@ const MetricsManagerPage = () => {
       fetchUsers();
     } else {
       console.warn('⚠️ [METRICS MANAGER] No organization ID, skipping data fetch');
+      setLoading(false); // Stop loading if no org ID
     }
-  }, [user]);
+  }, [user?.organization_id]); // Only depend on organization_id to prevent loops
 
   const fetchMetrics = async () => {
     try {
@@ -111,10 +113,20 @@ const MetricsManagerPage = () => {
     console.log('🔍 [METRICS MANAGER] Access token exists:', !!localStorage.getItem('accessToken'));
     
     try {
+      setUsersLoading(true);
       const url = `/users/organization`;
       console.log('🔍 [METRICS MANAGER] Fetching from:', url);
       
-      const response = await axios.get(url);
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await axios.get(url, { 
+        signal: controller.signal,
+        timeout: 10000 // Also set axios timeout
+      });
+      
+      clearTimeout(timeoutId);
       
       console.log('🔍 [METRICS MANAGER] Response status:', response.status);
       console.log('🔍 [METRICS MANAGER] Response data:', response.data);
@@ -135,12 +147,33 @@ const MetricsManagerPage = () => {
         console.log('🔍 [METRICS MANAGER] Users state updated successfully');
       } else {
         console.warn('⚠️ [METRICS MANAGER] No data in response:', response.data);
+        setUsers([]);
       }
     } catch (error) {
       console.error('❌ [METRICS MANAGER] Error fetching users:', error);
-      console.error('❌ [METRICS MANAGER] Error response:', error.response);
-      console.error('❌ [METRICS MANAGER] Error message:', error.message);
+      
+      if (error.name === 'AbortError') {
+        console.error('❌ [METRICS MANAGER] Request timed out after 10 seconds');
+        alert('User loading timed out. Please refresh the page and try again.');
+      } else if (error.code === 'ECONNABORTED') {
+        console.error('❌ [METRICS MANAGER] Connection timeout');
+        alert('Connection timeout while fetching users. Please check your connection and try again.');
+      } else {
+        console.error('❌ [METRICS MANAGER] Error response:', error.response);
+        console.error('❌ [METRICS MANAGER] Error message:', error.message);
+        
+        if (error.response?.status === 401) {
+          alert('Authentication failed. Please log in again.');
+        } else if (error.response?.status === 403) {
+          alert('You do not have permission to view users.');
+        } else {
+          alert('Failed to load users. Please refresh the page and try again.');
+        }
+      }
+      
       setUsers([]);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -403,6 +436,7 @@ const MetricsManagerPage = () => {
                   setFormData={setFormData}
                   teams={teams}
                   users={users}
+                  usersLoading={usersLoading}
                   ownerSearchTerm={ownerSearchTerm}
                   setOwnerSearchTerm={setOwnerSearchTerm}
                   toggleTeamVisibility={toggleTeamVisibility}
@@ -451,6 +485,10 @@ const MetricsManagerPage = () => {
             formData={formData}
             setFormData={setFormData}
             teams={teams}
+            users={users}
+            usersLoading={usersLoading}
+            ownerSearchTerm={ownerSearchTerm}
+            setOwnerSearchTerm={setOwnerSearchTerm}
             toggleTeamVisibility={toggleTeamVisibility}
             selectAllTeams={selectAllTeams}
             deselectAllTeams={deselectAllTeams}
@@ -520,6 +558,7 @@ const MetricForm = ({
   setFormData,
   teams,
   users,
+  usersLoading,
   ownerSearchTerm,
   setOwnerSearchTerm,
   toggleTeamVisibility,
@@ -548,16 +587,23 @@ const MetricForm = ({
             <Select
               value={formData.ownerId}
               onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
+              disabled={usersLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select owner..." />
+                <SelectValue placeholder={usersLoading ? "Loading users..." : "Select owner..."} />
               </SelectTrigger>
               <SelectContent>
-                {(users || []).map(user => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                  </SelectItem>
-                ))}
+                {usersLoading ? (
+                  <SelectItem value="" disabled>Loading users...</SelectItem>
+                ) : users.length === 0 ? (
+                  <SelectItem value="" disabled>No users found</SelectItem>
+                ) : (
+                  (users || []).map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.first_name || user.firstName} {user.last_name || user.lastName}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
