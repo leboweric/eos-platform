@@ -11,7 +11,8 @@ import {
   AlertCircle,
   MessageSquare,
   Share2,
-  Users
+  Users,
+  Target
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
@@ -24,6 +25,7 @@ const ScorecardTableClean = ({
   monthlyScores = {},
   weeklyNotes = {}, // New prop for notes
   monthlyNotes = {}, // New prop for notes
+  customGoals = {}, // New prop for custom weekly goals
   type = 'weekly', // 'weekly' or 'monthly'
   readOnly = false,
   isRTL = false,
@@ -454,7 +456,31 @@ const ScorecardTableClean = ({
                 </th>
                 {!meetingMode && <th className="text-left px-2 py-2 text-xs font-semibold text-gray-700">Metric</th>}
                 <th className={meetingMode ? "w-8" : "w-6"}></th>
-                <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>Goal</th>
+                <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
+                  <div className="flex items-center justify-center gap-1">
+                    <span>Goal</span>
+                    {type === 'weekly' && !meetingMode && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => {
+                                // TODO: Open custom goal modal
+                                console.log('Custom goal icon clicked');
+                              }}
+                              className="hover:bg-orange-100 rounded p-0.5 transition-colors"
+                            >
+                              <Target className="h-3 w-3 text-orange-500" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Set custom weekly goals</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                </th>
                 
                 {showAverage ? (
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
