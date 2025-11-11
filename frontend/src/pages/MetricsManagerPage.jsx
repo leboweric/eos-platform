@@ -101,11 +101,25 @@ const MetricsManagerPage = () => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${currentOrganization.id}/users`
+        `${process.env.REACT_APP_API_URL}/users/organization`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        }
       );
-      setUsers(response.data || []);
+      if (response.data && response.data.data) {
+        // Sort users alphabetically by first name
+        const sortedUsers = response.data.data.sort((a, b) => {
+          const firstNameA = (a.firstName || a.first_name || '').toLowerCase();
+          const firstNameB = (b.firstName || b.first_name || '').toLowerCase();
+          return firstNameA.localeCompare(firstNameB);
+        });
+        setUsers(sortedUsers);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     }
   };
 
@@ -523,11 +537,14 @@ const MetricForm = ({
               </SelectTrigger>
               <SelectContent>
                 {users && users.length > 0 ? (
-                  users.map((user) => (
-                    <SelectItem key={user.id} value={user.name}>
-                      {user.name}
-                    </SelectItem>
-                  ))
+                  users.map((user) => {
+                    const displayName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email;
+                    return (
+                      <SelectItem key={user.id} value={displayName}>
+                        {displayName}
+                      </SelectItem>
+                    );
+                  })
                 ) : (
                   <SelectItem value="loading" disabled>
                     Loading users...
