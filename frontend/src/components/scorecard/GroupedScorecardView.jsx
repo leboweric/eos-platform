@@ -54,6 +54,8 @@ const GroupedScorecardView = ({
   selectedMonths,
   scorecardTimePeriodPreference = '13_week_rolling'
 }) => {
+  console.log('🎯 GroupedScorecardView customGoals prop:', customGoals);
+  
   const [groups, setGroups] = useState([]);
   const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -601,6 +603,14 @@ const GroupedScorecardView = ({
           
           // Check if this cell has a custom goal
           const hasCustomGoal = customGoals[metric.id]?.[periodDate];
+          if (metric.name === 'Collection Calls' && periodDate === '2025-10-21') {
+            console.log('🔍 Custom goal check for Collection Calls 2025-10-21:', {
+              metricId: metric.id,
+              periodDate,
+              customGoalsForMetric: customGoals[metric.id],
+              hasCustomGoal
+            });
+          }
           
           // Use custom goal if available, otherwise use metric's default goal
           const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
@@ -1103,4 +1113,4 @@ const GroupedScorecardView = ({
     </div>
   );
 };
-export default GroupedScorecardView;;
+export default function GroupedScorecardView({
