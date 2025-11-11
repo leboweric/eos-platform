@@ -59,7 +59,7 @@ const MetricsManagerPage = () => {
     description: '',
     dataSource: '',
     calculationMethod: '',
-    visibleToTeams: []
+    visible_to_teams: []
   });
   
   const [users, setUsers] = useState([]);
