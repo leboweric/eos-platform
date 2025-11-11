@@ -193,5 +193,38 @@ export const scorecardService = {
     }
     
     return await response.json();
+  },
+
+  // Save custom goal for a specific metric and period
+  saveCustomGoal: async (orgId, teamId, metricId, period, goalData) => {
+    const token = localStorage.getItem('accessToken');
+    // Use the existing updateScore endpoint which already supports custom goals
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/scores`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          metricId,
+          week: period,
+          value: null, // Don't update the score value
+          scoreType: 'weekly',
+          customGoal: goalData.customGoal,
+          customGoalMin: goalData.customGoalMin,
+          customGoalMax: goalData.customGoalMax,
+          customGoalNotes: goalData.customGoalNotes
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to save custom goal');
+    }
+    
+    const data = await response.json();
+    return data.data;
   }
 };

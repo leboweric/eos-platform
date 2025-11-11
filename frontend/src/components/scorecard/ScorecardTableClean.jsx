@@ -39,6 +39,8 @@ const ScorecardTableClean = ({
   onMetricDelete,
   onMetricShare, // New prop for sharing metrics
   onAddIssue, // New prop for adding metric issues
+  onCustomGoalOpen, // New prop for opening custom goal modal
+  onCustomGoalSelectorOpen, // New prop for opening custom goal selector modal
   noWrapper = false, // Add prop to disable Card wrapper
   maxPeriods = 10, // Control how many weeks/months to show
   meetingMode = false, // New prop for meeting display mode
@@ -465,8 +467,9 @@ const ScorecardTableClean = ({
                           <TooltipTrigger asChild>
                             <button
                               onClick={() => {
-                                // TODO: Open custom goal modal
-                                console.log('Custom goal icon clicked');
+                                if (onCustomGoalSelectorOpen) {
+                                  onCustomGoalSelectorOpen();
+                                }
                               }}
                               className="hover:bg-orange-100 rounded p-0.5 transition-colors"
                             >

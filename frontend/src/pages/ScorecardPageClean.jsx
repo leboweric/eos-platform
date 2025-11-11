@@ -38,6 +38,8 @@ import {
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
+import CustomGoalModal from '../components/scorecard/CustomGoalModal';
+import CustomGoalSelectorModal from '../components/scorecard/CustomGoalSelectorModal';
 import ShareMetricDialog from '../components/shared-metrics/ShareMetricDialog';
 import SharedMetricsBrowser from '../components/shared-metrics/SharedMetricsBrowser';
 import sharedMetricsService from '../services/sharedMetricsService';
@@ -91,6 +93,13 @@ const ScorecardPageClean = () => {
   // Shared metrics state
   const [shareMetricDialog, setShareMetricDialog] = useState(false);
   const [metricToShare, setMetricToShare] = useState(null);
+  
+  // Custom goal modal state
+  const [showCustomGoalModal, setShowCustomGoalModal] = useState(false);
+  const [customGoalData, setCustomGoalData] = useState({ metric: null, periodDate: null, currentGoal: null });
+  
+  // Custom goal selector modal state (for header icon)
+  const [showCustomGoalSelectorModal, setShowCustomGoalSelectorModal] = useState(false);
   
   // Filter metrics by type
   const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
@@ -391,6 +400,105 @@ const ScorecardPageClean = () => {
     setSuccess('Metric shared successfully');
     // Refresh metrics to update the is_shared status
     await fetchScorecard();
+  };
+
+  const handleCustomGoalOpen = (metric, periodDate) => {
+    // Get current goal from nested structure: customGoals[metricId][date]
+    const currentGoal = customGoals[metric.id]?.[periodDate] || null;
+    setCustomGoalData({ metric, periodDate, currentGoal });
+    setShowCustomGoalModal(true);
+  };
+
+  const handleCustomGoalSelectorOpen = () => {
+    setShowCustomGoalSelectorModal(true);
+  };
+
+  const handleCustomGoalSelectorSave = async (metric, periodDate, goalData) => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
+      
+      if (!orgId || !teamId) {
+        return;
+      }
+      
+      await scorecardService.saveCustomGoal(
+        orgId,
+        teamId,
+        metric.id,
+        periodDate,
+        goalData
+      );
+      
+      // Update local state with nested structure matching backend
+      setCustomGoals(prev => ({
+        ...prev,
+        [metric.id]: {
+          ...prev[metric.id],
+          [periodDate]: {
+            goal: goalData.customGoal,
+            min: goalData.customGoalMin,
+            max: goalData.customGoalMax,
+            notes: goalData.customGoalNotes
+          }
+        }
+      }));
+      
+      setSuccess('Custom goal saved successfully');
+      await fetchScorecard();
+    } catch (err) {
+      console.error('Error saving custom goal:', err);
+      setError('Failed to save custom goal');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCustomGoalSave = async (goalData) => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
+      
+      if (!orgId || !teamId) {
+        return;
+      }
+      
+      await scorecardService.saveCustomGoal(
+        orgId,
+        teamId,
+        customGoalData.metric.id,
+        customGoalData.periodDate,
+        goalData
+      );
+      
+      // Update local state with nested structure matching backend
+      setCustomGoals(prev => ({
+        ...prev,
+        [customGoalData.metric.id]: {
+          ...prev[customGoalData.metric.id],
+          [customGoalData.periodDate]: {
+            goal: goalData.customGoal,
+            min: goalData.customGoalMin,
+            max: goalData.customGoalMax,
+            notes: goalData.customGoalNotes
+          }
+        }
+      }));
+      
+      setSuccess('Custom goal saved successfully');
+      await fetchScorecard();
+    } catch (err) {
+      console.error('Error saving custom goal:', err);
+      setError('Failed to save custom goal');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleScoreEdit = (metric, weekDate, scoreType = 'weekly', customGoalData = null) => {
@@ -887,6 +995,7 @@ const ScorecardPageClean = () => {
                 monthlyScores={monthlyScores}
                 weeklyNotes={weeklyNotes}
                 monthlyNotes={monthlyNotes}
+                customGoals={customGoals}
                 type="weekly"
                 readOnly={false}
                 isRTL={isRTL}
@@ -900,6 +1009,8 @@ const ScorecardPageClean = () => {
                 onMetricUpdate={handleEditMetric}
                 onMetricDelete={handleArchiveMetric}
                 onMetricShare={handleMetricShare}
+                onCustomGoalOpen={handleCustomGoalOpen}
+                onCustomGoalSelectorOpen={handleCustomGoalSelectorOpen}
                 noWrapper={false}
                 maxPeriods={10}
                 meetingMode={false}
@@ -1239,6 +1350,29 @@ const ScorecardPageClean = () => {
         metricId={chartModal.metricId}
         orgId={user?.organizationId}
         teamId={selectedDepartment?.id}
+      />
+      
+      {/* Custom Goal Modal */}
+      <CustomGoalModal
+        isOpen={showCustomGoalModal}
+        onClose={() => {
+          setShowCustomGoalModal(false);
+          setCustomGoalData({ metric: null, periodDate: null, currentGoal: null });
+        }}
+        metric={customGoalData.metric}
+        periodDate={customGoalData.periodDate}
+        currentGoal={customGoalData.currentGoal}
+        onSave={handleCustomGoalSave}
+      />
+      
+      {/* Custom Goal Selector Modal (from header icon) */}
+      <CustomGoalSelectorModal
+        isOpen={showCustomGoalSelectorModal}
+        onClose={() => setShowCustomGoalSelectorModal(false)}
+        metrics={weeklyMetrics}
+        weekDates={weekDates}
+        customGoals={customGoals}
+        onSave={handleCustomGoalSelectorSave}
       />
     </div>
   );
