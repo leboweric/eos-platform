@@ -59,7 +59,7 @@ const CustomGoalSelectorModal = ({
         setCustomGoalNotes(existingGoal.notes || '');
       } else {
         // Load the metric's default goal
-        const metric = metrics.find(m => m.id === parseInt(selectedMetricId));
+        const metric = metrics.find(m => m.id === selectedMetricId);
         if (metric && metric.goal) {
           setCustomGoal(metric.goal.toString());
           setCustomGoalMin('');
@@ -81,7 +81,7 @@ const CustomGoalSelectorModal = ({
 
     setLoading(true);
     try {
-      const metric = metrics.find(m => m.id === parseInt(selectedMetricId));
+      const metric = metrics.find(m => m.id === selectedMetricId);
       const goalData = {
         customGoal: customGoal !== '' ? parseFloat(customGoal) : null,
         customGoalMin: customGoalMin !== '' ? parseFloat(customGoalMin) : null,
@@ -105,7 +105,7 @@ const CustomGoalSelectorModal = ({
 
     setLoading(true);
     try {
-      const metric = metrics.find(m => m.id === parseInt(selectedMetricId));
+      const metric = metrics.find(m => m.id === selectedMetricId);
       const goalData = {
         customGoal: null,
         customGoalMin: null,
@@ -122,7 +122,7 @@ const CustomGoalSelectorModal = ({
     }
   };
 
-  const selectedMetric = metrics.find(m => m.id === parseInt(selectedMetricId));
+  const selectedMetric = metrics.find(m => m.id === selectedMetricId);
   
   // Debug logging
   console.log('CustomGoalSelectorModal Debug:', {
