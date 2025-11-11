@@ -395,7 +395,7 @@ Respond in a valid JSON object with an "options" array. Example format for a sin
 }`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo', // Use a powerful model
+      model: 'gpt-4o', // Use a powerful model
       messages: [
         {
           role: 'system',
