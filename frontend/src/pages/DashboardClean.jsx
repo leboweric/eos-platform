@@ -1173,7 +1173,7 @@ const DashboardClean = () => {
                                             {priority.title}
                                           </span>
                                           {viewMode === 'my-items' && priority.team_name && (
-                                            <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
                                               {priority.team_name}
                                             </span>
                                           )}
@@ -1400,7 +1400,7 @@ const DashboardClean = () => {
                               {priority.title}
                             </span>
                             {viewMode === 'my-items' && priority.team_name && (
-                              <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
                                 {priority.team_name}
                               </span>
                             )}
@@ -1870,7 +1870,7 @@ const DashboardClean = () => {
                                   {todo.title}
                                 </div>
                                 {viewMode === 'my-items' && todo.team_name && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
                                     {todo.team_name}
                                   </span>
                                 )}
