@@ -18,7 +18,9 @@ import {
   Video,
   VideoOff,
   X,
-  Clock
+  Clock,
+  Pause,
+  Play
 } from 'lucide-react';
 import useMeeting from '../../hooks/useMeeting';
 
@@ -32,7 +34,9 @@ const MeetingBar = ({
   meetingStartTime, 
   meetingStarted,
   isFollowing,
-  toggleFollow
+  toggleFollow,
+  isPaused = false,
+  onPauseResume
 }) => {
   const {
     isEnabled,
@@ -141,6 +145,22 @@ const MeetingBar = ({
                     <span className="text-sm font-medium text-blue-600">
                       {formatTime(elapsedTime)}
                     </span>
+                    {/* Pause/Resume button */}
+                    {onPauseResume && (
+                      <Button
+                        onClick={onPauseResume}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        title={isPaused ? "Resume timer" : "Pause timer"}
+                      >
+                        {isPaused ? (
+                          <Play className="h-3 w-3 text-green-600" />
+                        ) : (
+                          <Pause className="h-3 w-3 text-orange-600" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                   <div className="h-6 w-px bg-gray-300" />
                 </>

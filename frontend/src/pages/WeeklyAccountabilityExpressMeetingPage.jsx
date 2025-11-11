@@ -7723,6 +7723,8 @@ const WeeklyAccountabilityMeetingPage = () => {
             meetingStarted={meetingStarted}
             isFollowing={isFollowing}
             toggleFollow={toggleFollow}
+            isPaused={isPaused}
+            onPauseResume={handlePauseResume}
           />
         )}
 
