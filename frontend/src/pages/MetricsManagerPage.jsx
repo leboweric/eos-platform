@@ -203,9 +203,30 @@ const MetricsManagerPage = () => {
   const handleCreateMetric = async () => {
     try {
       setSaving(true);
+      
+      // Convert ownerId (UUID) to owner name
+      const selectedUser = users.find(u => u.id === formData.ownerId);
+      const ownerName = selectedUser 
+        ? `${selectedUser.first_name || selectedUser.firstName} ${selectedUser.last_name || selectedUser.lastName}`
+        : formData.ownerId;
+      
+      // Transform camelCase to snake_case for API
+      const payload = {
+        name: formData.name,
+        owner: ownerName,
+        goal: formData.goal,
+        type: formData.type,
+        value_type: formData.valueType,
+        comparison_operator: formData.comparisonOperator,
+        description: formData.description,
+        data_source: formData.dataSource,
+        calculation_method: formData.calculationMethod,
+        visible_to_teams: formData.visible_to_teams
+      };
+      
       await axios.post(
         `/admin/org-shared-metrics/${user.organization_id}/metrics`,
-        formData
+        payload
       );
       setIsCreateDialogOpen(false);
       resetForm();
@@ -223,9 +244,15 @@ const MetricsManagerPage = () => {
       setSaving(true);
       
       // Transform camelCase to snake_case for API
+      // Convert ownerId (UUID) to owner name
+      const selectedUser = users.find(u => u.id === formData.ownerId);
+      const ownerName = selectedUser 
+        ? `${selectedUser.first_name || selectedUser.firstName} ${selectedUser.last_name || selectedUser.lastName}`
+        : formData.ownerId; // Fallback if user not found
+      
       const payload = {
         name: formData.name,
-        owner: formData.owner,
+        owner: ownerName,
         goal: formData.goal,
         type: formData.type,
         value_type: formData.valueType,
