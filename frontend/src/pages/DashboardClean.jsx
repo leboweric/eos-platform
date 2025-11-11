@@ -303,15 +303,16 @@ const DashboardClean = () => {
       
       console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId, 'selectedDepartment:', selectedDepartment, 'viewMode:', viewMode);
       
-      // In my-items mode, fetch from ALL teams the user belongs to (pass null for department)
+      // In my-items mode, fetch from ALL teams the user belongs to (pass 'null' string as teamId)
       // In team-view mode, fetch only from the selected team
+      const teamIdForAPI = viewMode === 'my-items' ? 'null' : teamIdForPriorities;
       const departmentFilter = viewMode === 'my-items' ? null : userDepartmentId;
       
       // In team view mode, fetch all todos regardless of assignment
       const fetchAllForTeam = viewMode === 'team-view';
       
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
-        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForPriorities, departmentFilter),
+        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForAPI, departmentFilter),
         todosService.getTodos(null, null, fetchAllForTeam, departmentFilter),
         issuesService.getIssues(null, false, departmentFilter),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
