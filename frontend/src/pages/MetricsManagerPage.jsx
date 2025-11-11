@@ -245,7 +245,7 @@ const MetricsManagerPage = () => {
   const selectAllTeams = () => {
     setFormData(prev => ({
       ...prev,
-      visible_to_teams: teams.map(t => t.id)
+      visible_to_teams: (teams || []).map(t => t.id)
     }));
   };
 
@@ -326,7 +326,7 @@ const MetricsManagerPage = () => {
                   </div>
                 ) : (
                   <div className="divide-y">
-                    {filteredMetrics.map((metric) => (
+                    {(filteredMetrics || []).map((metric) => (
                       <div
                         key={metric.id}
                         onClick={() => handleSelectMetric(metric)}
@@ -699,7 +699,7 @@ const MetricForm = ({
         </p>
 
         <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-4">
-          {teams.map((team) => (
+          {(teams || []).map((team) => (
             <label
               key={team.id}
               className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
