@@ -522,11 +522,17 @@ const MetricForm = ({
                 <SelectValue placeholder="Select owner..." />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.name}>
-                    {user.name}
+                {users && users.length > 0 ? (
+                  users.map((user) => (
+                    <SelectItem key={user.id} value={user.name}>
+                      {user.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    Loading users...
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
