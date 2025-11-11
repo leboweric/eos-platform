@@ -84,7 +84,7 @@ const MetricsManagerPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`
       );
       setMetrics(response.data.data || []);
     } catch (error) {
@@ -97,7 +97,7 @@ const MetricsManagerPage = () => {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${user.organization_id}/teams`
+        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${user.organization_id}/teams`
       );
       setTeams(response.data || []);
     } catch (error) {
@@ -107,11 +107,11 @@ const MetricsManagerPage = () => {
 
   const fetchUsers = async () => {
     console.log('🔍 [METRICS MANAGER] fetchUsers() called');
-    console.log('🔍 [METRICS MANAGER] API URL:', process.env.REACT_APP_API_URL);
+    console.log('🔍 [METRICS MANAGER] API URL:', import.meta.env.VITE_API_URL);
     console.log('🔍 [METRICS MANAGER] Access token exists:', !!localStorage.getItem('accessToken'));
     
     try {
-      const url = `${process.env.REACT_APP_API_URL}/users/organization`;
+      const url = `${import.meta.env.VITE_API_URL}/users/organization`;
       console.log('🔍 [METRICS MANAGER] Fetching from:', url);
       
       const response = await axios.get(url, {
@@ -152,7 +152,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`,
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`,
         formData
       );
       setIsCreateDialogOpen(false);
@@ -170,7 +170,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
         formData
       );
       setSelectedMetric(null);
@@ -187,7 +187,7 @@ const MetricsManagerPage = () => {
   const handleDeleteMetric = async () => {
     try {
       await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${metricToDelete.id}`
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${metricToDelete.id}`
       );
       setIsDeleteDialogOpen(false);
       setMetricToDelete(null);
