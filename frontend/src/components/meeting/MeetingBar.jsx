@@ -66,7 +66,7 @@ const MeetingBar = ({
   // Update timer
   useEffect(() => {
     let timer;
-    if (meetingStarted && meetingStartTime) {
+    if (meetingStarted && meetingStartTime && !isPaused) {
       timer = setInterval(() => {
         const now = Date.now();
         const elapsed = Math.floor((now - meetingStartTime) / 1000);
@@ -76,7 +76,7 @@ const MeetingBar = ({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [meetingStarted, meetingStartTime]);
+  }, [meetingStarted, meetingStartTime, isPaused]);
 
   // Format elapsed time
   const formatTime = (seconds) => {
