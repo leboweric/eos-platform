@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../services/axiosConfig';
 import { useAuthStore } from '../stores/authStore';
@@ -114,8 +114,15 @@ const MetricsManagerPage = () => {
       const response = await axios.get(
         `/organizations/${user.organization_id}/teams`
       );
-      console.log('🔍 [METRICS MANAGER] Teams response:', response.data);
-      setTeams(response.data || []);
+      console.log('🔍 [METRICS MANAGER] Teams response status:', response.status);
+      console.log('🔍 [METRICS MANAGER] Teams response data:', response.data);
+      console.log('🔍 [METRICS MANAGER] Teams response data type:', typeof response.data);
+      console.log('🔍 [METRICS MANAGER] Teams response is array:', Array.isArray(response.data));
+      
+      // Ensure teams is always an array
+      const teamsData = Array.isArray(response.data) ? response.data : [];
+      console.log('🔍 [METRICS MANAGER] Setting teams to:', teamsData);
+      setTeams(teamsData);
     } catch (error) {
       console.error('❌ [METRICS MANAGER] Error fetching teams:', error);
       setTeams([]); // Ensure we always set an array
@@ -262,6 +269,11 @@ const MetricsManagerPage = () => {
   };
 
   const handleSelectMetric = (metric) => {
+    console.log('🔍 [METRICS MANAGER] handleSelectMetric called with:', metric);
+    console.log('🔍 [METRICS MANAGER] metric.visible_to_teams:', metric.visible_to_teams);
+    console.log('🔍 [METRICS MANAGER] metric.visible_to_teams type:', typeof metric.visible_to_teams);
+    console.log('🔍 [METRICS MANAGER] metric.visible_to_teams is array:', Array.isArray(metric.visible_to_teams));
+    
     setSelectedMetric(metric);
     setFormData({
       name: metric.name || '',
@@ -273,7 +285,7 @@ const MetricsManagerPage = () => {
       description: metric.description || '',
       dataSource: metric.data_source || '',
       calculationMethod: metric.calculation_method || '',
-      visibleToTeams: metric.visible_to_teams || []
+      visibleToTeams: Array.isArray(metric.visible_to_teams) ? metric.visible_to_teams : []
     });
   };
 
@@ -300,10 +312,23 @@ const MetricsManagerPage = () => {
     }));
   };
 
-  const filteredMetrics = (metrics || []).filter(metric =>
-    metric.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    metric.owner?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Ensure filteredMetrics is always an array with safe operations
+  const filteredMetrics = useMemo(() => {
+    console.log('🔍 [METRICS MANAGER] Computing filteredMetrics');
+    console.log('🔍 [METRICS MANAGER] metrics:', metrics);
+    console.log('🔍 [METRICS MANAGER] metrics type:', typeof metrics);
+    console.log('🔍 [METRICS MANAGER] metrics is array:', Array.isArray(metrics));
+    
+    const safeMetrics = Array.isArray(metrics) ? metrics : [];
+    console.log('🔍 [METRICS MANAGER] safeMetrics:', safeMetrics);
+    
+    const filtered = safeMetrics.filter(metric =>
+      metric?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      metric?.owner?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    console.log('🔍 [METRICS MANAGER] filtered:', filtered);
+    return filtered;
+  }, [metrics, searchTerm]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
