@@ -538,13 +538,15 @@ const MetricForm = ({
               <SelectContent>
                 {users && users.length > 0 ? (
                   users.map((user) => {
-                    const displayName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email;
+                    const displayName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email || `User ${user.id}`;
+                    // Skip users with empty names
+                    if (!displayName || displayName.trim() === '') return null;
                     return (
                       <SelectItem key={user.id} value={displayName}>
                         {displayName}
                       </SelectItem>
                     );
-                  })
+                  }).filter(Boolean)
                 ) : (
                   <SelectItem value="loading" disabled>
                     Loading users...
