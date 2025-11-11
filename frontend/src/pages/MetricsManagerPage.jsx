@@ -119,8 +119,9 @@ const MetricsManagerPage = () => {
       console.log('🔍 [METRICS MANAGER] Teams response data type:', typeof response.data);
       console.log('🔍 [METRICS MANAGER] Teams response is array:', Array.isArray(response.data));
       
-      // Ensure teams is always an array
-      const teamsData = Array.isArray(response.data) ? response.data : [];
+      // Extract teams from API response {success: true, data: Array}
+      const teamsData = response.data.data || [];
+      console.log('🔍 [METRICS MANAGER] Teams count:', teamsData.length);
       console.log('🔍 [METRICS MANAGER] Setting teams to:', teamsData);
       setTeams(teamsData);
     } catch (error) {
