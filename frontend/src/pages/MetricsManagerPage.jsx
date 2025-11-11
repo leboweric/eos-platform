@@ -536,7 +536,7 @@ const MetricForm = ({
                 <SelectValue placeholder="Select owner..." />
               </SelectTrigger>
               <SelectContent>
-                {users.map(user => (
+                {(users || []).map(user => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.first_name} {user.last_name}
                   </SelectItem>
