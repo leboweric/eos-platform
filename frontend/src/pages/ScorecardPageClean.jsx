@@ -842,16 +842,6 @@ const ScorecardPageClean = () => {
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Monthly
               </TabsTrigger>
-              <TabsTrigger 
-                value="shared" 
-                className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
-                style={activeTab === 'shared' ? {
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                } : {}}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Shared
-              </TabsTrigger>
             </TabsList>
           </div>
           
@@ -969,16 +959,6 @@ const ScorecardPageClean = () => {
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="shared" className="mt-0">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-6">
-            <SharedMetricsBrowser
-              orgId={user?.organizationId || user?.organization_id}
-              teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
-              onSubscribe={fetchScorecard}
-            />
             </div>
           </TabsContent>
         </Tabs>
