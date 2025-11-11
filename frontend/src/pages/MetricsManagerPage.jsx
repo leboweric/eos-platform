@@ -66,10 +66,17 @@ const MetricsManagerPage = () => {
   const [ownerSearchTerm, setOwnerSearchTerm] = useState('');
 
   useEffect(() => {
+    console.log('🔍 [METRICS MANAGER] useEffect triggered');
+    console.log('🔍 [METRICS MANAGER] currentOrganization:', currentOrganization);
+    console.log('🔍 [METRICS MANAGER] currentOrganization.id:', currentOrganization?.id);
+    
     if (currentOrganization?.id) {
+      console.log('🔍 [METRICS MANAGER] Organization ID exists, fetching data...');
       fetchMetrics();
       fetchTeams();
       fetchUsers();
+    } else {
+      console.warn('⚠️ [METRICS MANAGER] No organization ID, skipping data fetch');
     }
   }, [currentOrganization]);
 
@@ -99,26 +106,44 @@ const MetricsManagerPage = () => {
   };
 
   const fetchUsers = async () => {
+    console.log('🔍 [METRICS MANAGER] fetchUsers() called');
+    console.log('🔍 [METRICS MANAGER] API URL:', process.env.REACT_APP_API_URL);
+    console.log('🔍 [METRICS MANAGER] Access token exists:', !!localStorage.getItem('accessToken'));
+    
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/users/organization`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-          }
+      const url = `${process.env.REACT_APP_API_URL}/users/organization`;
+      console.log('🔍 [METRICS MANAGER] Fetching from:', url);
+      
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
-      );
+      });
+      
+      console.log('🔍 [METRICS MANAGER] Response status:', response.status);
+      console.log('🔍 [METRICS MANAGER] Response data:', response.data);
+      
       if (response.data && response.data.data) {
+        console.log('🔍 [METRICS MANAGER] Users count:', response.data.data.length);
+        console.log('🔍 [METRICS MANAGER] First user:', response.data.data[0]);
+        
         // Sort users alphabetically by first name
         const sortedUsers = response.data.data.sort((a, b) => {
           const firstNameA = (a.firstName || a.first_name || '').toLowerCase();
           const firstNameB = (b.firstName || b.first_name || '').toLowerCase();
           return firstNameA.localeCompare(firstNameB);
         });
+        
+        console.log('🔍 [METRICS MANAGER] Setting users state with', sortedUsers.length, 'users');
         setUsers(sortedUsers);
+        console.log('🔍 [METRICS MANAGER] Users state updated successfully');
+      } else {
+        console.warn('⚠️ [METRICS MANAGER] No data in response:', response.data);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('❌ [METRICS MANAGER] Error fetching users:', error);
+      console.error('❌ [METRICS MANAGER] Error response:', error.response);
+      console.error('❌ [METRICS MANAGER] Error message:', error.message);
       setUsers([]);
     }
   };
