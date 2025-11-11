@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,7 @@ import {
 
 const MetricsManagerPage = () => {
   const navigate = useNavigate();
-  const { currentOrganization } = useAuth();
+  const { currentOrganization } = useAuthStore();
   const [metrics, setMetrics] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
