@@ -1113,4 +1113,5 @@ const GroupedScorecardView = ({
     </div>
   );
 };
-export default function GroupedScorecardView({
+
+export default GroupedScorecardView;
