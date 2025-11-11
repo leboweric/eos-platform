@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../services/axiosConfig';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,7 +84,7 @@ const MetricsManagerPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`
+        `/admin/org-shared-metrics/${user.organization_id}/metrics`
       );
       setMetrics(response.data.data || []);
     } catch (error) {
@@ -97,7 +97,7 @@ const MetricsManagerPage = () => {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${user.organization_id}/teams`
+        `/organizations/${user.organization_id}/teams`
       );
       setTeams(response.data || []);
     } catch (error) {
@@ -111,14 +111,10 @@ const MetricsManagerPage = () => {
     console.log('🔍 [METRICS MANAGER] Access token exists:', !!localStorage.getItem('accessToken'));
     
     try {
-      const url = `${import.meta.env.VITE_API_URL}/users/organization`;
+      const url = `/users/organization`;
       console.log('🔍 [METRICS MANAGER] Fetching from:', url);
       
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
+      const response = await axios.get(url);
       
       console.log('🔍 [METRICS MANAGER] Response status:', response.status);
       console.log('🔍 [METRICS MANAGER] Response data:', response.data);
@@ -152,7 +148,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`,
+        `/admin/org-shared-metrics/${user.organization_id}/metrics`,
         formData
       );
       setIsCreateDialogOpen(false);
@@ -170,7 +166,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
+        `/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
         formData
       );
       setSelectedMetric(null);
@@ -187,7 +183,7 @@ const MetricsManagerPage = () => {
   const handleDeleteMetric = async () => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${metricToDelete.id}`
+        `/admin/org-shared-metrics/${user.organization_id}/metrics/${metricToDelete.id}`
       );
       setIsDeleteDialogOpen(false);
       setMetricToDelete(null);
