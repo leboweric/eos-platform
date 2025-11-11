@@ -1173,9 +1173,9 @@ const DashboardClean = () => {
                                             {priority.title}
                                           </span>
                                           {viewMode === 'my-items' && priority.team_name && (
-                                            <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                                            <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
                                               {priority.team_name}
-                                            </Badge>
+                                            </span>
                                           )}
                                         </div>
                                         <p className="text-xs text-slate-500 mt-0.5">
@@ -1400,9 +1400,9 @@ const DashboardClean = () => {
                               {priority.title}
                             </span>
                             {viewMode === 'my-items' && priority.team_name && (
-                              <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                              <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
                                 {priority.team_name}
-                              </Badge>
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1870,7 +1870,7 @@ const DashboardClean = () => {
                                   {todo.title}
                                 </div>
                                 {viewMode === 'my-items' && todo.team_name && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                                  <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
                                     {todo.team_name}
                                   </span>
                                 )}
