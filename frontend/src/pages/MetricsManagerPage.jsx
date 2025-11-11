@@ -85,12 +85,24 @@ const MetricsManagerPage = () => {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [METRICS MANAGER] fetchMetrics() called');
+      console.log('🔍 [METRICS MANAGER] Fetching from:', `/admin/org-shared-metrics/${user.organization_id}/metrics`);
+      
       const response = await axios.get(
         `/admin/org-shared-metrics/${user.organization_id}/metrics`
       );
-      setMetrics(response.data.data || []);
+      
+      console.log('🔍 [METRICS MANAGER] Metrics response status:', response.status);
+      console.log('🔍 [METRICS MANAGER] Metrics response data:', response.data);
+      
+      const metricsData = response.data.data || [];
+      console.log('🔍 [METRICS MANAGER] Metrics count:', metricsData.length);
+      console.log('🔍 [METRICS MANAGER] First metric:', metricsData[0]);
+      
+      setMetrics(metricsData);
     } catch (error) {
-      console.error('Error fetching metrics:', error);
+      console.error('❌ [METRICS MANAGER] Error fetching metrics:', error);
+      setMetrics([]); // Ensure we always set an array
     } finally {
       setLoading(false);
     }
@@ -98,12 +110,15 @@ const MetricsManagerPage = () => {
 
   const fetchTeams = async () => {
     try {
+      console.log('🔍 [METRICS MANAGER] fetchTeams() called');
       const response = await axios.get(
         `/organizations/${user.organization_id}/teams`
       );
+      console.log('🔍 [METRICS MANAGER] Teams response:', response.data);
       setTeams(response.data || []);
     } catch (error) {
-      console.error('Error fetching teams:', error);
+      console.error('❌ [METRICS MANAGER] Error fetching teams:', error);
+      setTeams([]); // Ensure we always set an array
     }
   };
 
@@ -285,8 +300,8 @@ const MetricsManagerPage = () => {
     }));
   };
 
-  const filteredMetrics = metrics.filter(metric =>
-    metric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredMetrics = (metrics || []).filter(metric =>
+    metric.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     metric.owner?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
