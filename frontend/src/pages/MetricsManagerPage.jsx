@@ -201,17 +201,15 @@ const MetricsManagerPage = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      owner: '',
+      ownerId: '',
       goal: 100,
       type: 'weekly',
-      value_type: 'number',
-      comparison_operator: 'greater_equal',
+      valueType: 'number',
+      comparisonOperator: 'greater_equal',
       description: '',
-      shared_description: '',
-      data_source: '',
-      calculation_method: '',
-      update_frequency: 'daily',
-      visible_to_teams: []
+      dataSource: '',
+      calculationMethod: '',
+      visibleToTeams: []
     });
   };
 
@@ -219,40 +217,38 @@ const MetricsManagerPage = () => {
     setSelectedMetric(metric);
     setFormData({
       name: metric.name || '',
-      owner: metric.owner || '',
+      ownerId: metric.owner_id || '',
       goal: metric.goal || 100,
       type: metric.type || 'weekly',
-      value_type: metric.value_type || 'number',
-      comparison_operator: metric.comparison_operator || 'greater_equal',
+      valueType: metric.value_type || 'number',
+      comparisonOperator: metric.comparison_operator || 'greater_equal',
       description: metric.description || '',
-      shared_description: metric.shared_description || '',
-      data_source: metric.data_source || '',
-      calculation_method: metric.calculation_method || '',
-      update_frequency: metric.update_frequency || 'daily',
-      visible_to_teams: metric.visible_to_teams || []
+      dataSource: metric.data_source || '',
+      calculationMethod: metric.calculation_method || '',
+      visibleToTeams: metric.visible_to_teams || []
     });
   };
 
   const toggleTeamVisibility = (teamId) => {
     setFormData(prev => ({
       ...prev,
-      visible_to_teams: prev.visible_to_teams.includes(teamId)
-        ? prev.visible_to_teams.filter(id => id !== teamId)
-        : [...prev.visible_to_teams, teamId]
+      visibleToTeams: prev.visibleToTeams.includes(teamId)
+        ? prev.visibleToTeams.filter(id => id !== teamId)
+        : [...prev.visibleToTeams, teamId]
     }));
   };
 
   const selectAllTeams = () => {
     setFormData(prev => ({
       ...prev,
-      visible_to_teams: teams.map(t => t.id)
+      visibleToTeams: teams.map(t => t.id)
     }));
   };
 
   const deselectAllTeams = () => {
     setFormData(prev => ({
       ...prev,
-      visible_to_teams: []
+      visibleToTeams: []
     }));
   };
 
@@ -472,7 +468,7 @@ const MetricsManagerPage = () => {
             </Button>
             <Button
               onClick={handleCreateMetric}
-              disabled={saving || !formData.name || !formData.owner}
+              disabled={saving || !formData.name || !formData.ownerId}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
               {saving ? 'Creating...' : 'Create Metric'}
@@ -596,10 +592,10 @@ const MetricForm = ({
           </div>
           
           <div>
-            <Label htmlFor="value_type">Value Type</Label>
+            <Label htmlFor="valueType">Value Type</Label>
             <Select
-              value={formData.value_type}
-              onValueChange={(value) => setFormData({ ...formData, value_type: value })}
+              value={formData.valueType}
+              onValueChange={(value) => setFormData({ ...formData, valueType: value })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -615,10 +611,10 @@ const MetricForm = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="comparison">Comparison Operator</Label>
+            <Label htmlFor="comparisonOperator">Comparison Operator</Label>
             <Select
-              value={formData.comparison_operator}
-              onValueChange={(value) => setFormData({ ...formData, comparison_operator: value })}
+              value={formData.comparisonOperator}
+              onValueChange={(value) => setFormData({ ...formData, comparisonOperator: value })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -647,21 +643,21 @@ const MetricForm = ({
         </div>
 
         <div>
-          <Label htmlFor="data_source">Data Source</Label>
+          <Label htmlFor="dataSource">Data Source</Label>
           <Input
-            id="data_source"
-            value={formData.data_source}
-            onChange={(e) => setFormData({ ...formData, data_source: e.target.value })}
+            id="dataSource"
+            value={formData.dataSource}
+            onChange={(e) => setFormData({ ...formData, dataSource: e.target.value })}
             placeholder="Where this data comes from"
           />
         </div>
 
         <div>
-          <Label htmlFor="calculation_method">Calculation Method</Label>
+          <Label htmlFor="calculationMethod">Calculation Method</Label>
           <Textarea
-            id="calculation_method"
-            value={formData.calculation_method}
-            onChange={(e) => setFormData({ ...formData, calculation_method: e.target.value })}
+            id="calculationMethod"
+            value={formData.calculationMethod}
+            onChange={(e) => setFormData({ ...formData, calculationMethod: e.target.value })}
             placeholder="How this metric is calculated"
             rows={2}
           />
@@ -693,9 +689,9 @@ const MetricForm = ({
         </div>
         
         <p className="text-sm text-gray-600">
-          {formData.visible_to_teams.length === 0
+          {formData.visibleToTeams.length === 0
             ? 'Visible to all teams (no restrictions)'
-            : `Visible to ${formData.visible_to_teams.length} selected team(s)`}
+            : `Visible to ${formData.visibleToTeams.length} selected team(s)`}
         </p>
 
         <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-4">
@@ -706,7 +702,7 @@ const MetricForm = ({
             >
               <input
                 type="checkbox"
-                checked={formData.visible_to_teams.includes(team.id)}
+                checked={formData.visibleToTeams.includes(team.id)}
                 onChange={() => toggleTeamVisibility(team.id)}
                 className="rounded border-gray-300"
               />
