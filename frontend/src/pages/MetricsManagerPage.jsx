@@ -37,7 +37,7 @@ import {
 
 const MetricsManagerPage = () => {
   const navigate = useNavigate();
-  const { currentOrganization } = useAuthStore();
+  const { user } = useAuthStore();
   const [metrics, setMetrics] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,10 +67,10 @@ const MetricsManagerPage = () => {
 
   useEffect(() => {
     console.log('🔍 [METRICS MANAGER] useEffect triggered');
-    console.log('🔍 [METRICS MANAGER] currentOrganization:', currentOrganization);
-    console.log('🔍 [METRICS MANAGER] currentOrganization.id:', currentOrganization?.id);
+    console.log('🔍 [METRICS MANAGER] user:', user);
+    console.log('🔍 [METRICS MANAGER] user.organization_id:', user?.organization_id);
     
-    if (currentOrganization?.id) {
+    if (user?.organization_id) {
       console.log('🔍 [METRICS MANAGER] Organization ID exists, fetching data...');
       fetchMetrics();
       fetchTeams();
@@ -78,13 +78,13 @@ const MetricsManagerPage = () => {
     } else {
       console.warn('⚠️ [METRICS MANAGER] No organization ID, skipping data fetch');
     }
-  }, [currentOrganization]);
+  }, [user]);
 
   const fetchMetrics = async () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${currentOrganization.id}/metrics`
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`
       );
       setMetrics(response.data.data || []);
     } catch (error) {
@@ -97,7 +97,7 @@ const MetricsManagerPage = () => {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${currentOrganization.id}/teams`
+        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${user.organization_id}/teams`
       );
       setTeams(response.data || []);
     } catch (error) {
@@ -152,7 +152,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${currentOrganization.id}/metrics`,
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics`,
         formData
       );
       setIsCreateDialogOpen(false);
@@ -170,7 +170,7 @@ const MetricsManagerPage = () => {
     try {
       setSaving(true);
       await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${currentOrganization.id}/metrics/${selectedMetric.id}`,
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
         formData
       );
       setSelectedMetric(null);
@@ -187,7 +187,7 @@ const MetricsManagerPage = () => {
   const handleDeleteMetric = async () => {
     try {
       await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${currentOrganization.id}/metrics/${metricToDelete.id}`
+        `${process.env.REACT_APP_API_URL}/api/v1/admin/org-shared-metrics/${user.organization_id}/metrics/${metricToDelete.id}`
       );
       setIsDeleteDialogOpen(false);
       setMetricToDelete(null);
