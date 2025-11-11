@@ -221,9 +221,24 @@ const MetricsManagerPage = () => {
   const handleUpdateMetric = async () => {
     try {
       setSaving(true);
+      
+      // Transform camelCase to snake_case for API
+      const payload = {
+        name: formData.name,
+        owner: formData.owner,
+        goal: formData.goal,
+        type: formData.type,
+        value_type: formData.valueType,
+        comparison_operator: formData.comparisonOperator,
+        description: formData.description,
+        data_source: formData.dataSource,
+        calculation_method: formData.calculationMethod,
+        visible_to_teams: formData.visible_to_teams
+      };
+      
       await axios.put(
         `/admin/org-shared-metrics/${user.organization_id}/metrics/${selectedMetric.id}`,
-        formData
+        payload
       );
       setSelectedMetric(null);
       resetForm();
