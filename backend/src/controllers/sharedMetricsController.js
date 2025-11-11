@@ -23,7 +23,6 @@ export const getSharedMetrics = async (req, res) => {
         sm.goal,
         sm.owner,
         sm.created_by_team_id,
-        sm.is_org_level,
         t.name as created_by_team_name,
         sm.created_at,
         COUNT(DISTINCT tms.team_id) as subscriber_count,
@@ -43,12 +42,8 @@ export const getSharedMetrics = async (req, res) => {
     const params = [orgId, teamId || null];
     
     // Filter out metrics created by the requesting team if teamId provided
-    // Also respect team visibility for org-level metrics
     if (teamId) {
-      query += ` AND (
-        (sm.is_org_level = FALSE AND (sm.created_by_team_id != $2 OR sm.created_by_team_id IS NULL))
-        OR (sm.is_org_level = TRUE AND (sm.visible_to_teams IS NULL OR $2 = ANY(sm.visible_to_teams)))
-      )`;
+      query += ` AND (sm.created_by_team_id != $2 OR sm.created_by_team_id IS NULL)`;
     }
     
     query += ` GROUP BY 

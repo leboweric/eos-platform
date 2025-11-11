@@ -217,7 +217,7 @@ const AIMonitoringPage = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Stuck (&gt;1 hour)</p>
+                <p className="text-sm text-gray-600">Stuck (>1 hour)</p>
                 <p className="text-3xl font-bold text-orange-600">{overview?.stuckCount || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">
                   Currently processing

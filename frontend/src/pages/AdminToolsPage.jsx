@@ -10,8 +10,7 @@ import {
   CheckSquare,
   Upload,
   Lock,
-  ArrowRight,
-  BarChart3
+  ArrowRight
 } from 'lucide-react';
 
 const AdminToolsPage = () => {
@@ -82,19 +81,6 @@ const AdminToolsPage = () => {
         label: 'Source',
         value: 'Ninety.io'
       }
-    },
-    {
-      id: 'metrics-manager',
-      title: 'Metrics Manager',
-      description: 'Create and manage organization-wide shared metrics for teams to subscribe to',
-      icon: BarChart3,
-      color: 'indigo',
-      href: '/admin/metrics-manager',
-      available: true,
-      stats: {
-        label: 'Type',
-        value: 'Shared Metrics'
-      }
     }
   ];
 
@@ -134,13 +120,6 @@ const AdminToolsPage = () => {
           icon: 'bg-teal-100',
           iconText: 'text-teal-600',
           button: 'bg-teal-600 hover:bg-teal-700'
-        };
-      case 'indigo':
-        return {
-          bg: 'bg-indigo-50',
-          icon: 'bg-indigo-100',
-          iconText: 'text-indigo-600',
-          button: 'bg-indigo-600 hover:bg-indigo-700'
         };
       default:
         return {
