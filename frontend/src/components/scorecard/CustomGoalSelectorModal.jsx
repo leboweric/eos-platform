@@ -123,6 +123,14 @@ const CustomGoalSelectorModal = ({
   };
 
   const selectedMetric = metrics.find(m => m.id === parseInt(selectedMetricId));
+  
+  // Debug logging
+  console.log('CustomGoalSelectorModal Debug:', {
+    selectedMetricId,
+    metricsCount: metrics.length,
+    selectedMetric,
+    weekDatesCount: weekDates.length
+  });
   const hasExistingCustomGoal = selectedMetricId && selectedWeekDate && 
     customGoals[selectedMetricId]?.[selectedWeekDate];
   const isRangeGoal = selectedMetric?.comparison_operator === 'between';
@@ -184,7 +192,7 @@ const CustomGoalSelectorModal = ({
           </div>
 
           {/* Custom Goal Input(s) */}
-          {selectedMetric && (
+          {selectedMetricId && selectedMetric && (
             <>
               <div className="space-y-2">
                 <Label className="text-sm text-gray-600">
