@@ -301,15 +301,19 @@ const DashboardClean = () => {
         }
       }
       
-      console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId, 'selectedDepartment:', selectedDepartment);
+      console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId, 'selectedDepartment:', selectedDepartment, 'viewMode:', viewMode);
+      
+      // In my-items mode, fetch from ALL teams the user belongs to (pass null for department)
+      // In team-view mode, fetch only from the selected team
+      const departmentFilter = viewMode === 'my-items' ? null : userDepartmentId;
       
       // In team view mode, fetch all todos regardless of assignment
       const fetchAllForTeam = viewMode === 'team-view';
       
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
-        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForPriorities),
-        todosService.getTodos(null, null, fetchAllForTeam, userDepartmentId),
-        issuesService.getIssues(null, false, userDepartmentId),
+        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForPriorities, departmentFilter),
+        todosService.getTodos(null, null, fetchAllForTeam, departmentFilter),
+        issuesService.getIssues(null, false, departmentFilter),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
         businessBlueprintService.getBusinessBlueprint().catch(err => {
           console.error('Failed to fetch business blueprint:', err);
@@ -1161,11 +1165,18 @@ const DashboardClean = () => {
                                           setShowPriorityDialog(true);
                                         }}
                                       >
-                                        <span className={`font-medium ${
-                                          isComplete ? 'line-through text-slate-400' : 'text-slate-900'
-                                        }`}>
-                                          {priority.title}
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className={`font-medium ${
+                                            isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                                          }`}>
+                                            {priority.title}
+                                          </span>
+                                          {viewMode === 'my-items' && priority.team_name && (
+                                            <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                                              {priority.team_name}
+                                            </Badge>
+                                          )}
+                                        </div>
                                         <p className="text-xs text-slate-500 mt-0.5">
                                           {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : 'No date'}
                                         </p>
@@ -1383,9 +1394,16 @@ const DashboardClean = () => {
                             setShowPriorityDialog(true);
                           }}
                         >
-                          <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                            {priority.title}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                              {priority.title}
+                            </span>
+                            {viewMode === 'my-items' && priority.team_name && (
+                              <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                                {priority.team_name}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         
                         {/* Milestone Progress */}

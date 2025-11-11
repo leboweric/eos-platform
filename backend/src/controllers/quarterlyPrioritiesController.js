@@ -1395,6 +1395,7 @@ export const getCurrentPriorities = async (req, res) => {
         u.email as owner_email,
         u.first_name as owner_first_name,
         u.last_name as owner_last_name,
+        t.name as team_name,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
           WHEN t.is_leadership_team = true THEN true

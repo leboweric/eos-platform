@@ -465,10 +465,17 @@ const TodosListClean = ({
                               className={`flex-1 ml-3 cursor-pointer ${showingArchived ? 'pr-4' : ''}`}
                               onClick={() => onEdit && onEdit(todo)}
                             >
-                              <div className={`text-sm font-medium ${
-                                isComplete ? 'text-slate-400 line-through' : 'text-slate-900'
-                              }`}>
-                                {todo.title}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className={`text-sm font-medium ${
+                                  isComplete ? 'text-slate-400 line-through' : 'text-slate-900'
+                                }`}>
+                                  {todo.title}
+                                </div>
+                                {todo.team_name && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                                    {todo.team_name}
+                                  </span>
+                                )}
                               </div>
                               {todo.description && (
                                 <div className="text-xs text-slate-500 mt-1">
