@@ -44,6 +44,7 @@ const GroupedScorecardView = ({
   onChartOpen,
   onRefresh,
   onRefreshGroups,
+  onCustomGoalSelectorOpen,
   showTotal,
   weekOptions,
   monthOptions,
@@ -854,7 +855,20 @@ const GroupedScorecardView = ({
           <th className="text-center p-2 font-semibold text-gray-700 w-32">Owner</th>
           <th className="text-left p-2 font-semibold text-gray-700 w-64">Metric</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-28">Goal</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-28">
+            <div className="flex items-center justify-center gap-1">
+              <span>Goal</span>
+              {type === 'weekly' && onCustomGoalSelectorOpen && (
+                <button
+                  onClick={onCustomGoalSelectorOpen}
+                  className="hover:bg-orange-100 rounded p-0.5 transition-colors"
+                  title="Set custom weekly goals"
+                >
+                  <Target className="h-3 w-3 text-orange-500" />
+                </button>
+              )}
+            </div>
+          </th>
           <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">
             {(() => {
               // For monthly view, just show "Average"

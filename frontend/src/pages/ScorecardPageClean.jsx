@@ -979,6 +979,7 @@ const ScorecardPageClean = () => {
                 onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
+                onCustomGoalSelectorOpen={handleCustomGoalSelectorOpen}
                 showTotal={false}
                 weekOptions={weekDates.map((date, index) => ({ value: date, label: weekLabels[index] }))}
                 weekOptionsOriginal={weekDates.map((date, index) => ({ value: date, label: weekLabels[index] }))}
@@ -1042,6 +1043,7 @@ const ScorecardPageClean = () => {
                 onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
+                onCustomGoalSelectorOpen={handleCustomGoalSelectorOpen}
                 showTotal={false}
                 weekOptions={[]}
                 weekOptionsOriginal={[]}
