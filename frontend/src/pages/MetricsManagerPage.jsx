@@ -57,17 +57,19 @@ const MetricsManagerPage = () => {
     value_type: 'number',
     comparison_operator: 'greater_equal',
     description: '',
-    shared_description: '',
     data_source: '',
     calculation_method: '',
-    update_frequency: 'daily',
     visible_to_teams: []
   });
+  
+  const [users, setUsers] = useState([]);
+  const [ownerSearchTerm, setOwnerSearchTerm] = useState('');
 
   useEffect(() => {
     if (currentOrganization?.id) {
       fetchMetrics();
       fetchTeams();
+      fetchUsers();
     }
   }, [currentOrganization]);
 
@@ -93,6 +95,17 @@ const MetricsManagerPage = () => {
       setTeams(response.data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/organizations/${currentOrganization.id}/users`
+      );
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
   };
 
@@ -358,6 +371,9 @@ const MetricsManagerPage = () => {
                   formData={formData}
                   setFormData={setFormData}
                   teams={teams}
+                  users={users}
+                  ownerSearchTerm={ownerSearchTerm}
+                  setOwnerSearchTerm={setOwnerSearchTerm}
                   toggleTeamVisibility={toggleTeamVisibility}
                   selectAllTeams={selectAllTeams}
                   deselectAllTeams={deselectAllTeams}
@@ -472,6 +488,9 @@ const MetricForm = ({
   formData,
   setFormData,
   teams,
+  users,
+  ownerSearchTerm,
+  setOwnerSearchTerm,
   toggleTeamVisibility,
   selectAllTeams,
   deselectAllTeams
@@ -495,12 +514,21 @@ const MetricForm = ({
           
           <div>
             <Label htmlFor="owner">Owner *</Label>
-            <Input
-              id="owner"
+            <Select
               value={formData.owner}
-              onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-              placeholder="e.g., John Doe"
-            />
+              onValueChange={(value) => setFormData({ ...formData, owner: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select owner..." />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.name}>
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -561,29 +589,15 @@ const MetricForm = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="greater_than">Greater Than (&gt;)</SelectItem>
                 <SelectItem value="greater_equal">Greater Than or Equal (≥)</SelectItem>
+                <SelectItem value="less_than">Less Than (&lt;)</SelectItem>
                 <SelectItem value="less_equal">Less Than or Equal (≤)</SelectItem>
                 <SelectItem value="equal">Equal (=)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
-          <div>
-            <Label htmlFor="update_frequency">Update Frequency</Label>
-            <Select
-              value={formData.update_frequency}
-              onValueChange={(value) => setFormData({ ...formData, update_frequency: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
         </div>
 
         <div>
@@ -593,17 +607,6 @@ const MetricForm = ({
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Internal description for this metric"
-            rows={2}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="shared_description">Shared Description</Label>
-          <Textarea
-            id="shared_description"
-            value={formData.shared_description}
-            onChange={(e) => setFormData({ ...formData, shared_description: e.target.value })}
-            placeholder="Description visible to teams when subscribing"
             rows={2}
           />
         </div>
