@@ -7701,6 +7701,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             toggleFollow={toggleFollow}
             isPaused={isPaused}
             onPauseResume={handlePauseResume}
+            totalPausedTime={totalPausedTime}
           />
         )}
 

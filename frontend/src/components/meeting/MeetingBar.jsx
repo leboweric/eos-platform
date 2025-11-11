@@ -36,7 +36,8 @@ const MeetingBar = ({
   isFollowing,
   toggleFollow,
   isPaused = false,
-  onPauseResume
+  onPauseResume,
+  totalPausedTime = 0
 }) => {
   const {
     isEnabled,
@@ -54,7 +55,9 @@ const MeetingBar = ({
     isLeader,
     currentLeader,
     meetingStartTime,
-    meetingStarted
+    meetingStarted,
+    isPaused: isPaused,
+    isPausedType: typeof isPaused
   });
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
@@ -69,14 +72,16 @@ const MeetingBar = ({
     if (meetingStarted && meetingStartTime && !isPaused) {
       timer = setInterval(() => {
         const now = Date.now();
-        const elapsed = Math.floor((now - meetingStartTime) / 1000);
-        setElapsedTime(elapsed);
+        const totalElapsed = Math.floor((now - meetingStartTime) / 1000);
+        // Subtract total paused time to get active duration
+        const activeElapsed = totalElapsed - totalPausedTime;
+        setElapsedTime(activeElapsed);
       }, 1000);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [meetingStarted, meetingStartTime, isPaused]);
+  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime]);
 
   // Format elapsed time
   const formatTime = (seconds) => {
