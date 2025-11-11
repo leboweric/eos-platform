@@ -1859,14 +1859,21 @@ const DashboardClean = () => {
                             
                             {/* Title */}
                             <div className="flex-1 ml-3">
-                              <div 
-                                className={`text-sm font-medium cursor-pointer ${
-                                  isComplete ? 'line-through text-slate-400' : 
-                                  overdue ? 'text-red-700 hover:text-red-600' : 'text-slate-900 hover:text-slate-700'
-                                }`}
-                                onClick={() => handleEditTodo(todo)}
-                              >
-                                {todo.title}
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className={`text-sm font-medium cursor-pointer ${
+                                    isComplete ? 'line-through text-slate-400' : 
+                                    overdue ? 'text-red-700 hover:text-red-600' : 'text-slate-900 hover:text-slate-700'
+                                  }`}
+                                  onClick={() => handleEditTodo(todo)}
+                                >
+                                  {todo.title}
+                                </div>
+                                {viewMode === 'my-items' && todo.team_name && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                                    {todo.team_name}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             
