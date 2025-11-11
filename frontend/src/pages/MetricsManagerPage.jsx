@@ -308,23 +308,23 @@ const MetricsManagerPage = () => {
   const toggleTeamVisibility = (teamId) => {
     setFormData(prev => ({
       ...prev,
-      visibleToTeams: prev.visibleToTeams.includes(teamId)
-        ? prev.visibleToTeams.filter(id => id !== teamId)
-        : [...prev.visibleToTeams, teamId]
+      visible_to_teams: prev.visible_to_teams.includes(teamId)
+        ? prev.visible_to_teams.filter(id => id !== teamId)
+        : [...prev.visible_to_teams, teamId]
     }));
   };
 
   const selectAllTeams = () => {
     setFormData(prev => ({
       ...prev,
-      visibleToTeams: (teams || []).map(t => t.id)
+      visible_to_teams: (teams || []).map(t => t.id)
     }));
   };
 
   const deselectAllTeams = () => {
     setFormData(prev => ({
       ...prev,
-      visibleToTeams: []
+      visible_to_teams: []
     }));
   };
 
