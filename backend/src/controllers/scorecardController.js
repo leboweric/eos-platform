@@ -75,16 +75,21 @@ export const getScorecard = async (req, res) => {
     // Prioritize department_id from query params over teamId from URL
     // This fixes the meeting data scoping bug where Finance meetings show Leadership data
     const effectiveTeamId = department_id || teamId;
-    const teamFilter = effectiveTeamId ? 'AND sm.team_id = $2' : '';
+    
+    // Build team filter to include both team-specific AND org-level shared metrics
+    const teamFilter = effectiveTeamId 
+      ? 'AND (sm.team_id = $2 OR (sm.is_org_level = TRUE AND $2 = ANY(sm.visible_to_teams)))'
+      : '';
     
     console.log('🔍 Scorecard Team Filter Debug:', { 
       teamIdFromURL: teamId,
       departmentIdFromQuery: department_id,
       effectiveTeamId,
-      willFilter: !!effectiveTeamId
+      willFilter: !!effectiveTeamId,
+      includesOrgLevelMetrics: true
     });
     
-    // Get all metrics for the team (excluding soft deleted)
+    // Get all metrics for the team (team-specific + org-level shared) (excluding soft deleted)
     const metricsQuery = `
       SELECT ${selectColumns}
       FROM scorecard_metrics sm
