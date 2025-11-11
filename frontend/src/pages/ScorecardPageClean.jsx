@@ -202,10 +202,9 @@ const ScorecardPageClean = () => {
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
         setThemeColors(savedTheme);
-        return;
       }
       
-      // Fetch from API
+      // Always fetch organization data to get scorecard preference (even if theme is cached)
       console.log('🔍 MAIN Scorecard - Fetching organization data...');
       const orgData = await organizationService.getOrganization();
       
