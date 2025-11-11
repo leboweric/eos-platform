@@ -94,7 +94,7 @@ const AIMonitoringPage = () => {
     );
   }
 
-  const { overview, summaries, activeTranscriptions, recentCompletions, failureReasons, trends, organizationBreakdown } = metrics || {};
+  const { overview, summaries, activeTranscriptions, recentCompletions, failureReasons, trends, organizationBreakdown, recentErrors, errorStats } = metrics || {};
 
   // Calculate health status
   const getHealthStatus = () => {
@@ -459,6 +459,87 @@ const AIMonitoringPage = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Railway Error Logs (Last 24 Hours) */}
+        {recentErrors && recentErrors.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              Recent Railway Errors (Last 24 Hours)
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Organization
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Error Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Error Message
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Transcript ID
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentErrors.map((error) => (
+                    <tr key={error.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(error.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {error.organizationName || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                          {error.errorType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate" title={error.errorMessage}>
+                        {error.errorMessage}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        {error.transcriptId ? error.transcriptId.substring(0, 8) : 'N/A'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Error Statistics */}
+        {errorStats && errorStats.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Error Statistics (Last 24 Hours)
+            </h3>
+            <div className="space-y-3">
+              {errorStats.map((stat, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-orange-50 rounded">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">{stat.errorType}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Last: {new Date(stat.lastOccurrence).toLocaleString()}
+                    </p>
+                  </div>
+                  <span className="ml-4 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
+                    {stat.count}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}

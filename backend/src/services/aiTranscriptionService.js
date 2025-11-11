@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import { getClient } from '../config/database.js';
 import logger from '../utils/logger.js';
+import { logAIError } from '../utils/aiErrorLogger.js';
 
 let assemblyAI;
 let openai;
@@ -233,6 +234,13 @@ class AITranscriptionService {
       return realtimeTranscriber;
     } catch (error) {
       console.error('Failed to start real-time transcription:', error);
+      await logAIError({
+        transcriptId,
+        errorType: 'websocket_start_error',
+        errorMessage: error.message,
+        errorStack: error.stack,
+        context: { meetingId, organizationId }
+      });
       await this.updateTranscriptStatus(transcriptId, 'failed');
       throw error;
     }
@@ -266,6 +274,12 @@ class AITranscriptionService {
       return aiSummary;
     } catch (error) {
       console.error('Failed to process transcript with AI:', error);
+      await logAIError({
+        transcriptId,
+        errorType: 'ai_processing_error',
+        errorMessage: error.message,
+        errorStack: error.stack
+      });
       await this.updateTranscriptStatus(transcriptId, 'failed');
       throw error;
     }
@@ -357,6 +371,12 @@ Focus on:
       return aiSummary;
     } catch (error) {
       console.error('OpenAI API error:', error);
+      await logAIError({
+        errorType: 'openai_api_error',
+        errorMessage: error.message || 'Failed to generate AI summary',
+        errorStack: error.stack,
+        context: { transcriptLength: transcript?.length }
+      });
       throw new Error('Failed to generate AI summary');
     }
   }

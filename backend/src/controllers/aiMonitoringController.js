@@ -1,4 +1,5 @@
 import { getClient } from '../config/database.js';
+import { getRecentAIErrors, getAIErrorStats, cleanupOldAIErrors } from '../utils/aiErrorLogger.js';
 
 /**
  * Get AI transcription and summary health metrics (platform-wide)
@@ -144,6 +145,13 @@ export const getAIHealthMetrics = async (req, res) => {
     
     const orgBreakdownResult = await client.query(orgBreakdownQuery);
     
+    // Get recent errors and error stats (last 24 hours)
+    const recentErrors = await getRecentAIErrors(24, 20);
+    const errorStats = await getAIErrorStats(24);
+    
+    // Auto-cleanup old errors
+    await cleanupOldAIErrors();
+    
     res.json({
       success: true,
       data: {
@@ -200,6 +208,21 @@ export const getAIHealthMetrics = async (req, res) => {
           completed: parseInt(row.completed),
           failed: parseInt(row.failed),
           processing: parseInt(row.processing)
+        })),
+        recentErrors: recentErrors.map(err => ({
+          id: err.id,
+          transcriptId: err.transcript_id,
+          organizationName: err.organization_name,
+          meetingType: err.meeting_type,
+          errorType: err.error_type,
+          errorMessage: err.error_message,
+          createdAt: err.created_at,
+          context: err.context
+        })),
+        errorStats: errorStats.map(stat => ({
+          errorType: stat.error_type,
+          count: parseInt(stat.count),
+          lastOccurrence: stat.last_occurrence
         }))
       }
     });
