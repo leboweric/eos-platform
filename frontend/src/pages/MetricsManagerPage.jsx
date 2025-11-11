@@ -51,15 +51,15 @@ const MetricsManagerPage = () => {
   // Form state for create/edit
   const [formData, setFormData] = useState({
     name: '',
-    owner: '',
+    ownerId: '',
     goal: 100,
     type: 'weekly',
-    value_type: 'number',
-    comparison_operator: 'greater_equal',
+    valueType: 'number',
+    comparisonOperator: 'greater_equal',
     description: '',
-    data_source: '',
-    calculation_method: '',
-    visible_to_teams: []
+    dataSource: '',
+    calculationMethod: '',
+    visibleToTeams: []
   });
   
   const [users, setUsers] = useState([]);
@@ -529,29 +529,18 @@ const MetricForm = ({
           <div>
             <Label htmlFor="owner">Owner *</Label>
             <Select
-              value={formData.owner}
-              onValueChange={(value) => setFormData({ ...formData, owner: value })}
+              value={formData.ownerId}
+              onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select owner..." />
               </SelectTrigger>
               <SelectContent>
-                {users && users.length > 0 ? (
-                  users.map((user) => {
-                    const displayName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email || `User ${user.id}`;
-                    // Skip users with empty names
-                    if (!displayName || displayName.trim() === '') return null;
-                    return (
-                      <SelectItem key={user.id} value={displayName}>
-                        {displayName}
-                      </SelectItem>
-                    );
-                  }).filter(Boolean)
-                ) : (
-                  <SelectItem value="loading" disabled>
-                    Loading users...
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name}
                   </SelectItem>
-                )}
+                ))}
               </SelectContent>
             </Select>
           </div>
