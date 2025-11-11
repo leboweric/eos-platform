@@ -10,7 +10,8 @@ import {
   Archive,
   AlertCircle,
   MessageSquare,
-  Share2
+  Share2,
+  Users
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
@@ -555,14 +556,34 @@ const ScorecardTableClean = ({
                     <td className={meetingMode ? 'px-3 py-3' : 'text-center px-2 py-2 text-[11px]'}>
                       {meetingMode ? (
                         <div className="text-left">
-                          <div className="text-sm font-medium text-gray-900">{metric.name}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900">{metric.name}</div>
+                            {metric.is_org_level && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                                <Users className="h-3 w-3" />
+                                Shared
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500">{metric.ownerName || metric.owner || 'Unassigned'}</div>
                         </div>
                       ) : (
                         metric.ownerName || metric.owner || '-'
                       )}
                     </td>
-                    {!meetingMode && <td className="text-left px-2 py-2 text-xs font-medium">{metric.name}</td>}
+                    {!meetingMode && (
+                      <td className="text-left px-2 py-2 text-xs font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{metric.name}</span>
+                          {metric.is_org_level && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                              <Users className="h-2.5 w-2.5" />
+                              Shared
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td className={meetingMode ? "w-8" : "w-6"}>
                       <Button
                         onClick={() => onChartOpen && onChartOpen(metric)}

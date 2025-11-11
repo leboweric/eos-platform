@@ -11,7 +11,8 @@ import {
   GripVertical,
   BarChart3,
   MessageSquare,
-  Share2 
+  Share2,
+  Users
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -526,8 +527,16 @@ const GroupedScorecardView = ({
           </div>
         </td>
         <td className="text-left p-2 font-medium w-64">
-          <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={metric.name}>
-            {metric.name}
+          <div className="flex items-center gap-2">
+            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={metric.name}>
+              {metric.name}
+            </div>
+            {metric.is_org_level && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                <Users className="h-3 w-3" />
+                Shared
+              </span>
+            )}
           </div>
         </td>
         <td className="text-center p-2 w-12">
