@@ -978,14 +978,29 @@ class MeetingSocketService {
   }
 
   // Get meeting code from meeting ID (database lookup)
+  // The meeting_id passed here is actually a meeting_sessions.id (sessionId)
+  // We need to construct the meeting code from org_id, team_id, and meeting_type
   async getMeetingCodeByMeetingId(meetingId) {
     try {
       const { query } = await import('../config/database.js');
-      const result = await query(
-        'SELECT meeting_code FROM meetings WHERE id = $1',
+      
+      // Try to find in meeting_sessions first (for collaborative meetings)
+      const sessionResult = await query(
+        'SELECT organization_id, team_id, meeting_type FROM meeting_sessions WHERE id = $1',
         [meetingId]
       );
-      return result.rows[0]?.meeting_code || null;
+      
+      if (sessionResult.rows.length > 0) {
+        const { organization_id, team_id, meeting_type } = sessionResult.rows[0];
+        // Construct meeting code: {orgId}-{teamId}-{meetingType}
+        // e.g., "abc123-def456-weekly" or "abc123-def456-weekly-accountability"
+        const meetingTypeSlug = meeting_type === 'weekly' ? 'weekly-accountability' : meeting_type;
+        return `${organization_id}-${team_id}-${meetingTypeSlug}`;
+      }
+      
+      // If not found in meeting_sessions, it might be a traditional meeting
+      // Traditional meetings don't use WebSocket rooms, so return null
+      return null;
     } catch (error) {
       console.error('Error getting meeting code:', error.message);
       return null;
