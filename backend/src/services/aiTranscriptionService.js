@@ -352,7 +352,7 @@ Focus on:
 
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: 'You are an expert at analyzing business meetings and extracting actionable insights.' },
           { role: 'user', content: prompt }
@@ -365,7 +365,7 @@ Focus on:
       const aiSummary = JSON.parse(response.choices[0].message.content);
       
       // Add metadata
-      aiSummary.ai_model = 'gpt-4-turbo-preview';
+      aiSummary.ai_model = 'gpt-4o';
       aiSummary.ai_prompt_version = '1.0';
       
       return aiSummary;
