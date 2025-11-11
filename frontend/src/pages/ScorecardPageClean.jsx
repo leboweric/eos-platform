@@ -178,6 +178,7 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
+        console.log('Loading customGoals from backend:', response.data.customGoals);
         setCustomGoals(response.data.customGoals || {}); // Load custom goals
         setUsers(response.data.teamMembers || []);
       } else if (response) {
@@ -478,10 +479,10 @@ const ScorecardPageClean = () => {
       );
       
       // Update local state with nested structure matching backend
-      setCustomGoals(prev => ({
-        ...prev,
+      const newCustomGoals = {
+        ...customGoals,
         [customGoalData.metric.id]: {
-          ...prev[customGoalData.metric.id],
+          ...customGoals[customGoalData.metric.id],
           [customGoalData.periodDate]: {
             goal: goalData.customGoal,
             min: goalData.customGoalMin,
@@ -489,7 +490,9 @@ const ScorecardPageClean = () => {
             notes: goalData.customGoalNotes
           }
         }
-      }));
+      };
+      console.log('Saving custom goal - new state:', newCustomGoals);
+      setCustomGoals(newCustomGoals);
       
       setSuccess('Custom goal saved successfully');
       await fetchScorecard();
