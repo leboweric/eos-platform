@@ -460,7 +460,7 @@ const ScorecardTableClean = ({
                 <th className={meetingMode ? "w-8" : "w-6"}></th>
                 <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
                   <div className="flex items-center justify-center gap-1">
-                    <span>Goal</span>
+                    <span>Custom Goal</span>
                     {type === 'weekly' && !meetingMode && (
                       <TooltipProvider>
                         <Tooltip>

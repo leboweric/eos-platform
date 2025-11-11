@@ -857,7 +857,7 @@ const GroupedScorecardView = ({
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-28">
             <div className="flex items-center justify-center gap-1">
-              <span>Goal</span>
+              <span>Custom Goal</span>
               {type === 'weekly' && onCustomGoalSelectorOpen && (
                 <button
                   onClick={onCustomGoalSelectorOpen}
