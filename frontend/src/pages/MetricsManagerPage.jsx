@@ -59,7 +59,7 @@ const MetricsManagerPage = () => {
     description: '',
     dataSource: '',
     calculationMethod: '',
-    visibleToTeams: []
+    visible_to_teams: []
   });
   
   const [users, setUsers] = useState([]);
@@ -280,7 +280,7 @@ const MetricsManagerPage = () => {
       description: '',
       dataSource: '',
       calculationMethod: '',
-      visibleToTeams: []
+      visible_to_teams: []
     });
   };
 
@@ -301,7 +301,7 @@ const MetricsManagerPage = () => {
       description: metric.description || '',
       dataSource: metric.data_source || '',
       calculationMethod: metric.calculation_method || '',
-      visibleToTeams: Array.isArray(metric.visible_to_teams) ? metric.visible_to_teams : []
+      visible_to_teams: Array.isArray(metric.visible_to_teams) ? metric.visible_to_teams : []
     });
   };
 
@@ -791,9 +791,9 @@ const MetricForm = ({
         </div>
         
         <p className="text-sm text-gray-600">
-          {formData.visibleToTeams.length === 0
+          {formData.visible_to_teams.length === 0
             ? 'Visible to all teams (no restrictions)'
-            : `Visible to ${formData.visibleToTeams.length} selected team(s)`}
+            : `Visible to ${formData.visible_to_teams.length} selected team(s)`}
         </p>
 
         <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-4">
@@ -804,7 +804,7 @@ const MetricForm = ({
             >
               <input
                 type="checkbox"
-                checked={formData.visibleToTeams.includes(team.id)}
+                checked={formData.visible_to_teams.includes(team.id)}
                 onChange={() => toggleTeamVisibility(team.id)}
                 className="rounded border-gray-300"
               />
