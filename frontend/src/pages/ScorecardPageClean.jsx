@@ -805,6 +805,26 @@ const ScorecardPageClean = () => {
   
   const { labels: weekLabels, weekDates } = getWeekData();
   const { labels: monthLabels, monthDates } = getMonthData();
+  
+  // Extended week dates for custom goal modal (includes current week + 4 future weeks)
+  const extendedWeekDates = React.useMemo(() => {
+    const extended = [...weekDates];
+    
+    // Get the most recent week from weekDates
+    const lastWeek = weekDates.length > 0 ? new Date(weekDates[0]) : new Date();
+    
+    // Add current week + 4 future weeks
+    for (let i = 1; i <= 5; i++) {
+      const futureWeek = new Date(lastWeek);
+      futureWeek.setDate(lastWeek.getDate() + (i * 7));
+      const futureWeekStr = futureWeek.toISOString().split('T')[0];
+      if (!extended.includes(futureWeekStr)) {
+        extended.unshift(futureWeekStr); // Add to beginning (most recent first)
+      }
+    }
+    
+    return extended;
+  }, [weekDates]);
 
 
   if (loading || departmentLoading || (!selectedDepartment && !isLeadershipMember)) {
@@ -1372,7 +1392,7 @@ const ScorecardPageClean = () => {
         isOpen={showCustomGoalSelectorModal}
         onClose={() => setShowCustomGoalSelectorModal(false)}
         metrics={weeklyMetrics}
-        weekDates={weekDates}
+        weekDates={extendedWeekDates}
         customGoals={customGoals}
         onSave={handleCustomGoalSelectorSave}
       />
