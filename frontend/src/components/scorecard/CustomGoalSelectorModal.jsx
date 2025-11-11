@@ -152,7 +152,10 @@ const CustomGoalSelectorModal = ({
           {/* Metric Selection */}
           <div className="space-y-2">
             <Label htmlFor="metric">Select Metric</Label>
-            <Select value={selectedMetricId} onValueChange={setSelectedMetricId}>
+            <Select value={selectedMetricId} onValueChange={(value) => {
+              console.log('Metric selected:', value);
+              setSelectedMetricId(value);
+            }}>
               <SelectTrigger id="metric">
                 <SelectValue placeholder="Choose a metric..." />
               </SelectTrigger>
