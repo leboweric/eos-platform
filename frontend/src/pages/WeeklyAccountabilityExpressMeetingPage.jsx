@@ -246,6 +246,18 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-broadcast', handleBroadcast);
     };
   }, [isLeader]);
+  
+  // Expose meeting context to child components (like IssueDialog) for real-time collaboration
+  useEffect(() => {
+    window.meetingCode = meetingCode;
+    window.broadcastIssueUpdate = broadcastIssueUpdate;
+    
+    return () => {
+      window.meetingCode = null;
+      window.broadcastIssueUpdate = null;
+    };
+  }, [meetingCode, broadcastIssueUpdate]);
+  
   const { labels } = useTerminology();
   
   // Default methodology - can be made configurable later when organization methodology is implemented
@@ -3934,8 +3946,37 @@ const WeeklyAccountabilityMeetingPage = () => {
       const issueData = event.detail;
       console.log('📊 Received issue update:', issueData);
       
-      // Update the specific issue in both short-term and long-term lists
-      if (issueData.issueId && issueData.status !== undefined) {
+      // Handle full issue updates (from Edit Issue dialog auto-save)
+      if (issueData.action === 'issue-updated' && issueData.issueId && issueData.updates) {
+        console.log('✏️ Issue edited by another participant:', issueData.issueId);
+        const { issueId, updates } = issueData;
+        
+        // Update issue in both short-term and long-term lists
+        setShortTermIssues(prev => 
+          prev.map(issue => 
+            issue.id === issueId ? { 
+              ...issue, 
+              title: updates.title !== undefined ? updates.title : issue.title,
+              description: updates.description !== undefined ? updates.description : issue.description,
+              owner_id: updates.ownerId !== undefined ? updates.ownerId : issue.owner_id,
+              status: updates.status !== undefined ? updates.status : issue.status
+            } : issue
+          )
+        );
+        setLongTermIssues(prev => 
+          prev.map(issue => 
+            issue.id === issueId ? { 
+              ...issue, 
+              title: updates.title !== undefined ? updates.title : issue.title,
+              description: updates.description !== undefined ? updates.description : issue.description,
+              owner_id: updates.ownerId !== undefined ? updates.ownerId : issue.owner_id,
+              status: updates.status !== undefined ? updates.status : issue.status
+            } : issue
+          )
+        );
+      }
+      // Handle status-only updates (from issue status change)
+      else if (issueData.issueId && issueData.status !== undefined) {
         setShortTermIssues(prev => 
           prev.map(issue => 
             issue.id === issueData.issueId ? { ...issue, status: issueData.status } : issue
@@ -4041,6 +4082,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else if (action === 'headline-created') {
         // New headline created by another participant
+        fetchHeadlines();
+      } else if (action === 'headlines-archived') {
+        // Headlines archived by another participant
+        console.log('📰 Headlines archived by another participant');
         fetchHeadlines();
       } else if (action === 'meeting-ended') {
         // Meeting has been concluded by presenter
@@ -5917,6 +5962,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                           const effectiveTeamId = getEffectiveTeamId(teamId, user);
                           await headlinesService.archiveHeadlines(effectiveTeamId);
                           await fetchHeadlines();
+                          
+                          // Broadcast to other participants
+                          if (meetingCode && broadcastIssueListUpdate) {
+                            broadcastIssueListUpdate({
+                              action: 'headlines-archived',
+                              teamId: effectiveTeamId
+                            });
+                          }
+                          
                           setSuccess(`Successfully archived ${totalCount} headline${totalCount !== 1 ? 's' : ''}`);
                         } catch (error) {
                           console.error('Failed to archive headlines:', error);
@@ -7601,6 +7655,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                           // Archive all headlines (both customer and employee)
                           try {
                             await headlinesService.archiveHeadlines(effectiveTeamId);
+                            
+                            // Broadcast to other participants
+                            if (meetingCode && broadcastIssueListUpdate) {
+                              broadcastIssueListUpdate({
+                                action: 'headlines-archived',
+                                teamId: effectiveTeamId
+                              });
+                            }
                           } catch (error) {
                             console.error('Failed to archive headlines:', error);
                           }

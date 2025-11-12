@@ -245,6 +245,21 @@ const IssueDialog = ({
       if (!issueId && newId) {
         setCreatedIssueId(newId);
       }
+      
+      // Broadcast update to other meeting participants for real-time collaboration
+      const finalIssueId = issueId || newId;
+      if (finalIssueId && window.meetingCode && window.broadcastIssueUpdate) {
+        window.broadcastIssueUpdate({
+          action: 'issue-updated',
+          issueId: finalIssueId,
+          updates: {
+            title: formData.title,
+            description: formData.description,
+            ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+            status: formData.status
+          }
+        });
+      }
     } catch (error) {
       console.error('Auto-save failed:', error);
     } finally {
