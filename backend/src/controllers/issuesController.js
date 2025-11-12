@@ -403,6 +403,15 @@ export const moveIssueToTeam = async (req, res) => {
       return acc;
     }, {});
     
+    // Get the user's name for the transfer note
+    const userResult = await db.query(
+      'SELECT first_name, last_name FROM users WHERE id = $1',
+      [userId]
+    );
+    const userName = userResult.rows.length > 0 
+      ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`.trim()
+      : 'user';
+    
     // Update the issue's team
     const updateResult = await db.query(
       `UPDATE issues 
@@ -414,7 +423,7 @@ export const moveIssueToTeam = async (req, res) => {
     );
     
     // Add a note to the issue's description about the transfer
-    const transferNote = `\n\n---\n[Transferred from ${teams[oldTeamId] || 'Unknown Team'} to ${teams[newTeamId] || 'Unknown Team'} by user on ${new Date().toLocaleDateString()}]`;
+    const transferNote = `\n\n---\n[Transferred from ${teams[oldTeamId] || 'Unknown Team'} to ${teams[newTeamId] || 'Unknown Team'} by ${userName} on ${new Date().toLocaleDateString()}]`;
     const transferReason = reason ? `\nReason: ${reason}` : '';
     
     await db.query(
