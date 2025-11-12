@@ -1,6 +1,6 @@
 import db from '../config/database.js';
 import { getUserTeamContext } from '../utils/teamUtils.js';
-import { formatDateLocal } from '../utils/dateUtils.js';
+import { formatDateLocal, getWeekStartDate } from '../utils/dateUtils.js';
 
 // Helper function to check if a column exists
 async function checkColumn(tableName, columnName) {
@@ -146,7 +146,9 @@ export const getScorecard = async (req, res) => {
         if (!customGoals[score.metric_id]) {
           customGoals[score.metric_id] = {};
         }
-        customGoals[score.metric_id][scoreDate] = {
+        // CRITICAL: Normalize date to Monday of the week for consistent lookup
+        const mondayDate = getWeekStartDate(scoreDate);
+        customGoals[score.metric_id][mondayDate] = {
           goal: score.custom_goal,
           min: score.custom_goal_min,
           max: score.custom_goal_max,

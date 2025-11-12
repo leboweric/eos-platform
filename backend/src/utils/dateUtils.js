@@ -56,3 +56,19 @@ export const getDateDaysFromNow = (days) => {
   date.setDate(date.getDate() + days);
   return formatDateLocal(date);
 };
+
+/**
+ * Get the Monday (start of week) for a given date
+ * @param {Date|string} date - Date object or date string
+ * @returns {string} Monday date formatted as YYYY-MM-DD
+ */
+export const getWeekStartDate = (date) => {
+  const d = date instanceof Date ? date : parseDateLocal(date);
+  if (!d) return null;
+  
+  const day = d.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(d.getFullYear(), d.getMonth(), diff);
+  
+  return formatDateLocal(monday);
+};
