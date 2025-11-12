@@ -3228,10 +3228,49 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
+      console.log('🔧 [Edit Milestone] Updating milestone:', { priorityId, milestoneId, updates });
+      
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, updates);
-      await fetchPrioritiesData();
+      
+      // Update local state immediately
+      setPriorities(prev => prev.map(p => {
+        if (p.id !== priorityId) return p;
+        
+        const updatedMilestones = p.milestones?.map(m => 
+          m.id === milestoneId ? { ...m, ...updates } : m
+        ) || [];
+        
+        return {
+          ...p,
+          milestones: updatedMilestones
+        };
+      }));
+      
+      // Update selectedPriority if it's the one being edited
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: prev.milestones?.map(m => 
+            m.id === milestoneId ? { ...m, ...updates } : m
+          ) || []
+        }));
+      }
+      
+      // Broadcast update to meeting participants
+      if (broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'milestone-edited',
+          priorityId,
+          milestoneId,
+          updates
+        });
+      }
+      
+      toast.success('Milestone updated successfully');
+      console.log('✅ [Edit Milestone] Milestone updated successfully');
     } catch (error) {
-      console.error('Failed to edit milestone:', error);
+      console.error('❌ [Edit Milestone] Failed to edit milestone:', error);
+      toast.error(`Failed to update milestone: ${error.message}`);
     }
   };
 
@@ -4092,6 +4131,24 @@ const WeeklyAccountabilityMeetingPage = () => {
             ...p,
             milestones: updatedMilestones,
             progress: newProgress
+          };
+        }));
+      } else if (action === 'milestone-edited') {
+        // Update milestone details (title, due date, owner)
+        const { priorityId, milestoneId, updates } = event.detail;
+        console.log('✏️ Milestone edited:', priorityId, milestoneId, updates);
+        
+        // Update local state with edited milestone
+        setPriorities(prev => prev.map(p => {
+          if (p.id !== priorityId) return p;
+          
+          const updatedMilestones = p.milestones?.map(m => 
+            m.id === milestoneId ? { ...m, ...updates } : m
+          ) || [];
+          
+          return {
+            ...p,
+            milestones: updatedMilestones
           };
         }));
       } else if (action === 'milestone-toggled') {
