@@ -398,10 +398,22 @@ export const stopTranscription = async (req, res) => {
         timestamp: new Date().toISOString()
       });
 
+      // If transcript is already in a terminal state, return success without doing anything
+      if (transcript.status === 'completed' || transcript.status === 'failed' || transcript.status === 'cancelled') {
+        console.log(`⚠️ [Stop Transcription] Transcript already in terminal state: ${transcript.status}`);
+        return res.json({
+          success: true,
+          transcript_id: transcript.id,
+          status: transcript.status,
+          message: `Transcription already ${transcript.status}`,
+          already_stopped: true
+        });
+      }
+
       if (transcript.status !== 'processing') {
         return res.status(400).json({
           success: false,
-          error: 'Transcription is not currently active'
+          error: `Transcription is in unexpected state: ${transcript.status}`
         });
       }
 
