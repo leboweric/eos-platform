@@ -1046,15 +1046,18 @@ const GroupedScorecardView = ({
             // Save custom goal via API
             await scorecardService.updateScore(
               orgId,
+              teamId,
               customGoalModal.metric.id,
               customGoalModal.periodDate,
               currentValue,
-              currentNotes || '',
               type,
-              goalData.customGoal,
-              goalData.customGoalMin,
-              goalData.customGoalMax,
-              goalData.customGoalNotes
+              currentNotes || '',
+              {
+                customGoal: goalData.customGoal,
+                customGoalMin: goalData.customGoalMin,
+                customGoalMax: goalData.customGoalMax,
+                customGoalNotes: goalData.customGoalNotes
+              }
             );
             
             // Close modal
