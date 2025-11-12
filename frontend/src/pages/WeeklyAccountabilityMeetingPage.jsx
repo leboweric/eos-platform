@@ -7958,6 +7958,8 @@ const WeeklyAccountabilityMeetingPage = () => {
             teamMembers={teamMembers || []}
             teamId={teamId}
             onToggleMilestone={handleToggleMilestone}
+            onEditMilestone={handleEditMilestone}
+            onDeleteMilestone={handleDeleteMilestone}
             onAddMilestone={async (priorityId, milestoneData) => {
               try {
                 console.log('🔧 [Modal Milestone] Adding milestone:', { priorityId, milestoneData });
