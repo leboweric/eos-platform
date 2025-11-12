@@ -4072,6 +4072,28 @@ const WeeklyAccountabilityMeetingPage = () => {
         const { priorityId, updates } = event.detail;
         console.log('🎯 Priority updated:', priorityId, updates);
         setPriorities(prev => prev.map(p => p.id === priorityId ? { ...p, ...updates } : p));
+      } else if (action === 'milestone-added') {
+        // Add new milestone to rock/priority
+        const { priorityId, milestone } = event.detail;
+        console.log('➕ Milestone added:', priorityId, milestone);
+        
+        // Update local state with new milestone
+        setPriorities(prev => prev.map(p => {
+          if (p.id !== priorityId) return p;
+          
+          const updatedMilestones = [...(p.milestones || []), milestone];
+          
+          // Calculate new progress
+          const completedCount = updatedMilestones.filter(m => m.completed).length;
+          const totalCount = updatedMilestones.length;
+          const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+          
+          return {
+            ...p,
+            milestones: updatedMilestones,
+            progress: newProgress
+          };
+        }));
       } else if (action === 'milestone-toggled') {
         // Update milestone completion status
         const { priorityId, milestoneId, completed } = event.detail;
