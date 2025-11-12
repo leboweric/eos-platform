@@ -54,6 +54,11 @@ const GroupedScorecardView = ({
   selectedMonths,
   scorecardTimePeriodPreference = '13_week_rolling'
 }) => {
+  // Log only if customGoals has data
+  if (Object.keys(customGoals).length > 0) {
+    console.log('🎯 CustomGoals loaded:', customGoals);
+  }
+  
   const [groups, setGroups] = useState([]);
   const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -553,6 +558,11 @@ const GroupedScorecardView = ({
           
           // Check if this cell has a custom goal
           const hasCustomGoal = customGoals[metric.id]?.[periodDate];
+          
+          // Log only when a custom goal exists for this cell
+          if (hasCustomGoal) {
+            console.log(`🎯 Custom goal found for ${metric.name} on ${periodDate}:`, hasCustomGoal);
+          }
           
           // Use custom goal if available, otherwise use metric's default goal
           const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
