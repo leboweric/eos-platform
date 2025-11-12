@@ -178,6 +178,7 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
+        console.log('🎯 CustomGoals from API:', response.data.customGoals);
         setCustomGoals(response.data.customGoals || {}); // Load custom goals
         setUsers(response.data.teamMembers || []);
       } else if (response) {
@@ -196,6 +197,7 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.monthlyScores || {});
         setWeeklyNotes(response.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.monthlyNotes || {}); // Load notes
+        console.log('🎯 CustomGoals from API:', response.customGoals);
         setCustomGoals(response.customGoals || {}); // Load custom goals
         setUsers(response.teamMembers || []);
       }
