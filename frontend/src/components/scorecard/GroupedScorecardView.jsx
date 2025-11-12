@@ -54,10 +54,12 @@ const GroupedScorecardView = ({
   selectedMonths,
   scorecardTimePeriodPreference = '13_week_rolling'
 }) => {
-  // Log only if customGoals has data
-  if (Object.keys(customGoals).length > 0) {
-    console.log('🎯 CustomGoals loaded:', customGoals);
-  }
+  // Always log customGoals to debug
+  console.log('🎯 CustomGoals prop received:', {
+    hasData: Object.keys(customGoals).length > 0,
+    count: Object.keys(customGoals).length,
+    data: customGoals
+  });
   
   const [groups, setGroups] = useState([]);
   const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
