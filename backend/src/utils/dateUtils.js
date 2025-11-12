@@ -8,11 +8,31 @@
  * @returns {string} Date formatted as YYYY-MM-DD
  */
 export const formatDateLocal = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // If it's already a string in YYYY-MM-DD format, return as-is
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+  
+  // If it's a Date object, format it
+  if (date instanceof Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  // If it's a string but not in YYYY-MM-DD format, parse it carefully
+  // Use parseDateLocal to avoid UTC conversion, then format
+  const parsed = parseDateLocal(date);
+  if (parsed) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Fallback: return the input as-is
+  return date;
 };
 
 /**
