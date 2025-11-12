@@ -54,8 +54,6 @@ const GroupedScorecardView = ({
   selectedMonths,
   scorecardTimePeriodPreference = '13_week_rolling'
 }) => {
-  console.log('🎯 GroupedScorecardView customGoals prop:', customGoals);
-  
   const [groups, setGroups] = useState([]);
   const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,32 +111,15 @@ const GroupedScorecardView = ({
 
   // Format value based on type
   const formatValue = (value, valueType) => {
-    console.log(`🎨 formatValue called:`, {
-      inputValue: value,
-      inputType: typeof value,
-      valueType: valueType,
-      isZero: value === 0,
-      isNull: value === null,
-      isUndefined: value === undefined,
-      isEmpty: value === ''
-    });
-    
     // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') {
-      console.log(`🎨 formatValue returning dash for null/undefined/empty`);
       return '-';
     }
     
     // Convert to number and check if it's valid (0 is valid)
     const numValue = typeof value === 'number' ? value : parseFloat(value);
-    console.log(`🎨 formatValue converted to number:`, {
-      numValue,
-      isNaN: isNaN(numValue),
-      isZero: numValue === 0
-    });
     
     if (isNaN(numValue)) {
-      console.log(`🎨 formatValue returning dash for NaN`);
       return '-';
     }
     
@@ -157,7 +138,6 @@ const GroupedScorecardView = ({
         result = Math.round(numValue).toString();
     }
     
-    console.log(`🎨 formatValue returning: "${result}" for valueType: ${valueType}`);
     return result;
   };
 
@@ -290,9 +270,7 @@ const GroupedScorecardView = ({
 
   const handleMoveMetricToGroup = async (metricId, groupId) => {
     try {
-      console.log('Moving metric', metricId, 'to group', groupId);
       const response = await scorecardGroupsService.moveMetricToGroup(orgId, teamId, metricId, groupId);
-      console.log('Move response:', response);
       
       // Update metrics immediately by modifying the group_id
       const updatedMetrics = metrics.map(m => 
@@ -500,17 +478,6 @@ const GroupedScorecardView = ({
     const { dates: periodsOriginal } = getDataDrivenDates();
     const periods = isRTL ? [...periodsOriginal].reverse() : periodsOriginal;
     
-    // LOG SCORES FROM PROPS
-    console.log(`📊 SCORES FROM PROPS [${metric.name}]:`, {
-      metricId: metric.id,
-      isWeekly,
-      scoresObject: scores,
-      weeklyScores: weeklyScores[metric.id],
-      monthlyScores: monthlyScores[metric.id],
-      hasZeros: Object.values(scores).some(v => v === 0 || v === '0'),
-      allValues: Object.entries(scores).map(([k, v]) => ({ period: k, value: v, type: typeof v }))
-    });
-    
     return (
       <tr 
         key={metric.id} 
@@ -578,39 +545,14 @@ const GroupedScorecardView = ({
         {periods.map((periodDate, periodIndex) => {
           const rawValue = scores[periodDate];
           
-          // DEEP LOGGING FOR ZERO TRACKING
-          console.log(`🔍 ZERO DEBUG [${metric.name}][${periodDate}]:`, {
-            rawValue,
-            rawValueType: typeof rawValue,
-            isZero: rawValue === 0,
-            isStringZero: rawValue === '0',
-            isNull: rawValue === null,
-            isUndefined: rawValue === undefined,
-            scores: scores
-          });
-          
           // Explicitly handle 0 as a valid value
           const value = rawValue === 0 || rawValue === '0' ? 0 : (rawValue || null);
-          
-          console.log(`🔍 ZERO DEBUG - After processing:`, {
-            value,
-            valueType: typeof value,
-            willDisplay: value === 0 ? 'YES - ZERO' : (value !== null && value !== undefined ? 'YES - OTHER' : 'NO - DASH')
-          });
           
           const noteValue = notes[periodDate] || '';
           const hasNotes = noteValue && noteValue.length > 0;
           
           // Check if this cell has a custom goal
           const hasCustomGoal = customGoals[metric.id]?.[periodDate];
-          if (metric.name === 'Collection Calls' && periodDate === '2025-10-21') {
-            console.log('🔍 Custom goal check for Collection Calls 2025-10-21:', {
-              metricId: metric.id,
-              periodDate,
-              customGoalsForMetric: customGoals[metric.id],
-              hasCustomGoal
-            });
-          }
           
           // Use custom goal if available, otherwise use metric's default goal
           const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
@@ -627,12 +569,6 @@ const GroupedScorecardView = ({
           // Calculate what will be displayed
           const displayValue = value === 0 ? formatValue(0, metric.value_type) : (value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-');
           
-          console.log(`🔍 ZERO DEBUG - Final display:`, {
-            displayValue,
-            formatted: displayValue,
-            metricValueType: metric.value_type
-          });
-          
           return (
             <td key={periodDate} className={`p-2 text-center w-28 relative ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
               <div className="relative">
@@ -647,12 +583,7 @@ const GroupedScorecardView = ({
                     <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
                   )}
                 </button>
-                {(() => {
-                  console.log(`🎯 Icon render check [${metric.name}][${periodDate}]:`, {
-                    hasCustomGoal,
-                    willRender: !!hasCustomGoal
-                  });
-                  return hasCustomGoal && (
+                {hasCustomGoal && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -663,8 +594,7 @@ const GroupedScorecardView = ({
                   >
                     <Target className="h-3 w-3 text-white" />
                   </button>
-                  );
-                })()}
+                )}
               </div>
             </td>
           );
@@ -751,7 +681,6 @@ const GroupedScorecardView = ({
       ? `${startMonth} ${startDay} - ${endDay}`
       : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
     
-    console.log('📅 GroupedScorecardView week label formatted:', { date, formattedLabel });
     return formattedLabel;
   };
 
@@ -787,13 +716,7 @@ const GroupedScorecardView = ({
       });
     }
     const sortedDates = Array.from(allScoreDates).sort();
-    
-    console.log('🔧 GroupedView: Found score dates in data:', {
-      type: isWeekly ? 'weekly' : 'monthly',
-      earliestDate: sortedDates[0],
-      latestDate: sortedDates[sortedDates.length - 1],
-      totalUniqueDates: sortedDates.length
-    });
+
 
     if (isWeekly) {
       // For weekly - get current quarter dates or use actual data dates
@@ -833,7 +756,6 @@ const GroupedScorecardView = ({
         dates.splice(0, trimCount);
       }
       
-      console.log(`🔧 GroupedView: Using ${dates.length} weeks from ${dates[0]} to ${dates[dates.length-1]}`);
       return { labels, dates };
     } else {
       // For monthly - show last 12 months
@@ -853,7 +775,6 @@ const GroupedScorecardView = ({
         currentMonth.setMonth(currentMonth.getMonth() + 1);
       }
       
-      console.log(`🔧 GroupedView: Using last 12 months:`, dates);
       return { labels, dates };
     }
   };
