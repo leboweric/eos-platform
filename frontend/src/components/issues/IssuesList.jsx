@@ -305,6 +305,13 @@ const IssuesList = ({
             <span className="text-gray-500 truncate max-w-[120px]">
               {issue.owner_name || 'Unassigned'}
             </span>
+            {/* Attachment indicator */}
+            {issue.attachment_count > 0 && (
+              <span className="flex items-center gap-1 text-gray-500" title={`${issue.attachment_count} attachment${issue.attachment_count > 1 ? 's' : ''}`}>
+                <Paperclip className="h-3 w-3" />
+                <span className="text-xs">{issue.attachment_count}</span>
+              </span>
+            )}
           </div>
         </div>
         </div>
