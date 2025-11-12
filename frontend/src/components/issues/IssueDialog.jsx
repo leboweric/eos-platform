@@ -105,6 +105,9 @@ const IssueDialog = ({
     // Reset initialization flag when issue changes (dialog opens)
     isInitializedRef.current = false;
     
+    // Clear error state when dialog opens (for both new and existing issues)
+    setError(null);
+    
     if (issue) {
       setFormData({
         title: issue.title || '',
