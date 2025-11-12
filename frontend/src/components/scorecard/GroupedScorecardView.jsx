@@ -1031,12 +1031,42 @@ const GroupedScorecardView = ({
         metric={customGoalModal.metric}
         periodDate={customGoalModal.periodDate}
         currentGoal={customGoalModal.metric && customGoalModal.periodDate ? customGoals[customGoalModal.metric.id]?.[customGoalModal.periodDate] : null}
-        onSave={(goalData) => {
-          // Call onScoreUpdate with the custom goal data
-          const currentValue = type === 'monthly' 
-            ? monthlyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate]
-            : weeklyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate];
-          onScoreUpdate(customGoalModal.metric, customGoalModal.periodDate, currentValue, goalData);
+        onSave={async (goalData) => {
+          try {
+            // Get current score value to preserve it
+            const currentValue = type === 'monthly' 
+              ? monthlyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate]
+              : weeklyScores[customGoalModal.metric.id]?.[customGoalModal.periodDate];
+            
+            // Get current notes to preserve them
+            const currentNotes = type === 'monthly'
+              ? monthlyNotes[customGoalModal.metric.id]?.[customGoalModal.periodDate]
+              : weeklyNotes[customGoalModal.metric.id]?.[customGoalModal.periodDate];
+            
+            // Save custom goal via API
+            await scorecardService.updateScore(
+              orgId,
+              customGoalModal.metric.id,
+              customGoalModal.periodDate,
+              currentValue,
+              currentNotes || '',
+              type,
+              goalData.customGoal,
+              goalData.customGoalMin,
+              goalData.customGoalMax,
+              goalData.customGoalNotes
+            );
+            
+            // Close modal
+            setCustomGoalModal({ isOpen: false, metric: null, periodDate: null });
+            
+            // Refresh scorecard data to show updated custom goals
+            if (onRefresh) {
+              await onRefresh();
+            }
+          } catch (error) {
+            console.error('Error saving custom goal:', error);
+          }
         }}
       />
     </div>
