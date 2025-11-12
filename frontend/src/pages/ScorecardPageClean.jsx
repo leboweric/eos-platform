@@ -478,18 +478,33 @@ const ScorecardPageClean = () => {
       );
       
       // Update local state with nested structure matching backend
-      const newCustomGoals = {
-        ...customGoals,
-        [customGoalData.metric.id]: {
-          ...customGoals[customGoalData.metric.id],
-          [customGoalData.periodDate]: {
-            goal: goalData.customGoal,
-            min: goalData.customGoalMin,
-            max: goalData.customGoalMax,
-            notes: goalData.customGoalNotes
+      const newCustomGoals = { ...customGoals };
+      
+      // If all custom goal values are null, remove the entry entirely
+      if (goalData.customGoal === null && goalData.customGoalMin === null && 
+          goalData.customGoalMax === null && goalData.customGoalNotes === null) {
+        // Remove this date's custom goal
+        if (newCustomGoals[customGoalData.metric.id]) {
+          delete newCustomGoals[customGoalData.metric.id][customGoalData.periodDate];
+          
+          // If no more custom goals for this metric, remove the metric entry
+          if (Object.keys(newCustomGoals[customGoalData.metric.id]).length === 0) {
+            delete newCustomGoals[customGoalData.metric.id];
           }
         }
-      };
+      } else {
+        // Add or update the custom goal
+        if (!newCustomGoals[customGoalData.metric.id]) {
+          newCustomGoals[customGoalData.metric.id] = {};
+        }
+        newCustomGoals[customGoalData.metric.id][customGoalData.periodDate] = {
+          goal: goalData.customGoal,
+          min: goalData.customGoalMin,
+          max: goalData.customGoalMax,
+          notes: goalData.customGoalNotes
+        };
+      }
+      
       setCustomGoals(newCustomGoals);
       setShowCustomGoalSelectorModal(false); // Close modal
       setSuccess('Custom goal saved successfully');
