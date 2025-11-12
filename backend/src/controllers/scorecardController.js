@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import { getUserTeamContext } from '../utils/teamUtils.js';
+import { formatDateLocal } from '../utils/dateUtils.js';
 
 // Helper function to check if a column exists
 async function checkColumn(tableName, columnName) {
@@ -123,8 +124,8 @@ export const getScorecard = async (req, res) => {
     const customGoals = {}; // Store custom goals per metric/date
     
     scores.rows.forEach(score => {
-      // Format date as YYYY-MM-DD
-      const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
+      // Format date as YYYY-MM-DD (local time, not UTC)
+      const scoreDate = formatDateLocal(score.week_date);
       
       // ALWAYS send just the number value
       const numericValue = score.value !== null ? Number(score.value) : null;
@@ -416,8 +417,8 @@ export const updateScore = async (req, res) => {
       });
     }
     
-    // Convert week/month to proper date format
-    const scoreDate = new Date(week).toISOString().split('T')[0];
+    // Convert week/month to proper date format (local time, not UTC)
+    const scoreDate = formatDateLocal(week);
     
     // CRITICAL FIX: Allow zero as a valid value
     // Only use null if value is actually null or undefined
