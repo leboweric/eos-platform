@@ -420,7 +420,8 @@ export const updateScore = async (req, res) => {
     }
     
     // Convert week/month to proper date format (local time, not UTC)
-    const scoreDate = formatDateLocal(week);
+    // CRITICAL: Normalize to Monday of the week for consistent storage
+    const scoreDate = getWeekStartDate(week);
     
     // CRITICAL FIX: Allow zero as a valid value
     // Only use null if value is actually null or undefined
