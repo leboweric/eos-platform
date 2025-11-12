@@ -491,9 +491,8 @@ const ScorecardPageClean = () => {
         }
       };
       setCustomGoals(newCustomGoals);
-      
+      setShowCustomGoalSelectorModal(false); // Close modal
       setSuccess('Custom goal saved successfully');
-      await fetchScorecard();
     } catch (err) {
       console.error('Error saving custom goal:', err);
       setError('Failed to save custom goal');
