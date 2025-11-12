@@ -647,18 +647,24 @@ const GroupedScorecardView = ({
                     <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
                   )}
                 </button>
-                {hasCustomGoal && (
+                {(() => {
+                  console.log(`🎯 Icon render check [${metric.name}][${periodDate}]:`, {
+                    hasCustomGoal,
+                    willRender: !!hasCustomGoal
+                  });
+                  return hasCustomGoal && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setCustomGoalModal({ isOpen: true, metric, periodDate });
                     }}
-                    className="absolute -top-1 -right-1 p-0.5 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors"
+                    className="absolute -top-1 -right-1 p-0.5 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors z-10"
                     title={`Custom goal: ${hasCustomGoal.goal || `${hasCustomGoal.min}-${hasCustomGoal.max}`}${hasCustomGoal.notes ? `\n${hasCustomGoal.notes}` : ''}`}
                   >
                     <Target className="h-3 w-3 text-white" />
                   </button>
-                )}
+                  );
+                })()}
               </div>
             </td>
           );
