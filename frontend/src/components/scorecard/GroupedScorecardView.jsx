@@ -561,6 +561,17 @@ const GroupedScorecardView = ({
           // Check if this cell has a custom goal
           const hasCustomGoal = customGoals[metric.id]?.[periodDate];
           
+          // Debug ONLY for Collection Calls metric
+          if (metric.name === 'Collection Calls' && periodIndex === 0) {
+            console.log('🔍 Collection Calls date check:', {
+              periodDate,
+              periodDateType: typeof periodDate,
+              metricId: metric.id,
+              customGoalsForMetric: customGoals[metric.id],
+              hasMatch: !!hasCustomGoal
+            });
+          }
+          
           // Use custom goal if available, otherwise use metric's default goal
           const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
             ? hasCustomGoal.goal 
