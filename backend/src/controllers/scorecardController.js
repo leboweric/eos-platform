@@ -463,13 +463,15 @@ export const updateScore = async (req, res) => {
     console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue, 'OrgId:', orgId);
     
     // Upsert the score with notes, organization_id, and custom goals
+    // CRITICAL FIX: Only update value/notes if they are explicitly provided (not null)
+    // This prevents overwriting existing scores when only saving custom goals
     const query = `
       INSERT INTO scorecard_scores (metric_id, week_date, value, notes, organization_id, custom_goal, custom_goal_min, custom_goal_max, custom_goal_notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (metric_id, week_date)
       DO UPDATE SET 
-        value = EXCLUDED.value, 
-        notes = EXCLUDED.notes, 
+        value = CASE WHEN EXCLUDED.value IS NOT NULL THEN EXCLUDED.value ELSE scorecard_scores.value END, 
+        notes = CASE WHEN $4 IS NOT NULL THEN EXCLUDED.notes ELSE scorecard_scores.notes END, 
         custom_goal = EXCLUDED.custom_goal,
         custom_goal_min = EXCLUDED.custom_goal_min,
         custom_goal_max = EXCLUDED.custom_goal_max,
