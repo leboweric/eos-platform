@@ -117,7 +117,8 @@ const ScorecardPageClean = () => {
     type: 'weekly',
     valueType: 'number',
     comparisonOperator: 'greater_equal',
-    groupId: 'none'
+    groupId: 'none',
+    summaryType: 'weekly_avg'
   });
 
   useEffect(() => {
@@ -304,7 +305,8 @@ const ScorecardPageClean = () => {
       type: metric.type || 'weekly',
       valueType: metric.value_type || 'number',
       comparisonOperator: metric.comparison_operator || 'greater_equal',
-      groupId: metric.group_id || 'none'
+      groupId: metric.group_id || 'none',
+      summaryType: metric.summary_type || 'weekly_avg'
     });
     setShowMetricDialog(true);
   };
@@ -333,7 +335,8 @@ const ScorecardPageClean = () => {
         type: metricForm.type,
         valueType: metricForm.valueType,
         comparisonOperator: metricForm.comparisonOperator,
-        groupId: metricForm.groupId === 'none' ? null : metricForm.groupId
+        groupId: metricForm.groupId === 'none' ? null : metricForm.groupId,
+        summaryType: metricForm.summaryType
       };
       
       if (editingMetric) {
@@ -356,7 +359,8 @@ const ScorecardPageClean = () => {
         type: 'weekly',
         valueType: 'number',
         comparisonOperator: 'greater_equal',
-        groupId: 'none'
+        groupId: 'none',
+        summaryType: 'weekly_avg'
       });
     } catch {
       setError('Failed to save metric');
@@ -1230,6 +1234,27 @@ const ScorecardPageClean = () => {
                     <SelectItem value="quarterly">Quarterly</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="metric-summary-type" className="text-slate-700 font-medium">Summary Display</Label>
+                <Select
+                  value={metricForm.summaryType}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, summaryType: value }))}
+                >
+                  <SelectTrigger id="metric-summary-type" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                    <SelectItem value="weekly_avg">Weekly Average</SelectItem>
+                    <SelectItem value="monthly_avg">Monthly Average</SelectItem>
+                    <SelectItem value="quarterly_total">Quarterly Total</SelectItem>
+                    <SelectItem value="quarterly_avg">Quarterly Average</SelectItem>
+                    <SelectItem value="latest_value">Latest Value</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  How this metric's summary is calculated in the summary column
+                </p>
               </div>
               {groups.length > 0 && (
                 <div>
