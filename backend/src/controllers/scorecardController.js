@@ -18,6 +18,12 @@ async function checkColumn(tableName, columnName) {
   }
 }
 
+// Helper function to validate summary_type
+function validateSummaryType(summaryType) {
+  const validTypes = ['weekly_avg', 'monthly_avg', 'quarterly_total', 'quarterly_avg', 'latest_value'];
+  return !summaryType || validTypes.includes(summaryType);
+}
+
 // Helper function to get team members
 async function getTeamMembers(orgId) {
   console.log('Getting team members for scorecard org:', orgId);
@@ -234,7 +240,15 @@ export const getScorecard = async (req, res) => {
 export const createMetric = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description, groupId } = req.body;
+    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description, groupId, summaryType = 'weekly_avg' } = req.body;
+    
+    // Validate summary_type
+    if (!validateSummaryType(summaryType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid summary_type. Must be one of: weekly_avg, monthly_avg, quarterly_total, quarterly_avg, latest_value'
+      });
+    }
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
@@ -275,6 +289,12 @@ export const createMetric = async (req, res) => {
       values.push(groupId);
       placeholders.push(`$${values.length}`);
     }
+    // Add summary_type
+    if (summaryType !== undefined) {
+      columns.push('summary_type');
+      values.push(summaryType);
+      placeholders.push(`$${values.length}`);
+    }
     
     const query = `
       INSERT INTO scorecard_metrics (${columns.join(', ')})
@@ -301,8 +321,16 @@ export const createMetric = async (req, res) => {
 export const updateMetric = async (req, res) => {
   try {
     const { orgId, teamId, metricId } = req.params;
-    const { name, goal, owner, type, valueType, comparisonOperator, description, groupId } = req.body;
-    console.log('Updating metric with data:', { name, goal, owner, type, valueType, comparisonOperator, description, groupId });
+    const { name, goal, owner, type, valueType, comparisonOperator, description, groupId, summaryType } = req.body;
+    console.log('Updating metric with data:', { name, goal, owner, type, valueType, comparisonOperator, description, groupId, summaryType });
+    
+    // Validate summary_type if provided
+    if (summaryType !== undefined && !validateSummaryType(summaryType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid summary_type. Must be one of: weekly_avg, monthly_avg, quarterly_total, quarterly_avg, latest_value'
+      });
+    }
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
@@ -330,6 +358,11 @@ export const updateMetric = async (req, res) => {
     if (hasGroupId && groupId !== undefined) {
       values.push(groupId);
       setClauses.push(`group_id = $${values.length}`);
+    }
+    // Add summary_type
+    if (summaryType !== undefined) {
+      values.push(summaryType);
+      setClauses.push(`summary_type = $${values.length}`);
     }
     
     // Add the WHERE clause parameters
