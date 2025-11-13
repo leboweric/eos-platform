@@ -339,6 +339,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   });
   const [showConcludeDialog, setShowConcludeDialog] = useState(false);
   
+  // Score editing dialog state
+  const [showScoreDialog, setShowScoreDialog] = useState(false);
+  const [scoreDialogData, setScoreDialogData] = useState({ metricId: null, weekDate: '', metricName: '', currentValue: '', currentNotes: '', scoreType: 'weekly' });
+  const [scoreInputValue, setScoreInputValue] = useState('');
+  const [scoreNotesValue, setScoreNotesValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  
   // AI Recording state
   const [aiRecordingState, setAiRecordingState] = useState({
     isRecording: false,
@@ -2360,6 +2367,95 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchIssuesData();
       throw error;
     }
+  };
+
+  // Score editing handlers
+  const handleScoreEdit = (metric, periodDate) => {
+    console.log('📝 [Score Edit] Opening dialog for:', { metric, periodDate });
+    
+    const scoreType = metric.type || 'weekly';
+    const scores = scoreType === 'monthly' ? monthlyScores : weeklyScores;
+    const notes = scoreType === 'monthly' ? monthlyNotes : weeklyNotes;
+    
+    const scoreData = scores[metric.id]?.[periodDate];
+    const noteData = notes[metric.id]?.[periodDate];
+    
+    const scoreValue = (typeof scoreData === 'object' && scoreData !== null) 
+      ? scoreData?.value 
+      : scoreData;
+    const noteValue = (typeof noteData === 'object' && noteData !== null) 
+      ? noteData?.note 
+      : noteData;
+    
+    const currentValue = scoreValue !== null && scoreValue !== undefined 
+      ? scoreValue.toString() 
+      : '';
+    const currentNotes = noteValue || '';
+    
+    setScoreDialogData({
+      metricId: metric.id,
+      weekDate: periodDate,
+      metricName: metric.name,
+      currentValue,
+      currentNotes,
+      scoreType,
+      valueType: metric.value_type || 'number'
+    });
+    setScoreInputValue(currentValue);
+    setScoreNotesValue(currentNotes);
+    setShowScoreDialog(true);
+  };
+
+  const handleScoreDialogSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const value = scoreInputValue === '' ? null : parseFloat(scoreInputValue);
+      
+      console.log('💾 [Score Save] Saving score:', {
+        metricId: scoreDialogData.metricId,
+        weekDate: scoreDialogData.weekDate,
+        value,
+        notes: scoreNotesValue,
+        scoreType: scoreDialogData.scoreType
+      });
+      
+      await scorecardService.updateScore(
+        orgId,
+        effectiveTeamId,
+        scoreDialogData.metricId,
+        scoreDialogData.weekDate,
+        value,
+        scoreNotesValue,
+        scoreDialogData.scoreType
+      );
+      
+      setShowScoreDialog(false);
+      setScoreInputValue('');
+      setScoreNotesValue('');
+      
+      // Refresh scorecard data to get updated values
+      await fetchScorecardData();
+      
+      toast.success('Score updated successfully');
+    } catch (error) {
+      console.error('❌ [Score Save] Failed to update score:', error);
+      toast.error('Failed to update score');
+      setError('Failed to update score. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleScoreDialogCancel = () => {
+    setShowScoreDialog(false);
+    setScoreInputValue('');
+    setScoreNotesValue('');
   };
 
   // Create To-Do from Issue
@@ -4613,13 +4709,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                   weeklyNotes={weeklyNotes}
                   monthlyNotes={monthlyNotes}
                   type={scorecardViewType}
-                  readOnly={true}
+                  readOnly={false}
                   isRTL={isRTL}
                   showTotal={showScorecardTotal}
                   showAverage={showScorecardAverage}
                   departmentId={getEffectiveTeamId(teamId, user)}
                   onAddIssue={handleAddIssueFromMetric}
-                  onScoreEdit={null}
+                  onScoreEdit={handleScoreEdit}
                   onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
                   onMetricUpdate={null}
                   onMetricDelete={null}
@@ -8398,6 +8494,71 @@ const WeeklyAccountabilityMeetingPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Score Update Dialog */}
+      <Dialog open={showScoreDialog} onOpenChange={setShowScoreDialog}>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl sm:max-w-[500px]">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Update Score
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 pt-2">
+              Enter the score for <span className="font-semibold text-slate-800">{scoreDialogData.metricName}</span> on {scoreDialogData.weekDate}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="score" className="text-sm font-medium text-slate-700">
+                Score {scoreDialogData.currentValue && `(Current: ${scoreDialogData.currentValue})`}
+              </Label>
+              <Input
+                id="score"
+                type="number"
+                step="any"
+                value={scoreInputValue}
+                onChange={(e) => setScoreInputValue(e.target.value)}
+                placeholder="Enter score value"
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 rounded-xl transition-all duration-200"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
+                Notes (Optional)
+              </Label>
+              <Textarea
+                id="notes"
+                value={scoreNotesValue}
+                onChange={(e) => setScoreNotesValue(e.target.value)}
+                placeholder="Add context or comments about this score..."
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 rounded-xl min-h-[100px] resize-none transition-all duration-200"
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-4 border-t border-white/20">
+            <Button 
+              variant="outline" 
+              onClick={handleScoreDialogCancel}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleScoreDialogSave} 
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Score'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation Dialog for Delete/Remove actions */}
       <ConfirmationDialog
