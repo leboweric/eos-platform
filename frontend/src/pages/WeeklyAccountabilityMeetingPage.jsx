@@ -278,6 +278,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [weeklyNotes, setWeeklyNotes] = useState({});
   const [monthlyScores, setMonthlyScores] = useState({});
   const [monthlyNotes, setMonthlyNotes] = useState({});
+  const [customGoals, setCustomGoals] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [quarterlyPriorities, setQuarterlyPriorities] = useState([]);
   const [completedPrioritiesCount, setCompletedPrioritiesCount] = useState(0);
@@ -1034,6 +1035,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {});
         setMonthlyNotes(response.data.monthlyNotes || {});
+        setCustomGoals(response.data.customGoals || {});
       } else if (response) {
         // Store all metrics (will filter by type in render based on scorecardViewType)
         const allMetrics = response.metrics || [];
@@ -1043,6 +1045,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setMonthlyScores(response.monthlyScores || {});
         setWeeklyNotes(response.weeklyNotes || {});
         setMonthlyNotes(response.monthlyNotes || {});
+        setCustomGoals(response.customGoals || {});
       }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
@@ -4732,6 +4735,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   monthlyScores={monthlyScores}
                   weeklyNotes={weeklyNotes}
                   monthlyNotes={monthlyNotes}
+                  customGoals={customGoals}
                   type={scorecardViewType}
                   readOnly={false}
                   isRTL={isRTL}
