@@ -629,16 +629,26 @@ const PriorityDialog = ({
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => {
+                      onClick={async () => {
                         if (onAddMilestone && newMilestone.title) {
                           // Ensure ownerId is set - use selected value or default to form's current owner
                           const milestoneToAdd = {
                             ...newMilestone,
                             ownerId: newMilestone.ownerId || formData.ownerId || priority?.owner?.id || ''
                           };
-                          onAddMilestone(priority.id, milestoneToAdd);
-                          setNewMilestone({ title: '', dueDate: '', ownerId: '' });
-                          setShowAddMilestone(false);
+                          try {
+                            await onAddMilestone(priority.id, milestoneToAdd);
+                            // Clear form but keep it open for adding more milestones
+                            setNewMilestone({ 
+                              title: '', 
+                              dueDate: '', 
+                              ownerId: newMilestone.ownerId || formData.ownerId || priority?.owner?.id || '' 
+                            });
+                            // Don't hide the form - let user add more milestones or manually close
+                            // setShowAddMilestone(false);
+                          } catch (error) {
+                            console.error('Failed to add milestone:', error);
+                          }
                         }
                       }}
                       className="text-white"
