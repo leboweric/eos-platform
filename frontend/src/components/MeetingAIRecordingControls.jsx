@@ -31,6 +31,9 @@ export const MeetingAIRecordingControls = ({
 
   // Check if AI is enabled for this org (from context or props)
   const aiEnabled = true; // TODO: Get from organization settings
+  
+  // TEMPORARY: Disable AI note taking due to ongoing issues
+  const aiNotesTakingTemporarilyDisabled = true;
 
   // Timer for recording duration
   useEffect(() => {
@@ -369,18 +372,26 @@ export const MeetingAIRecordingControls = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {!isRecording && transcriptionStatus === 'not_started' && (
-            <Button
-              onClick={handleStartRecording}
-              disabled={isProcessing}
-              className="flex items-center gap-2"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Mic className="h-4 w-4" />
+            <div className="relative group">
+              <Button
+                onClick={handleStartRecording}
+                disabled={isProcessing || aiNotesTakingTemporarilyDisabled}
+                className="flex items-center gap-2"
+                title={aiNotesTakingTemporarilyDisabled ? "AI Note Taking is temporarily unavailable" : ""}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+                Start AI Note Taking
+              </Button>
+              {aiNotesTakingTemporarilyDisabled && (
+                <div className="absolute left-0 top-full mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  AI Note Taking is temporarily unavailable
+                </div>
               )}
-              Start AI Note Taking
-            </Button>
+            </div>
           )}
 
           {isRecording && (
