@@ -613,8 +613,8 @@ const IssuesListClean = ({
             <div className="space-y-1">
             {/* Header Row - EXACT ORDER: Drag, Status, #, Issue, Owner, Created */}
             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-              {enableDragDrop && <div className="w-8">Drag</div>}
-              <div className="w-10">Status</div>
+              {enableDragDrop && <div className="w-8 mr-2">Drag</div>}
+              <div className="w-12">Status</div>
               <div className="w-8 ml-2">#</div>
               <div className="flex-1 ml-3">Issue</div>
               <div className="w-32 text-center">Owner</div>
@@ -661,7 +661,7 @@ const IssuesListClean = ({
                         {/* Drag Handle */}
                         {enableDragDrop && (
                           <div 
-                            className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-8 mr-2 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
                             draggable="true"
                             onDragStart={(e) => handleDragStart(e, issue, index)}
                             onDragEnd={handleDragEnd}
@@ -671,7 +671,7 @@ const IssuesListClean = ({
                         )}
                         
                         {/* Status Checkbox - EXACT COPY from Level 10 Meeting */}
-                        <div className="w-10 flex items-center relative">
+                        <div className="w-12 flex items-center relative">
                           <div 
                             className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                             style={{
