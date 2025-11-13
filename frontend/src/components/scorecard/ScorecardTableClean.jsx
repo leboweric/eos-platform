@@ -19,6 +19,57 @@ import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
 
+// Helper function to calculate metric summary based on summary_type
+const calculateMetricSummary = (metric, scores, scorecardTimePeriodPreference) => {
+  const summaryType = metric.summary_type || 'weekly_avg';
+  const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
+  const metricScores = scores[metric.id] || {};
+  
+  // Get all scores in the date range
+  const scoresInRange = Object.entries(metricScores)
+    .filter(([date]) => {
+      const scoreDate = new Date(date);
+      return scoreDate >= startDate && scoreDate <= endDate;
+    })
+    .map(([_, scoreData]) => {
+      const value = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
+      return value !== undefined && value !== null && value !== '' ? parseFloat(value) : null;
+    })
+    .filter(val => val !== null);
+  
+  if (scoresInRange.length === 0) return null;
+  
+  switch (summaryType) {
+    case 'weekly_avg':
+    case 'monthly_avg':
+    case 'quarterly_avg':
+      // Calculate average
+      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
+    
+    case 'quarterly_total':
+      // Calculate sum
+      return scoresInRange.reduce((sum, val) => sum + val, 0);
+    
+    case 'latest_value':
+      // Return most recent value
+      const sortedDates = Object.keys(metricScores)
+        .filter(date => {
+          const scoreDate = new Date(date);
+          return scoreDate >= startDate && scoreDate <= endDate;
+        })
+        .sort((a, b) => new Date(b) - new Date(a));
+      
+      if (sortedDates.length === 0) return null;
+      const latestScore = metricScores[sortedDates[0]];
+      const latestValue = (typeof latestScore === 'object' && latestScore !== null) ? latestScore?.value : latestScore;
+      return latestValue !== undefined && latestValue !== null && latestValue !== '' ? parseFloat(latestValue) : null;
+    
+    default:
+      // Default to average
+      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
+  }
+};
+
 const ScorecardTableClean = ({ 
   metrics = [], 
   weeklyScores = {}, 
@@ -556,12 +607,8 @@ const ScorecardTableClean = ({
             </thead>
             <tbody>
               {metrics.map((metric, metricIndex) => {
-                // Calculate average based on organization's time period preference
-                const average = (() => {
-                  const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
-                  const metricScores = scores[metric.id] || {};
-                  return calculateAverageInRange(metricScores, startDate, endDate);
-                })();
+                // Calculate summary based on metric's summary_type
+                const summary = calculateMetricSummary(metric, scores, scorecardTimePeriodPreference);
                 
                 // For total, still use only visible periods
                 const visibleScores = periodDates
@@ -573,7 +620,7 @@ const ScorecardTableClean = ({
                 const total = visibleScores.length > 0
                   ? visibleScores.reduce((sum, score) => sum + parseFloat(score), 0)
                   : null;
-                const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
+                const avgGoalMet = summary !== null && isGoalMet(summary, metric.goal, metric.comparison_operator);
                 
                 return (
                   <tr key={metric.id} className={'border-b ' + (meetingMode ? 'hover:bg-blue-50/30' : 'hover:bg-gray-50/50')}>
@@ -627,21 +674,50 @@ const ScorecardTableClean = ({
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
-                    {/* Average column */}
+                    {/* Summary column with progress */}
                     {showAverage ? (
                       <td className={'text-center ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200')}>
-                        {average !== null ? (
+                        {summary !== null && metric.goal ? (
+                          meetingMode ? (
+                            <div className="flex flex-col gap-0.5">
+                              <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                                (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
+                              }>
+                                {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
+                              </div>
+                              <div className="text-[10px] text-gray-500">
+                                Goal: {metric.value_type === 'number' ? Math.round(metric.goal) : formatValue(metric.goal, metric.value_type)}
+                                {metric.goal > 0 && (
+                                  <span className={avgGoalMet ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                                    ({Math.round((summary / metric.goal) * 100)}%)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className={'text-[10px] px-0.5 rounded font-medium ' + 
+                                (avgGoalMet ? 'text-green-700' : 'text-red-700')
+                              }>
+                                {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
+                              </span>
+                              <span className="text-[9px] text-gray-400">
+                                / {metric.value_type === 'number' ? Math.round(metric.goal) : formatValue(metric.goal, metric.value_type)}
+                              </span>
+                            </div>
+                          )
+                        ) : summary !== null ? (
                           meetingMode ? (
                             <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
                               (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
                             }>
-                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                              {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
                             </div>
                           ) : (
                             <span className={'text-[10px] px-0.5 rounded ' + 
                               (avgGoalMet ? 'text-green-700' : 'text-red-700')
                             }>
-                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                              {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
                             </span>
                           )
                         ) : (
@@ -883,7 +959,7 @@ const ScorecardTableClean = ({
                       <td className="px-2 py-2 text-center">
                         <Button
                           onClick={() => {
-                            const isOffTrack = average !== null && !isGoalMet(average, metric.goal, metric.comparison_operator);
+                            const isOffTrack = summary !== null && !isGoalMet(summary, metric.goal, metric.comparison_operator);
                             onAddIssue(metric, isOffTrack);
                           }}
                           size="sm"
