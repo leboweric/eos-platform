@@ -66,7 +66,7 @@ export const getIssues = async (req, res) => {
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
         t.name as team_name,
-        COUNT(DISTINCT ia.id) as attachment_count,
+        COUNT(DISTINCT ia.id)::integer as attachment_count,
         EXISTS(SELECT 1 FROM issue_votes iv WHERE iv.issue_id = i.id AND iv.user_id = $2) as user_has_voted
       FROM issues i
       LEFT JOIN users creator ON i.created_by_id = creator.id
