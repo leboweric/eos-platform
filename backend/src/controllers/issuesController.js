@@ -124,7 +124,8 @@ export const getIssues = async (req, res) => {
       data: {
         issues: issues.rows.map(issue => ({
           ...issue,
-          teamName: issue.team_name
+          teamName: issue.team_name,
+          attachment_count: parseInt(issue.attachment_count) || 0
         })),
         teamMembers
       }
