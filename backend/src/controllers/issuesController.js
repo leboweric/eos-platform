@@ -1088,10 +1088,10 @@ export const updateIssueOrder = async (req, res) => {
     await db.query('BEGIN');
     
     try {
-      // Update each issue's priority_rank
+      // Update each issue's priority_rank and set manual_sort = true
       for (const issue of issues) {
         await db.query(
-          'UPDATE issues SET priority_rank = $1 WHERE id = $2 AND organization_id = $3',
+          'UPDATE issues SET priority_rank = $1, manual_sort = true WHERE id = $2 AND organization_id = $3',
           [issue.priority_rank, issue.id, orgId]
         );
       }
