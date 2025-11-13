@@ -745,7 +745,7 @@ const ScorecardTableClean = ({
                       
                       return (
                         <td key={periodDate} className={cellClassName}>
-                          {meetingMode ? (
+                          {meetingMode && !onScoreEdit ? (
                             <div 
                               className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative ' + 
                                 (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
@@ -768,6 +768,18 @@ const ScorecardTableClean = ({
                                 </TooltipProvider>
                               )}
                             </div>
+                          ) : meetingMode && onScoreEdit ? (
+                            <button
+                              onClick={() => onScoreEdit(metric, periodDate)}
+                              className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative cursor-pointer hover:opacity-80 transition-opacity ' + 
+                                (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                              }
+                            >
+                              {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
+                              {hasNotes && (
+                                <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70" />
+                              )}
+                            </button>
                           ) : (
                             readOnly && !onScoreEdit ? (
                               // Read-only mode without edit capability - show tooltip for comments
