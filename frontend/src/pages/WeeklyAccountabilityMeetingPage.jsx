@@ -6926,8 +6926,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           }}
                                         >
                                           {issue.title}
-                                          {issue.attachments && issue.attachments.length > 0 && (
-                                            <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                          {issue.attachment_count > 0 && (
+                                            <>
+                                              <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                              <span className="text-xs text-slate-400 ml-1">{issue.attachment_count}</span>
+                                            </>
                                           )}
                                         </div>
                                         {issue.description && (
