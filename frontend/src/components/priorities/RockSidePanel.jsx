@@ -104,10 +104,34 @@ function RockSidePanel({
         };
         setEditedRock(updatedRock);
         onUpdate(updatedRock);
-        setNewMilestone({ title: '', dueDate: '' });
-        setIsAddingMilestone(false);
+        
+        // Show success toast with milestone name
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+        toast.innerHTML = `
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>Milestone "${milestone.title}" added successfully</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+        
+        // Clear form but keep it open for adding more milestones
+        setNewMilestone({ title: '', dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd') });
+        // Focus back on title input for easy multiple additions
+        setTimeout(() => {
+          const titleInput = document.querySelector('input[placeholder="Milestone description..."]');
+          if (titleInput) titleInput.focus();
+        }, 100);
       } catch (error) {
         console.error('Failed to add milestone:', error);
+        // Show error toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg z-50';
+        toast.textContent = 'Failed to add milestone';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
     }
   };
