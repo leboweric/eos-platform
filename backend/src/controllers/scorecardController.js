@@ -463,8 +463,13 @@ export const updateScore = async (req, res) => {
     console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue, 'OrgId:', orgId);
     
     // Upsert the score with notes, organization_id, and custom goals
-    // CRITICAL FIX: Only update value/notes if they are explicitly provided (not null)
-    // This prevents overwriting existing scores when only saving custom goals
+    // CRITICAL FIX: Only update value/notes/custom_goals if they are explicitly provided
+    // This prevents overwriting existing data when only updating some fields
+    
+    // Determine if custom goals are being updated (any custom goal field is defined)
+    const updatingCustomGoals = customGoal !== undefined || customGoalMin !== undefined || 
+                                customGoalMax !== undefined || customGoalNotes !== undefined;
+    
     const query = `
       INSERT INTO scorecard_scores (metric_id, week_date, value, notes, organization_id, custom_goal, custom_goal_min, custom_goal_max, custom_goal_notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -472,10 +477,10 @@ export const updateScore = async (req, res) => {
       DO UPDATE SET 
         value = CASE WHEN EXCLUDED.value IS NOT NULL THEN EXCLUDED.value ELSE scorecard_scores.value END, 
         notes = CASE WHEN $4 IS NOT NULL THEN EXCLUDED.notes ELSE scorecard_scores.notes END, 
-        custom_goal = EXCLUDED.custom_goal,
-        custom_goal_min = EXCLUDED.custom_goal_min,
-        custom_goal_max = EXCLUDED.custom_goal_max,
-        custom_goal_notes = EXCLUDED.custom_goal_notes,
+        custom_goal = CASE WHEN $10 = TRUE THEN EXCLUDED.custom_goal ELSE scorecard_scores.custom_goal END,
+        custom_goal_min = CASE WHEN $10 = TRUE THEN EXCLUDED.custom_goal_min ELSE scorecard_scores.custom_goal_min END,
+        custom_goal_max = CASE WHEN $10 = TRUE THEN EXCLUDED.custom_goal_max ELSE scorecard_scores.custom_goal_max END,
+        custom_goal_notes = CASE WHEN $10 = TRUE THEN EXCLUDED.custom_goal_notes ELSE scorecard_scores.custom_goal_notes END,
         updated_at = CURRENT_TIMESTAMP
       RETURNING metric_id, week_date, value, notes, organization_id, custom_goal, custom_goal_min, custom_goal_max, custom_goal_notes
     `;
@@ -489,7 +494,8 @@ export const updateScore = async (req, res) => {
       customGoal !== undefined ? customGoal : null,
       customGoalMin !== undefined ? customGoalMin : null,
       customGoalMax !== undefined ? customGoalMax : null,
-      customGoalNotes || null
+      customGoalNotes || null,
+      updatingCustomGoals // $10 - flag to indicate if custom goals should be updated
     ]);
     
     console.log('Backend updateScore - Database returned:', result.rows[0]);
