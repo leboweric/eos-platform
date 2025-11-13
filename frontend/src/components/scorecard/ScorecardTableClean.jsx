@@ -804,8 +804,13 @@ const ScorecardTableClean = ({
                         console.log('Note exists but hasNotes is false:', { noteValue, length: noteValue.length });
                       }
                       
+                      // Check for custom goal for this specific period
+                      const hasCustomGoal = customGoals[metric.id]?.[periodDate];
+                      const effectiveGoal = hasCustomGoal?.goal !== null && hasCustomGoal?.goal !== undefined 
+                        ? hasCustomGoal.goal 
+                        : metric.goal;
                       
-                      const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
+                      const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, effectiveGoal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isLastWeekColumn = originalIndex === periodLabelsOriginal.length - 1;
                       
