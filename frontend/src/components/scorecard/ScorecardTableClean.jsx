@@ -833,6 +833,18 @@ const ScorecardTableClean = ({
                               }
                             >
                               {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
+                              {hasCustomGoal && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Target className="inline-block ml-1 h-3 w-3 text-orange-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                               {hasNotes && (
                                 <TooltipProvider>
                                   <Tooltip>
@@ -857,6 +869,18 @@ const ScorecardTableClean = ({
                               }
                             >
                               {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
+                              {hasCustomGoal && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Target className="inline-block ml-1 h-3 w-3 text-orange-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                               {hasNotes && (
                                 <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70" />
                               )}
@@ -870,6 +894,18 @@ const ScorecardTableClean = ({
                                 }
                               >
                                 <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                                {hasCustomGoal && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Target className="inline-block ml-0.5 h-2.5 w-2.5 text-orange-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                                 {hasNotes && (
                                   <TooltipProvider>
                                     <Tooltip>
@@ -896,6 +932,18 @@ const ScorecardTableClean = ({
                                 title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
                               >
                                 <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                                {hasCustomGoal && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Target className="inline-block ml-0.5 h-2.5 w-2.5 text-orange-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                                 {hasNotes && (
                                   <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60" />
                                 )}
