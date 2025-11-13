@@ -8166,6 +8166,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                     : priority
                 ));
                 
+                // Update selectedPriority if this is the currently open priority
+                if (selectedPriority?.id === priorityId) {
+                  setSelectedPriority(prev => ({
+                    ...prev,
+                    milestones: [...(prev.milestones || []), milestone]
+                  }));
+                }
+                
                 // Success feedback
                 toast.success('Milestone added successfully');
                 
