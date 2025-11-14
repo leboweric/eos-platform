@@ -54,6 +54,11 @@ export const todosService = {
       relatedPriorityId: todoData.related_priority_id
     };
     
+    // Convert empty string dates to null to avoid database errors
+    if (mappedData.dueDate === '') {
+      mappedData.dueDate = null;
+    }
+    
     const response = await axios.post(
       `/organizations/${orgId}/todos`,
       mappedData
@@ -70,6 +75,14 @@ export const todosService = {
       ...todoData,
       ...(todoData.assignedToIds && { assignedToIds: todoData.assignedToIds })
     };
+    
+    // Convert empty string dates to null to avoid database errors
+    if (updateData.dueDate === '') {
+      updateData.dueDate = null;
+    }
+    if (updateData.due_date === '') {
+      updateData.due_date = null;
+    }
     
     const response = await axios.put(
       `/organizations/${orgId}/todos/${todoId}`,

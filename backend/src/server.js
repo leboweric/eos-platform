@@ -1,6 +1,10 @@
-// Import Sentry for middleware (initialization happens in instrument.js)
+// Instrument.js must be imported first
 import * as Sentry from '@sentry/node';
 // Build trigger: 2025-11-08 - Manual sort flag deployment
+
+// Initialize production logging (reduces verbosity in production)
+import { initProductionLogging } from './utils/productionLogger.js';
+initProductionLogging();
 
 import express from 'express';
 import cors from 'cors';
