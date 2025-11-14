@@ -26,10 +26,9 @@ cron.schedule('0 0 * * *', async () => {
         t.due_date,
         t.user_id,
         t.team_id,
-        uo.organization_id,
+        t.organization_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
       FROM todos t
-      JOIN user_organizations uo ON t.user_id = uo.user_id
       WHERE t.due_date < NOW()
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
@@ -128,10 +127,9 @@ export async function convertOverdueTodos() {
         t.due_date,
         t.user_id,
         t.team_id,
-        uo.organization_id,
+        t.organization_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
       FROM todos t
-      JOIN user_organizations uo ON t.user_id = uo.user_id
       WHERE t.due_date < NOW()
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL

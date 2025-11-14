@@ -14,9 +14,8 @@ async function findUserByName(client, fullName, organizationId) {
 
   const query = `
     SELECT u.id FROM users u
-    JOIN user_organizations uo ON u.id = uo.user_id
-    WHERE uo.organization_id = $1 
-    AND uo.is_active = true
+    WHERE u.organization_id = $1 
+    AND u.is_active = true
     AND LOWER(u.first_name) = LOWER($2)
     AND LOWER(u.last_name) = LOWER($3)
     LIMIT 1
