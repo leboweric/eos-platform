@@ -607,13 +607,14 @@ const UsersPage = () => {
                         </Alert>
                       )}
                       {temporaryPassword && (
-                        <Alert>
-                          <AlertCircle className="h-4 w-4" />
+                        <Alert className="bg-amber-50 border-amber-200">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
                           <AlertDescription>
-                            <div className="space-y-2">
-                              <p>User created successfully. Temporary password:</p>
-                              <div className="flex items-center gap-2">
-                                <code className="bg-gray-100 px-2 py-1 rounded">{temporaryPassword}</code>
+                            <div className="space-y-3">
+                              <p className="font-semibold text-amber-900">✅ User created successfully!</p>
+                              <p className="text-sm text-amber-800">No welcome email was sent. Please share this temporary password with the user:</p>
+                              <div className="flex items-center gap-2 bg-white p-3 rounded border border-amber-300">
+                                <code className="font-mono text-lg font-semibold text-gray-900 flex-1">{temporaryPassword}</code>
                   <Button
                     type="button"
                     variant="ghost"
@@ -621,17 +622,17 @@ const UsersPage = () => {
                     onClick={async () => {
                       try {
                         await navigator.clipboard.writeText(temporaryPassword);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 3000);
+                        toast.success('Password copied to clipboard!');
                       } catch (err) {
                         toast.error('Please manually copy the password above');
                       }
                     }}
+                    className="hover:bg-amber-100"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                               </div>
-                              <p className="text-sm text-gray-600">Share this password securely with the user.</p>
+                              <p className="text-xs text-amber-700">⚠️ This password will not be shown again. Make sure to save it before closing.</p>
                             </div>
                           </AlertDescription>
                         </Alert>
