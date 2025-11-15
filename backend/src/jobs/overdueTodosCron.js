@@ -24,7 +24,7 @@ cron.schedule('0 0 * * *', async () => {
         t.title,
         t.description,
         t.due_date,
-        t.user_id,
+        t.owner_id,
         t.team_id,
         t.organization_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
@@ -79,7 +79,7 @@ async function createIssueFromOverdueTodo(todo) {
     timeline: 'short_term',
     priority_level: daysOverdue > 7 ? 'high' : 'normal',
     related_todo_id: todo.id,
-    created_by: todo.user_id
+    created_by: todo.owner_id
   };
   
   await pool.query(`
@@ -125,7 +125,7 @@ export async function convertOverdueTodos() {
         t.title,
         t.description,
         t.due_date,
-        t.user_id,
+        t.owner_id,
         t.team_id,
         t.organization_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
