@@ -503,7 +503,7 @@ const UsersPage = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                      {isConsultant && organizations.length > 0 && (
+                      {!temporaryPassword && isConsultant && organizations.length > 0 && (
                         <div className="space-y-2">
                           <Label htmlFor="organization">Organization</Label>
                           <Select
@@ -526,6 +526,8 @@ const UsersPage = () => {
                           </p>
                         </div>
                       )}
+                      {!temporaryPassword && (
+                      <>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
@@ -600,6 +602,8 @@ const UsersPage = () => {
                         />
                         <Label htmlFor="sendWelcomeEmail">Send welcome email with credentials</Label>
                       </div>
+                      </>
+                      )}
                       {error && (
                         <Alert variant="destructive">
                           <AlertCircle className="h-4 w-4" />
