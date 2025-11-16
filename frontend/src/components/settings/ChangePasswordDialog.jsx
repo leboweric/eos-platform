@@ -148,7 +148,7 @@ const ChangePasswordDialog = ({ open, onOpenChange }) => {
             <Button type="button" variant="outline" onClick={handleClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}>
+            <Button type="submit" disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
