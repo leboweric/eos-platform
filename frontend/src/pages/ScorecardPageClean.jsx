@@ -341,7 +341,20 @@ const ScorecardPageClean = () => {
       
       if (editingMetric) {
         const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
-        setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? {...updatedMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName} : m));
+        // Preserve existing metric and merge with updated fields
+        setMetrics(prev => prev.map(m => {
+          if (m.id === updatedMetric.id) {
+            return {
+              ...m, // Keep all existing fields
+              ...updatedMetric, // Merge backend response
+              ownerId: metricForm.ownerId, // Ensure ownerId is set
+              ownerName: metricForm.ownerName // Ensure ownerName is set
+            };
+          }
+          return m;
+        }));
+        // Refetch scorecard to ensure UI is in sync with database
+        await fetchScorecard();
         setSuccess('Metric updated successfully');
       } else {
         const newMetric = await scorecardService.createMetric(orgId, teamId, metricData);
