@@ -673,6 +673,14 @@ const ScorecardPageClean = () => {
     return new Date(d.getFullYear(), quarter * 3 + 3, 0);
   };
 
+  // Helper function to format date as YYYY-MM-DD in local time (not UTC)
+  const formatDateLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Get week labels based on actual data dates, shifted back by 1 week
   const getWeekLabels = () => {
     const labels = [];
@@ -697,7 +705,7 @@ const ScorecardPageClean = () => {
       for (let i = 12; i >= 0; i--) {
         const weekStart = new Date(lastWeekStart);
         weekStart.setDate(lastWeekStart.getDate() - (i * 7));
-        const weekStartStr = weekStart.toISOString().split('T')[0];
+        const weekStartStr = formatDateLocal(weekStart);
         labels.push(formatWeekLabel(weekStart));
         weekDates.push(weekStartStr);
       }
@@ -721,7 +729,7 @@ const ScorecardPageClean = () => {
       last13Weeks.forEach(dateStr => {
         const date = new Date(dateStr);
         const weekStart = getWeekStartDate(date);
-        const weekStartStr = weekStart.toISOString().split('T')[0];
+        const weekStartStr = formatDateLocal(weekStart);
         
         // Avoid duplicate weeks
         if (!weekDates.includes(weekStartStr)) {
@@ -738,7 +746,7 @@ const ScorecardPageClean = () => {
         for (let i = 1; i <= weeksNeeded; i++) {
           const weekStart = new Date(oldestDate);
           weekStart.setDate(oldestDate.getDate() - (i * 7));
-          const weekStartStr = weekStart.toISOString().split('T')[0];
+          const weekStartStr = formatDateLocal(weekStart);
           
           if (!weekDates.includes(weekStartStr)) {
             labels.push(formatWeekLabel(weekStart));
@@ -763,7 +771,7 @@ const ScorecardPageClean = () => {
       const date = new Date(dateStr);
       if (date >= startDate && date <= adjustedEndDate) {
         const weekStart = getWeekStartDate(date);
-        const weekStartStr = weekStart.toISOString().split('T')[0];
+        const weekStartStr = formatDateLocal(weekStart);
         
         if (!weekDates.includes(weekStartStr)) {
           labels.push(formatWeekLabel(weekStart));
@@ -820,7 +828,7 @@ const ScorecardPageClean = () => {
     displayDates.forEach(dateStr => {
       const date = new Date(dateStr);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-      const monthStartStr = monthStart.toISOString().split('T')[0];
+      const monthStartStr = formatDateLocal(monthStart);
       
       if (!monthsSet.has(monthStartStr)) {
         monthsSet.add(monthStartStr);
@@ -852,7 +860,7 @@ const ScorecardPageClean = () => {
     for (let i = 1; i <= 5; i++) {
       const futureWeek = new Date(lastWeek);
       futureWeek.setDate(lastWeek.getDate() + (i * 7));
-      const futureWeekStr = futureWeek.toISOString().split('T')[0];
+      const futureWeekStr = formatDateLocal(futureWeek);
       if (!extended.includes(futureWeekStr)) {
         extended.unshift(futureWeekStr); // Add to beginning (most recent first)
       }
