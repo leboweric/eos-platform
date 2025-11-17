@@ -177,17 +177,19 @@ export const getScorecard = async (req, res) => {
           monthlyNotes[score.metric_id][scoreDate] = score.notes;
         }
       } else {
+        // CRITICAL: Normalize date to Monday for consistent frontend lookup
+        const normalizedDate = getWeekStartDate(scoreDate);
         if (!weeklyScores[score.metric_id]) {
           weeklyScores[score.metric_id] = {};
         }
-        weeklyScores[score.metric_id][scoreDate] = numericValue; // JUST THE NUMBER
+        weeklyScores[score.metric_id][normalizedDate] = numericValue; // JUST THE NUMBER
         
         // Store notes separately if they exist
         if (score.notes && score.notes.trim().length > 0) {
           if (!weeklyNotes[score.metric_id]) {
             weeklyNotes[score.metric_id] = {};
           }
-          weeklyNotes[score.metric_id][scoreDate] = score.notes;
+          weeklyNotes[score.metric_id][normalizedDate] = score.notes;
         }
       }
     });
