@@ -4727,7 +4727,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   onMetricUpdate={null}
                   onMetricDelete={null}
                   noWrapper={true}
-                  maxPeriods={4}
+                  maxPeriods={5}
                   meetingMode={true}
                   scorecardTimePeriodPreference={scorecardTimePeriodPreference}
                   />
