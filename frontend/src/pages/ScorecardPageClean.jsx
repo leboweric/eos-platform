@@ -102,7 +102,8 @@ const ScorecardPageClean = () => {
   const [showCustomGoalSelectorModal, setShowCustomGoalSelectorModal] = useState(false);
   
   // Filter metrics by type
-  const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
+  // Note: Quarterly metrics are shown in weekly view (tracked weekly, summarized quarterly)
+  const weeklyMetrics = metrics.filter(m => m.type === 'weekly' || m.type === 'quarterly');
   const monthlyMetrics = metrics.filter(m => m.type === 'monthly');
   const [activeTab, setActiveTab] = useState('weekly');
   const [monthlyScores, setMonthlyScores] = useState({});
