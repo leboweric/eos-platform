@@ -472,7 +472,7 @@ const GroupedScorecardView = ({
   };
 
   const renderMetricRow = (metric, index, groupId) => {
-    const isWeekly = metric.type === 'weekly';
+    const isWeekly = metric.type === 'weekly' || metric.type === 'quarterly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
     const notes = isWeekly ? weeklyNotes?.[metric.id] || {} : monthlyNotes?.[metric.id] || {};
     
@@ -702,7 +702,7 @@ const GroupedScorecardView = ({
 
   // Get actual date ranges from score data (same logic as ScorecardTableClean)
   const getDataDrivenDates = () => {
-    const isWeekly = type === 'weekly';
+    const isWeekly = type === 'weekly' || type === 'quarterly';
     const scores = isWeekly ? weeklyScores : monthlyScores;
     const today = new Date();
     
