@@ -296,8 +296,15 @@ const ScorecardPageClean = () => {
   };
 
   const handleEditMetric = (metric) => {
+    console.log('🔍 EDIT METRIC - Opening dialog:', {
+      metricId: metric.id,
+      metricName: metric.name,
+      summary_type: metric.summary_type,
+      summaryType: metric.summaryType,
+      fullMetric: metric
+    });
     setEditingMetric(metric);
-    setMetricForm({
+    const formData = {
       name: metric.name,
       description: metric.description || '',
       goal: metric.goal,
@@ -308,7 +315,9 @@ const ScorecardPageClean = () => {
       comparisonOperator: metric.comparison_operator || 'greater_equal',
       groupId: metric.group_id || 'none',
       summaryType: metric.summary_type || 'weekly_avg'
-    });
+    };
+    console.log('🔍 EDIT METRIC - Form data:', formData);
+    setMetricForm(formData);
     setShowMetricDialog(true);
   };
 
