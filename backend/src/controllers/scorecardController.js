@@ -80,6 +80,8 @@ export const getScorecard = async (req, res) => {
     }
     // Include is_org_level to identify shared metrics in UI
     selectColumns += ', sm.is_org_level';
+    // Include summary_type for metric summary calculations
+    selectColumns += ', sm.summary_type';
     
     // Prioritize department_id from query params over teamId from URL
     // This fixes the meeting data scoping bug where Finance meetings show Leadership data
