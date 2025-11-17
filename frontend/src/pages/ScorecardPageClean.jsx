@@ -340,8 +340,19 @@ const ScorecardPageClean = () => {
         summaryType: metricForm.summaryType
       };
       
+      console.log('🔍 METRIC UPDATE - Sending to backend:', {
+        metricId: editingMetric?.id,
+        metricData,
+        metricFormSummaryType: metricForm.summaryType
+      });
+      
       if (editingMetric) {
         const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
+        console.log('🔍 METRIC UPDATE - Backend response:', {
+          updatedMetric,
+          summary_type: updatedMetric.summary_type,
+          summaryType: updatedMetric.summaryType
+        });
         // Preserve existing metric and merge with updated fields
         setMetrics(prev => prev.map(m => {
           if (m.id === updatedMetric.id) {
