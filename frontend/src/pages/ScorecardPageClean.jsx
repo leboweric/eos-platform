@@ -1054,7 +1054,24 @@ const ScorecardPageClean = () => {
               />
             ) : (
               <ScorecardTableClean
-                metrics={weeklyMetrics}
+                metrics={(() => {
+                  // DEBUG: Log Churned $ metric data before passing to component
+                  const churnMetric = weeklyMetrics.find(m => m.id === '5e39ff18-65de-4202-a84d-81a9bb7338e5');
+                  if (churnMetric) {
+                    console.log('🔍 PAGE LEVEL - Churned $ metric found:', {
+                      metric: churnMetric,
+                      weeklyScoresForChurn: weeklyScores['5e39ff18-65de-4202-a84d-81a9bb7338e5'],
+                      weeklyScoresKeys: Object.keys(weeklyScores),
+                      weekDates: weekDates
+                    });
+                  } else {
+                    console.log('❌ PAGE LEVEL - Churned $ metric NOT in weeklyMetrics!', {
+                      weeklyMetricsCount: weeklyMetrics.length,
+                      weeklyMetricsIds: weeklyMetrics.map(m => m.id)
+                    });
+                  }
+                  return weeklyMetrics;
+                })()}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
                 weeklyNotes={weeklyNotes}
