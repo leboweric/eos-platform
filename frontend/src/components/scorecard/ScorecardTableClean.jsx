@@ -701,14 +701,8 @@ const ScorecardTableClean = ({
                               }>
                                 {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
                               </div>
-                              <div className="text-[10px] text-gray-500">
-                                Goal: {metric.value_type === 'number' ? Math.round(metric.goal) : formatValue(metric.goal, metric.value_type)}
-                                {metric.goal > 0 && (
-                                  <span className={avgGoalMet ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
-                                    ({Math.round((summary / metric.goal) * 100)}%)
-                                  </span>
-                                )}
-                                <span className="text-gray-400 ml-1">({getSummaryLabel(metric.summary_type || 'weekly_avg')})</span>
+                              <div className="text-[10px] text-gray-400">
+                                ({getSummaryLabel(metric.summary_type || 'weekly_avg')})
                               </div>
                             </div>
                           ) : (

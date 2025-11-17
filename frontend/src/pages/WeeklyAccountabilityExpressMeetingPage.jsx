@@ -4693,7 +4693,10 @@ const WeeklyAccountabilityMeetingPage = () => {
               <>
               {(() => {
                 // Filter metrics by type based on selected view
-                const filteredMetrics = scorecardMetrics.filter(m => m.type === scorecardViewType);
+                // Include quarterly metrics in weekly view since they track weekly data points
+                const filteredMetrics = scorecardMetrics.filter(m => 
+                  m.type === scorecardViewType || (scorecardViewType === 'weekly' && m.type === 'quarterly')
+                );
                 console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
                   viewType: scorecardViewType,
                   totalMetrics: scorecardMetrics.length,
