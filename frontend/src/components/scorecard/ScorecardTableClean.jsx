@@ -19,6 +19,22 @@ import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
 
+// Helper function to get human-readable summary type label
+const getSummaryLabel = (summaryType) => {
+  switch (summaryType) {
+    case 'weekly_avg':
+    case 'monthly_avg':
+    case 'quarterly_avg':
+      return 'avg';
+    case 'quarterly_total':
+      return 'total';
+    case 'latest_value':
+      return 'latest';
+    default:
+      return 'avg';
+  }
+};
+
 // Helper function to calculate metric summary based on summary_type
 const calculateMetricSummary = (metric, scores, scorecardTimePeriodPreference) => {
   const summaryType = metric.summary_type || 'weekly_avg';
@@ -540,7 +556,7 @@ const ScorecardTableClean = ({
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
                     {(() => {
                       const { label } = getDateRange(scorecardTimePeriodPreference);
-                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Avg';
+                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Summary';
                       
                       // Debug logging for scorecard label (both meeting and main scorecard)
                       console.log('🔍 ScorecardTableClean - Label calculation:', {
@@ -692,6 +708,7 @@ const ScorecardTableClean = ({
                                     ({Math.round((summary / metric.goal) * 100)}%)
                                   </span>
                                 )}
+                                <span className="text-gray-400 ml-1">({getSummaryLabel(metric.summary_type || 'weekly_avg')})</span>
                               </div>
                             </div>
                           ) : (
@@ -708,10 +725,13 @@ const ScorecardTableClean = ({
                           )
                         ) : summary !== null ? (
                           meetingMode ? (
-                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
-                              (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
-                            }>
-                              {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
+                            <div className="flex flex-col gap-0.5">
+                              <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                                (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
+                              }>
+                                {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
+                              </div>
+                              <div className="text-[10px] text-gray-400">({getSummaryLabel(metric.summary_type || 'weekly_avg')})</div>
                             </div>
                           ) : (
                             <span className={'text-[10px] px-0.5 rounded ' + 
