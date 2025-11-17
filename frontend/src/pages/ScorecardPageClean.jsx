@@ -296,15 +296,8 @@ const ScorecardPageClean = () => {
   };
 
   const handleEditMetric = (metric) => {
-    console.log('🔍 EDIT METRIC - Opening dialog:', {
-      metricId: metric.id,
-      metricName: metric.name,
-      summary_type: metric.summary_type,
-      summaryType: metric.summaryType,
-      fullMetric: metric
-    });
     setEditingMetric(metric);
-    const formData = {
+    setMetricForm({
       name: metric.name,
       description: metric.description || '',
       goal: metric.goal,
@@ -315,9 +308,7 @@ const ScorecardPageClean = () => {
       comparisonOperator: metric.comparison_operator || 'greater_equal',
       groupId: metric.group_id || 'none',
       summaryType: metric.summary_type || 'weekly_avg'
-    };
-    console.log('🔍 EDIT METRIC - Form data:', formData);
-    setMetricForm(formData);
+    });
     setShowMetricDialog(true);
   };
 
@@ -349,19 +340,8 @@ const ScorecardPageClean = () => {
         summaryType: metricForm.summaryType
       };
       
-      console.log('🔍 METRIC UPDATE - Sending to backend:', {
-        metricId: editingMetric?.id,
-        metricData,
-        metricFormSummaryType: metricForm.summaryType
-      });
-      
       if (editingMetric) {
         const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
-        console.log('🔍 METRIC UPDATE - Backend response:', {
-          updatedMetric,
-          summary_type: updatedMetric.summary_type,
-          summaryType: updatedMetric.summaryType
-        });
         // Preserve existing metric and merge with updated fields
         setMetrics(prev => prev.map(m => {
           if (m.id === updatedMetric.id) {
@@ -1074,24 +1054,7 @@ const ScorecardPageClean = () => {
               />
             ) : (
               <ScorecardTableClean
-                metrics={(() => {
-                  // DEBUG: Log Churned $ metric data before passing to component
-                  const churnMetric = weeklyMetrics.find(m => m.id === '5e39ff18-65de-4202-a84d-81a9bb7338e5');
-                  if (churnMetric) {
-                    console.log('🔍 PAGE LEVEL - Churned $ metric found:', {
-                      metric: churnMetric,
-                      weeklyScoresForChurn: weeklyScores['5e39ff18-65de-4202-a84d-81a9bb7338e5'],
-                      weeklyScoresKeys: Object.keys(weeklyScores),
-                      weekDates: weekDates
-                    });
-                  } else {
-                    console.log('❌ PAGE LEVEL - Churned $ metric NOT in weeklyMetrics!', {
-                      weeklyMetricsCount: weeklyMetrics.length,
-                      weeklyMetricsIds: weeklyMetrics.map(m => m.id)
-                    });
-                  }
-                  return weeklyMetrics;
-                })()}
+                metrics={weeklyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
                 weeklyNotes={weeklyNotes}

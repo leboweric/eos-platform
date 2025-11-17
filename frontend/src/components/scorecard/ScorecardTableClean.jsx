@@ -791,20 +791,7 @@ const ScorecardTableClean = ({
                       } else {
                         // Normal mode: exact date match
                         scoreValue = scores[metric.id]?.[periodDate];
-                        
-                        // DEBUG: Churned $ metric
-                        if (metric.id === '5e39ff18-65de-4202-a84d-81a9bb7338e5') {
-                          console.log('🔍 CHURNED $ DEBUG:', {
-                            periodDate,
-                            scoreValue,
-                            hasMetricScores: !!scores[metric.id],
-                            metricScoreKeys: scores[metric.id] ? Object.keys(scores[metric.id]) : [],
-                            fullMetricScores: scores[metric.id],
-                            scoresObject: scores,
-                            metricType: metric.type,
-                            isWeekly
-                          });
-                        }
+
                       }
                       
                       // DEBUG: Enhanced date matching diagnostics for Level 10 Meeting
