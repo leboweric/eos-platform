@@ -296,7 +296,7 @@ const ScorecardTableClean = ({
       let currentWeek = getWeekStartDate(effectiveStartDate);
       while (currentWeek <= endDate) {
         labels.push(formatWeekLabel(currentWeek));
-        weekDates.push(currentWeek.toISOString().split('T')[0]);
+        weekDates.push(toLocalDateString(currentWeek));
         
         // Move to next week
         currentWeek = new Date(currentWeek);
@@ -325,7 +325,7 @@ const ScorecardTableClean = ({
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - (i * 7));
         const mondayOfWeek = getWeekStartDate(weekStart);
-        const weekStartStr = mondayOfWeek.toISOString().split('T')[0];
+        const weekStartStr = toLocalDateString(mondayOfWeek);
         
         labels.push(formatWeekLabel(mondayOfWeek));
         weekDates.push(weekStartStr);
