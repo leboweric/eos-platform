@@ -391,7 +391,7 @@ const ScorecardTableClean = ({
     return { labels, monthDates };
   };
 
-  const isWeekly = type === 'weekly';
+  const isWeekly = type === 'weekly' || type === 'quarterly';
   const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = isWeekly ? getWeekLabels() : { labels: [], weekDates: [] };
   const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = !isWeekly ? getMonthLabels() : { labels: [], monthDates: [] };
   
