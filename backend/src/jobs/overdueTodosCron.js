@@ -104,7 +104,7 @@ async function createIssueFromOverdueTodo(todo) {
     issueData.description,
     issueData.timeline,
     issueData.priority_level,
-    0,  // priority_rank = 0 puts overdue issues at top for visibility
+    9999,  // priority_rank = 9999 puts overdue issues at bottom of list
     issueData.related_todo_id,
     issueData.created_by
   ]);
