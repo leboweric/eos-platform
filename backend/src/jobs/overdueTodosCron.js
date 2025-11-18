@@ -90,12 +90,13 @@ async function createIssueFromOverdueTodo(todo) {
       description,
       timeline,
       priority_level,
+      priority_rank,
       related_todo_id,
       created_by_id,
       status,
       archived,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open', false, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'open', false, NOW())
   `, [
     issueData.organization_id,
     issueData.team_id,
@@ -103,6 +104,7 @@ async function createIssueFromOverdueTodo(todo) {
     issueData.description,
     issueData.timeline,
     issueData.priority_level,
+    0,  // priority_rank = 0 puts overdue issues at top for visibility
     issueData.related_todo_id,
     issueData.created_by
   ]);
