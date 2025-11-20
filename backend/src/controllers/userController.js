@@ -515,7 +515,7 @@ export const cancelInvitation = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { firstName, lastName, role, teamId, teamIds, is_active } = req.body; // Support both single teamId and multiple teamIds
+    const { email, firstName, lastName, role, teamId, teamIds, is_active } = req.body; // Support both single teamId and multiple teamIds
     const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
 
     // Check if user can update (must be admin or consultant)
@@ -533,12 +533,30 @@ export const updateUser = async (req, res) => {
       return res.status(404).json({ error: 'User not found in organization' });
     }
 
+    // If email is being updated, check for uniqueness
+    if (email !== undefined) {
+      // Check if new email is already in use by another user
+      const emailCheck = await query(
+        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        [email, userId]
+      );
+
+      if (emailCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'Email address is already in use by another user' });
+      }
+    }
+
     // Build update query dynamically based on provided fields
     const updateFields = [];
     const updateValues = [];
     let paramCount = 1;
 
     // Only update fields that were provided
+    if (email !== undefined) {
+      updateFields.push(`email = $${paramCount}`);
+      updateValues.push(email);
+      paramCount++;
+    }
     if (firstName !== undefined) {
       updateFields.push(`first_name = $${paramCount}`);
       updateValues.push(firstName);

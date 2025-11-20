@@ -80,6 +80,7 @@ const UsersPage = () => {
     teamIds: []
   });
   const [editForm, setEditForm] = useState({
+    email: '',
     firstName: '',
     lastName: '',
     role: 'member',
@@ -314,6 +315,7 @@ const UsersPage = () => {
   const handleEditUser = (user) => {
     setEditingUser(user);
     setEditForm({
+      email: user.email,
       firstName: user.first_name,
       lastName: user.last_name,
       role: user.role,
@@ -336,6 +338,7 @@ const UsersPage = () => {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: JSON.stringify({
+          email: editForm.email,
           firstName: editForm.firstName,
           lastName: editForm.lastName,
           role: editForm.role,
@@ -748,6 +751,16 @@ const UsersPage = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email Address</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="editFirstName">First Name</Label>
