@@ -206,6 +206,14 @@ async function handleSubscriptionUpdated(stripeSubscription) {
     }
   }
 
+  // Safely convert timestamps, handling undefined/null values
+  const periodStart = stripeSubscription.current_period_start 
+    ? new Date(stripeSubscription.current_period_start * 1000) 
+    : subscription.current_period_start;
+  const periodEnd = stripeSubscription.current_period_end 
+    ? new Date(stripeSubscription.current_period_end * 1000) 
+    : subscription.current_period_end;
+
   await query(
     `UPDATE subscriptions 
      SET status = $1,
@@ -220,8 +228,8 @@ async function handleSubscriptionUpdated(stripeSubscription) {
      WHERE id = $10`,
     [
       stripeSubscription.status,
-      new Date(stripeSubscription.current_period_start * 1000),
-      new Date(stripeSubscription.current_period_end * 1000),
+      periodStart,
+      periodEnd,
       userCount,
       stripeSubscription.items.data[0]?.id || subscription.stripe_subscription_item_id,
       stripeSubscription.cancel_at_period_end ? new Date() : null,
