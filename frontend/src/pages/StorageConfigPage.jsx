@@ -72,7 +72,7 @@ const StorageConfigPage = () => {
 
   const fetchCurrentConfig = async () => {
     try {
-      const response = await axios.get(`/api/v1/organizations/${user.organizationId}/storage/config`);
+      const response = await axios.get(`/organizations/${user.organizationId}/storage/config`);
       setCurrentConfig(response.data.data);
       setSelectedProvider(response.data.data.provider || 'internal');
       setConfigForm(response.data.data.config || {});
@@ -85,7 +85,7 @@ const StorageConfigPage = () => {
 
   const fetchStorageStats = async () => {
     try {
-      const response = await axios.get(`/api/v1/organizations/${user.organizationId}/storage/stats`);
+      const response = await axios.get(`/organizations/${user.organizationId}/storage/stats`);
       setStorageStats(response.data.data);
     } catch (error) {
       console.error('Error fetching storage stats:', error);
@@ -98,7 +98,7 @@ const StorageConfigPage = () => {
     
     try {
       const response = await axios.post(
-        `/api/v1/organizations/${user.organizationId}/storage/test`,
+        `/organizations/${user.organizationId}/storage/test`,
         {
           provider: selectedProvider,
           config: configForm
@@ -121,7 +121,7 @@ const StorageConfigPage = () => {
     
     try {
       await axios.put(
-        `/api/v1/organizations/${user.organizationId}/storage/config`,
+        `/organizations/${user.organizationId}/storage/config`,
         {
           provider: selectedProvider,
           config: configForm
