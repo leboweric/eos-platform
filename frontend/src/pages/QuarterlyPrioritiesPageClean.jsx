@@ -1185,37 +1185,49 @@ const QuarterlyPrioritiesPageClean = () => {
   const handleCreatePriority = async () => {
     // Prevent multiple submissions
     if (loading) return;
-    
+
+    // Client-side validation for required fields
+    if (!priorityForm.title?.trim()) {
+      setError('Title is required');
+      return;
+    }
+
+    if (!priorityForm.dueDate) {
+      setError('Due date is required');
+      return;
+    }
+
     setLoading(true);
+    setError(null); // Clear any previous errors
     try {
       // Get current quarter and year
       const now = new Date();
       const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
       const currentYear = now.getFullYear();
       const quarter = `Q${currentQuarter}`;
-      
+
       const orgId = user?.organizationId;
       const teamId = selectedDepartment?.id;
-      
+
       if (!orgId || !teamId) {
         throw new Error('Organization or department not found');
       }
-      
+
       const priorityData = {
         ...priorityForm,
         quarter,
         year: currentYear
       };
-      
+
       const newPriority = await quarterlyPrioritiesService.createPriority(orgId, teamId, priorityData);
-      
+
       // Add milestones if any were created
       if (addPriorityMilestones.length > 0 && newPriority?.id) {
         for (const milestone of addPriorityMilestones) {
           await quarterlyPrioritiesService.createMilestone(orgId, teamId, newPriority.id, milestone);
         }
       }
-      
+
       setShowAddPriority(false);
       setPriorityForm({
         title: '',
@@ -1228,12 +1240,14 @@ const QuarterlyPrioritiesPageClean = () => {
       setAddPriorityMilestones([]);
       setAddMilestoneForm({ title: '', dueDate: '' });
       setNewMilestoneForm({ title: '', dueDate: '' });
-      
+
       // Refresh data
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to create priority:', err);
-      setError('Failed to create item');
+      // Extract specific error message from API response
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to create item';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -4317,7 +4331,9 @@ const QuarterlyPrioritiesPageClean = () => {
           </DialogHeader>
           <div className="space-y-6">
             <div>
-              <Label htmlFor="title" className="text-sm font-medium">Title</Label>
+              <Label htmlFor="title" className="text-sm font-medium">
+                Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="title"
                 value={priorityForm.title}
@@ -4365,7 +4381,9 @@ const QuarterlyPrioritiesPageClean = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="dueDate" className="text-sm font-medium">Due Date</Label>
+                <Label htmlFor="dueDate" className="text-sm font-medium">
+                  Due Date <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="dueDate"
                   type="date"
