@@ -58,13 +58,19 @@ export const departmentService = {
 
   // Add member to department
   async addMember(departmentId, userId) {
-    const response = await axios.post(`/departments/${departmentId}/members`, { userId });
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+
+    const response = await axios.post(`/organizations/${orgId}/teams/${departmentId}/members`, { userId });
     return response.data;
   },
 
   // Remove member from department
   async removeMember(departmentId, userId) {
-    const response = await axios.delete(`/departments/${departmentId}/members/${userId}`);
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+
+    const response = await axios.delete(`/organizations/${orgId}/teams/${departmentId}/members/${userId}`);
     return response.data;
   }
 };
