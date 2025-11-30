@@ -2254,10 +2254,10 @@ const QuarterlyPrioritiesPageClean = () => {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="text-xs bg-gray-100">
-                        {getUserInitials(priority.owner.name)}
+                        {getUserInitials(priority.owner?.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span>{priority.owner.name}</span>
+                    <span>{priority.owner?.name || 'Unassigned'}</span>
                   </div>
                   
                   <div className="flex items-center gap-1">
@@ -2409,10 +2409,10 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
                         <AvatarFallback className="text-xs bg-gray-100">
-                          {getUserInitials(priority.owner.name)}
+                          {getUserInitials(priority.owner?.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-900">{priority.owner.name}</span>
+                      <span className="text-sm text-gray-900">{priority.owner?.name || 'Unassigned'}</span>
                     </div>
                   )}
                 </div>
@@ -3099,9 +3099,9 @@ const QuarterlyPrioritiesPageClean = () => {
                           <div key={memberId} className="space-y-4">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-gray-100">{getUserInitials(firstPriority.owner.name)}</AvatarFallback>
+                                <AvatarFallback className="bg-gray-100">{getUserInitials(firstPriority.owner?.name)}</AvatarFallback>
                               </Avatar>
-                              <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
+                              <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner?.name || 'Unassigned'}</h4>
                             </div>
                             {priorities.map(priority => {
                               const isComplete = priority.status === 'complete' || priority.status === 'completed';

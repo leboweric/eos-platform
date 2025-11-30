@@ -161,6 +161,8 @@ const DashboardClean = () => {
   }, [viewMode, selectedDepartment, user]);
   
   useEffect(() => {
+    let retryTimer;
+
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
       navigate('/consultant');
     } else if (user) {
@@ -170,10 +172,10 @@ const DashboardClean = () => {
       if (!selectedDepartment) {
         fetchDashboardData();
       }
-      
+
       // Retry fetching business blueprint after a short delay if initial load fails
       // This helps with timing issues on initial login
-      const retryTimer = setTimeout(() => {
+      retryTimer = setTimeout(() => {
         if (predictions?.revenue?.target === 0) {
           console.log('Dashboard - Retrying business blueprint fetch for predictions...');
           businessBlueprintService.getBusinessBlueprint()
@@ -181,7 +183,7 @@ const DashboardClean = () => {
               if (blueprintResponse?.oneYearPlan) {
                 const oneYearPlan = blueprintResponse.oneYearPlan;
                 let targetRevenue = 0;
-                
+
                 if (oneYearPlan.revenueStreams && oneYearPlan.revenueStreams.length > 0) {
                   targetRevenue = oneYearPlan.revenueStreams.reduce((sum, stream) => {
                     return sum + (parseFloat(stream.revenue_target) || 0);
@@ -189,7 +191,7 @@ const DashboardClean = () => {
                 } else if (oneYearPlan.revenue) {
                   targetRevenue = parseFloat(oneYearPlan.revenue) || 0;
                 }
-                
+
                 if (targetRevenue > 0) {
                   console.log('Dashboard - Retry successful, updating predictions with revenue:', targetRevenue);
                   setPredictions(prev => ({
@@ -211,17 +213,19 @@ const DashboardClean = () => {
             });
         }
       }, 2000);
-      
-      return () => clearTimeout(retryTimer);
     }
-    
+
     // Listen for theme changes
     const handleThemeChange = (event) => {
       setThemeColors(event.detail);
     };
-    
+
     window.addEventListener('themeChanged', handleThemeChange);
-    return () => window.removeEventListener('themeChanged', handleThemeChange);
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      window.removeEventListener('themeChanged', handleThemeChange);
+    };
   }, [user, navigate]);
 
   // Fetch user's annual commitment for dashboard display
