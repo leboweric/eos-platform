@@ -67,7 +67,6 @@ const TodosListClean = ({
   });
   
   useEffect(() => {
-    console.log('TodosListClean: Current viewMode is', viewMode);
     fetchOrganizationTheme();
     
     // Listen for theme changes
@@ -186,7 +185,6 @@ const TodosListClean = ({
     }
     if (todo.due_date) {
       const parsedDate = parseDateLocal(todo.due_date);
-      console.log('📅 formatDueDate:', {
         raw: todo.due_date,
         parsed: parsedDate,
         formatted: format(parsedDate, 'MMM d'),
@@ -416,25 +414,12 @@ const TodosListClean = ({
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   
-                                  console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
-                                  console.log('📋 Todo ID:', todo.id);
-                                  console.log('📊 Current status:', todo.status);
-                                  console.log('🎯 Is multi-assignee?', !!todo._currentAssignee);
-                                  console.log('👤 Current assignee object:', todo._currentAssignee);
-                                  console.log('🔢 Assignees array:', todo.assignees);
                                   
                                   if (onStatusChange) {
                                     // For multi-assignee todos, pass the assigneeId as a third parameter
                                     const assigneeId = todo._currentAssignee ? todo._currentAssignee.id : null;
-                                    console.log('🎯 Calling onStatusChange with assigneeId:', assigneeId);
                                     onStatusChange(todo.id, !isComplete, assigneeId);
                                   } else if (onUpdate) {
-                                    console.log('🔥🔥🔥 FRONTEND: Marking todo as complete 🔥🔥🔥');
-                                    console.log('📋 Todo ID:', todo.id);
-                                    console.log('📊 Current status:', todo.status);
-                                    console.log('🎯 Is multi-assignee?', !!todo._currentAssignee);
-                                    console.log('👤 Current assignee object:', todo._currentAssignee);
-                                    console.log('🔢 Assignees array:', todo.assignees);
                                     
                                     // For multi-assignee todos, pass the specific assignee ID
                                     const updateData = { 
@@ -444,14 +429,10 @@ const TodosListClean = ({
                                     // If this is a multi-assignee todo, include which assignee's copy to mark
                                     if (todo._currentAssignee) {
                                       updateData.assigneeId = todo._currentAssignee.id;
-                                      console.log('✅ Adding assigneeId to request:', updateData.assigneeId);
                                     } else {
-                                      console.log('⚠️ No _currentAssignee found, not adding assigneeId');
                                     }
                                     
-                                    console.log('📤 Sending update request with data:', updateData);
                                     await todosService.updateTodo(todo.id, updateData);
-                                    console.log('✅ Update request completed');
                                     onUpdate();
                                   }
                                 }}

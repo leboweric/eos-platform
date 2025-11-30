@@ -205,7 +205,6 @@ const ScorecardTableClean = ({
       ? `${startMonth} ${startDay} - ${endDay}`
       : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
     
-    console.log('📅 Week label formatted:', { date, formattedLabel });
     return formattedLabel;
   };
 
@@ -246,7 +245,6 @@ const ScorecardTableClean = ({
     const sortedDates = Array.from(allScoreDates).sort();
     
     if (sortedDates.length > 0) {
-      console.log('📊 SCORECARD DEBUG: Found score dates in data:', {
         earliestDate: sortedDates[0],
         latestDate: sortedDates[sortedDates.length - 1],
         totalUniqueDates: sortedDates.length,
@@ -272,7 +270,6 @@ const ScorecardTableClean = ({
       if (showHistoricalData && sortedDates.length > 0) {
         const earliestDataDate = new Date(sortedDates[0] + 'T12:00:00');
         if (earliestDataDate < quarterStart) {
-          console.log('⚠️ SCORECARD: Historical data found before current quarter!', {
             currentQuarterStart: quarterStart.toISOString().split('T')[0],
             earliestData: sortedDates[0],
             action: 'Using earliest data date as start',
@@ -282,7 +279,6 @@ const ScorecardTableClean = ({
         }
       }
       
-      console.log('Quarter calculation:', {
         today: today.toISOString().split('T')[0],
         quarter: Math.floor(today.getMonth() / 3) + 1,
         quarterStart: quarterStart.toISOString().split('T')[0],
@@ -312,7 +308,6 @@ const ScorecardTableClean = ({
         weekDates.splice(0, trimCount);
       }
       
-      console.log(`📊 SCORECARD: Showing ${weekDates.length} weeks from ${weekDates[0]} to ${weekDates[weekDates.length-1]}`);
     } else {
       // Meeting mode - Generate weeks from current date (same as main scorecard)
       // This ensures meeting scorecard always shows the same weeks as main scorecard
@@ -331,7 +326,6 @@ const ScorecardTableClean = ({
         weekDates.push(weekStartStr);
       }
       
-      console.log('🚨🚨🚨 LEVEL 10 MEETING - Week display logic (FIXED):', {
         TODAY: toLocalDateString(today),
         weeksToShow,
         generatedWeeks: weekDates,
@@ -342,7 +336,6 @@ const ScorecardTableClean = ({
     }
     
     // Final debug output
-    console.log('📊 SCORECARD: Final week configuration:', {
       mode: meetingMode ? 'meeting' : 'scorecard',
       weekCount: weekDates.length,
       dateRange: weekDates.length > 0 ? `${weekDates[0]} to ${weekDates[weekDates.length-1]}` : 'no dates',
@@ -351,12 +344,9 @@ const ScorecardTableClean = ({
     });
     
     if (meetingMode) {
-      console.log('WeeklyMeeting - Generated week dates:', weekDates);
-      console.log('WeeklyMeeting - Available scores for metrics:', Object.keys(weeklyScores || {}));
       // Log sample scores for first metric if available
       const firstMetricId = metrics?.[0]?.id;
       if (firstMetricId && weeklyScores?.[firstMetricId]) {
-        console.log('WeeklyMeeting - Sample scores for first metric:', firstMetricId, weeklyScores[firstMetricId]);
       }
     }
     
@@ -390,7 +380,6 @@ const ScorecardTableClean = ({
         currentMonth.setMonth(currentMonth.getMonth() + 1);
       }
       
-      console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} months:`, monthDates);
     } else {
       // Meeting mode or fallback - show last N months as before
       const monthsToShow = Math.min(maxPeriods, 12);
@@ -420,7 +409,6 @@ const ScorecardTableClean = ({
   const notes = isWeekly ? weeklyNotes : monthlyNotes;
   
   // Debug: Check if notes are being passed
-  console.log('ScorecardTableClean - Notes prop received:', { 
     weeklyNotes: Object.keys(weeklyNotes || {}).length,
     monthlyNotes: Object.keys(monthlyNotes || {}).length,
     currentNotes: notes 
@@ -430,7 +418,6 @@ const ScorecardTableClean = ({
   const formatValue = (value, valueType) => {
     // Debug log for zero values
     if (value === 0 || value === "0") {
-      console.log('formatValue called with zero - value:', value, 'type:', typeof value, 'valueType:', valueType);
     }
     
     // Check for null, undefined, or empty string - but allow 0
@@ -460,7 +447,6 @@ const ScorecardTableClean = ({
     
     // Debug log the result for zero values
     if (value === 0 || value === "0") {
-      console.log('formatValue returning for zero:', result);
     }
     
     return result;
@@ -559,7 +545,6 @@ const ScorecardTableClean = ({
                       const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Summary';
                       
                       // Debug logging for scorecard label (both meeting and main scorecard)
-                      console.log('🔍 ScorecardTableClean - Label calculation:', {
                         preference: scorecardTimePeriodPreference,
                         originalLabel: label,
                         finalLabel: finalLabel,
@@ -583,7 +568,6 @@ const ScorecardTableClean = ({
                   const isCurrentWeek = weekDate === currentWeekStart;
                   
                   if (isCurrentWeek) {
-                    console.log('🚨🚨🚨 FOUND CURRENT WEEK IN DISPLAY!', {
                       weekDate,
                       currentWeekStart,
                       label,
@@ -773,7 +757,6 @@ const ScorecardTableClean = ({
                           
                           // Debug: Log week aggregation for verification
                           if (weekScores.length > 1 && metrics.indexOf(metric) === 0) {
-                            console.log(`✅ Week aggregation working for week ${periodDate}:`, {
                               weekStart: weekStartDate.toISOString().split('T')[0],
                               weekEnd: weekEndDate.toISOString().split('T')[0],
                               allScoresInWeek: weekScores.map(s => ({ date: s.date, value: s.value })),
@@ -790,7 +773,6 @@ const ScorecardTableClean = ({
                       
                       // DEBUG: Enhanced date matching diagnostics for Level 10 Meeting
                       if (metrics.indexOf(metric) === 0) {
-                        console.log(`📊 LEVEL 10 DATE CHECK [${index}]:`, {
                           metricId: metric.id,
                           metricName: metric.name,
                           periodDate: periodDate,
@@ -806,7 +788,6 @@ const ScorecardTableClean = ({
                       if (scores[metric.id] && periodDate in scores[metric.id]) {
                         const rawValue = scores[metric.id][periodDate];
                         if (rawValue === 0 || rawValue === "0") {
-                          console.log('Zero check - Metric:', metric.id, 'Date:', periodDate, 'Raw value:', rawValue, 'Type:', typeof rawValue, 'scoreValue:', scoreValue, 'scoreValue type:', typeof scoreValue);
                         }
                       }
                       
@@ -816,7 +797,6 @@ const ScorecardTableClean = ({
                       
                       // Debug: Check if notes are being detected
                       if (noteValue && !hasNotes) {
-                        console.log('Note exists but hasNotes is false:', { noteValue, length: noteValue.length });
                       }
                       
                       // Check for custom goal for this specific period

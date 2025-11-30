@@ -55,13 +55,11 @@ const PriorityCardClean = ({
   teamMembers = [],
   readOnly = false
 }) => {
-  console.log('[PriorityCardClean] Rendering with:', {
     priorityTitle: priority?.title,
     hasMilestones: priority?.milestones?.length > 0,
     milestones: priority?.milestones,
     teamMembersCount: teamMembers.length
   });
-  console.log('[PriorityCardClean] Handler props received:', {
     onEditMilestone: typeof onEditMilestone,
     onEditMilestoneExists: !!onEditMilestone,
     onUpdateExists: !!onUpdate,
@@ -713,8 +711,6 @@ const PriorityCardClean = ({
                           <Select
                             value={editingMilestone.ownerId || milestone.owner_id || priority.owner?.id}
                             onValueChange={(value) => {
-                              console.log('[FRONTEND] Owner dropdown changed to:', value);
-                              console.log('[FRONTEND] Setting editingMilestone.ownerId to:', value);
                               setEditingMilestone({ ...editingMilestone, ownerId: value });
                             }}
                           >
@@ -726,7 +722,6 @@ const PriorityCardClean = ({
                                 <div className="px-2 py-1 text-sm text-gray-500">No team members available</div>
                               )}
                               {teamMembers.map((member) => {
-                                console.log('[FRONTEND] Rendering team member option:', member.id, member.name);
                                 return (
                                   <SelectItem key={member.id} value={member.id}>
                                     {member.name}
@@ -745,18 +740,8 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              console.log('===========================================');
-                              console.log('[FRONTEND] MILESTONE SAVE CLICKED');
-                              console.log('===========================================');
-                              console.log('[FRONTEND] Priority ID:', priority.id);
-                              console.log('[FRONTEND] Milestone ID:', milestone.id);
-                              console.log('[FRONTEND] editingMilestone object:', JSON.stringify(editingMilestone, null, 2));
-                              console.log('[FRONTEND] editingMilestone.ownerId:', editingMilestone.ownerId);
-                              console.log('[FRONTEND] editingMilestone.ownerId type:', typeof editingMilestone.ownerId);
-                              console.log('[FRONTEND] onEditMilestone exists?', !!onEditMilestone);
                               
                               if (onEditMilestone) {
-                                console.log('[FRONTEND] Calling onEditMilestone with:', {
                                   priorityId: priority.id,
                                   milestoneId: milestone.id,
                                   updates: editingMilestone
@@ -808,7 +793,6 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              console.log('[PriorityCardClean] Entering edit mode for milestone:', {
                                 milestoneId: milestone.id,
                                 milestone_owner_id: milestone.owner_id,
                                 milestone_owner_name: milestone.owner_name,
@@ -825,7 +809,6 @@ const PriorityCardClean = ({
                                 ) : '',
                                 ownerId: milestone.owner_id || priority.owner?.id
                               });
-                              console.log('[PriorityCardClean] Edit state set to:', {
                                 title: milestone.title,
                                 dueDate: milestone.dueDate,
                                 ownerId: milestone.owner_id || priority.owner?.id

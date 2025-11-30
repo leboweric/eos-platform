@@ -60,7 +60,6 @@ const ScorecardPageClean = () => {
   
   // Debug scorecard preference changes
   useEffect(() => {
-    console.log('🔍 MAIN Scorecard - Scorecard preference state changed:', scorecardTimePeriodPreference);
   }, [scorecardTimePeriodPreference]);
   
   // Scorecard data
@@ -162,7 +161,6 @@ const ScorecardPageClean = () => {
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
       
       // Debug: Check for zero values in the response
-      console.log('Scorecard response:', response);
       
       if (response && response.data) {
         // Check for zero values in scores
@@ -170,7 +168,6 @@ const ScorecardPageClean = () => {
         Object.keys(scores).forEach(metricId => {
           Object.keys(scores[metricId]).forEach(date => {
             if (scores[metricId][date] === 0) {
-              console.log('Found zero value from backend - metricId:', metricId, 'date:', date, 'value:', scores[metricId][date]);
             }
           });
         });
@@ -180,7 +177,6 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.data.monthlyScores || {});
         setWeeklyNotes(response.data.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
-        console.log('🎯 CustomGoals from API:', response.data.customGoals);
         setCustomGoals(response.data.customGoals || {}); // Load custom goals
         setUsers(response.data.teamMembers || []);
       } else if (response) {
@@ -189,7 +185,6 @@ const ScorecardPageClean = () => {
         Object.keys(scores).forEach(metricId => {
           Object.keys(scores[metricId]).forEach(date => {
             if (scores[metricId][date] === 0) {
-              console.log('Found zero value from backend - metricId:', metricId, 'date:', date, 'value:', scores[metricId][date]);
             }
           });
         });
@@ -199,7 +194,6 @@ const ScorecardPageClean = () => {
         setMonthlyScores(response.monthlyScores || {});
         setWeeklyNotes(response.weeklyNotes || {}); // Load notes
         setMonthlyNotes(response.monthlyNotes || {}); // Load notes
-        console.log('🎯 CustomGoals from API:', response.customGoals);
         setCustomGoals(response.customGoals || {}); // Load custom goals
         setUsers(response.teamMembers || []);
       }
@@ -221,10 +215,8 @@ const ScorecardPageClean = () => {
       }
       
       // Always fetch organization data to get scorecard preference (even if theme is cached)
-      console.log('🔍 MAIN Scorecard - Fetching organization data...');
       const orgData = await organizationService.getOrganization();
       
-      console.log('🔍 MAIN Scorecard - Organization data received:', {
         ...orgData,
         scorecard_time_period_preference: orgData?.scorecard_time_period_preference,
         hasPreference: !!orgData?.scorecard_time_period_preference
@@ -241,7 +233,6 @@ const ScorecardPageClean = () => {
         
         // Set scorecard time period preference
         const preference = orgData.scorecard_time_period_preference || '13_week_rolling';
-        console.log('🔍 MAIN Scorecard - Setting scorecard preference:', {
           fromDB: orgData.scorecard_time_period_preference,
           final: preference
         });
@@ -574,7 +565,6 @@ const ScorecardPageClean = () => {
       }
       
       const valueToSave = scoreInputValue === '' ? null : parseFloat(scoreInputValue);
-      console.log('Saving score - Input value:', scoreInputValue, 'Value to save:', valueToSave, 'Type:', typeof valueToSave);
       
       await scorecardService.updateScore(
         orgId, 
@@ -655,7 +645,6 @@ const ScorecardPageClean = () => {
       ? `${startMonth} ${startDay} - ${endDay}`
       : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
     
-    console.log('📅 Main Scorecard week label formatted:', { date, formattedLabel });
     return formattedLabel;
   };
 
@@ -699,7 +688,6 @@ const ScorecardPageClean = () => {
     )].sort((a, b) => new Date(b) - new Date(a));
     
     if (allScoreDates.length === 0) {
-      console.log('ScorecardPage - No score data available, showing last 13 weeks ending with last week');
       
       // Show last 13 weeks, with the rightmost being last week
       for (let i = 12; i >= 0; i--) {
@@ -710,7 +698,6 @@ const ScorecardPageClean = () => {
         weekDates.push(weekStartStr);
       }
       
-      console.log('ScorecardPage - Showing weeks:', weekDates);
       return { labels, weekDates };
     }
     
@@ -755,7 +742,6 @@ const ScorecardPageClean = () => {
         }
       }
       
-      console.log(`ScorecardPage - Showing 13-week rolling (ending last week):`, weekDates);
       
       return { labels, weekDates };
     }
@@ -780,7 +766,6 @@ const ScorecardPageClean = () => {
       }
     });
     
-    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks (ending last week):`, weekDates);
     
     return { labels, weekDates };
   };
@@ -803,7 +788,6 @@ const ScorecardPageClean = () => {
     )].sort();
     
     if (allScoreDates.length === 0) {
-      console.log('ScorecardPage - No score data available, showing empty months');
       return { labels: [], monthDates: [] };
     }
     
@@ -837,7 +821,6 @@ const ScorecardPageClean = () => {
       }
     });
     
-    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} months with actual data:`, monthDates);
     
     return { labels, monthDates };
   };

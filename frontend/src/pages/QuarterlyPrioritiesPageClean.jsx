@@ -281,7 +281,6 @@ const QuarterlyPrioritiesPageClean = () => {
         
         allPriorities.forEach(priority => {
           if (priority.updates && priority.updates.length > 0) {
-            console.log(`Priority ${priority.id} has ${priority.updates.length} updates:`, 
               priority.updates.map(u => ({ 
                 id: u.id, 
                 hasId: !!u.id,
@@ -681,7 +680,6 @@ const QuarterlyPrioritiesPageClean = () => {
           }
         }
         
-        console.log('Milestone Progress Calculation:', {
           priorityId,
           completedCount,
           totalCount,
@@ -855,7 +853,6 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
-      console.log('Updating milestone with:', { priorityId, milestoneId, updates });
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
       // Update local state
@@ -1002,12 +999,10 @@ const QuarterlyPrioritiesPageClean = () => {
       'Are you sure you want to delete this update? This action cannot be undone.',
       async () => {
         try {
-          console.log('Attempting to delete update:', { priorityId, updateId });
           
           const orgId = user?.organizationId;
           const teamId = selectedDepartment?.id;
       
-      console.log('Delete params:', { orgId, teamId, priorityId, updateId });
       
       if (!orgId || !teamId) {
         throw new Error('Organization or department not found');
@@ -1015,7 +1010,6 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // Call backend to delete the update
       await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
-      console.log('Update deleted successfully from backend');
       
       // Update local state to reflect the deletion
       const removeUpdate = (updates) => 
@@ -1128,7 +1122,6 @@ const QuarterlyPrioritiesPageClean = () => {
       
       const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
-      console.log('Update creation result:', result);
       
       // Ensure we have a valid result object
       if (!result || !result.id) {
@@ -1386,7 +1379,6 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Missing organization or rock ID');
       }
 
-      console.log(`Generating action plan for Rock ${rockId}`);
 
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/organizations/${orgId}/rocks/${rockId}/action-plan`,
@@ -1641,7 +1633,6 @@ const QuarterlyPrioritiesPageClean = () => {
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Log for debugging
-      console.log('Updating priority status:', { priorityId, newStatus, orgId, teamId });
       
       if (!orgId) {
         throw new Error('Organization ID not found');
@@ -1718,10 +1709,6 @@ const QuarterlyPrioritiesPageClean = () => {
         
         const allPriorities = [...allCompanyPriorities, ...allIndividualPriorities];
         
-        console.log('Looking for priority with ID:', priorityId);
-        console.log('Company priorities:', allCompanyPriorities.length);
-        console.log('Individual priorities:', allIndividualPriorities.length);
-        console.log('Total priorities to search:', allPriorities.length);
         
         const priority = allPriorities.find(p => p.id === priorityId);
         
@@ -1743,7 +1730,6 @@ const QuarterlyPrioritiesPageClean = () => {
             related_priority_id: priorityId
           };
           
-          console.log('Creating issue with data:', issueData);
           
           await issuesService.createIssue(issueData);
           setSuccess('Issue created for off-track priority');
@@ -1840,7 +1826,6 @@ const QuarterlyPrioritiesPageClean = () => {
     ...currentTeamIndividualPriorities
   ];
   
-  console.log('Stats Debug:', {
     selectedTeam: selectedDepartment?.name,
     selectedTeamId: selectedDepartment?.id,
     isLeadershipTeam: isOnLeadershipTeam(),
@@ -2220,13 +2205,10 @@ const QuarterlyPrioritiesPageClean = () => {
                   
                   {(() => {
                     // Debug logging
-                    console.log('[QuarterlyPrioritiesPageClean] Checking overdue for:', priority.title);
-                    console.log('[QuarterlyPrioritiesPageClean] Milestones:', priority.milestones);
                     
                     const overdueMilestones = (priority.milestones || []).filter(
                       m => {
                         const daysUntil = getDaysUntilDue(m.dueDate || m.due_date);
-                        console.log('[QuarterlyPrioritiesPageClean] Milestone:', {
                           title: m.title,
                           dueDate: m.dueDate || m.due_date,
                           completed: m.completed,
@@ -2236,7 +2218,6 @@ const QuarterlyPrioritiesPageClean = () => {
                         return !m.completed && daysUntil < 0;
                       }
                     );
-                    console.log('[QuarterlyPrioritiesPageClean] Overdue count:', overdueMilestones.length);
                     
                     if (overdueMilestones.length > 0) {
                       return (
@@ -3187,10 +3168,7 @@ const QuarterlyPrioritiesPageClean = () => {
             };
             
             // Group priorities based on organization preference
-            console.log('🔧 Rock display preference:', rockDisplayPreference);
-            console.log('🔧 Organization data:', organization);
             const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
-            console.log('🔧 Grouped rocks result (fixed null names):', groupedRocks);
             
             if (allPriorities.length === 0) {
               return (

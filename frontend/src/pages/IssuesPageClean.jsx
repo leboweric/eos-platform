@@ -164,14 +164,12 @@ const IssuesPageClean = () => {
   };
 
   const fetchIssues = async () => {
-    console.log('🔍 fetchIssues called - refreshing all issues...');
     try {
       setLoading(true);
       setError(null);
       
       // Get effective team ID (like Level 10 Meeting does)
       const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
-      console.log('Issues Page - Fetching issues for effective team:', effectiveTeamId, 'selected department:', selectedDepartment?.id);
       
       // Fetch all types of issues for the specific team
       const [shortTermResponse, longTermResponse, archivedResponse] = await Promise.all([
@@ -180,15 +178,10 @@ const IssuesPageClean = () => {
         issuesService.getIssues(null, true, effectiveTeamId) // Get all archived issues
       ]);
       
-      console.log('📊 Fetch Results:');
-      console.log('  - Short term issues count:', shortTermResponse.data?.issues?.length);
-      console.log('  - Long term issues count:', longTermResponse.data?.issues?.length);
-      console.log('  - Short term issue details:', shortTermResponse.data?.issues?.map(i => ({ 
         id: i.id, 
         title: i.title, 
         timeline: i.timeline 
       })));
-      console.log('  - Long term issue details:', longTermResponse.data?.issues?.map(i => ({ 
         id: i.id, 
         title: i.title, 
         timeline: i.timeline 
@@ -199,7 +192,6 @@ const IssuesPageClean = () => {
       const longTerm = Array.isArray(longTermResponse?.data?.issues) ? longTermResponse.data.issues : [];
       const archived = Array.isArray(archivedResponse?.data?.issues) ? archivedResponse.data.issues : [];
       
-      console.log('✅ Setting state with:', { shortTerm: shortTerm.length, longTerm: longTerm.length, archived: archived.length });
       
       setShortTermIssues(shortTerm);
       setLongTermIssues(longTerm);
@@ -221,7 +213,6 @@ const IssuesPageClean = () => {
   };
 
   const handleEditIssue = (issue) => {
-    console.log('🔧 handleEditIssue called with issue:', {
       id: issue.id,
       title: issue.title,
       timeline: issue.timeline,
@@ -327,25 +318,16 @@ const IssuesPageClean = () => {
   };
 
   const handleTimelineChange = async (issueId, newTimeline) => {
-    console.log('🚀 handleTimelineChange called');
-    console.log('  - Issue ID:', issueId);
-    console.log('  - New Timeline:', newTimeline);
-    console.log('  - Current Short Term Issues:', shortTermIssues.length);
-    console.log('  - Current Long Term Issues:', longTermIssues.length);
     
     try {
       // Update the issue in the database FIRST
-      console.log('📡 Updating issue in database...');
       const response = await issuesService.updateIssue(issueId, { timeline: newTimeline });
-      console.log('✅ Database update response:', response);
       
       // Show success message
       setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
       
       // FORCE A FULL REFRESH OF THE ISSUES
-      console.log('🔄 Fetching fresh issue data...');
       await fetchIssues();
-      console.log('✅ Issues refreshed');
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
@@ -431,19 +413,14 @@ const IssuesPageClean = () => {
         actionLabel: 'Archive',
         themeColor: themeColors.primary,
         onConfirm: async () => {
-          console.log('🗃️ Archive onConfirm started');
           try {
             // Archive all closed issues
             await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
-            console.log('✅ Archive operations completed successfully');
             
             toast.success(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
             
             // Refresh the issues list
-            console.log('🔄 Starting fetchIssues...');
             await fetchIssues();
-            console.log('✅ fetchIssues completed successfully');
-            console.log('🗃️ Archive onConfirm finished - modal should close now');
             
             // ✅ CRITICAL FIX: Explicitly close the modal (backup safety measure)
             archiveConfirmation.hideConfirmation();
