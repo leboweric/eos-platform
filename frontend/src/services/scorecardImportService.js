@@ -7,11 +7,7 @@ const scorecardImportService = {
    * Preview import without saving
    */
   preview: async (formData) => {
-    const response = await axios.post(`${API_BASE}/preview`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    const response = await axios.post(`${API_BASE}/preview`, formData);
     return response.data;
   },
 
@@ -19,11 +15,7 @@ const scorecardImportService = {
    * Execute the actual import
    */
   execute: async (formData) => {
-    const response = await axios.post(`${API_BASE}/execute`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    const response = await axios.post(`${API_BASE}/execute`, formData);
     return response.data;
   },
 

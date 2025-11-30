@@ -17,12 +17,8 @@ export const organizationService = {
   uploadLogo: async (file) => {
     const formData = new FormData();
     formData.append('logo', file);
-    
-    const response = await axios.post('/organizations/current/logo', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+
+    const response = await axios.post('/organizations/current/logo', formData);
     return response.data;
   },
 

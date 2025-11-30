@@ -62,12 +62,8 @@ export const adminService = {
   previewBulkImport: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    
-    const response = await axios.post(`${API_BASE}/users/bulk-import/preview`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+
+    const response = await axios.post(`${API_BASE}/users/bulk-import/preview`, formData);
     return response.data;
   },
 
@@ -75,12 +71,8 @@ export const adminService = {
   performBulkImport: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    
-    const response = await axios.post(`${API_BASE}/users/bulk-import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+
+    const response = await axios.post(`${API_BASE}/users/bulk-import`, formData);
     return response.data;
   }
 };

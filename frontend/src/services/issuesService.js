@@ -147,12 +147,7 @@ export const issuesService = {
 
       const response = await axios.post(
         `/organizations/${orgId}/issues/${issueId}/attachments`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       return response.data.data;
     } catch (error) {

@@ -20,11 +20,7 @@ export const issuesImportService = {
    */
   async previewImport(formData) {
     try {
-      const response = await axios.post('/issues/import/preview', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/issues/import/preview', formData);
       return response.data.preview;
     } catch (error) {
       console.error('Failed to preview import:', error);
@@ -38,11 +34,7 @@ export const issuesImportService = {
    */
   async executeImport(formData) {
     try {
-      const response = await axios.post('/issues/import/execute', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/issues/import/execute', formData);
       return response.data.results;
     } catch (error) {
       console.error('Failed to execute import:', error);

@@ -123,12 +123,7 @@ export const todosService = {
     
     const response = await axios.post(
       `/organizations/${orgId}/todos/${todoId}/attachments`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
+      formData
     );
     return response.data.data;
   },
