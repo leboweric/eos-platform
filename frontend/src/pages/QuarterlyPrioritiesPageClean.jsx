@@ -1332,25 +1332,38 @@ const QuarterlyPrioritiesPageClean = () => {
         status: 'on-track',
         progress: 0
       };
-      
+
       const orgId = user?.organizationId;
       const teamId = selectedDepartment?.id;
-      
+
       if (!orgId || !teamId) {
         throw new Error('Organization or team not found');
       }
-      
+
       // Get current quarter and year
       const now = new Date();
       const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
       const currentYear = now.getFullYear();
       const quarter = `Q${currentQuarter}`;
-      
-      await quarterlyPrioritiesService.createPriority(orgId, teamId, {
+
+      const newPriority = await quarterlyPrioritiesService.createPriority(orgId, teamId, {
         ...priorityData,
         quarter,
         year: currentYear
       });
+
+      // Copy milestones from original priority
+      if (priority.milestones && priority.milestones.length > 0 && newPriority?.id) {
+        for (const milestone of priority.milestones) {
+          await quarterlyPrioritiesService.createMilestone(orgId, teamId, newPriority.id, {
+            title: milestone.title,
+            dueDate: milestone.due_date || milestone.dueDate,
+            ownerId: milestone.owner_id || milestone.ownerId,
+            completed: false // Reset completion status for duplicated milestones
+          });
+        }
+      }
+
       await fetchQuarterlyData();
       setSuccess('Priority duplicated successfully');
     } catch (error) {

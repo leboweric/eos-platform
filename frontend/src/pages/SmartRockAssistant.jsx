@@ -346,7 +346,6 @@ const SmartRockAssistant = () => {
       // Reset to Step 1 for next Rock creation
       setCurrentStep(0);
       setVision('');
-      setChallenges('');
       setGeneratedOptions([]);
       setSelectedOption(null);
       setMilestones([]);
