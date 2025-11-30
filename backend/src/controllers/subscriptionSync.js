@@ -6,9 +6,10 @@ import { stripe, PLAN_FEATURES } from '../config/stripe-flat-rate.js';
  * This handles cases where webhook failed or subscription exists in Stripe but not in DB
  */
 export const syncSubscriptionFromStripe = async (req, res) => {
-  const client = await getClient();
-  
+  let client;
+
   try {
+    client = await getClient();
     const organizationId = req.user.organization_id;
     const userEmail = req.user.email;
     
@@ -210,11 +211,13 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     });
     
   } catch (error) {
-    await rollbackTransaction(client);
+    if (client) {
+      await rollbackTransaction(client);
+    }
     console.error('Subscription sync error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to sync subscription',
-      message: error.message 
+      message: error.message
     });
   }
   // Note: client.release() is called by commitTransaction/rollbackTransaction

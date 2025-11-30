@@ -220,13 +220,15 @@ function extractGoalValue(goalStr) {
  * CRITICAL: Supports incremental re-imports with proper deduplication
  */
 export const execute = async (req, res) => {
-  const client = await db.getClient();
-  
+  let client;
+
   try {
+    client = await db.getClient();
+
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No file uploaded' 
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
       });
     }
 
@@ -470,14 +472,18 @@ export const execute = async (req, res) => {
       results
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error('Error executing scorecard import:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to import scorecard: ' + error.message
     });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 };
 
