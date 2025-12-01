@@ -157,6 +157,12 @@ export const useAudioRecording = (meetingId) => {
 
   // Start recording
   const startRecording = useCallback(async () => {
+    // Prevent double-clicks - if already recording or processing, ignore
+    if (isRecording || isProcessing) {
+      console.log('⚠️ Recording already in progress, ignoring duplicate start request');
+      return;
+    }
+
     try {
       setError(null);
       setIsProcessing(true);
@@ -212,7 +218,7 @@ export const useAudioRecording = (meetingId) => {
       setError('Failed to start recording: ' + err.message);
       setIsProcessing(false);
     }
-  }, [meetingId, requestPermissions, connectWebSocket, sendAudioData]);
+  }, [meetingId, requestPermissions, connectWebSocket, sendAudioData, isRecording, isProcessing]);
 
   // Pause recording
   const pauseRecording = useCallback(() => {

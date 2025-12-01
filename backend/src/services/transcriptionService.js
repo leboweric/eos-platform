@@ -93,21 +93,49 @@ class TranscriptionService {
       // STEP 3: Update connection with WebSocket reference
       connectionData.websocket = ws;
       
-      // STEP 4: Set up Promise with improved error handling
+      // STEP 4: Set up Promise with improved error handling and exponential backoff
+      // Exponential backoff: 15s -> 30s -> 60s (max 3 retries)
+      const maxRetries = 3;
+      const baseTimeout = 15000; // 15 seconds initial timeout
+      const retryAttempt = connectionData.retryAttempt || 0;
+      const currentTimeout = Math.min(baseTimeout * Math.pow(2, retryAttempt), 60000);
+
+      connectionData.retryAttempt = retryAttempt;
+
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          console.log('⏰ [WebSocket] Connection timeout after 10 seconds for transcript:', transcriptId);
+          console.log(`⏰ [WebSocket] Connection timeout after ${currentTimeout/1000} seconds for transcript:`, transcriptId);
           ws.close();
-          // Don't delete connection - mark as failed to allow retry
+
+          // Retry with exponential backoff if we haven't exceeded max retries
+          if (retryAttempt < maxRetries - 1) {
+            console.log(`🔄 [WebSocket] Retrying connection (attempt ${retryAttempt + 2}/${maxRetries}) for ${transcriptId}`);
+            connectionData.retryAttempt = retryAttempt + 1;
+            connectionData.status = 'retrying';
+
+            // Clean up current connection and retry
+            this.activeConnections.delete(transcriptId);
+
+            // Delay before retry (exponential: 1s, 2s, 4s)
+            setTimeout(() => {
+              this.startWebSocketTranscription(transcriptId, organizationId)
+                .then(resolve)
+                .catch(reject);
+            }, 1000 * Math.pow(2, retryAttempt));
+            return;
+          }
+
+          // Max retries exceeded - mark as failed
           connectionData.status = 'failed';
-          connectionData.errorMessage = 'WebSocket connection timeout after 10 seconds';
-          console.log('❌ [TranscriptionService] Connection marked as FAILED (timeout):', {
+          connectionData.errorMessage = `WebSocket connection timeout after ${maxRetries} attempts`;
+          console.log('❌ [TranscriptionService] Connection marked as FAILED (max retries exceeded):', {
             transcriptId,
             status: connectionData.status,
-            totalConnections: this.activeConnections.size
+            totalConnections: this.activeConnections.size,
+            attempts: retryAttempt + 1
           });
-          reject(new Error('WebSocket connection timeout after 10 seconds'));
-        }, 10000);
+          reject(new Error(`WebSocket connection timeout after ${maxRetries} attempts`));
+        }, currentTimeout);
         
         ws.on('open', () => {
           clearTimeout(timeout);
@@ -125,22 +153,51 @@ class TranscriptionService {
           
           // Universal Streaming API v3 - no session config needed, parameters are in URL
           console.log('🔧 [TranscriptionService] Universal Streaming API connected - ready to receive audio');
-          
-          // Set up keepalive to prevent WebSocket timeout
-          const keepaliveInterval = setInterval(() => {
+
+          // Track last message received time for connection health monitoring
+          connectionData.lastMessageTime = Date.now();
+          const HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+          const MAX_SILENCE_DURATION = 90000; // 90 seconds without any message = connection dead
+
+          // Set up health check to detect zombie connections
+          const healthCheckInterval = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
-              // Send periodic keepalive ping (AssemblyAI ignores unknown message types)
-              ws.send(JSON.stringify({ type: 'keepalive', timestamp: Date.now() }));
-              console.log(`💓 [Keepalive] Sent ping for ${transcriptId}`);
+              const silenceDuration = Date.now() - connectionData.lastMessageTime;
+
+              if (silenceDuration > MAX_SILENCE_DURATION) {
+                console.error(`💀 [HealthCheck] Connection appears dead for ${transcriptId} - no messages for ${Math.round(silenceDuration/1000)}s`);
+                console.log(`🔄 [HealthCheck] Attempting to close and reconnect for ${transcriptId}`);
+
+                // Mark connection as failed and close
+                connectionData.status = 'reconnecting';
+                ws.close(4000, 'Connection health check failed');
+                clearInterval(healthCheckInterval);
+
+                // Emit error to frontend so user knows
+                this.emitTranscriptUpdate(transcriptId, {
+                  type: 'connection_warning',
+                  message: 'Connection lost, attempting to reconnect...'
+                });
+
+                return;
+              }
+
+              // Send ping to keep connection alive (AssemblyAI ignores unknown types but it exercises the connection)
+              try {
+                ws.send(JSON.stringify({ type: 'keepalive', timestamp: Date.now() }));
+                console.log(`💓 [HealthCheck] Ping sent for ${transcriptId} (silence: ${Math.round(silenceDuration/1000)}s)`);
+              } catch (sendError) {
+                console.error(`❌ [HealthCheck] Failed to send ping for ${transcriptId}:`, sendError.message);
+              }
             } else {
-              console.warn(`⚠️ [Keepalive] WebSocket not open for ${transcriptId}, clearing interval`);
-              clearInterval(keepaliveInterval);
+              console.warn(`⚠️ [HealthCheck] WebSocket not open for ${transcriptId} (state: ${ws.readyState}), clearing interval`);
+              clearInterval(healthCheckInterval);
             }
-          }, 30000); // Every 30 seconds
-          
+          }, HEALTH_CHECK_INTERVAL);
+
           // Store interval for cleanup
-          connectionData.keepaliveInterval = keepaliveInterval;
-          console.log(`💓 [Keepalive] Started interval for ${transcriptId} (every 30s)`);
+          connectionData.keepaliveInterval = healthCheckInterval;
+          console.log(`💓 [HealthCheck] Started health monitoring for ${transcriptId} (every ${HEALTH_CHECK_INTERVAL/1000}s, max silence: ${MAX_SILENCE_DURATION/1000}s)`);
           
           resolve({
             sessionId: transcriptId,
@@ -150,6 +207,9 @@ class TranscriptionService {
         
         ws.on('message', (data) => {
           try {
+            // Update last message time for health check monitoring
+            connectionData.lastMessageTime = Date.now();
+
             const message = JSON.parse(data.toString());
             console.log('📨 [WebSocket] MESSAGE event fired:', {
               transcriptId,
@@ -158,7 +218,7 @@ class TranscriptionService {
               hasTranscript: !!message.transcript,
               endOfTurn: message.end_of_turn
             });
-            
+
             // Universal Streaming API v3 format
             if (message.type === 'Begin') {
               console.log('🎬 [WebSocket] Session Begin received:', {
@@ -806,10 +866,17 @@ class TranscriptionService {
    * Clean up inactive connections (called periodically)
    */
   cleanupInactiveConnections() {
-    const cutoffTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
-    
+    // Reduced cutoff from 30 to 15 minutes to prevent memory buildup
+    const cutoffTime = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes ago
+
     for (const [transcriptId, connection] of this.activeConnections.entries()) {
-      if (!connection.isActive || connection.startTime < cutoffTime) {
+      // Clean up connections that are inactive OR older than cutoff OR in failed/reconnecting status
+      const shouldCleanup = !connection.isActive ||
+                           connection.startTime < cutoffTime ||
+                           connection.status === 'failed' ||
+                           connection.status === 'reconnecting';
+
+      if (shouldCleanup) {
         console.log(`🧹 Cleaning up inactive connection for transcript ${transcriptId}`);
         
         if (connection.websocket) {
@@ -968,9 +1035,9 @@ class TranscriptionService {
 // Create singleton instance
 const transcriptionService = new TranscriptionService();
 
-// Clean up inactive connections every 10 minutes
+// Clean up inactive connections every 5 minutes (reduced from 10 to prevent memory buildup)
 setInterval(() => {
   transcriptionService.cleanupInactiveConnections();
-}, 10 * 60 * 1000);
+}, 5 * 60 * 1000);
 
 export default transcriptionService;
