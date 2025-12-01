@@ -465,7 +465,7 @@ const DashboardClean = () => {
       
       setDashboardData({
         priorities: displayPriorities,
-        todos: viewMode === 'team-view' ? userTodos : userTodos.slice(0, 5),
+        todos: userTodos, // Show all user todos from all teams
         issues: shortTermIssues,
         teamMembers: todosResponse.data.teamMembers || [],
         stats: {
