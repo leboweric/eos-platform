@@ -282,7 +282,7 @@ const DashboardClean = () => {
       
       setDashboardData({
         priorities: userPriorities, // Show all user priorities, not just 5
-        todos: userTodos.slice(0, 5),
+        todos: userTodos, // Show all user todos from all teams
         issues: shortTermIssues,
         teamMembers: todosResponse.data.teamMembers || [],
         stats: {
