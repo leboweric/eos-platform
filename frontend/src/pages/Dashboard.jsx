@@ -140,21 +140,24 @@ const DashboardClean = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, 'leadership');
       
-      let userDepartmentId = null;
+      // Get first non-leadership team for creating new items (default team context)
+      let defaultDepartmentId = null;
       if (user?.teams && user.teams.length > 0) {
         const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
         if (nonLeadershipTeam) {
-          userDepartmentId = nonLeadershipTeam.id;
+          defaultDepartmentId = nonLeadershipTeam.id;
         } else {
-          userDepartmentId = user.teams[0].id;
+          defaultDepartmentId = user.teams[0].id;
         }
       }
-      setCurrentDepartmentId(userDepartmentId);
-      
+      setCurrentDepartmentId(defaultDepartmentId);
+
+      // Pass null for departmentId to fetch To-Dos/Issues from ALL teams the user belongs to
+      // The backend getUserTeamScope() will return items from all user's teams when no explicit team is specified
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
-        todosService.getTodos(null, null, true, userDepartmentId),
-        issuesService.getIssues(null, false, userDepartmentId),
+        todosService.getTodos(null, null, true, null),
+        issuesService.getIssues(null, false, null),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
         businessBlueprintService.getBusinessBlueprint().catch(err => {
           console.error('Failed to fetch business blueprint:', err);
