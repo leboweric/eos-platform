@@ -236,8 +236,15 @@ const DashboardClean = () => {
       
       // Process todos
       const allTodos = todosResponse.data.todos || [];
-      
-      
+
+      // Debug: Log all todos and their team assignments
+      console.log('🔍 Dashboard - All todos received:', allTodos.length);
+      console.log('🔍 Dashboard - Todos by team:', allTodos.reduce((acc, todo) => {
+        const teamName = todo.team_name || 'No Team';
+        acc[teamName] = (acc[teamName] || 0) + 1;
+        return acc;
+      }, {}));
+
       const userTodos = allTodos.filter(todo => {
         // Check single assignee field
         const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
@@ -251,7 +258,15 @@ const DashboardClean = () => {
 
         return (isAssignedToUser || isInAssigneesArray) && isNotCompleted;
       });
-      
+
+      // Debug: Log filtered user todos by team
+      console.log('🔍 Dashboard - User todos after filtering:', userTodos.length);
+      console.log('🔍 Dashboard - User todos by team:', userTodos.reduce((acc, todo) => {
+        const teamName = todo.team_name || 'No Team';
+        acc[teamName] = (acc[teamName] || 0) + 1;
+        return acc;
+      }, {}));
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
