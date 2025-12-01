@@ -641,40 +641,88 @@ export const concludeMeeting = async (req, res) => {
       // Continue with empty todos rather than failing
     }
 
-    // Format todos from request body (if provided)
-    const formattedNewTodos = (todos?.added || []).map(todo => ({
-      title: todo.title || todo.todo || 'Untitled',
-      assignee: todo.assigned_to_name || todo.assignee || todo.assigned_to || 'Unassigned',
-      dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'
-    }));
+    // Get today's date at start of day for filtering "new" items
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    const formattedCompletedItems = (todos?.completed || []).map(todo => 
-      todo.title || todo.todo || 'Untitled'
-    );
+    console.log('📧 [Email Filter] Today start:', todayStart.toISOString());
+    console.log('📧 [Email Filter] Raw todos received:', { added: todos?.added?.length || 0, completed: todos?.completed?.length || 0 });
+    console.log('📧 [Email Filter] Raw issues received:', { count: Array.isArray(issues) ? issues.length : 'object format' });
+
+    // Format todos from request body - FILTER to only include items created TODAY
+    const formattedNewTodos = (todos?.added || [])
+      .filter(todo => {
+        if (!todo.created_at) return false; // No timestamp = exclude from "new"
+        const todoCreated = new Date(todo.created_at);
+        return todoCreated >= todayStart;
+      })
+      .map(todo => ({
+        title: todo.title || todo.todo || 'Untitled',
+        assignee: todo.assigned_to_name || todo.assignee || todo.assigned_to || 'Unassigned',
+        dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'
+      }));
+
+    console.log(`📧 [Email Filter] Todos added: ${todos?.added?.length || 0} → ${formattedNewTodos.length} (filtered by created_at >= today)`);
+
+    // Format completed todos - FILTER to only include items completed TODAY
+    const formattedCompletedItems = (todos?.completed || [])
+      .filter(todo => {
+        if (!todo.completed_at) return false; // No timestamp = exclude from "completed"
+        const todoCompleted = new Date(todo.completed_at);
+        return todoCompleted >= todayStart;
+      })
+      .map(todo => todo.title || todo.todo || 'Untitled');
+
+    console.log(`📧 [Email Filter] Todos completed: ${todos?.completed?.length || 0} → ${formattedCompletedItems.length} (filtered by completed_at >= today)`);
 
     // Format issues - handle both array and object structure
+    // CRITICAL: Filter by date to only include items created/resolved TODAY
     let resolvedIssues = [];
     let unresolvedIssues = [];
-    
+
     if (Array.isArray(issues)) {
-      // Legacy format: array of issues
-      resolvedIssues = issues.filter(issue => issue.is_solved).map(issue => 
-        issue.title || issue.issue || 'Untitled issue'
-      );
-      unresolvedIssues = issues.filter(issue => !issue.is_solved).map(issue => 
-        issue.title || issue.issue || 'Untitled issue'
-      );
+      // Array format: filter by created_at and resolved_at for TODAY only
+      resolvedIssues = issues
+        .filter(issue => {
+          if (!issue.is_solved) return false;
+          if (!issue.resolved_at) return false; // No resolved timestamp = exclude
+          const resolvedDate = new Date(issue.resolved_at);
+          return resolvedDate >= todayStart;
+        })
+        .map(issue => issue.title || issue.issue || 'Untitled issue');
+
+      unresolvedIssues = issues
+        .filter(issue => {
+          if (issue.is_solved) return false; // Solved issues don't go in "new"
+          if (!issue.created_at) return false; // No created timestamp = exclude from "new"
+          const createdDate = new Date(issue.created_at);
+          return createdDate >= todayStart;
+        })
+        .map(issue => issue.title || issue.issue || 'Untitled issue');
+
+      console.log(`📧 [Email Filter] Issues from array: ${issues.length} → ${unresolvedIssues.length} new + ${resolvedIssues.length} solved (filtered by date >= today)`);
     } else if (issues && typeof issues === 'object') {
       // New format: object with {discussed, created, solved}
-      // Solved issues go to resolved
-      resolvedIssues = (issues.solved || []).map(issue => 
-        issue.title || issue.issue || 'Untitled issue'
-      );
-      // Only created issues go to unresolved (New Issues)
-      // Discussed issues are for context only, not for email summary
-      unresolvedIssues = (issues.created || [])
-        .filter(issue => !issue.is_solved)
+      // Solved issues go to resolved - filter by resolved_at
+      resolvedIssues = (issues.solved || [])
+        .filter(issue => {
+          if (!issue.resolved_at) return false;
+          const resolvedDate = new Date(issue.resolved_at);
+          return resolvedDate >= todayStart;
+        })
         .map(issue => issue.title || issue.issue || 'Untitled issue');
+
+      // Only created issues go to unresolved (New Issues) - filter by created_at
+      unresolvedIssues = (issues.created || [])
+        .filter(issue => {
+          if (issue.is_solved) return false;
+          if (!issue.created_at) return false;
+          const createdDate = new Date(issue.created_at);
+          return createdDate >= todayStart;
+        })
+        .map(issue => issue.title || issue.issue || 'Untitled issue');
+
+      console.log(`📧 [Email Filter] Issues from object: ${unresolvedIssues.length} new + ${resolvedIssues.length} solved (filtered by date >= today)`);
     }
 
     // Format meeting type for display
