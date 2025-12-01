@@ -221,10 +221,12 @@ export const unpublishFromDepartments = async (itemId, tableName) => {
 export const getUserTeamIds = async (userId, organizationId) => {
   try {
     const result = await db.query(
-      `SELECT team_id FROM team_members WHERE user_id = $1 AND team_id IN 
-       (SELECT id FROM teams WHERE organization_id = $2)`,
+      `SELECT tm.team_id, t.name as team_name FROM team_members tm
+       JOIN teams t ON tm.team_id = t.id
+       WHERE tm.user_id = $1 AND t.organization_id = $2`,
       [userId, organizationId]
     );
+    console.log(`🔍 getUserTeamIds for user ${userId}:`, result.rows.map(r => ({ id: r.team_id, name: r.team_name })));
     return result.rows.map(row => row.team_id);
   } catch (error) {
     console.error("Error getting user's team IDs:", error);

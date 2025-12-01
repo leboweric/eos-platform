@@ -50,7 +50,9 @@ export const getTodos = async (req, res) => {
     // =====================================================================
     // MANDATORY TEAM ISOLATION
     // =====================================================================
+    console.log('🔍 Team scope debug:', { userId, orgId, department_id, paramIndex });
     const teamScope = await getUserTeamScope(userId, orgId, 't', department_id, paramIndex); // Use 't' as the alias for the todos table
+    console.log('🔍 Team scope result:', { query: teamScope.query, params: teamScope.params });
     conditions.push(`(${teamScope.query})`);
     if (teamScope.params.length > 0) {
       params.push(teamScope.params[0]); // CORRECTED LINE
