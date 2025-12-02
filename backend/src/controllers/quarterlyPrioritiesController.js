@@ -1464,6 +1464,22 @@ export const getCurrentPriorities = async (req, res) => {
 
     // Get "My Milestones" - milestones assigned to current user on OTHER people's Rocks
     // This allows users to see milestones they're responsible for even if they don't own the Rock
+
+    // Debug: Log user ID and org ID for the query
+    console.log(`[MY_MILESTONES] Querying for user ${req.user.id} in org ${orgId}`);
+
+    // Debug: Check if there are ANY milestones assigned to this user
+    const debugAllMilestones = await query(
+      `SELECT pm.id, pm.title, pm.owner_id, pm.priority_id,
+              p.title as rock_title, p.owner_id as rock_owner_id,
+              p.organization_id
+       FROM priority_milestones pm
+       LEFT JOIN quarterly_priorities p ON pm.priority_id = p.id
+       WHERE pm.owner_id = $1`,
+      [req.user.id]
+    );
+    console.log(`[MY_MILESTONES] All milestones assigned to user ${req.user.id}:`, debugAllMilestones.rows);
+
     const myMilestonesResult = await query(
       `SELECT
         pm.*,
@@ -1485,6 +1501,8 @@ export const getCurrentPriorities = async (req, res) => {
        ORDER BY pm.due_date ASC NULLS LAST, pm.created_at ASC`,
       [req.user.id, orgId]
     );
+
+    console.log(`[MY_MILESTONES] Filtered results (excluding own Rocks):`, myMilestonesResult.rows);
 
     myMilestones = myMilestonesResult.rows.map(m => ({
       id: m.id,
