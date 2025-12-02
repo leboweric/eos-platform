@@ -23,7 +23,8 @@ export const quarterlyPrioritiesService = {
       companyPriorities: response.data.data?.companyPriorities || [],
       teamMemberPriorities: response.data.data?.teamMemberPriorities || {},
       predictions: response.data.data?.predictions || {},
-      teamMembers: response.data.data?.teamMembers || []
+      teamMembers: response.data.data?.teamMembers || [],
+      myMilestones: response.data.data?.myMilestones || []
     };
   },
 
