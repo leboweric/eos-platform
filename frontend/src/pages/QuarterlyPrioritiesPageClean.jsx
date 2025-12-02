@@ -2569,9 +2569,14 @@ const QuarterlyPrioritiesPageClean = () => {
                             style={milestone.completed ? { textDecorationColor: themeColors.primary } : {}}>
                             {milestone.title}
                           </span>
+                          {milestone.owner_name && (
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                              {milestone.owner_name}
+                            </span>
+                          )}
                           <span className={`text-xs font-medium ${
-                            !milestone.completed && getDaysUntilDue(milestone.dueDate) < 0 
-                              ? 'text-red-600' 
+                            !milestone.completed && getDaysUntilDue(milestone.dueDate) < 0
+                              ? 'text-red-600'
                               : !milestone.completed && getDaysUntilDue(milestone.dueDate) <= 3
                               ? 'text-orange-600'
                               : 'text-gray-500'
@@ -4221,12 +4226,17 @@ const QuarterlyPrioritiesPageClean = () => {
                                           <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                             {milestone.title}
                                           </span>
+                                          {milestone.owner_name && (
+                                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                              {milestone.owner_name}
+                                            </span>
+                                          )}
                                           <span className="text-xs text-slate-500">
                                             {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                           </span>
                                         </div>
                                       ))}
-                                      
+
                                       {/* Add milestone button section if no milestones */}
                                       {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
                                         <div className="space-y-3">
@@ -4237,8 +4247,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                               className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                                               onClick={() => {
                                                 setAddingMilestoneFor(priority.id);
-                                                setNewMilestone({ 
-                                                  title: '', 
+                                                setNewMilestone({
+                                                  title: '',
                                                   dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
                                                 });
                                               }}
