@@ -15,9 +15,28 @@ export const upload = multer({
 });
 
 // Helper function to get team members
-async function getTeamMembers(orgId) {
+async function getTeamMembers(orgId, teamId = null) {
+  // If teamId is provided, get only members of that specific team
+  if (teamId) {
+    const result = await db.query(
+      `SELECT
+        u.id,
+        u.first_name || ' ' || u.last_name as name,
+        u.role,
+        u.first_name,
+        u.last_name
+       FROM users u
+       INNER JOIN team_members tm ON u.id = tm.user_id
+       WHERE u.organization_id = $1 AND tm.team_id = $2
+       ORDER BY u.first_name, u.last_name`,
+      [orgId, teamId]
+    );
+    return result.rows;
+  }
+
+  // Fallback: get all org members (for backward compatibility)
   const result = await db.query(
-    `SELECT 
+    `SELECT
       u.id,
       u.first_name || ' ' || u.last_name as name,
       u.role,
@@ -28,7 +47,7 @@ async function getTeamMembers(orgId) {
      ORDER BY u.first_name, u.last_name`,
     [orgId]
   );
-  
+
   return result.rows;
 }
 
@@ -116,9 +135,10 @@ export const getIssues = async (req, res) => {
     
     console.log(`Found ${issues.rows.length} issues for org ${orgId}`);
     
-    // Get team members for the organization
-    const teamMembers = await getTeamMembers(orgId);
-    
+    // Get team members - filter by user's team if available
+    const teamIdForMembers = department_id || userTeam?.id || null;
+    const teamMembers = await getTeamMembers(orgId, teamIdForMembers);
+
     res.json({
       success: true,
       data: {
