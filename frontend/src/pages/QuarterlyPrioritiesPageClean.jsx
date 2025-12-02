@@ -2570,7 +2570,7 @@ const QuarterlyPrioritiesPageClean = () => {
                             {milestone.title}
                           </span>
                           {milestone.owner_name && (
-                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
                               {milestone.owner_name}
                             </span>
                           )}
@@ -3474,7 +3474,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   {milestone.title}
                                                 </span>
                                                 {milestone.owner_name && (
-                                                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
                                                     {milestone.owner_name}
                                                   </span>
                                                 )}
@@ -3861,7 +3861,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   {milestone.title}
                                                 </span>
                                                 {milestone.owner_name && (
-                                                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
                                                     {milestone.owner_name}
                                                   </span>
                                                 )}
@@ -4227,7 +4227,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                             {milestone.title}
                                           </span>
                                           {milestone.owner_name && (
-                                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                            <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
                                               {milestone.owner_name}
                                             </span>
                                           )}
