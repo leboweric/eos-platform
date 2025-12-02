@@ -1935,6 +1935,16 @@ const DashboardClean = () => {
                             checked={milestone.completed}
                             onChange={async (e) => {
                               e.stopPropagation();
+                              const newCompleted = e.target.checked;
+
+                              // Optimistic update - update UI immediately
+                              setDashboardData(prev => ({
+                                ...prev,
+                                myMilestones: prev.myMilestones.map(m =>
+                                  m.id === milestone.id ? { ...m, completed: newCompleted } : m
+                                )
+                              }));
+
                               try {
                                 const orgId = user?.organizationId || user?.organization_id;
                                 const teamId = getTeamId(user);
@@ -1943,11 +1953,17 @@ const DashboardClean = () => {
                                   teamId,
                                   milestone.rock.id,
                                   milestone.id,
-                                  { completed: e.target.checked }
+                                  { completed: newCompleted }
                                 );
-                                fetchDashboardData();
                               } catch (err) {
                                 console.error('Failed to update milestone:', err);
+                                // Revert on error
+                                setDashboardData(prev => ({
+                                  ...prev,
+                                  myMilestones: prev.myMilestones.map(m =>
+                                    m.id === milestone.id ? { ...m, completed: !newCompleted } : m
+                                  )
+                                }));
                               }
                             }}
                             className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
