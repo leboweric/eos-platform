@@ -468,9 +468,9 @@ class MeetingSocketService {
           meeting.ratings = new Map();
         }
         
-        // Use the userId from socket data as primary, fall back to provided data
-        const ratingUserId = socketUserId || data.userId;
-        const ratingUserName = userData.userName || data.userName;
+        // Use the userId from data (for facilitator-entered ratings for non-app users) or socket user
+        const ratingUserId = data.userId || socketUserId;
+        const ratingUserName = data.userName || userData.userName;
         
         if (process.env.LOG_LEVEL === 'debug') {
           console.log('💾 Storing rating:', {
