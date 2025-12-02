@@ -6006,10 +6006,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-slate-600 text-lg leading-relaxed">
-                    Headlines should be brief updates and archived upon conclusion of the meeting. If they require discussion they should be added to the Issues list for prioritization.
-                  </p>
+                <div className="flex justify-end items-center">
                   <div className="flex items-center gap-3">
                     {/* Add Headline Button */}
                     <Button
