@@ -7436,6 +7436,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           max="10"
                                           step="0.1"
                                           placeholder="1-10"
+                                          id={`rating-input-${member.id}`}
                                           className="w-16 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                           onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
@@ -7464,8 +7465,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           }}
                                         />
                                         <button
-                                          onClick={(e) => {
-                                            const input = e.target.previousSibling;
+                                          onClick={() => {
+                                            const input = document.getElementById(`rating-input-${member.id}`);
+                                            if (!input) return;
                                             const rating = parseFloat(input.value);
                                             if (rating >= 1 && rating <= 10 && broadcastRating) {
                                               // Optimistic update - immediately add to participantRatings
