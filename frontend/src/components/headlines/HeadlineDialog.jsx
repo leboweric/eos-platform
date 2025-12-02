@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { AlertCircle, Megaphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -102,19 +102,16 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline, currentTeamId })
             <Label htmlFor="headline-text" className="text-sm font-semibold text-slate-700">
               Headline Text <span className="text-red-500">*</span>
             </Label>
-            <Textarea
-              id="headline-text"
-              value={headlineText}
-              onChange={(e) => setHeadlineText(e.target.value)}
-              placeholder={headlineType === 'customer'
-                ? 'Enter customer headline...\n\nTip: Use bullet points for lists:\n- Item one\n- Item two'
-                : 'Enter employee headline...\n\nTip: Use bullet points for lists:\n- New hire: John Smith\n- Department: Engineering'}
-              rows={6}
-              className="resize-y bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 min-h-[120px]"
-            />
-            <p className="text-xs text-slate-500">
-              Tip: Press Enter for new lines. Start lines with - or • for bullet points.
-            </p>
+            <div className="h-[180px] overflow-hidden border rounded-xl shadow-sm">
+              <RichTextEditor
+                value={headlineText}
+                onChange={setHeadlineText}
+                placeholder={headlineType === 'customer'
+                  ? 'Enter customer headline...'
+                  : 'Enter employee headline...'}
+                className="border-0 shadow-none h-full"
+              />
+            </div>
           </div>
         </div>
 

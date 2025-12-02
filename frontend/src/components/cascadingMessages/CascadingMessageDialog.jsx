@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Send, Users } from 'lucide-react';
@@ -118,22 +118,14 @@ const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
             <Label htmlFor="message" className="text-sm font-semibold text-slate-700">
               Message <span className="text-red-500">*</span>
             </Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter your message to cascade to other teams...
-
-Tip: Use bullet points for lists:
-- Item one
-- Item two"
-              rows={6}
-              className="resize-y bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 min-h-[120px]"
-              autoFocus
-            />
-            <p className="text-xs text-slate-500">
-              Tip: Press Enter for new lines. Start lines with - or • for bullet points.
-            </p>
+            <div className="h-[180px] overflow-hidden border rounded-xl shadow-sm">
+              <RichTextEditor
+                value={message}
+                onChange={setMessage}
+                placeholder="Enter your message to cascade to other teams..."
+                className="border-0 shadow-none h-full"
+              />
+            </div>
           </div>
 
           {/* Team Selection */}
