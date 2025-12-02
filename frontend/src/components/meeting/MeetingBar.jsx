@@ -24,20 +24,21 @@ import {
 } from 'lucide-react';
 import useMeeting from '../../hooks/useMeeting';
 
-const MeetingBar = ({ 
+const MeetingBar = ({
   meetingCode,
   participants,
   onLeave,
   isLeader,
   currentLeader,
   onNavigate,
-  meetingStartTime, 
+  meetingStartTime,
   meetingStarted,
   isFollowing,
   toggleFollow,
   isPaused = false,
   onPauseResume,
-  totalPausedTime = 0
+  totalPausedTime = 0,
+  onClaimPresenter
 }) => {
   const {
     isEnabled,
@@ -214,24 +215,39 @@ const MeetingBar = ({
             <>
               {/* Follow toggle (only for non-leaders) */}
               {!isLeader && (
-                <Button
-                  onClick={toggleFollow}
-                  variant={isFollowing ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  {isFollowing ? (
-                    <>
-                      <Eye className="h-4 w-4" />
-                      Following Leader
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="h-4 w-4" />
-                      Not Following
-                    </>
+                <>
+                  <Button
+                    onClick={toggleFollow}
+                    variant={isFollowing ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {isFollowing ? (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Following Leader
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4" />
+                        Not Following
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Take Control button - allows non-leader to claim presenter role */}
+                  {onClaimPresenter && (
+                    <Button
+                      onClick={onClaimPresenter}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                    >
+                      <Crown className="h-4 w-4" />
+                      Take Control
+                    </Button>
                   )}
-                </Button>
+                </>
               )}
 
               {/* Leader indicator */}

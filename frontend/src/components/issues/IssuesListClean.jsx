@@ -7,7 +7,7 @@ import { debugTheme } from '../../utils/debugTheme';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
+import {
   Edit,
   User,
   Calendar,
@@ -30,6 +30,7 @@ import {
   GripVertical,
   Newspaper,
   ChevronRight,
+  ChevronDown,
   Check
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -94,6 +95,65 @@ const IssuesListClean = ({
   const [isDragging, setIsDragging] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedGroups, setExpandedGroups] = useState({});  // Track which grouped issues are expanded
+
+  // Helper function to extract days overdue from issue description
+  const getDaysOverdue = (issue) => {
+    if (!issue.description) return 0;
+    const match = issue.description.match(/(\d+)\s*days?\s*overdue/i);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  // Helper function to group overdue issues by title
+  const groupOverdueIssues = (issuesList) => {
+    const groups = {};
+    const result = [];
+
+    issuesList.forEach(issue => {
+      // Only group auto-created overdue issues (title starts with "Overdue:")
+      if (issue.title?.startsWith('Overdue:')) {
+        const baseTitle = issue.title;
+        if (!groups[baseTitle]) {
+          groups[baseTitle] = {
+            primaryIssue: issue,
+            relatedIssues: [issue],
+            maxDaysOverdue: getDaysOverdue(issue)
+          };
+        } else {
+          groups[baseTitle].relatedIssues.push(issue);
+          // Update primary issue to the one with most days overdue
+          const daysOverdue = getDaysOverdue(issue);
+          if (daysOverdue > groups[baseTitle].maxDaysOverdue) {
+            groups[baseTitle].maxDaysOverdue = daysOverdue;
+            groups[baseTitle].primaryIssue = issue;
+          }
+        }
+      } else {
+        // Non-overdue issues go directly to result
+        result.push({ type: 'single', issue });
+      }
+    });
+
+    // Add grouped issues to result
+    Object.keys(groups).forEach(title => {
+      const group = groups[title];
+      if (group.relatedIssues.length > 1) {
+        // Multiple issues with same title - create a group
+        result.push({
+          type: 'group',
+          primaryIssue: group.primaryIssue,
+          relatedIssues: group.relatedIssues,
+          groupKey: title,
+          ownerCount: group.relatedIssues.length
+        });
+      } else {
+        // Single issue - treat as regular
+        result.push({ type: 'single', issue: group.primaryIssue });
+      }
+    });
+
+    return result;
+  };
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -103,12 +163,12 @@ const IssuesListClean = ({
       setSortedIssues([...(issues || [])]);
       return;
     }
-    
+
     const sorted = [...(issues || [])].sort((a, b) => {
       if (!sortField) return 0;
-      
+
       let aValue, bValue;
-      
+
       if (sortField === 'owner') {
         aValue = (a.owner_name || 'zzz').toLowerCase();
         bValue = (b.owner_name || 'zzz').toLowerCase();
@@ -122,14 +182,25 @@ const IssuesListClean = ({
         aValue = a.status || 'zzz';
         bValue = b.status || 'zzz';
       }
-      
+
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-    
+
     setSortedIssues(sorted);
   }, [issues, sortField, sortDirection, enableDragDrop]);
+
+  // Compute grouped issues for display
+  const groupedIssuesForDisplay = groupOverdueIssues(sortedIssues);
+
+  // Toggle group expansion
+  const toggleGroupExpand = (groupKey) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
+  };
 
   // Fetch updates when an issue is selected
   useEffect(() => {
@@ -621,14 +692,188 @@ const IssuesListClean = ({
               <div className="w-24 text-center">Created</div>
             </div>
             
-            {/* Issue Rows - COPIED from Level 10 Meeting */}
-            {sortedIssues.map((issue, index) => {
+            {/* Issue Rows - With grouping support for overdue issues */}
+            {groupedIssuesForDisplay.map((item, index) => {
+              // Handle grouped issues
+              if (item.type === 'group') {
+                const { primaryIssue, relatedIssues, groupKey, ownerCount } = item;
+                const isGroupExpanded = expandedGroups[groupKey];
+                const allSolved = relatedIssues.every(i => i.status === 'closed' || i.status === 'solved');
+
+                return (
+                  <div key={groupKey} className="border-b border-slate-100 last:border-0">
+                    {/* Group Header Row */}
+                    <div
+                      className="flex items-center px-3 py-3 group cursor-pointer hover:bg-orange-50 transition-colors"
+                      style={{
+                        borderLeftWidth: '4px',
+                        borderLeftColor: '#F97316', // Orange for grouped overdue
+                        borderLeftStyle: 'solid',
+                        backgroundColor: isGroupExpanded ? 'rgb(255 247 237)' : undefined
+                      }}
+                      onClick={() => toggleGroupExpand(groupKey)}
+                    >
+                      {/* Expand/Collapse Icon */}
+                      <div className="w-8 mr-2 flex items-center justify-center">
+                        {isGroupExpanded ? (
+                          <ChevronDown className="h-4 w-4 text-orange-500" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-orange-500" />
+                        )}
+                      </div>
+
+                      {/* Status - Show check only if ALL are solved */}
+                      <div className="w-12 flex items-center relative">
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-full"
+                          style={{
+                            backgroundColor: allSolved ? themeColors.primary + '20' : 'transparent',
+                            border: `2px solid ${allSolved ? themeColors.primary : '#E2E8F0'}`
+                          }}
+                        >
+                          {allSolved && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
+                        </div>
+                      </div>
+
+                      {/* Issue Number */}
+                      <div className="w-8 ml-2 text-sm font-medium text-slate-600">
+                        {index + 1}.
+                      </div>
+
+                      {/* Issue Title with Owner Count Badge */}
+                      <div className="flex-1 ml-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold text-slate-900 leading-tight ${allSolved ? 'line-through opacity-75' : ''}`}>
+                            {primaryIssue.title}
+                          </span>
+                          <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300 text-xs">
+                            <Users className="h-3 w-3 mr-1" />
+                            {ownerCount} owners
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Owner - Show "Multiple" */}
+                      <div className="w-32 text-center">
+                        <span className="text-sm text-orange-600 font-medium">
+                          {ownerCount} people
+                        </span>
+                      </div>
+
+                      {/* Created Date */}
+                      <div className="w-24 text-center">
+                        <span className="text-xs text-slate-500">
+                          {format(new Date(primaryIssue.created_at), 'MMM d')}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="w-8" />
+                    </div>
+
+                    {/* Expanded Group Members */}
+                    {isGroupExpanded && (
+                      <div className="bg-orange-50/50 border-l-4 border-orange-200 ml-4">
+                        {relatedIssues.map((issue, subIndex) => {
+                          const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
+
+                          return (
+                            <IssueContextMenu
+                              key={issue.id}
+                              issue={issue}
+                              onEdit={onEdit}
+                              onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
+                              onCreateTodo={onCreateTodo}
+                              onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+                              onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+                              onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+                              onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+                              currentUserId={user?.id}
+                            >
+                              <div className="flex items-center px-3 py-2 group hover:bg-orange-100/50 transition-colors border-b border-orange-100 last:border-0">
+                                {/* Indent spacer */}
+                                <div className="w-8 mr-2" />
+
+                                {/* Status Checkbox */}
+                                <div className="w-12 flex items-center relative">
+                                  <div
+                                    className="flex items-center justify-center w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                    style={{
+                                      backgroundColor: isSolved ? themeColors.primary + '20' : 'transparent',
+                                      border: `2px solid ${isSolved ? themeColors.primary : '#E2E8F0'}`
+                                    }}
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        const newStatus = isSolved ? 'open' : 'closed';
+                                        await onStatusChange(issue.id, newStatus);
+                                      } catch (error) {
+                                        console.error('Failed to update issue status:', error);
+                                      }
+                                    }}
+                                  >
+                                    {isSolved && <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />}
+                                  </div>
+                                </div>
+
+                                {/* Sub-number */}
+                                <div className="w-8 ml-2 text-xs text-slate-400">
+                                  {index + 1}.{subIndex + 1}
+                                </div>
+
+                                {/* Title (smaller) */}
+                                <div className="flex-1 ml-3">
+                                  <span
+                                    className={`text-sm text-slate-700 cursor-pointer hover:text-blue-600 ${isSolved ? 'line-through opacity-75' : ''}`}
+                                    onClick={() => onEdit && onEdit(issue)}
+                                  >
+                                    {getDaysOverdue(issue)} days overdue
+                                  </span>
+                                </div>
+
+                                {/* Owner */}
+                                <div className="w-32 text-center">
+                                  <span className="text-sm text-slate-600">
+                                    {issue.owner_name || 'Unassigned'}
+                                  </span>
+                                </div>
+
+                                {/* Created */}
+                                <div className="w-24 text-center">
+                                  <span className="text-xs text-slate-500">
+                                    {format(new Date(issue.created_at), 'MMM d')}
+                                  </span>
+                                </div>
+
+                                {/* Edit button */}
+                                <div className="w-8 flex items-center justify-center">
+                                  <button
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEdit && onEdit(issue);
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3 text-slate-600" />
+                                  </button>
+                                </div>
+                              </div>
+                            </IssueContextMenu>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Handle single issues (non-grouped)
+              const issue = item.issue;
               const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
-              const isExpanded = selectedIssue?.id === issue.id;
               const isTopThree = index < 3;  // Top 3 issues get blue border
-              
+
               return (
-                <IssueContextMenu 
+                <IssueContextMenu
                   key={issue.id}
                   issue={issue}
                   onEdit={onEdit}
@@ -640,7 +885,7 @@ const IssuesListClean = ({
                   onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
                   currentUserId={user?.id}
                 >
-                  <div 
+                  <div
                     className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
                     style={{
                       borderLeftWidth: isTopThree ? '4px' : '0px',
@@ -648,8 +893,8 @@ const IssuesListClean = ({
                       borderLeftStyle: 'solid'
                     }}
                   >
-                      {/* Main Issue Row - COPIED from Level 10 Meeting */}
-                      <div 
+                      {/* Main Issue Row */}
+                      <div
                         className={`flex items-center px-3 py-3 group ${
                           draggedIssueIndex === index ? 'opacity-50' : ''
                         } ${dragOverIssueIndex === index ? 'ring-2 ring-blue-400' : ''}`}
@@ -660,7 +905,7 @@ const IssuesListClean = ({
                       >
                         {/* Drag Handle */}
                         {enableDragDrop && (
-                          <div 
+                          <div
                             className="w-8 mr-2 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
                             draggable="true"
                             onDragStart={(e) => handleDragStart(e, issue, index)}
@@ -669,10 +914,10 @@ const IssuesListClean = ({
                             <GripVertical className="h-4 w-4 text-slate-400" />
                           </div>
                         )}
-                        
-                        {/* Status Checkbox - EXACT COPY from Level 10 Meeting */}
+
+                        {/* Status Checkbox */}
                         <div className="w-12 flex items-center relative">
-                          <div 
+                          <div
                             className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                             style={{
                               backgroundColor: isSolved ? themeColors.primary + '20' : 'transparent',
@@ -690,16 +935,16 @@ const IssuesListClean = ({
                             {isSolved && <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />}
                           </div>
                         </div>
-                        
+
                         {/* Issue Number */}
                         <div className="w-8 ml-2 text-sm font-medium text-slate-600">
                           {index + 1}.
                         </div>
-                        
-                        {/* Issue Title - COPIED from Level 10 Meeting */}
+
+                        {/* Issue Title */}
                         <div className="flex-1 ml-3">
                           <div className="flex items-center">
-                            <div 
+                            <div
                               className={`flex-1 font-semibold text-slate-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors ${
                                 isSolved ? 'line-through opacity-75' : ''
                               }`}
@@ -726,22 +971,22 @@ const IssuesListClean = ({
                             )}
                           </div>
                         </div>
-                        
-                        {/* Owner - COPIED from Level 10 Meeting */}
+
+                        {/* Owner */}
                         <div className="w-32 text-center">
                           <span className="text-sm text-slate-600">
                             {issue.owner_name || issue.assignee_name || issue.assigned_to_name || 'Unassigned'}
                           </span>
                         </div>
-                        
-                        {/* Created Date - ADDED for Main Issues Page */}
+
+                        {/* Created Date */}
                         <div className="w-24 text-center">
                           <span className="text-xs text-slate-500">
                             {format(new Date(issue.created_at), 'MMM d')}
                           </span>
                         </div>
-                        
-                        {/* Actions - COPIED from Level 10 Meeting */}
+
+                        {/* Actions */}
                         <div className="w-8 flex items-center justify-center">
                           <button
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
@@ -751,8 +996,8 @@ const IssuesListClean = ({
                           </button>
                         </div>
                       </div>
-                      
-                      {/* Expanded Details - COPIED from Level 10 Meeting */}
+
+                      {/* Expanded Details */}
                       {selectedIssue?.id === issue.id && issue.description && (
                         <div className="px-16 pb-3">
                           <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded border-l-4" style={{ borderLeftColor: themeColors.primary }}>

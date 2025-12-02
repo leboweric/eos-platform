@@ -93,10 +93,11 @@ async function createIssueFromOverdueTodo(todo) {
       priority_rank,
       related_todo_id,
       created_by_id,
+      owner_id,
       status,
       archived,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'open', false, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'open', false, NOW())
   `, [
     issueData.organization_id,
     issueData.team_id,
@@ -106,7 +107,8 @@ async function createIssueFromOverdueTodo(todo) {
     issueData.priority_level,
     9999,  // priority_rank = 9999 puts overdue issues at bottom of list
     issueData.related_todo_id,
-    issueData.created_by
+    issueData.created_by,
+    todo.owner_id  // Set issue owner to the todo owner
   ]);
   
   console.log(`📋 [CRON] Created issue for overdue todo: "${todo.title}"`);

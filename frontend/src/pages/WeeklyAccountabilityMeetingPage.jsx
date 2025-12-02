@@ -7353,15 +7353,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <div className="space-y-1">
                         {participants.map((participant) => {
                           // More flexible matching - check both userId and id fields
-                          const hasRated = participantRatings.some(r => 
-                            String(r.userId) === String(participant.id) || 
+                          const hasRated = participantRatings.some(r =>
+                            String(r.userId) === String(participant.id) ||
                             String(r.userId) === String(participant.userId)
                           );
-                          const rating = participantRatings.find(r => 
-                            String(r.userId) === String(participant.id) || 
+                          const rating = participantRatings.find(r =>
+                            String(r.userId) === String(participant.id) ||
                             String(r.userId) === String(participant.userId)
                           )?.rating;
-                          
+
                           console.log('🔍 Participant rating check:', {
                             participantId: participant.id,
                             participantUserId: participant.userId,
@@ -7369,7 +7369,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             rating,
                             ratingsUserIds: participantRatings.map(r => r.userId)
                           });
-                          
+
                           return (
                             <div key={participant.id} className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-50">
                               <div className="flex items-center gap-2">
@@ -7392,6 +7392,102 @@ const WeeklyAccountabilityMeetingPage = () => {
                           );
                         })}
                       </div>
+
+                      {/* Facilitator: Enter ratings for team members not in meeting */}
+                      {isLeader && teamMembers.length > 0 && (() => {
+                        // Find team members who haven't joined the meeting
+                        const nonParticipantMembers = teamMembers.filter(member => {
+                          const isParticipant = participants.some(p =>
+                            String(p.id) === String(member.id) ||
+                            String(p.userId) === String(member.id)
+                          );
+                          return !isParticipant;
+                        });
+
+                        if (nonParticipantMembers.length === 0) return null;
+
+                        return (
+                          <div className="border-t border-slate-200 pt-3 mt-3">
+                            <h5 className="text-sm font-medium text-slate-700 mb-2">
+                              Enter ratings for team members not in app
+                            </h5>
+                            <div className="space-y-2">
+                              {nonParticipantMembers.map((member) => {
+                                const memberName = member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Unknown';
+                                const hasRated = participantRatings.some(r =>
+                                  String(r.userId) === String(member.id)
+                                );
+                                const existingRating = participantRatings.find(r =>
+                                  String(r.userId) === String(member.id)
+                                )?.rating;
+
+                                return (
+                                  <div key={member.id} className="flex items-center gap-2 py-1 px-2 rounded-md bg-slate-50">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      {hasRated ? (
+                                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                      ) : (
+                                        <div className="h-4 w-4 rounded-full border-2 border-orange-300 flex-shrink-0" />
+                                      )}
+                                      <span className="text-sm text-slate-600 truncate">
+                                        {memberName}
+                                        <span className="ml-1 text-xs text-orange-600">(not in app)</span>
+                                      </span>
+                                    </div>
+                                    {hasRated ? (
+                                      <span className="text-sm font-medium text-slate-700 flex-shrink-0">
+                                        {existingRating.toFixed(1)}/10
+                                      </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max="10"
+                                          step="0.1"
+                                          placeholder="1-10"
+                                          className="w-16 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const rating = parseFloat(e.target.value);
+                                              if (rating >= 1 && rating <= 10 && broadcastRating) {
+                                                broadcastRating({
+                                                  userId: member.id,
+                                                  userName: memberName,
+                                                  rating: rating
+                                                });
+                                                e.target.value = '';
+                                              }
+                                            }
+                                          }}
+                                        />
+                                        <button
+                                          onClick={(e) => {
+                                            const input = e.target.previousSibling;
+                                            const rating = parseFloat(input.value);
+                                            if (rating >= 1 && rating <= 10 && broadcastRating) {
+                                              broadcastRating({
+                                                userId: member.id,
+                                                userName: memberName,
+                                                rating: rating
+                                              });
+                                              input.value = '';
+                                            }
+                                          }}
+                                          className="px-2 py-1 text-xs font-medium text-white rounded"
+                                          style={{ backgroundColor: themeColors.primary }}
+                                        >
+                                          Submit
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
