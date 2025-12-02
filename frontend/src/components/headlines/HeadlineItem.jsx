@@ -4,7 +4,6 @@ import { issuesService } from '../../services/issuesService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { FormattedText } from '@/components/ui/FormattedText';
 
 export const HeadlineItem = ({
   headline,
@@ -110,7 +109,7 @@ const newIssue = await issuesService.createIssue(issueData);
         <div className="p-4 flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div
-              className={`text-base font-semibold text-slate-900 mb-2 leading-snug ${
+              className={`text-base font-semibold text-slate-900 mb-2 leading-snug rich-text-display ${
                 showEditDelete && (headline.created_by === user?.id || user?.role === 'admin')
                   ? 'cursor-pointer hover:text-slate-700 transition-colors'
                   : ''
@@ -121,9 +120,8 @@ const newIssue = await issuesService.createIssue(issueData);
                 }
               }}
               title={showEditDelete && (headline.created_by === user?.id || user?.role === 'admin') ? "Click to edit" : ""}
-            >
-              <FormattedText text={headline.text} maxLines={2} expandable={true} />
-            </div>
+              dangerouslySetInnerHTML={{ __html: headline.text }}
+            />
             
             {/* Enhanced Metadata */}
             <div className="flex items-center gap-3 text-sm text-slate-500">

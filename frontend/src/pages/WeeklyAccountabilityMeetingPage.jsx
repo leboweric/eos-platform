@@ -6222,9 +6222,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <div className="space-y-2">
                       {cascadedMessages.map(message => (
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="text-sm font-medium text-slate-900 leading-relaxed">
-                            <FormattedText text={message.message} maxLines={3} expandable={true} />
-                          </div>
+                          <div
+                            className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display"
+                            dangerouslySetInnerHTML={{ __html: message.message }}
+                          />
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
                               From: {message.from_team_name || 'Unknown Team'}
@@ -6320,9 +6321,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <div className="space-y-2">
                             {archivedMessages.map(message => (
                               <div key={message.id} className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
-                                <div className="text-sm font-medium text-slate-900">
-                                  <FormattedText text={message.message} maxLines={3} expandable={true} />
-                                </div>
+                                <div
+                                  className="text-sm font-medium text-slate-900 rich-text-display"
+                                  dangerouslySetInnerHTML={{ __html: message.message }}
+                                />
                                 <div className="mt-2 flex items-center justify-between">
                                   <p className="text-xs text-slate-600">
                                     From: {message.from_team_name || 'Unknown Team'}

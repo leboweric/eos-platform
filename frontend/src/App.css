@@ -135,6 +135,48 @@
   }
 }
 
+/* Rich text display styles for headlines and cascading messages */
+.rich-text-display ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.25rem 0;
+}
+
+.rich-text-display ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.25rem 0;
+}
+
+.rich-text-display li {
+  margin: 0.125rem 0;
+}
+
+.rich-text-display blockquote {
+  border-left: 3px solid #e5e7eb;
+  padding-left: 1rem;
+  margin: 0.25rem 0;
+  color: #6b7280;
+}
+
+.rich-text-display pre {
+  background: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.rich-text-display a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.rich-text-display a:hover {
+  color: #2563eb;
+}
+
 /* Print styles for 2-Page Plan */
 @media print {
   /* Reset page margins and size */
