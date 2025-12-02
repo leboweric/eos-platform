@@ -1467,6 +1467,8 @@ export const getCurrentPriorities = async (req, res) => {
 
     // Debug: Log user ID and org ID for the query
     console.log(`[MY_MILESTONES] Querying for user ${req.user.id} in org ${orgId}`);
+    console.log(`[MY_MILESTONES] Expected org: 2eef2d6b-45ab-4d87-90ac-91d04c2395cb (Bennett Material Handling)`);
+    console.log(`[MY_MILESTONES] orgId match: ${orgId === '2eef2d6b-45ab-4d87-90ac-91d04c2395cb'}`);
 
     // Debug: Check if there are ANY milestones assigned to this user
     const debugAllMilestones = await query(
