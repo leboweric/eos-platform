@@ -7342,7 +7342,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <div className="border-t border-slate-200 pt-3 mt-3">
                       <div className="flex items-center justify-between mb-2">
                         <h5 className="text-sm font-medium text-slate-700">
-                          Rating Status ({participantRatings.length} of {participants.length} completed)
+                          Rating Status ({participantRatings.length} completed)
                         </h5>
                         {ratingAverage > 0 && (
                           <span className="text-sm font-medium text-blue-600">
@@ -7351,6 +7351,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         )}
                       </div>
                       <div className="space-y-1">
+                        {/* Show in-app participants */}
                         {participants.map((participant) => {
                           // More flexible matching - check both userId and id fields
                           const hasRated = participantRatings.some(r =>
@@ -7391,6 +7392,29 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                           );
                         })}
+                        {/* Show non-participant team members who have ratings */}
+                        {participantRatings
+                          .filter(r => {
+                            // Check if this rating is from a non-participant
+                            const isParticipant = participants.some(p =>
+                              String(p.id) === String(r.userId) ||
+                              String(p.userId) === String(r.userId)
+                            );
+                            return !isParticipant;
+                          })
+                          .map((r) => (
+                            <div key={r.userId} className="flex items-center justify-between py-1 px-2 rounded-md bg-slate-50">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <span className="text-sm text-slate-600">
+                                  {r.userName}
+                                  <span className="ml-1 text-xs text-orange-600">(not in app)</span>
+                                </span>
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">{r.rating.toFixed(1)}/10</span>
+                            </div>
+                          ))
+                        }
                       </div>
 
                       {/* Facilitator: Enter ratings for team members not in meeting */}
@@ -7451,11 +7475,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             if (e.key === 'Enter') {
                                               const rating = parseFloat(e.target.value);
                                               if (rating >= 1 && rating <= 10 && broadcastRating) {
-                                                broadcastRating({
+                                                // Optimistic update - immediately add to participantRatings
+                                                const newRating = {
                                                   userId: member.id,
                                                   userName: memberName,
                                                   rating: rating
+                                                };
+                                                setParticipantRatings(prev => {
+                                                  // Remove any existing rating for this user, then add new one
+                                                  const filtered = prev.filter(r => String(r.userId) !== String(member.id));
+                                                  const updated = [...filtered, newRating];
+                                                  // Recalculate average
+                                                  const avg = updated.reduce((sum, r) => sum + r.rating, 0) / updated.length;
+                                                  setRatingAverage(avg);
+                                                  return updated;
                                                 });
+                                                // Broadcast to other participants
+                                                broadcastRating(newRating);
                                                 e.target.value = '';
                                               }
                                             }
@@ -7466,11 +7502,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             const input = e.target.previousSibling;
                                             const rating = parseFloat(input.value);
                                             if (rating >= 1 && rating <= 10 && broadcastRating) {
-                                              broadcastRating({
+                                              // Optimistic update - immediately add to participantRatings
+                                              const newRating = {
                                                 userId: member.id,
                                                 userName: memberName,
                                                 rating: rating
+                                              };
+                                              setParticipantRatings(prev => {
+                                                // Remove any existing rating for this user, then add new one
+                                                const filtered = prev.filter(r => String(r.userId) !== String(member.id));
+                                                const updated = [...filtered, newRating];
+                                                // Recalculate average
+                                                const avg = updated.reduce((sum, r) => sum + r.rating, 0) / updated.length;
+                                                setRatingAverage(avg);
+                                                return updated;
                                               });
+                                              // Broadcast to other participants
+                                              broadcastRating(newRating);
                                               input.value = '';
                                             }
                                           }}
