@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -289,17 +290,14 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
 
             <div className="space-y-2">
               <Label htmlFor="rocks" className="text-slate-700 font-medium">Rocks (Company Priorities)</Label>
-              <Textarea
-                id="rocks"
-                value={formData.rocks}
-                onChange={(e) => setFormData({ ...formData, rocks: e.target.value })}
-                placeholder="List your company rocks for this quarter..."
-                rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
-                  style={{ '--focus-color': themeColors.primary }}
-                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[180px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.rocks}
+                  onChange={(content) => setFormData({ ...formData, rocks: content })}
+                  placeholder="List your company rocks for this quarter..."
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
           </div>
 

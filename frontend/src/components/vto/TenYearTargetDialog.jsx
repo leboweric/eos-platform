@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Mountain } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -85,18 +86,14 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
               <Label htmlFor="targetDescription" className="text-slate-700 font-medium">
                 10-Year Target Description <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="targetDescription"
-                value={formData.targetDescription}
-                onChange={(e) => setFormData({ ...formData, targetDescription: e.target.value })}
-                placeholder="What will your organization achieve in 10 years?"
-                rows={3}
-                required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[180px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.targetDescription}
+                  onChange={(content) => setFormData({ ...formData, targetDescription: content })}
+                  placeholder="What will your organization achieve in 10 years?"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

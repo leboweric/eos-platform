@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Heart } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -98,17 +99,14 @@ const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what this value means for your organization..."
-                rows={3}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                  placeholder="Describe what this value means for your organization..."
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter className="pt-6 border-t border-white/20">

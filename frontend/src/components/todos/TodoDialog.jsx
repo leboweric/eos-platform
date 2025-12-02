@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Calendar, User, Users, Paperclip, X, Download, Link, Sparkles, CheckSquare, MessageSquare, Plus, Trash2, Upload, Check, ChevronDown } from 'lucide-react';
@@ -479,14 +480,12 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
 
             <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Description</Label>
-              <div className="max-h-[200px] overflow-y-auto border dark:border-gray-600/50 rounded-xl shadow-sm">
-                <Textarea
-                  id="description"
+              <div className="h-[180px] overflow-hidden border dark:border-gray-600/50 rounded-xl shadow-sm">
+                <RichTextEditor
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
                   placeholder="Provide additional details..."
-                  rows={4}
-                  className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-0 rounded-xl shadow-none transition-all duration-200 resize-none min-h-[120px]"
+                  className="border-0 shadow-none h-full"
                 />
               </div>
             </div>

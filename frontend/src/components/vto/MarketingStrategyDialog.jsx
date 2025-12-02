@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { TrendingUp } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -84,62 +85,51 @@ const MarketingStrategyDialog = ({ open, onOpenChange, data, onSave }) => {
               <Label htmlFor="targetMarket" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Target Market ("The List") <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="targetMarket"
-                value={formData.targetMarket}
-                onChange={(e) => setFormData({ ...formData, targetMarket: e.target.value })}
-                placeholder="Describe your ideal customers and target market segments..."
-                rows={3}
-                required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.targetMarket}
+                  onChange={(content) => setFormData({ ...formData, targetMarket: content })}
+                  placeholder="Describe your ideal customers and target market segments..."
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="threeUniques" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Three Uniques <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="threeUniques"
-                value={formData.threeUniques}
-                onChange={(e) => setFormData({ ...formData, threeUniques: e.target.value })}
-                placeholder="What three things make you unique compared to competitors?"
-                rows={3}
-                required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.threeUniques}
+                  onChange={(content) => setFormData({ ...formData, threeUniques: content })}
+                  placeholder="What three things make you unique compared to competitors?"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="provenProcess" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Proven Process <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="provenProcess"
-                value={formData.provenProcess}
-                onChange={(e) => setFormData({ ...formData, provenProcess: e.target.value })}
-                placeholder="Describe your step-by-step process for delivering value..."
-                rows={3}
-                required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.provenProcess}
+                  onChange={(content) => setFormData({ ...formData, provenProcess: content })}
+                  placeholder="Describe your step-by-step process for delivering value..."
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="guarantee" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Guarantee</Label>
-              <Textarea
-                id="guarantee"
-                value={formData.guarantee}
-                onChange={(e) => setFormData({ ...formData, guarantee: e.target.value })}
-                placeholder="What do you guarantee to your customers?"
-                rows={2}
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-              />
+              <div className="h-[120px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.guarantee}
+                  onChange={(content) => setFormData({ ...formData, guarantee: content })}
+                  placeholder="What do you guarantee to your customers?"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter className="pt-6 border-t border-white/20 dark:border-gray-700/50">

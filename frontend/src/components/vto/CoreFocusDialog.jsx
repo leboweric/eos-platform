@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Target } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -73,35 +74,27 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
               <Label htmlFor="purpose" className="text-sm font-semibold text-slate-700">
                 Purpose/Cause/Passion <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="purpose"
-                value={formData.purpose}
-                onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                placeholder="Why does your organization exist? What drives you?"
-                rows={3}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-                required
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.purpose}
+                  onChange={(content) => setFormData({ ...formData, purpose: content })}
+                  placeholder="Why does your organization exist? What drives you?"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="niche" className="text-sm font-semibold text-slate-700">
                 Niche <span className="text-red-500">*</span>
               </Label>
-              <Textarea
-                id="niche"
-                value={formData.niche}
-                onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
-                placeholder="What is your organization's 'sweet spot'? Where do you excel?"
-                rows={3}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
-                required
-              />
+              <div className="h-[140px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.niche}
+                  onChange={(content) => setFormData({ ...formData, niche: content })}
+                  placeholder="What is your organization's 'sweet spot'? Where do you excel?"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter className="pt-6 border-t border-white/20">
