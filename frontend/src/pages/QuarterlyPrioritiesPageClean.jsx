@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -4468,14 +4469,14 @@ const QuarterlyPrioritiesPageClean = () => {
             </div>
             <div>
               <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-              <Textarea
-                id="description"
-                value={priorityForm.description}
-                onChange={(e) => setPriorityForm({ ...priorityForm, description: e.target.value })}
-                placeholder="Describe what needs to be accomplished"
-                rows={3}
-                className="mt-2 bg-white"
-              />
+              <div className="mt-2 h-[180px] overflow-hidden border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={priorityForm.description}
+                  onChange={(content) => setPriorityForm({ ...priorityForm, description: content })}
+                  placeholder="Describe what needs to be accomplished"
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div>
