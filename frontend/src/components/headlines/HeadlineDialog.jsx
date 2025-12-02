@@ -106,12 +106,15 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline, currentTeamId })
               id="headline-text"
               value={headlineText}
               onChange={(e) => setHeadlineText(e.target.value)}
-              placeholder={headlineType === 'customer' 
-                ? 'Enter customer headline (e.g., major wins, feedback, market changes)...' 
-                : 'Enter employee headline (e.g., team updates, hiring, achievements)...'}
-              rows={3}
-              className="resize-none bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+              placeholder={headlineType === 'customer'
+                ? 'Enter customer headline...\n\nTip: Use bullet points for lists:\n- Item one\n- Item two'
+                : 'Enter employee headline...\n\nTip: Use bullet points for lists:\n- New hire: John Smith\n- Department: Engineering'}
+              rows={6}
+              className="resize-y bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 min-h-[120px]"
             />
+            <p className="text-xs text-slate-500">
+              Tip: Press Enter for new lines. Start lines with - or • for bullet points.
+            </p>
           </div>
         </div>
 

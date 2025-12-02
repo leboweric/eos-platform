@@ -98,6 +98,7 @@ import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { FormattedText } from '@/components/ui/FormattedText';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
@@ -6224,7 +6225,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <div className="space-y-2">
                       {cascadedMessages.map(message => (
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                          <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                          <div className="text-sm font-medium text-slate-900 leading-relaxed">
+                            <FormattedText text={message.message} maxLines={3} expandable={true} />
+                          </div>
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
                               From: {message.from_team_name || 'Unknown Team'}
@@ -6320,7 +6323,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <div className="space-y-2">
                             {archivedMessages.map(message => (
                               <div key={message.id} className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
-                                <p className="text-sm font-medium text-slate-900">{message.message}</p>
+                                <div className="text-sm font-medium text-slate-900">
+                                  <FormattedText text={message.message} maxLines={3} expandable={true} />
+                                </div>
                                 <div className="mt-2 flex items-center justify-between">
                                   <p className="text-xs text-slate-600">
                                     From: {message.from_team_name || 'Unknown Team'}

@@ -4,11 +4,12 @@ import { issuesService } from '../../services/issuesService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { FormattedText } from '@/components/ui/FormattedText';
 
-export const HeadlineItem = ({ 
-  headline, 
-  teamId, 
-  orgId, 
+export const HeadlineItem = ({
+  headline,
+  teamId,
+  orgId,
   onIssueCreated,
   themeColors = { primary: '#3B82F6', secondary: '#8B5CF6' },
   type = 'Customer', // 'Customer' or 'Employee'
@@ -108,10 +109,10 @@ const newIssue = await issuesService.createIssue(issueData);
       ) : (
         <div className="p-4 flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h4 
+            <div
               className={`text-base font-semibold text-slate-900 mb-2 leading-snug ${
-                showEditDelete && (headline.created_by === user?.id || user?.role === 'admin') 
-                  ? 'cursor-pointer hover:text-slate-700 transition-colors' 
+                showEditDelete && (headline.created_by === user?.id || user?.role === 'admin')
+                  ? 'cursor-pointer hover:text-slate-700 transition-colors'
                   : ''
               }`}
               onClick={() => {
@@ -121,8 +122,8 @@ const newIssue = await issuesService.createIssue(issueData);
               }}
               title={showEditDelete && (headline.created_by === user?.id || user?.role === 'admin') ? "Click to edit" : ""}
             >
-              {headline.text}
-            </h4>
+              <FormattedText text={headline.text} maxLines={2} expandable={true} />
+            </div>
             
             {/* Enhanced Metadata */}
             <div className="flex items-center gap-3 text-sm text-slate-500">

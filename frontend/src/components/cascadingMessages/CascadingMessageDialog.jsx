@@ -122,11 +122,18 @@ const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter your message to cascade to other teams..."
-              rows={4}
-              className="resize-none bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+              placeholder="Enter your message to cascade to other teams...
+
+Tip: Use bullet points for lists:
+- Item one
+- Item two"
+              rows={6}
+              className="resize-y bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 min-h-[120px]"
               autoFocus
             />
+            <p className="text-xs text-slate-500">
+              Tip: Press Enter for new lines. Start lines with - or • for bullet points.
+            </p>
           </div>
 
           {/* Team Selection */}
