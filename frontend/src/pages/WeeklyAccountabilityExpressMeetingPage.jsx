@@ -7358,29 +7358,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                           );
                         })}
-                        {/* Show non-participant team members who have ratings */}
-                        {participantRatings
-                          .filter(r => {
-                            // Check if this rating is from a non-participant
-                            const isParticipant = participants.some(p =>
-                              String(p.id) === String(r.userId) ||
-                              String(p.userId) === String(r.userId)
-                            );
-                            return !isParticipant;
-                          })
-                          .map((r) => (
-                            <div key={r.userId} className="flex items-center justify-between py-1 px-2 rounded-md bg-slate-50">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                <span className="text-sm text-slate-600">
-                                  {r.userName}
-                                  <span className="ml-1 text-xs text-orange-600">(not in app)</span>
-                                </span>
-                              </div>
-                              <span className="text-sm font-medium text-slate-700">{r.rating.toFixed(1)}/10</span>
-                            </div>
-                          ))
-                        }
                       </div>
 
                       {/* Facilitator: Enter ratings for team members not in meeting */}
