@@ -5107,6 +5107,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                     <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                       {milestone.title}
                                                     </span>
+                                                    {milestone.owner_name && (
+                                                      <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
+                                                        {milestone.owner_name}
+                                                      </span>
+                                                    )}
                                                     <span className="text-xs text-slate-500">
                                                       {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                     </span>
@@ -5494,6 +5499,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                     <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                       {milestone.title}
                                                     </span>
+                                                    {milestone.owner_name && (
+                                                      <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
+                                                        {milestone.owner_name}
+                                                      </span>
+                                                    )}
                                                     <span className="text-xs text-slate-500">
                                                       {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                                     </span>
@@ -5859,6 +5869,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                 {milestone.title}
                                               </span>
+                                              {milestone.owner_name && (
+                                                <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
+                                                  {milestone.owner_name}
+                                                </span>
+                                              )}
                                               <span className="text-xs text-slate-500">
                                                 {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
                                               </span>
