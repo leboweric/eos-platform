@@ -1442,23 +1442,72 @@ export const getCurrentPriorities = async (req, res) => {
     let milestonesByPriority = {};
     let updatesByPriority = {};
     let attachmentsByPriority = {};
-    
+    let myMilestones = []; // Milestones assigned to current user on OTHER people's Rocks
+
     if (priorityIds.length > 0) {
       const milestonesResult = await query(
-        `SELECT pm.*, u.first_name || ' ' || u.last_name as owner_name 
+        `SELECT pm.*, u.first_name || ' ' || u.last_name as owner_name
          FROM priority_milestones pm
          LEFT JOIN users u ON pm.owner_id = u.id
-         WHERE pm.priority_id = ANY($1) 
+         WHERE pm.priority_id = ANY($1)
          ORDER BY pm.display_order, pm.due_date`,
         [priorityIds]
       );
-      
+
       milestonesResult.rows.forEach(milestone => {
         if (!milestonesByPriority[milestone.priority_id]) {
           milestonesByPriority[milestone.priority_id] = [];
         }
         milestonesByPriority[milestone.priority_id].push(milestone);
       });
+    }
+
+    // Get "My Milestones" - milestones assigned to current user on OTHER people's Rocks
+    // This allows users to see milestones they're responsible for even if they don't own the Rock
+    const myMilestonesResult = await query(
+      `SELECT
+        pm.*,
+        pm.due_date as dueDate,
+        p.title as rock_title,
+        p.id as rock_id,
+        p.owner_id as rock_owner_id,
+        p.status as rock_status,
+        rock_owner.first_name || ' ' || rock_owner.last_name as rock_owner_name,
+        milestone_owner.first_name || ' ' || milestone_owner.last_name as owner_name
+       FROM priority_milestones pm
+       JOIN quarterly_priorities p ON pm.priority_id = p.id
+       LEFT JOIN users rock_owner ON p.owner_id = rock_owner.id
+       LEFT JOIN users milestone_owner ON pm.owner_id = milestone_owner.id
+       WHERE pm.owner_id = $1
+         AND p.owner_id != $1
+         AND p.organization_id = $2
+         AND p.deleted_at IS NULL
+       ORDER BY pm.due_date ASC NULLS LAST, pm.created_at ASC`,
+      [req.user.id, orgId]
+    );
+
+    myMilestones = myMilestonesResult.rows.map(m => ({
+      id: m.id,
+      title: m.title,
+      dueDate: m.due_date,
+      completed: m.completed,
+      status: m.status,
+      owner_id: m.owner_id,
+      owner_name: m.owner_name,
+      rock: {
+        id: m.rock_id,
+        title: m.rock_title,
+        status: m.rock_status,
+        owner: {
+          id: m.rock_owner_id,
+          name: m.rock_owner_name
+        }
+      }
+    }));
+
+    console.log(`Found ${myMilestones.length} milestones assigned to user ${req.user.id} on other people's Rocks`);
+
+    if (priorityIds.length > 0) {
       
       // Get all updates for each priority
       const updatesResult = await query(
@@ -1677,14 +1726,16 @@ export const getCurrentPriorities = async (req, res) => {
       companyPriorities: Array.isArray(companyPriorities) ? companyPriorities : [],
       teamMemberPriorities: typeof teamMemberPriorities === 'object' ? teamMemberPriorities : {},
       predictions: typeof predictions === 'object' ? predictions : {},
-      teamMembers: Array.isArray(teamMembersResult.rows) ? teamMembersResult.rows : []
+      teamMembers: Array.isArray(teamMembersResult.rows) ? teamMembersResult.rows : [],
+      myMilestones: Array.isArray(myMilestones) ? myMilestones : [] // Milestones assigned to user on other people's Rocks
     };
     
     console.log('Response data structure:', {
       companyPriorities: `Array[${responseData.companyPriorities.length}]`,
       teamMemberPriorities: `Object with ${Object.keys(responseData.teamMemberPriorities).length} keys`,
       predictions: `Object with keys: ${Object.keys(responseData.predictions).join(', ')}`,
-      teamMembers: `Array[${responseData.teamMembers.length}]`
+      teamMembers: `Array[${responseData.teamMembers.length}]`,
+      myMilestones: `Array[${responseData.myMilestones.length}]`
     });
 
     res.json({

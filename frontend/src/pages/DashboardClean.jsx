@@ -133,6 +133,7 @@ const DashboardClean = () => {
     todos: [],
     issues: [],
     teamMembers: [],
+    myMilestones: [], // Milestones assigned to user on other people's Rocks
     stats: {
       prioritiesCompleted: 0,
       totalPriorities: 0,
@@ -468,6 +469,7 @@ const DashboardClean = () => {
         todos: userTodos, // Show all user todos from all teams
         issues: shortTermIssues,
         teamMembers: todosResponse.data.teamMembers || [],
+        myMilestones: prioritiesResponse.myMilestones || [], // Milestones assigned to user on other people's Rocks
         stats: {
           prioritiesCompleted: completedPriorities,
           totalPriorities: totalPriorities,
@@ -1893,6 +1895,119 @@ const DashboardClean = () => {
             )}
           </div>
         </div>
+
+        {/* My Milestones Section - Only show in My Items mode and when there are milestones */}
+        {viewMode === 'my-items' && dashboardData.myMilestones && dashboardData.myMilestones.length > 0 && (
+          <div className="mt-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 shadow-sm border border-amber-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-amber-100">
+                  <Target className="h-5 w-5 text-amber-700" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-amber-900">My Milestones</h2>
+                  <p className="text-sm text-amber-600">
+                    {dashboardData.myMilestones.length} milestone{dashboardData.myMilestones.length !== 1 ? 's' : ''} assigned to you on other people's Rocks
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/quarterly-priorities"
+                className="text-sm text-amber-700 hover:text-amber-900 transition-colors"
+              >
+                View Rocks →
+              </Link>
+            </div>
+
+            <div className="space-y-1">
+              {/* Header Row */}
+              <div className="flex items-center px-3 py-2 text-xs font-medium text-amber-700 uppercase tracking-wider border-b border-amber-200">
+                <div className="w-8"></div>
+                <div className="flex-1 ml-2">Milestone</div>
+                <div className="w-48 text-center hidden md:block">Rock</div>
+                <div className="w-32 text-center hidden md:block">Rock Owner</div>
+                <div className="w-24 text-right">Due By</div>
+              </div>
+
+              {/* Milestone Rows */}
+              {dashboardData.myMilestones.slice(0, 5).map(milestone => {
+                const isComplete = milestone.completed;
+                const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null;
+                const isOverdueMilestone = dueDate && !isComplete && dueDate < new Date();
+
+                return (
+                  <div key={milestone.id} className="flex items-center px-3 py-3 hover:bg-amber-100/30 rounded-lg transition-colors group">
+                    {/* Checkbox */}
+                    <div className="w-8 flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={milestone.completed}
+                        onChange={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const orgId = user?.organizationId || user?.organization_id;
+                            const teamId = getTeamId(user);
+                            await quarterlyPrioritiesService.updateMilestone(
+                              orgId,
+                              teamId,
+                              milestone.rock.id,
+                              milestone.id,
+                              { completed: e.target.checked }
+                            );
+                            fetchDashboardData();
+                          } catch (err) {
+                            console.error('Failed to update milestone:', err);
+                          }
+                        }}
+                        className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Milestone Title */}
+                    <div className="flex-1 ml-2">
+                      <span className={`font-medium ${isComplete ? 'line-through text-amber-400' : 'text-amber-900'}`}>
+                        {milestone.title}
+                      </span>
+                    </div>
+
+                    {/* Rock Title */}
+                    <div className="w-48 text-center hidden md:block">
+                      <span className="text-sm text-amber-700 truncate block" title={milestone.rock?.title}>
+                        {milestone.rock?.title?.length > 25
+                          ? milestone.rock.title.substring(0, 25) + '...'
+                          : milestone.rock?.title || 'Unknown Rock'}
+                      </span>
+                    </div>
+
+                    {/* Rock Owner */}
+                    <div className="w-32 text-center hidden md:block">
+                      <span className="text-sm text-amber-600">{milestone.rock?.owner?.name || 'Unknown'}</span>
+                    </div>
+
+                    {/* Due Date */}
+                    <div className="w-24 text-right">
+                      <span className={`text-sm ${isOverdueMilestone ? 'text-red-600 font-medium' : 'text-amber-600'}`}>
+                        {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : '-'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Show more link if there are more than 5 */}
+              {dashboardData.myMilestones.length > 5 && (
+                <div className="pt-2 text-center">
+                  <Link
+                    to="/quarterly-priorities"
+                    className="text-sm text-amber-700 hover:text-amber-900 transition-colors"
+                  >
+                    View all {dashboardData.myMilestones.length} milestones →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Annual Commitment Reminder Card */}
         {userCommitment && (

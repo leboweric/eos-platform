@@ -143,11 +143,13 @@ const QuarterlyPrioritiesPageClean = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [archivedQuarters, setArchivedQuarters] = useState({});
   const [completedNotArchivedCount, setCompletedNotArchivedCount] = useState(0);
+  const [myMilestones, setMyMilestones] = useState([]); // Milestones assigned to user on other people's Rocks
   
   // Expansion states for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
-    individualPriorities: {} // Will be populated with team members on load
+    individualPriorities: {}, // Will be populated with team members on load
+    myMilestones: true // My Milestones section expanded by default
   });
   
   
@@ -267,6 +269,7 @@ const QuarterlyPrioritiesPageClean = () => {
         setCompanyPriorities([]);
         setTeamMemberPriorities({});
         setTeamMembers([]);
+        setMyMilestones([]);
       } else {
         // Use the selected department's ID as the teamId for the API call
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
@@ -294,6 +297,7 @@ const QuarterlyPrioritiesPageClean = () => {
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
         setTeamMembers(data.teamMembers || []);
+        setMyMilestones(data.myMilestones || []); // Milestones assigned to user on other people's Rocks
         
         // Automatically expand individual sections for all rock owners
         const expandedIndividuals = {};
@@ -324,6 +328,7 @@ const QuarterlyPrioritiesPageClean = () => {
       setCompanyPriorities([]);
       setTeamMembers([]);
       setTeamMemberPriorities({});
+      setMyMilestones([]);
     } finally {
       setLoading(false);
     }
@@ -1754,6 +1759,13 @@ const QuarterlyPrioritiesPageClean = () => {
         ...prev.individualPriorities,
         [memberId]: !prev.individualPriorities[memberId]
       }
+    }));
+  };
+
+  const toggleMyMilestones = () => {
+    setExpandedSections(prev => ({
+      ...prev,
+      myMilestones: !prev.myMilestones
     }));
   };
 
@@ -4304,9 +4316,117 @@ const QuarterlyPrioritiesPageClean = () => {
               </div>
             );
           })()}
+
+          {/* My Milestones Section - Shows milestones assigned to user on other people's Rocks */}
+          {!showArchived && myMilestones.length > 0 && (
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-md hover:shadow-lg transition-shadow mt-6">
+              <CardHeader className="pb-3">
+                <div
+                  className="flex items-center justify-between cursor-pointer hover:bg-amber-100/50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                  onClick={toggleMyMilestones}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 border-2 border-amber-200 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                      <span className="text-amber-700 font-semibold text-sm">📋</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-amber-900">My Milestones</h3>
+                      <p className="text-sm text-amber-600">
+                        {myMilestones.length} milestone{myMilestones.length !== 1 ? 's' : ''} assigned to you on other people's Rocks
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 text-amber-500 transition-transform duration-200 ${
+                    expandedSections.myMilestones ? 'rotate-180' : ''
+                  }`} />
+                </div>
+              </CardHeader>
+              {expandedSections.myMilestones && (
+              <CardContent className="pt-0">
+                <div className="space-y-1">
+                  {/* Header Row */}
+                  <div className="flex items-center px-3 py-2 text-xs font-medium text-amber-700 uppercase tracking-wider border-b border-amber-200">
+                    <div className="w-8"></div>
+                    <div className="flex-1 ml-2">Milestone</div>
+                    <div className="w-48 text-center">Rock</div>
+                    <div className="w-32 text-center">Rock Owner</div>
+                    <div className="w-24 text-right">Due By</div>
+                  </div>
+
+                  {/* Milestone Rows */}
+                  {myMilestones.map(milestone => {
+                    const isComplete = milestone.completed;
+                    const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null;
+                    const isOverdue = dueDate && !isComplete && dueDate < new Date();
+
+                    return (
+                      <div key={milestone.id} className="flex items-center px-3 py-3 hover:bg-amber-100/30 rounded-lg transition-colors group">
+                        {/* Checkbox */}
+                        <div className="w-8 flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={milestone.completed}
+                            onChange={async (e) => {
+                              e.stopPropagation();
+                              // Update milestone completion status
+                              try {
+                                const orgId = user?.organizationId;
+                                const teamId = selectedDepartment?.id;
+                                await quarterlyPrioritiesService.updateMilestone(
+                                  orgId,
+                                  teamId,
+                                  milestone.rock.id,
+                                  milestone.id,
+                                  { completed: e.target.checked }
+                                );
+                                // Refresh data
+                                fetchQuarterlyData();
+                              } catch (err) {
+                                console.error('Failed to update milestone:', err);
+                              }
+                            }}
+                            className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                          />
+                        </div>
+
+                        {/* Milestone Title */}
+                        <div className="flex-1 ml-2">
+                          <span className={`font-medium ${isComplete ? 'line-through text-amber-400' : 'text-amber-900'}`}>
+                            {milestone.title}
+                          </span>
+                        </div>
+
+                        {/* Rock Title */}
+                        <div className="w-48 text-center">
+                          <span className="text-sm text-amber-700 truncate block" title={milestone.rock.title}>
+                            {milestone.rock.title.length > 25
+                              ? milestone.rock.title.substring(0, 25) + '...'
+                              : milestone.rock.title}
+                          </span>
+                        </div>
+
+                        {/* Rock Owner */}
+                        <div className="w-32 text-center">
+                          <span className="text-sm text-amber-600">{milestone.rock.owner?.name || 'Unknown'}</span>
+                        </div>
+
+                        {/* Due Date */}
+                        <div className="w-24 text-right">
+                          <span className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-amber-600'}`}>
+                            {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : '-'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+              )}
+            </Card>
+          )}
         </div>
       )}
-      
+
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-lg border border-white/50">
           <DialogHeader>
