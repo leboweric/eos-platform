@@ -1921,7 +1921,7 @@ const DashboardClean = () => {
 
                 {/* Milestones List */}
                 <div className="space-y-1 bg-amber-50/50 rounded-lg p-2">
-                  {dashboardData.myMilestones.slice(0, 5).map(milestone => {
+                  {dashboardData.myMilestones.map(milestone => {
                     const isComplete = milestone.completed;
                     const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null;
                     const isOverdueMilestone = dueDate && !isComplete && dueDate < new Date();
@@ -1976,17 +1976,6 @@ const DashboardClean = () => {
                     );
                   })}
 
-                  {/* Show more link if there are more than 5 */}
-                  {dashboardData.myMilestones.length > 5 && (
-                    <div className="pt-2 text-center">
-                      <Link
-                        to="/quarterly-priorities"
-                        className="text-xs text-amber-700 hover:text-amber-900 transition-colors"
-                      >
-                        View all {dashboardData.myMilestones.length} milestones →
-                      </Link>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
