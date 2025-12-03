@@ -145,7 +145,6 @@ function AnnualPlanningMeetingPage() {
     broadcastIssueListUpdate,
     syncTimer,
     updateNotes,
-    claimPresenter,
     activeMeetings,
     activeMeetingsRef,
     socket

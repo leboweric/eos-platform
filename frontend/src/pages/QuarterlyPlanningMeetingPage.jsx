@@ -133,7 +133,6 @@ function QuarterlyPlanningMeetingPage() {
     broadcastIssueListUpdate,
     syncTimer,
     updateNotes,
-    claimPresenter,
     activeMeetings,
     activeMeetingsRef
   } = useMeeting();

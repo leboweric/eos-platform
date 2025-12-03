@@ -37,8 +37,7 @@ const MeetingBar = ({
   toggleFollow,
   isPaused = false,
   onPauseResume,
-  totalPausedTime = 0,
-  onClaimPresenter
+  totalPausedTime = 0
 }) => {
   const {
     isEnabled,
@@ -234,19 +233,6 @@ const MeetingBar = ({
                       </>
                     )}
                   </Button>
-
-                  {/* Take Control button - allows non-leader to claim presenter role */}
-                  {onClaimPresenter && (
-                    <Button
-                      onClick={onClaimPresenter}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 border-yellow-500 text-yellow-700 hover:bg-yellow-50"
-                    >
-                      <Crown className="h-4 w-4" />
-                      Take Control
-                    </Button>
-                  )}
                 </>
               )}
 

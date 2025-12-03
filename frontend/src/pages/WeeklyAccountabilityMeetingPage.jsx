@@ -211,7 +211,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     broadcastRating,
     syncTimer,
     updateNotes,
-    claimPresenter,
     activeMeetings,
     activeMeetingsRef,
     concludeMeeting
@@ -8079,7 +8078,6 @@ const WeeklyAccountabilityMeetingPage = () => {
             onSyncTimer={syncTimer}
             onUpdateNotes={updateNotes}
             sectionNotes={sectionNotes}
-            onClaimPresenter={claimPresenter}
             onBroadcastRating={broadcastRating}
             meetingStartTime={meetingStartTime}
             meetingStarted={meetingStarted}
