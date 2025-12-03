@@ -457,9 +457,16 @@ const MeetingsPage = () => {
       setTeamForMeeting(null);
       setPendingMeetingId(null);
     }, 200);
-    
-    // Proceed with the stored values
-    proceedWithMeeting(meetingToStart, teamToUse);
+
+    // For weekly meetings, show format selector after team selection
+    if (meetingToStart === 'weekly-accountability') {
+      console.log('📋 Weekly meeting - showing format selector for team:', teamToUse);
+      setPendingMeetingTeamId(teamToUse);
+      setShowFormatSelector(true);
+    } else {
+      // For other meetings, proceed directly
+      proceedWithMeeting(meetingToStart, teamToUse);
+    }
   };
 
   const handleJoinMeeting = (meetingType) => {
@@ -607,7 +614,7 @@ const MeetingsPage = () => {
                       </ul>
                     </div>
 
-                    <Button 
+                    <Button
                       onClick={() => {
                         if (meeting.id === 'weekly-accountability') {
                           // If meeting is active, join it directly without format selection
@@ -620,9 +627,18 @@ const MeetingsPage = () => {
                               navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
                             }
                           } else {
-                            // Starting a new meeting - always show format selector
-                            setPendingMeetingTeamId(selectedTeamId);
-                            setShowFormatSelector(true);
+                            // Starting a new meeting - check for multi-team users first
+                            if (teams && teams.length > 1) {
+                              // Show team selection dialog for multi-team users
+                              console.log('🎭 Multiple teams detected for weekly meeting, showing selection modal');
+                              setPendingMeetingId('weekly-accountability');
+                              setTeamForMeeting(selectedTeamId);
+                              setShowTeamSelectionDialog(true);
+                            } else {
+                              // Single team user - show format selector directly
+                              setPendingMeetingTeamId(selectedTeamId);
+                              setShowFormatSelector(true);
+                            }
                           }
                         } else {
                           // For all other meeting types, use normal handler
