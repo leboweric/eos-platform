@@ -399,23 +399,24 @@ class MeetingSocketService {
       // Handle presenter claim
       socket.on('claim-presenter', (data) => {
         const userData = userSocketMap.get(socket.id);
-        
+
         if (!userData) return;
-        
+
         const { meetingCode, userId } = userData;
         const meeting = meetings.get(meetingCode);
-        
+
         if (!meeting) return;
-        
+
         // Update leader
         meeting.leader = userId;
-        
-        // Broadcast new presenter to all participants
-        socket.to(meetingCode).emit('presenter-changed', {
+
+        // Broadcast new presenter to ALL participants INCLUDING the claimer
+        // Using this.io.to() instead of socket.to() so the sender also receives the event
+        this.io.to(meetingCode).emit('presenter-changed', {
           newPresenter: userId,
           presenterName: data.presenterName
         });
-        
+
         if (process.env.LOG_LEVEL === 'debug') {
           console.log('👑 Presenter changed in meeting:', meetingCode, 'new presenter:', userId);
         }
