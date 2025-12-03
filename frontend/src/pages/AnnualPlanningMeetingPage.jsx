@@ -935,6 +935,19 @@ function AnnualPlanningMeetingPage() {
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
       fetchTeamMembers(); // Need team members for todos
+      // Initialize current user's rating with default value if not already set
+      // This ensures the Conclude button works even if user doesn't move the slider
+      if (user?.id && !participantRatings[user.id]) {
+        setParticipantRatings(prev => ({
+          ...prev,
+          [user.id]: {
+            userId: user.id,
+            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+            rating: 5.0
+          }
+        }));
+        setMeetingRating(5.0);
+      }
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -2029,14 +2042,20 @@ function AnnualPlanningMeetingPage() {
       return;
     }
     
-    // Calculate average rating from all participant ratings
+    // Calculate average rating from available participant ratings
     const ratings = Object.values(participantRatings);
-    if (ratings.length === 0 || !ratings.every(r => r.rating > 0)) {
-      setError('All participants must rate the meeting before concluding');
+
+    // Check if at least the current user has rated
+    const currentUserRating = participantRatings[user?.id];
+    if (!currentUserRating || currentUserRating.rating <= 0) {
+      setError('Please rate the meeting before concluding');
       return;
     }
-    
-    const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+
+    // Calculate average from available ratings (at minimum, the current user's rating)
+    const averageRating = ratings.length > 0
+      ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+      : currentUserRating.rating;
     
     try {
       const orgId = user?.organizationId || user?.organization_id;
