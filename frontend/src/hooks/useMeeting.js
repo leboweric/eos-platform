@@ -83,6 +83,11 @@ const useMeeting = () => {
       setMeetingCode(data.meeting.code);
       setCurrentLeader(data.meeting.leader);
       setParticipants(data.participants);
+      // Set isLeader based on server-confirmed leader, not optimistic state
+      // This ensures we're in sync with server's view of who the leader is
+      const amILeader = data.meeting.leader === user?.id;
+      setIsLeader(amILeader);
+      setIsFollowing(!amILeader);
       
       // Navigate to current location if following (but not if we're on annual planning)
       if (isFollowing && data.meeting.currentRoute && data.meeting.currentRoute !== location.pathname) {
@@ -374,9 +379,9 @@ const useMeeting = () => {
     
     console.log('🚀 Emitting join-meeting with data:', meetingData);
     socket.emit('join-meeting', meetingData);
-
-    setIsLeader(asLeader);
-    setIsFollowing(!asLeader);
+    // NOTE: Do NOT set isLeader/isFollowing optimistically here
+    // Wait for server confirmation in 'meeting-joined' handler
+    // This prevents race conditions when multiple users try to lead
   }, [socket, user]);
 
   // Leave meeting
@@ -525,15 +530,17 @@ const useMeeting = () => {
   }, [socket, meetingCode]);
   
   // Claim presenter role
+  // NOTE: Do NOT set isLeader optimistically here - wait for server confirmation
+  // via 'presenter-changed' event to avoid race conditions where multiple users
+  // think they're the leader simultaneously
   const claimPresenter = useCallback(() => {
     if (!socket || !meetingCode) return;
-    
+
     console.log('👑 Claiming presenter role');
     socket.emit('claim-presenter', {
       presenterName: user ? `${user.firstName} ${user.lastName}` : 'Unknown'
     });
-    setIsLeader(true);
-    setCurrentLeader(user?.id);
+    // State updates happen in the 'presenter-changed' event handler
   }, [socket, meetingCode, user]);
   
   // Conclude meeting (leader only - removes meeting from backend)
