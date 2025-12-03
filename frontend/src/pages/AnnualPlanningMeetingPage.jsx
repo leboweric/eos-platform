@@ -130,16 +130,16 @@ function AnnualPlanningMeetingPage() {
     }
   }, [teamId, navigate]);
   
-  const { 
-    meetingCode, 
-    participants, 
+  const {
+    meetingCode,
+    participants,
     joinMeeting,
-    leaveMeeting, 
-    isConnected, 
-    isLeader, 
-    currentLeader, 
-    navigateToSection, 
-    broadcastVote, 
+    leaveMeeting,
+    isConnected,
+    isLeader,
+    currentLeader,
+    navigateToSection,
+    broadcastVote,
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
@@ -147,6 +147,7 @@ function AnnualPlanningMeetingPage() {
     updateNotes,
     claimPresenter,
     activeMeetings,
+    activeMeetingsRef,
     socket
   } = useMeeting();
   const { labels } = useTerminology();
@@ -638,16 +639,18 @@ function AnnualPlanningMeetingPage() {
       // Wait 500ms for active meetings to populate
       setTimeout(() => {
         if (!hasJoinedRef.current && !meetingCode) {
-          const existingMeeting = activeMeetings?.[meetingRoom];
+          // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
+          const currentActiveMeetings = activeMeetingsRef.current;
+          const existingMeeting = currentActiveMeetings?.[meetingRoom];
           const hasParticipants = existingMeeting?.participantCount > 0;
-          
+
           console.log('🚀 Annual Planning auto-joining meeting room after delay:', meetingRoom);
-          console.log('📡 Active meetings:', activeMeetings);
+          console.log('📡 Active meetings (current):', currentActiveMeetings);
           console.log('📡 Existing meeting:', existingMeeting);
           console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
-          
+
           hasJoinedRef.current = true;
-          
+
           // Create database session if we're joining as leader
           if (!hasParticipants) {
             (async () => {
@@ -661,7 +664,7 @@ function AnnualPlanningMeetingPage() {
               }
             })();
           }
-          
+
           joinMeeting(meetingRoom, !hasParticipants);
         }
       }, 500);

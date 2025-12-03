@@ -21,15 +21,20 @@ const useMeeting = () => {
   const navigationLock = useRef(false);
   const isFollowingRef = useRef(true);
   const isLeaderRef = useRef(false);
-  
+  const activeMeetingsRef = useRef({}); // Ref to access current activeMeetings in closures
+
   // Keep refs in sync with state
   useEffect(() => {
     isFollowingRef.current = isFollowing;
   }, [isFollowing]);
-  
+
   useEffect(() => {
     isLeaderRef.current = isLeader;
   }, [isLeader]);
+
+  useEffect(() => {
+    activeMeetingsRef.current = activeMeetings;
+  }, [activeMeetings]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -557,7 +562,7 @@ const useMeeting = () => {
     // Connection status
     isEnabled: ENABLE_MEETINGS,
     isConnected,
-    
+
     // Meeting state
     meetingCode,
     participants,
@@ -565,7 +570,8 @@ const useMeeting = () => {
     currentLeader,
     isFollowing,
     activeMeetings, // All active meetings with participant counts
-    
+    activeMeetingsRef, // Ref for accessing current value in closures (e.g., setTimeout)
+
     // Actions
     joinMeeting,
     leaveMeeting,

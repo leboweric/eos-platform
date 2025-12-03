@@ -118,23 +118,24 @@ function QuarterlyPlanningMeetingPage() {
     }
   }, [teamId, navigate]);
   
-  const { 
-    meetingCode, 
-    participants, 
+  const {
+    meetingCode,
+    participants,
     joinMeeting,
-    leaveMeeting, 
-    isConnected, 
-    isLeader, 
-    currentLeader, 
-    navigateToSection, 
-    broadcastVote, 
+    leaveMeeting,
+    isConnected,
+    isLeader,
+    currentLeader,
+    navigateToSection,
+    broadcastVote,
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
     syncTimer,
     updateNotes,
     claimPresenter,
-    activeMeetings 
+    activeMeetings,
+    activeMeetingsRef
   } = useMeeting();
   const { labels } = useTerminology();
   
@@ -453,11 +454,13 @@ function QuarterlyPlanningMeetingPage() {
       // Wait 500ms for active meetings to populate
       setTimeout(() => {
         if (!hasJoinedRef.current && !meetingCode) {
-          const existingMeeting = activeMeetings?.[meetingRoom];
+          // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
+          const currentActiveMeetings = activeMeetingsRef.current;
+          const existingMeeting = currentActiveMeetings?.[meetingRoom];
           const hasParticipants = existingMeeting?.participantCount > 0;
-          
+
           console.log('🚀 Quarterly Planning auto-joining meeting room after delay:', meetingRoom);
-          console.log('📡 Active meetings:', activeMeetings);
+          console.log('📡 Active meetings (current):', currentActiveMeetings);
           console.log('📡 Existing meeting:', existingMeeting);
           console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
           

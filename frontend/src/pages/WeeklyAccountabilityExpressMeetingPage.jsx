@@ -193,18 +193,18 @@ const WeeklyAccountabilityMeetingPage = () => {
     fetchCurrentTeam();
   }, [teamId, user]);
   
-  const { 
+  const {
     meetingCode,
-    participants, 
+    participants,
     joinMeeting,
-    leaveMeeting, 
-    isConnected, 
-    isLeader, 
+    leaveMeeting,
+    isConnected,
+    isLeader,
     currentLeader,
     isFollowing,
     toggleFollow,
-    navigateToSection, 
-    broadcastVote, 
+    navigateToSection,
+    broadcastVote,
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
@@ -213,6 +213,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     updateNotes,
     claimPresenter,
     activeMeetings,
+    activeMeetingsRef,
     concludeMeeting
   } = useMeeting();
   
@@ -1197,11 +1198,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Wait 500ms for active meetings to populate
         setTimeout(() => {
           if (!hasJoinedRef.current && !meetingCode) {
-            const existingMeeting = activeMeetings?.[meetingRoom];
+            // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
+            const currentActiveMeetings = activeMeetingsRef.current;
+            const existingMeeting = currentActiveMeetings?.[meetingRoom];
             const hasParticipants = existingMeeting?.participantCount > 0;
-            
+
             console.log('🎬 Auto-joining meeting after delay:', meetingRoom);
-            console.log('🎬 Active meetings:', activeMeetings);
+            console.log('🎬 Active meetings (current):', currentActiveMeetings);
             console.log('🎬 Existing meeting:', existingMeeting);
             console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
             
