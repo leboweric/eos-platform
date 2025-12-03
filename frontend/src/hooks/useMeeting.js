@@ -110,20 +110,31 @@ const useMeeting = () => {
           console.log(`🔄 Navigating to meeting position: ${data.meeting.currentRoute} (reconnecting: ${isReconnecting}, isLeader: ${amILeader})`);
           navigationLock.current = true;
           navigate(data.meeting.currentRoute);
-
-          // Also dispatch section change event so the meeting page can scroll to correct section
-          if (data.meeting.currentSection) {
-            setTimeout(() => {
-              const sectionEvent = new CustomEvent('meeting-section-restored', {
-                detail: {
-                  section: data.meeting.currentSection,
-                  scrollPosition: data.meeting.scrollPosition
-                }
-              });
-              window.dispatchEvent(sectionEvent);
-            }, 100);
-          }
         }
+      }
+
+      // Restore section position for reconnecting users (even if already on correct route)
+      // This handles browser refresh where user is on same route but needs section restored
+      if (isReconnecting && data.meeting.currentSection) {
+        console.log(`📍 Restoring section position: ${data.meeting.currentSection}`);
+        // Dispatch event with retries to ensure the event listener is ready after refresh
+        const dispatchSectionRestore = (attempt = 1) => {
+          console.log(`📍 Dispatching section restore event (attempt ${attempt}):`, data.meeting.currentSection);
+          const sectionEvent = new CustomEvent('meeting-section-restored', {
+            detail: {
+              section: data.meeting.currentSection,
+              scrollPosition: data.meeting.scrollPosition
+            }
+          });
+          window.dispatchEvent(sectionEvent);
+
+          // Retry a few times in case the event listener isn't registered yet after page refresh
+          if (attempt < 3) {
+            setTimeout(() => dispatchSectionRestore(attempt + 1), 300);
+          }
+        };
+        // Start with a delay to let the page hydrate after refresh
+        setTimeout(() => dispatchSectionRestore(1), 500);
       }
 
       // Sync timer state if meeting already started

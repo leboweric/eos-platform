@@ -4451,15 +4451,22 @@ const WeeklyAccountabilityMeetingPage = () => {
     // Handle section restoration after reconnection (for both leader and followers)
     const handleSectionRestored = (event) => {
       const { section, scrollPosition } = event.detail;
-      console.log('🔄 Restoring section after reconnection:', section);
+      console.log('🔄 SECTION RESTORE EVENT RECEIVED:', {
+        section,
+        scrollPosition,
+        currentActiveSection: activeSection,
+        agendaItemsCount: agendaItems?.length
+      });
 
       if (section) {
+        console.log('🔄 Setting activeSection to:', section);
         setActiveSection(section);
 
         // Update section config
-        const sectionConfig = agendaItems.find(item => item.id === section);
-        if (sectionConfig) {
-          setSectionConfig(sectionConfig);
+        const matchedConfig = agendaItems.find(item => item.id === section);
+        console.log('🔄 Matched section config:', matchedConfig);
+        if (matchedConfig) {
+          setSectionConfig(matchedConfig);
         }
 
         // Scroll to section after a brief delay for DOM to render
