@@ -1096,7 +1096,7 @@ Date: ${now.toLocaleDateString()}
 Duration: ${duration || 'Not recorded'} minutes
 Facilitator: ${userName || 'Not recorded'}
 Attendees: ${attendeeList}
-Rating: ${avgRating} / 5
+Rating: ${avgRating} / 10
 
 Key Items Discussed:
 - ${todoCount} To-Do items reviewed
@@ -1111,10 +1111,10 @@ Note: AI-generated summary was not available for this meeting. This summary was 
     key_takeaways: [
       `Meeting completed with ${todoCount} to-dos and ${issueCount} issues discussed`,
       notes ? 'Additional meeting notes were provided' : 'No additional notes recorded',
-      `Team rated the meeting ${avgRating}/5`
+      `Team rated the meeting ${avgRating}/10`
     ].filter(Boolean),
     action_items: todosArray.map(todo => todo.description || todo.text || 'Action item'),
     participants: attendees?.map(a => a.name || a.userName) || [],
-    meeting_effectiveness: avgRating ? `${avgRating}/5` : 'Not rated'
+    meeting_effectiveness: avgRating ? `${avgRating}/10` : 'Not rated'
   };
 }

@@ -1,6 +1,6 @@
 import db from '../config/database.js';
 import { getUserTeamContext } from '../utils/teamUtils.js';
-import { formatDateLocal, getWeekStartDate } from '../utils/dateUtils.js';
+import { formatDateLocal, getWeekStartDate, getMonthStartDate } from '../utils/dateUtils.js';
 
 // Helper function to check if a column exists
 async function checkColumn(tableName, columnName) {
@@ -166,17 +166,19 @@ export const getScorecard = async (req, res) => {
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
+        // CRITICAL: Normalize date to first of month for consistent frontend lookup
+        const normalizedMonthDate = getMonthStartDate(scoreDate);
         if (!monthlyScores[score.metric_id]) {
           monthlyScores[score.metric_id] = {};
         }
-        monthlyScores[score.metric_id][scoreDate] = numericValue; // JUST THE NUMBER
-        
+        monthlyScores[score.metric_id][normalizedMonthDate] = numericValue; // JUST THE NUMBER
+
         // Store notes separately if they exist
         if (score.notes && score.notes.trim().length > 0) {
           if (!monthlyNotes[score.metric_id]) {
             monthlyNotes[score.metric_id] = {};
           }
-          monthlyNotes[score.metric_id][scoreDate] = score.notes;
+          monthlyNotes[score.metric_id][normalizedMonthDate] = score.notes;
         }
       } else {
         // CRITICAL: Normalize date to Monday for consistent frontend lookup
@@ -457,8 +459,10 @@ export const updateScore = async (req, res) => {
     }
     
     // Convert week/month to proper date format (local time, not UTC)
-    // CRITICAL: Normalize to Monday of the week for consistent storage
-    const scoreDate = getWeekStartDate(week);
+    // CRITICAL: Normalize date based on score type for consistent storage
+    const scoreDate = scoreType === 'monthly'
+      ? getMonthStartDate(week)  // Normalize to first of month for monthly metrics
+      : getWeekStartDate(week);  // Normalize to Monday for weekly metrics
     
     // CRITICAL FIX: Allow zero as a valid value
     // Only use null if value is actually null or undefined

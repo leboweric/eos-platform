@@ -65,10 +65,24 @@ export const getDateDaysFromNow = (days) => {
 export const getWeekStartDate = (date) => {
   const d = date instanceof Date ? date : parseDateLocal(date);
   if (!d) return null;
-  
+
   const day = d.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
   const monday = new Date(d.getFullYear(), d.getMonth(), diff);
-  
+
   return formatDateLocal(monday);
+};
+
+/**
+ * Get the first day of the month for a given date
+ * @param {Date|string} date - Date object or date string
+ * @returns {string} First of month date formatted as YYYY-MM-DD
+ */
+export const getMonthStartDate = (date) => {
+  const d = date instanceof Date ? date : parseDateLocal(date);
+  if (!d) return null;
+
+  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+
+  return formatDateLocal(monthStart);
 };
