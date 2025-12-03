@@ -123,10 +123,37 @@ const useMeeting = () => {
       setParticipants(prev => [...prev, data.participant]);
     });
 
-    // Handle participant left
+    // Handle participant left (after grace period expired)
     newSocket.on('participant-left', (data) => {
       console.log('👋 Participant left:', data.userId);
       setParticipants(prev => prev.filter(p => p.id !== data.userId));
+    });
+
+    // Handle participant temporarily disconnected (grace period started)
+    newSocket.on('participant-temporarily-disconnected', (data) => {
+      console.log(`⏸️ Participant ${data.userName} temporarily disconnected (${data.gracePeriodSeconds}s grace period)`);
+      // Update participant status to show they're temporarily disconnected
+      setParticipants(prev => prev.map(p =>
+        p.id === data.userId ? { ...p, temporarilyDisconnected: true } : p
+      ));
+    });
+
+    // Handle participant reconnected
+    newSocket.on('participant-reconnected', (data) => {
+      console.log('🔄 Participant reconnected:', data.participant?.name);
+      setParticipants(prev => {
+        // Check if participant already exists
+        const existingIndex = prev.findIndex(p => p.id === data.participant.id);
+        if (existingIndex >= 0) {
+          // Update existing participant (clear temporarilyDisconnected flag)
+          return prev.map(p =>
+            p.id === data.participant.id ? { ...data.participant, temporarilyDisconnected: false } : p
+          );
+        } else {
+          // Add as new participant
+          return [...prev, { ...data.participant, temporarilyDisconnected: false }];
+        }
+      });
     });
 
     // Handle navigation updates from leader

@@ -12,6 +12,13 @@ const ENABLE_MEETINGS = process.env.ENABLE_MEETINGS === 'true';
 const meetings = new Map();
 const userSocketMap = new Map();
 
+// Track temporarily disconnected users for reconnection grace period
+// Key: `${meetingCode}:${userId}`, Value: { userId, userName, wasLeader, disconnectedAt, timeoutId }
+const disconnectedUsers = new Map();
+
+// Grace period in milliseconds before fully removing a disconnected user
+const DISCONNECT_GRACE_PERIOD_MS = 45000; // 45 seconds
+
 class MeetingSocketService {
   constructor() {
     this.io = null;
@@ -64,10 +71,25 @@ class MeetingSocketService {
       // Handle joining a meeting
       socket.on('join-meeting', (data) => {
         const { meetingCode, userId, userName, isLeader } = data;
-        
+
         if (!meetingCode) {
           socket.emit('error', { message: 'Meeting code required' });
           return;
+        }
+
+        // Check if this user is reconnecting within grace period
+        const disconnectKey = `${meetingCode}:${userId}`;
+        const disconnectedInfo = disconnectedUsers.get(disconnectKey);
+        let isReconnecting = false;
+        let shouldRestoreLeadership = false;
+
+        if (disconnectedInfo) {
+          // User is reconnecting - cancel the removal timeout
+          clearTimeout(disconnectedInfo.timeoutId);
+          disconnectedUsers.delete(disconnectKey);
+          isReconnecting = true;
+          shouldRestoreLeadership = disconnectedInfo.wasLeader;
+          console.log(`🔄 ${userName} reconnecting to meeting ${meetingCode} (was leader: ${shouldRestoreLeadership})`);
         }
 
         // Create meeting if it doesn't exist
@@ -109,7 +131,19 @@ class MeetingSocketService {
         }
 
         const meeting = meetings.get(meetingCode);
-        
+
+        // Restore leadership if user was leader before disconnect
+        if (shouldRestoreLeadership) {
+          meeting.leader = userId;
+          console.log(`👑 Leadership restored to ${userName} after reconnection`);
+          // Notify all participants about leadership restoration
+          this.io.to(meetingCode).emit('presenter-changed', {
+            newPresenter: userId,
+            presenterName: userName,
+            reason: 'reconnected'
+          });
+        }
+
         // Add participant
         meeting.participants.set(userId, {
           id: userId,
@@ -136,11 +170,12 @@ class MeetingSocketService {
             timerStartTime: meeting.timerStartTime,
             timerPaused: meeting.timerPaused
           },
-          participants: Array.from(meeting.participants.values())
+          participants: Array.from(meeting.participants.values()),
+          reconnected: isReconnecting
         });
 
-        // Notify others of new participant
-        socket.to(meetingCode).emit('participant-joined', {
+        // Notify others of new participant (or reconnection)
+        socket.to(meetingCode).emit(isReconnecting ? 'participant-reconnected' : 'participant-joined', {
           participant: meeting.participants.get(userId)
         });
 
@@ -148,7 +183,7 @@ class MeetingSocketService {
         this.broadcastActiveMeetings();
 
         if (process.env.LOG_LEVEL === 'debug') {
-          console.log(`✅ ${userName} joined meeting ${meetingCode}`);
+          console.log(`✅ ${userName} ${isReconnecting ? 'reconnected to' : 'joined'} meeting ${meetingCode}`);
         }
       });
 
@@ -795,34 +830,88 @@ class MeetingSocketService {
 
     const participant = meeting.participants.get(userInfo.userId);
     const userName = participant ? participant.name : 'Unknown';
+    const wasLeader = meeting.leader === userInfo.userId;
+    const { meetingCode, userId } = userInfo;
 
-    // Remove participant
-    meeting.participants.delete(userInfo.userId);
+    // Remove socket mapping immediately (socket is no longer valid)
     userSocketMap.delete(socket.id);
 
-    // Notify others
-    socket.to(userInfo.meetingCode).emit('participant-left', {
-      userId: userInfo.userId
+    // Create disconnect key for grace period tracking
+    const disconnectKey = `${meetingCode}:${userId}`;
+
+    // Check if user is already in grace period (multiple socket disconnects)
+    if (disconnectedUsers.has(disconnectKey)) {
+      console.log(`⏳ ${userName} already in grace period, ignoring duplicate disconnect`);
+      return;
+    }
+
+    console.log(`⏸️ ${userName} disconnected from meeting ${meetingCode} - starting ${DISCONNECT_GRACE_PERIOD_MS/1000}s grace period`);
+
+    // Notify others that user temporarily disconnected (but may reconnect)
+    socket.to(meetingCode).emit('participant-temporarily-disconnected', {
+      userId: userId,
+      userName: userName,
+      gracePeriodSeconds: DISCONNECT_GRACE_PERIOD_MS / 1000
     });
 
-    console.log(`👋 ${userName} left meeting ${userInfo.meetingCode}`);
-    
-    // Broadcast updated active meetings to all connected clients
+    // Set up timeout to fully remove user after grace period
+    const timeoutId = setTimeout(() => {
+      this.finalizeUserRemoval(meetingCode, userId, userName, wasLeader);
+    }, DISCONNECT_GRACE_PERIOD_MS);
+
+    // Store disconnect info for potential reconnection
+    disconnectedUsers.set(disconnectKey, {
+      userId,
+      userName,
+      wasLeader,
+      disconnectedAt: new Date(),
+      timeoutId
+    });
+  }
+
+  // Called after grace period expires - fully removes user from meeting
+  finalizeUserRemoval(meetingCode, userId, userName, wasLeader) {
+    const disconnectKey = `${meetingCode}:${userId}`;
+
+    // Check if user reconnected during grace period
+    if (!disconnectedUsers.has(disconnectKey)) {
+      console.log(`✅ ${userName} reconnected before grace period expired`);
+      return;
+    }
+
+    // Remove from disconnected tracking
+    disconnectedUsers.delete(disconnectKey);
+
+    const meeting = meetings.get(meetingCode);
+    if (!meeting) return;
+
+    // Now fully remove the participant
+    meeting.participants.delete(userId);
+
+    // Notify others that user has left for real
+    this.io.to(meetingCode).emit('participant-left', {
+      userId: userId
+    });
+
+    console.log(`👋 ${userName} removed from meeting ${meetingCode} (grace period expired)`);
+
+    // Broadcast updated active meetings
     this.broadcastActiveMeetings();
 
     // Clean up empty meetings
     if (meeting.participants.size === 0) {
-      meetings.delete(userInfo.meetingCode);
-      console.log(`🗑️ Meeting ${userInfo.meetingCode} ended (no participants)`);
-    } else if (meeting.leader === userInfo.userId) {
-      // Transfer leadership to next participant
+      meetings.delete(meetingCode);
+      console.log(`🗑️ Meeting ${meetingCode} ended (no participants)`);
+    } else if (wasLeader) {
+      // Transfer leadership to next participant only after grace period
       const nextParticipant = meeting.participants.values().next().value;
       if (nextParticipant) {
         meeting.leader = nextParticipant.id;
-        this.io.to(userInfo.meetingCode).emit('leader-changed', {
-          newLeader: nextParticipant.id
+        this.io.to(meetingCode).emit('leader-changed', {
+          newLeader: nextParticipant.id,
+          reason: 'previous-leader-left'
         });
-        console.log(`👑 Leadership transferred to ${nextParticipant.name}`);
+        console.log(`👑 Leadership transferred to ${nextParticipant.name} (original leader didn't reconnect)`);
       }
     }
   }
