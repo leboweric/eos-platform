@@ -4432,11 +4432,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       const { section, sectionStartTime } = event.detail;
       console.log('📍 Received section change from leader:', section);
       console.log('📍 Section start time from leader:', sectionStartTime);
-      
+
       // Only follow if not the leader
       if (!isLeader) {
         setActiveSection(section);
-        
+
         // Update section config when section changes (Phase 2)
         const newSectionConfig = agendaItems.find(item => item.id === section);
         if (newSectionConfig) {
@@ -4447,7 +4447,33 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       }
     };
-    
+
+    // Handle section restoration after reconnection (for both leader and followers)
+    const handleSectionRestored = (event) => {
+      const { section, scrollPosition } = event.detail;
+      console.log('🔄 Restoring section after reconnection:', section);
+
+      if (section) {
+        setActiveSection(section);
+
+        // Update section config
+        const sectionConfig = agendaItems.find(item => item.id === section);
+        if (sectionConfig) {
+          setSectionConfig(sectionConfig);
+        }
+
+        // Scroll to section after a brief delay for DOM to render
+        setTimeout(() => {
+          const sectionElement = document.getElementById(`section-${section}`);
+          if (sectionElement) {
+            sectionElement.scrollIntoView({ behavior: 'smooth' });
+          } else if (scrollPosition) {
+            window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+          }
+        }, 200);
+      }
+    };
+
     window.addEventListener('meeting-vote-update', handleVoteUpdate);
     window.addEventListener('meeting-issue-update', handleIssueUpdate);
     window.addEventListener('meeting-todo-update', handleTodoUpdate);
@@ -4457,6 +4483,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-presenter-changed', handlePresenterChange);
     window.addEventListener('meeting-rating-update', handleRatingUpdate);
     window.addEventListener('meeting-section-change', handleSectionChangeFromLeader);
+    window.addEventListener('meeting-section-restored', handleSectionRestored);
     
     // Real-time broadcast handlers
     const handleIssueCreated = (event) => {
@@ -4501,6 +4528,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
       window.removeEventListener('meeting-rating-update', handleRatingUpdate);
       window.removeEventListener('meeting-section-change', handleSectionChangeFromLeader);
+      window.removeEventListener('meeting-section-restored', handleSectionRestored);
       window.removeEventListener('meeting-issue-created', handleIssueCreated);
       window.removeEventListener('meeting-todo-created', handleTodoCreated);
       window.removeEventListener('meeting-headline-created', handleHeadlineCreated);

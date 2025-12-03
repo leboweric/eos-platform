@@ -93,18 +93,39 @@ const useMeeting = () => {
       const amILeader = data.meeting.leader === user?.id;
       setIsLeader(amILeader);
       setIsFollowing(!amILeader);
-      
-      // Navigate to current location if following (but not if we're on annual planning)
-      if (isFollowing && data.meeting.currentRoute && data.meeting.currentRoute !== location.pathname) {
+
+      // Navigate to current meeting position
+      // For reconnecting users (including leader), restore them to where the meeting is
+      // For followers joining, sync them to the leader's position
+      const shouldNavigate = data.meeting.currentRoute && data.meeting.currentRoute !== location.pathname;
+      const isReconnecting = data.reconnected === true;
+
+      if (shouldNavigate) {
         // Prevent automatic redirect away from annual planning meetings
         if (location.pathname.includes('/annual-planning/')) {
           console.log('🚫 Preventing auto-navigation away from annual planning meeting');
-          return;
+        } else if (isReconnecting || !amILeader) {
+          // Reconnecting users (leader or follower) should go back to current meeting position
+          // New followers should also sync to leader's position
+          console.log(`🔄 Navigating to meeting position: ${data.meeting.currentRoute} (reconnecting: ${isReconnecting}, isLeader: ${amILeader})`);
+          navigationLock.current = true;
+          navigate(data.meeting.currentRoute);
+
+          // Also dispatch section change event so the meeting page can scroll to correct section
+          if (data.meeting.currentSection) {
+            setTimeout(() => {
+              const sectionEvent = new CustomEvent('meeting-section-restored', {
+                detail: {
+                  section: data.meeting.currentSection,
+                  scrollPosition: data.meeting.scrollPosition
+                }
+              });
+              window.dispatchEvent(sectionEvent);
+            }, 100);
+          }
         }
-        navigationLock.current = true;
-        navigate(data.meeting.currentRoute);
       }
-      
+
       // Sync timer state if meeting already started
       if (data.meeting.timerStartTime) {
         const timerEvent = new CustomEvent('meeting-timer-update', {
