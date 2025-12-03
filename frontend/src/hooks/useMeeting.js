@@ -277,9 +277,19 @@ const useMeeting = () => {
     newSocket.on('presenter-changed', (data) => {
       console.log('👑 Presenter changed:', data);
       setCurrentLeader(data.newPresenter);
-      setIsLeader(data.newPresenter === user?.id);
-      const presenterEvent = new CustomEvent('meeting-presenter-changed', { 
-        detail: data 
+      const amINewLeader = data.newPresenter === user?.id;
+      setIsLeader(amINewLeader);
+      // CRITICAL: When someone else takes control, the previous leader must become a follower
+      // Otherwise they won't follow the new leader's navigation
+      if (!amINewLeader) {
+        console.log('👀 Not the new leader - enabling following mode');
+        setIsFollowing(true);
+      } else {
+        console.log('👑 I am the new leader - disabling following mode');
+        setIsFollowing(false);
+      }
+      const presenterEvent = new CustomEvent('meeting-presenter-changed', {
+        detail: data
       });
       window.dispatchEvent(presenterEvent);
     });
