@@ -73,6 +73,28 @@ const EmptyState = ({ message }) => (
   </div>
 );
 
+// Helper to clean HTML tags from text and convert to plain text with line breaks
+const cleanHtmlText = (text) => {
+  if (!text) return '';
+  if (typeof text !== 'string') return String(text);
+
+  // Replace <br>, <br/>, <br /> with newlines
+  let cleaned = text.replace(/<br\s*\/?>/gi, '\n');
+
+  // Remove any other HTML tags
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+  // Decode common HTML entities
+  cleaned = cleaned.replace(/&amp;/g, '&');
+  cleaned = cleaned.replace(/&lt;/g, '<');
+  cleaned = cleaned.replace(/&gt;/g, '>');
+  cleaned = cleaned.replace(/&quot;/g, '"');
+  cleaned = cleaned.replace(/&#39;/g, "'");
+  cleaned = cleaned.replace(/&nbsp;/g, ' ');
+
+  return cleaned.trim();
+};
+
 // List Item Component
 const ListItem = ({ children, completed = false }) => (
   <div className="flex items-start gap-3 py-3 border-b border-gray-200 last:border-0">
@@ -83,7 +105,7 @@ const ListItem = ({ children, completed = false }) => (
         <span className="text-lg">•</span>
       )}
     </div>
-    <div className={`flex-1 text-base leading-relaxed ${completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+    <div className={`flex-1 text-base leading-relaxed whitespace-pre-wrap ${completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
       {children}
     </div>
   </div>
@@ -329,8 +351,8 @@ export const MeetingSummaryModal = ({
               )}
 
               {/* Headlines */}
-              <DocumentSection 
-                title="Headlines" 
+              <DocumentSection
+                title="Headlines"
                 collapsible={true}
                 defaultOpen={true}
                 isEmpty={headlines.length === 0}
@@ -340,15 +362,15 @@ export const MeetingSummaryModal = ({
                 ) : (
                   <div>
                     {headlines.map((headline, idx) => (
-                      <ListItem key={idx}>{typeof headline === 'string' ? headline : headline.text}</ListItem>
+                      <ListItem key={idx}>{cleanHtmlText(typeof headline === 'string' ? headline : headline.text)}</ListItem>
                     ))}
                   </div>
                 )}
               </DocumentSection>
 
               {/* Cascading Messages */}
-              <DocumentSection 
-                title="Cascading Messages" 
+              <DocumentSection
+                title="Cascading Messages"
                 collapsible={true}
                 defaultOpen={cascadingMessages.length > 0}
                 isEmpty={cascadingMessages.length === 0}
@@ -358,7 +380,7 @@ export const MeetingSummaryModal = ({
                 ) : (
                   <div>
                     {cascadingMessages.map((message, idx) => (
-                      <ListItem key={idx}>{typeof message === 'string' ? message : (message.message || message.text)}</ListItem>
+                      <ListItem key={idx}>{cleanHtmlText(typeof message === 'string' ? message : (message.message || message.text))}</ListItem>
                     ))}
                   </div>
                 )}
@@ -378,7 +400,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {solvedIssues.map((issue, idx) => (
-                          <ListItem key={idx} completed={true}>{issue.title}</ListItem>
+                          <ListItem key={idx} completed={true}>{cleanHtmlText(issue.title)}</ListItem>
                         ))}
                       </div>
                     )}
@@ -395,7 +417,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {newIssues.map((issue, idx) => (
-                          <ListItem key={idx}>{issue.title}</ListItem>
+                          <ListItem key={idx}>{cleanHtmlText(issue.title)}</ListItem>
                         ))}
                       </div>
                     )}
@@ -417,7 +439,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {completedTodos.map((todo, idx) => (
-                          <ListItem key={idx} completed={true}>{todo.title}</ListItem>
+                          <ListItem key={idx} completed={true}>{cleanHtmlText(todo.title)}</ListItem>
                         ))}
                       </div>
                     )}
@@ -434,7 +456,7 @@ export const MeetingSummaryModal = ({
                     ) : (
                       <div>
                         {newTodos.map((todo, idx) => (
-                          <ListItem key={idx}>{todo.title}</ListItem>
+                          <ListItem key={idx}>{cleanHtmlText(todo.title)}</ListItem>
                         ))}
                       </div>
                     )}
