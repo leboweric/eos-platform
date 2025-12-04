@@ -630,11 +630,11 @@ const MeetingHistoryPageClean = () => {
                           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
                             {meeting.meeting_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Meeting'}
                           </Badge>
-                          {meeting.average_rating && (
+                          {meeting.average_rating != null && !isNaN(parseFloat(meeting.average_rating)) && (
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                               <span className="text-sm font-medium">
-                                {typeof meeting.average_rating === 'number' ? meeting.average_rating.toFixed(1) : 'N/A'}
+                                {parseFloat(meeting.average_rating).toFixed(1)}
                               </span>
                             </div>
                           )}
