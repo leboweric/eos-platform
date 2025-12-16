@@ -122,10 +122,16 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       // Calculate 3-week moving total (current + 2 previous weeks)
       if (index >= 2) {
         movingTotal = 0;
+        let count = 0;
         for (let i = index - 2; i <= index; i++) {
           if (sorted[i].value !== null && sorted[i].value !== undefined) {
             movingTotal += parseFloat(sorted[i].value);
+            count++;
           }
+        }
+        // For percentages, use average instead of sum
+        if (metric?.value_type === 'percentage' && count > 0) {
+          movingTotal = movingTotal / count;
         }
       }
       
@@ -218,7 +224,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {metric?.name} - 3-Week Moving Total Trend
+            {metric?.name} - 3-Week Moving {metric?.value_type === 'percentage' ? 'Average' : 'Total'} Trend
             {!loading && getTrendIcon()}
           </DialogTitle>
         </DialogHeader>
@@ -272,7 +278,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                     type="monotone" 
                     dataKey="movingTotal" 
                     stroke={themeColors.primary} 
-                    name="3-Week Moving Total"
+                    name={`3-Week Moving ${metric?.value_type === 'percentage' ? 'Average' : 'Total'}`}
                     strokeWidth={3}
                     dot={{ fill: themeColors.primary, r: 5 }}
                     strokeDasharray="5 5"
@@ -292,20 +298,20 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   {/* Goal line (if applicable) */}
                   {metric?.goal && metric?.comparison_operator !== 'less_equal' && (
                     <ReferenceLine 
-                      y={parseFloat(metric.goal) * 3} // 3-week goal
+                      y={metric?.value_type === 'percentage' ? parseFloat(metric.goal) : parseFloat(metric.goal) * 3} // For percentages use goal as-is, for others multiply by 3
                       stroke="#10b981" 
                       strokeDasharray="3 3"
-                      label="3-Week Goal"
+                      label={metric?.value_type === 'percentage' ? 'Goal' : '3-Week Goal'}
                     />
                   )}
                 </LineChart>
               </ResponsiveContainer>
               
               <div className="mt-4 text-sm text-gray-600">
-                <p>• The dashed line shows the 3-week moving total (sum of current week + 2 previous weeks)</p>
-                <p>• The dotted line shows the trend direction for the 3-week moving total</p>
+                <p>• The dashed line shows the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'} ({metric?.value_type === 'percentage' ? 'average' : 'sum'} of current week + 2 previous weeks)</p>
+                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'}</p>
                 <p>• The solid line shows individual weekly values</p>
-                {metric?.goal && <p>• Green dashed line shows the 3-week goal target ({getValueFormatter(metric.goal * 3)})</p>}
+                {metric?.goal && <p>• Green dashed line shows the {metric?.value_type === 'percentage' ? 'goal' : '3-week goal'} target ({getValueFormatter(metric?.value_type === 'percentage' ? metric.goal : metric.goal * 3)})</p>}
               </div>
             </CardContent>
           </Card>
