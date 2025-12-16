@@ -189,7 +189,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
           maximumFractionDigits: 0
         }).format(value);
       case 'percentage':
-        return `${value}%`;
+        return `${Math.round(value * 10) / 10}%`;
       default:
         return Math.round(value).toString();
     }
