@@ -2104,9 +2104,7 @@ const DashboardClean = () => {
                     >
                       <div className="p-4 flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-base font-semibold text-slate-900 mb-2 leading-snug">
-                            {message.message}
-                          </h4>
+                          <div className="text-base font-semibold text-slate-900 mb-2 leading-snug rich-text-display" dangerouslySetInnerHTML={{ __html: message.message }} />
                           
                           {/* Enhanced Metadata */}
                           <div className="flex items-center gap-3 text-sm text-slate-500">

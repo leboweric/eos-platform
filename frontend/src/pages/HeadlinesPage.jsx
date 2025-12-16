@@ -561,16 +561,15 @@ const HeadlinesPage = () => {
                       </div>
                     ) : (
                       <>
-                        <p 
-                          className="text-sm font-medium text-slate-900 leading-relaxed pr-20 cursor-pointer hover:bg-white/50 rounded px-2 py-1 -mx-2 -my-1"
+                        <div 
+                          className="text-sm font-medium text-slate-900 leading-relaxed pr-20 cursor-pointer hover:bg-white/50 rounded px-2 py-1 -mx-2 -my-1 rich-text-display"
                           onClick={() => {
                             setEditingMessageId(message.id);
                             setEditingMessageText(message.message);
                           }}
                           title="Click to edit"
-                        >
-                          {message.message}
-                        </p>
+                          dangerouslySetInnerHTML={{ __html: message.message }}
+                        />
                         <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
                           <ArrowDownLeft className="h-3 w-3 text-blue-600" />
                           <span className="font-medium text-blue-900">{message.from_team_name || 'Unknown Team'}</span>
@@ -684,7 +683,7 @@ const HeadlinesPage = () => {
                     <div className="space-y-3">
                       {archivedMessages.map(message => (
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
-                          <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                          <div className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" dangerouslySetInnerHTML={{ __html: message.message }} />
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
                               From: {message.from_team_name || 'Unknown Team'}
