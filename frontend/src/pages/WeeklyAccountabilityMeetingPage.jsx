@@ -7451,7 +7451,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         return (
                           <div className="border-t border-slate-200 pt-3 mt-3">
                             <h5 className="text-sm font-medium text-slate-700 mb-2">
-                              Enter ratings for team members not in app
+                              Enter ratings for team members
                             </h5>
                             <div className="space-y-2">
                               {nonParticipantMembers.map((member) => {
@@ -7473,7 +7473,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       )}
                                       <span className="text-sm text-slate-600 truncate">
                                         {memberName}
-                                        <span className="ml-1 text-xs text-orange-600">(not in app)</span>
                                       </span>
                                     </div>
                                     {hasRated ? (
