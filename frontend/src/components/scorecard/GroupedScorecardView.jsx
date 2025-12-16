@@ -662,7 +662,7 @@ const GroupedScorecardView = ({
                       setCustomGoalModal({ isOpen: true, metric, periodDate });
                     }}
                     className="absolute -top-1 -right-1 p-0.5 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors z-10"
-                    title={`Custom goal: ${hasCustomGoal.goal || `${hasCustomGoal.min}-${hasCustomGoal.max}`}${hasCustomGoal.notes ? `\n${hasCustomGoal.notes}` : ''}`}
+                    title={`Custom Goal: ${hasCustomGoal.goal ? formatValue(hasCustomGoal.goal, metric.value_type) : `${formatValue(hasCustomGoal.min, metric.value_type)}-${formatValue(hasCustomGoal.max, metric.value_type)}`}${hasCustomGoal.notes ? `\n${hasCustomGoal.notes}` : ''}`}
                   >
                     <Target className="h-3 w-3 text-white" />
                   </button>
