@@ -145,17 +145,21 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
     });
     
     // Calculate linear regression trendline for moving totals
-    const movingTotalPoints = dataWithMovingTotal
+    // Use only the last 13 weeks for trend calculation (quarterly trend)
+    const last13Weeks = dataWithMovingTotal.slice(-13);
+    const movingTotalPoints = last13Weeks
       .map((d, i) => ({ x: i, y: d.movingTotal }))
       .filter(p => p.y !== null);
     
     if (movingTotalPoints.length >= 2) {
       const { slope, intercept } = calculateLinearRegression(movingTotalPoints);
       
-      // Add trendline values
+      // Add trendline values only to the last 13 weeks
+      const startIndex = Math.max(0, dataWithMovingTotal.length - 13);
       dataWithMovingTotal.forEach((item, index) => {
-        if (item.movingTotal !== null) {
-          item.trendline = slope * index + intercept;
+        if (index >= startIndex && item.movingTotal !== null) {
+          const relativeIndex = index - startIndex;
+          item.trendline = slope * relativeIndex + intercept;
         }
       });
     }
@@ -309,7 +313,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
               
               <div className="mt-4 text-sm text-gray-600">
                 <p>• The dashed line shows the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'} ({metric?.value_type === 'percentage' ? 'average' : 'sum'} of current week + 2 previous weeks)</p>
-                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'}</p>
+                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'} (calculated using the last 13 weeks for quarterly trend analysis)</p>
                 <p>• The solid line shows individual weekly values</p>
                 {metric?.goal && <p>• Green dashed line shows the {metric?.value_type === 'percentage' ? 'goal' : '3-week goal'} target ({getValueFormatter(metric?.value_type === 'percentage' ? metric.goal : metric.goal * 3)})</p>}
               </div>
