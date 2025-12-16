@@ -855,7 +855,7 @@ const ScorecardTableClean = ({
                                       <Target className="inline-block ml-1 h-3 w-3 text-orange-500" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                      <p>Custom Goal: {formatValue(effectiveGoal, metric.value_type)}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -891,7 +891,7 @@ const ScorecardTableClean = ({
                                       <Target className="inline-block ml-1 h-3 w-3 text-orange-500" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                      <p>Custom Goal: {formatValue(effectiveGoal, metric.value_type)}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -916,7 +916,7 @@ const ScorecardTableClean = ({
                                         <Target className="inline-block ml-0.5 h-2.5 w-2.5 text-orange-500" />
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                        <p>Custom Goal: {formatValue(effectiveGoal, metric.value_type)}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -954,7 +954,7 @@ const ScorecardTableClean = ({
                                         <Target className="inline-block ml-0.5 h-2.5 w-2.5 text-orange-500" />
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Custom Goal: {effectiveGoal}{metric.value_type === 'percentage' ? '%' : ''}</p>
+                                        <p>Custom Goal: {formatValue(effectiveGoal, metric.value_type)}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
