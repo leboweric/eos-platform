@@ -889,7 +889,24 @@ class MeetingSocketService {
 
     // Check if user is already in grace period (multiple socket disconnects)
     if (disconnectedUsers.has(disconnectKey)) {
-      console.log(`⏳ ${userName} already in grace period, ignoring duplicate disconnect`);
+      console.log(`⏳ ${userName} already in grace period, resetting timeout`);
+      
+      // Get existing disconnect info
+      const existingInfo = disconnectedUsers.get(disconnectKey);
+      
+      // Clear old timeout
+      clearTimeout(existingInfo.timeoutId);
+      
+      // Create new timeout (restart grace period)
+      const newTimeoutId = setTimeout(() => {
+        this.finalizeUserRemoval(meetingCode, userId, userName, wasLeader);
+      }, DISCONNECT_GRACE_PERIOD_MS);
+      
+      // Update timeout ID and timestamp
+      existingInfo.timeoutId = newTimeoutId;
+      existingInfo.disconnectedAt = new Date();
+      
+      console.log(`✅ Grace period reset for ${userName}`);
       return;
     }
 
