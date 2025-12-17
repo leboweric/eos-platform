@@ -207,6 +207,9 @@ class MeetingSocketService {
         // Join socket room
         socket.join(meetingCode);
 
+        // MONITORING: Log successful join
+        console.log(`✅ [MEETING HEALTH] User ${userName} joined meeting ${meetingCode} (participants: ${meeting.participants.size}, leader: ${meeting.leader === userId ? 'YES' : 'NO'})`);
+
         // Send current state to joining user
         socket.emit('meeting-joined', {
           meeting: {
@@ -323,6 +326,10 @@ class MeetingSocketService {
 
       // Handle leaving meeting
       socket.on('leave-meeting', () => {
+        const userInfo = userSocketMap.get(socket.id);
+        if (userInfo) {
+          console.log(`👋 [MEETING HEALTH] User ${userInfo.userName} leaving meeting ${userInfo.meetingCode}`);
+        }
         this.handleUserDisconnect(socket);
       });
 
@@ -1168,6 +1175,257 @@ class MeetingSocketService {
     if (meetingCode) {
       this.broadcastToMeeting(meetingCode, event, data);
     }
+  }
+
+  // ============ MEETING HEALTH MONITORING ============
+
+  /**
+   * Validate meeting state consistency and detect anomalies
+   * This is read-only and safe to call frequently
+   */
+  validateMeetingHealth() {
+    const anomalies = [];
+
+    try {
+      // Check 1: Detect users in multiple meetings (ghost participants)
+      const userMeetingMap = new Map(); // userId -> [meetingCodes]
+      
+      for (const [meetingCode, meeting] of meetings.entries()) {
+        for (const [userId, participant] of meeting.participants.entries()) {
+          if (!userMeetingMap.has(userId)) {
+            userMeetingMap.set(userId, []);
+          }
+          userMeetingMap.get(userId).push({
+            meetingCode,
+            participantName: participant.name,
+            isLeader: meeting.leader === userId
+          });
+        }
+      }
+
+      // Report users in multiple meetings
+      for (const [userId, meetingList] of userMeetingMap.entries()) {
+        if (meetingList.length > 1) {
+          anomalies.push({
+            type: 'GHOST_PARTICIPANT',
+            severity: 'HIGH',
+            userId,
+            userName: meetingList[0].participantName,
+            meetings: meetingList.map(m => m.meetingCode),
+            message: `User ${meetingList[0].participantName} appears in ${meetingList.length} meetings simultaneously`
+          });
+        }
+      }
+
+      // Check 2: Detect meetings with 0 participants (should not exist)
+      for (const [meetingCode, meeting] of meetings.entries()) {
+        if (meeting.participants.size === 0) {
+          anomalies.push({
+            type: 'EMPTY_MEETING',
+            severity: 'MEDIUM',
+            meetingCode,
+            message: `Meeting ${meetingCode} exists with 0 participants`
+          });
+        }
+      }
+
+      // Check 3: Validate socket mapping consistency
+      for (const [socketId, userData] of userSocketMap.entries()) {
+        const meeting = meetings.get(userData.meetingCode);
+        if (!meeting) {
+          anomalies.push({
+            type: 'ORPHANED_SOCKET',
+            severity: 'LOW',
+            socketId,
+            userId: userData.userId,
+            userName: userData.userName,
+            meetingCode: userData.meetingCode,
+            message: `Socket ${socketId} mapped to non-existent meeting ${userData.meetingCode}`
+          });
+        } else if (!meeting.participants.has(userData.userId)) {
+          anomalies.push({
+            type: 'SOCKET_PARTICIPANT_MISMATCH',
+            severity: 'MEDIUM',
+            socketId,
+            userId: userData.userId,
+            userName: userData.userName,
+            meetingCode: userData.meetingCode,
+            message: `Socket ${socketId} for user ${userData.userName} exists but user not in meeting participants`
+          });
+        }
+      }
+
+      // Check 4: Validate participant socket references
+      for (const [meetingCode, meeting] of meetings.entries()) {
+        for (const [userId, participant] of meeting.participants.entries()) {
+          const socketData = userSocketMap.get(participant.socketId);
+          if (!socketData) {
+            anomalies.push({
+              type: 'INVALID_SOCKET_REFERENCE',
+              severity: 'LOW',
+              meetingCode,
+              userId,
+              userName: participant.name,
+              socketId: participant.socketId,
+              message: `Participant ${participant.name} has invalid socket reference ${participant.socketId}`
+            });
+          } else if (socketData.meetingCode !== meetingCode) {
+            anomalies.push({
+              type: 'SOCKET_MEETING_MISMATCH',
+              severity: 'HIGH',
+              meetingCode,
+              userId,
+              userName: participant.name,
+              socketId: participant.socketId,
+              actualMeetingCode: socketData.meetingCode,
+              message: `Participant ${participant.name} in meeting ${meetingCode} but socket mapped to ${socketData.meetingCode}`
+            });
+          }
+        }
+      }
+
+      // Log anomalies
+      if (anomalies.length > 0) {
+        console.warn(`⚠️ [MEETING HEALTH] Detected ${anomalies.length} anomalies:`);
+        anomalies.forEach(anomaly => {
+          console.warn(`  [${anomaly.severity}] ${anomaly.type}: ${anomaly.message}`);
+        });
+      }
+
+      return {
+        healthy: anomalies.length === 0,
+        anomalyCount: anomalies.length,
+        anomalies,
+        timestamp: new Date()
+      };
+    } catch (error) {
+      console.error('[MEETING HEALTH] Error during validation:', error);
+      return {
+        healthy: false,
+        error: error.message,
+        timestamp: new Date()
+      };
+    }
+  }
+
+  /**
+   * Get comprehensive meeting health stats
+   * Safe to call frequently, read-only
+   */
+  getMeetingHealthStats() {
+    try {
+      const stats = {
+        timestamp: new Date(),
+        meetings: {
+          total: meetings.size,
+          withParticipants: 0,
+          empty: 0,
+          list: []
+        },
+        participants: {
+          total: 0,
+          uniqueUsers: new Set(),
+          inMultipleMeetings: 0
+        },
+        sockets: {
+          total: userSocketMap.size,
+          orphaned: 0
+        },
+        gracePeriod: {
+          usersInGracePeriod: disconnectedUsers.size,
+          list: Array.from(disconnectedUsers.entries()).map(([key, info]) => ({
+            key,
+            userId: info.userId,
+            userName: info.userName,
+            wasLeader: info.wasLeader,
+            disconnectedAt: info.disconnectedAt,
+            timeRemaining: Math.max(0, DISCONNECT_GRACE_PERIOD_MS - (Date.now() - info.disconnectedAt.getTime()))
+          }))
+        }
+      };
+
+      // Collect meeting details
+      for (const [meetingCode, meeting] of meetings.entries()) {
+        const participantCount = meeting.participants.size;
+        
+        if (participantCount === 0) {
+          stats.meetings.empty++;
+        } else {
+          stats.meetings.withParticipants++;
+        }
+
+        stats.participants.total += participantCount;
+
+        // Track unique users and detect multiple meeting participation
+        for (const userId of meeting.participants.keys()) {
+          stats.participants.uniqueUsers.add(userId);
+        }
+
+        stats.meetings.list.push({
+          code: meetingCode,
+          participantCount,
+          leader: meeting.leader,
+          currentRoute: meeting.currentRoute,
+          createdAt: meeting.createdAt
+        });
+      }
+
+      // Calculate users in multiple meetings
+      const userMeetingCount = new Map();
+      for (const [meetingCode, meeting] of meetings.entries()) {
+        for (const userId of meeting.participants.keys()) {
+          userMeetingCount.set(userId, (userMeetingCount.get(userId) || 0) + 1);
+        }
+      }
+      stats.participants.inMultipleMeetings = Array.from(userMeetingCount.values()).filter(count => count > 1).length;
+
+      // Count orphaned sockets
+      for (const [socketId, userData] of userSocketMap.entries()) {
+        if (!meetings.has(userData.meetingCode)) {
+          stats.sockets.orphaned++;
+        }
+      }
+
+      stats.participants.uniqueUsers = stats.participants.uniqueUsers.size;
+
+      return stats;
+    } catch (error) {
+      console.error('[MEETING HEALTH] Error getting stats:', error);
+      return {
+        error: error.message,
+        timestamp: new Date()
+      };
+    }
+  }
+
+  /**
+   * Log meeting health summary to console
+   * Call this periodically or on-demand for monitoring
+   */
+  logMeetingHealthSummary() {
+    const health = this.validateMeetingHealth();
+    const stats = this.getMeetingHealthStats();
+
+    console.log('\n========== MEETING HEALTH SUMMARY ==========');
+    console.log(`Timestamp: ${stats.timestamp.toISOString()}`);
+    console.log(`\nMeetings:`);
+    console.log(`  Total: ${stats.meetings.total}`);
+    console.log(`  With Participants: ${stats.meetings.withParticipants}`);
+    console.log(`  Empty: ${stats.meetings.empty}`);
+    console.log(`\nParticipants:`);
+    console.log(`  Total: ${stats.participants.total}`);
+    console.log(`  Unique Users: ${stats.participants.uniqueUsers}`);
+    console.log(`  In Multiple Meetings: ${stats.participants.inMultipleMeetings}`);
+    console.log(`\nSockets:`);
+    console.log(`  Total: ${stats.sockets.total}`);
+    console.log(`  Orphaned: ${stats.sockets.orphaned}`);
+    console.log(`\nGrace Period:`);
+    console.log(`  Users: ${stats.gracePeriod.usersInGracePeriod}`);
+    console.log(`\nHealth Status: ${health.healthy ? '✅ HEALTHY' : '⚠️ ISSUES DETECTED'}`);
+    console.log(`Anomalies: ${health.anomalyCount}`);
+    console.log('==========================================\n');
+
+    return { health, stats };
   }
 }
 
