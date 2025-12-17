@@ -77,6 +77,54 @@ class MeetingSocketService {
           return;
         }
 
+        // AUTO-LEAVE: Check if user is already in a different meeting and remove them
+        const existingSocketData = userSocketMap.get(socket.id);
+        if (existingSocketData && existingSocketData.meetingCode !== meetingCode) {
+          console.log(`⚠️ User ${userName} is switching from meeting ${existingSocketData.meetingCode} to ${meetingCode}`);
+          
+          // Remove from old meeting
+          const oldMeeting = meetings.get(existingSocketData.meetingCode);
+          if (oldMeeting) {
+            // Check if user was leader of old meeting
+            const wasLeaderOfOldMeeting = oldMeeting.leader === userId;
+            
+            // Remove from participants
+            oldMeeting.participants.delete(userId);
+            
+            // Notify other participants in old meeting
+            socket.to(existingSocketData.meetingCode).emit('participant-left', { 
+              userId,
+              reason: 'joined-different-meeting'
+            });
+            
+            // Leave the socket room
+            socket.leave(existingSocketData.meetingCode);
+            
+            console.log(`✅ User ${userName} removed from old meeting ${existingSocketData.meetingCode}`);
+            
+            // Clean up empty meetings
+            if (oldMeeting.participants.size === 0) {
+              meetings.delete(existingSocketData.meetingCode);
+              console.log(`🗑️ Old meeting ${existingSocketData.meetingCode} deleted (no participants)`);
+            } else if (wasLeaderOfOldMeeting) {
+              // Transfer leadership if user was leader
+              const nextParticipant = oldMeeting.participants.values().next().value;
+              if (nextParticipant) {
+                oldMeeting.leader = nextParticipant.id;
+                this.io.to(existingSocketData.meetingCode).emit('leader-changed', {
+                  newLeader: nextParticipant.id,
+                  newLeaderName: nextParticipant.name,
+                  reason: 'previous-leader-joined-different-meeting'
+                });
+                console.log(`👑 Leadership in ${existingSocketData.meetingCode} transferred to ${nextParticipant.name}`);
+              }
+            }
+            
+            // Broadcast updated active meetings
+            this.broadcastActiveMeetings();
+          }
+        }
+
         // Check if this user is reconnecting within grace period
         const disconnectKey = `${meetingCode}:${userId}`;
         const disconnectedInfo = disconnectedUsers.get(disconnectKey);
