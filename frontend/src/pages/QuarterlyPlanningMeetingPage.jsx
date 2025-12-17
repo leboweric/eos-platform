@@ -182,6 +182,7 @@ function QuarterlyPlanningMeetingPage() {
   const [quarterGrade, setQuarterGrade] = useState('');
   const [quarterFeedback, setQuarterFeedback] = useState('');
   const [sessionId, setSessionId] = useState(null); // Store meeting session ID
+  const [sessionLoading, setSessionLoading] = useState(false); // Track session creation
   
   // Cascading message states
   const [showCascadeDialog, setShowCascadeDialog] = useState(false);
@@ -467,7 +468,8 @@ function QuarterlyPlanningMeetingPage() {
           joinMeeting(meetingRoom, !hasParticipants);
           
           // Create database session if we're joining as leader, or get existing session if joining as follower
-          if (!hasParticipants) {
+          if (!hasParticipants && !sessionLoading) {
+            setSessionLoading(true);
             (async () => {
               try {
                 console.log('📝 Creating database session for Quarterly Planning meeting');
@@ -476,10 +478,13 @@ function QuarterlyPlanningMeetingPage() {
                 console.log('✅ Database session created successfully:', result.session.id);
               } catch (error) {
                 console.error('❌ Failed to create database session:', error);
+              } finally {
+                setSessionLoading(false);
               }
             })();
-          } else {
+          } else if (!sessionLoading) {
             // Check for existing active session as a follower
+            setSessionLoading(true);
             (async () => {
               try {
                 console.log('📋 Checking for existing database session for Quarterly Planning meeting');
@@ -490,6 +495,8 @@ function QuarterlyPlanningMeetingPage() {
                 }
               } catch (error) {
                 console.error('❌ Failed to get existing database session:', error);
+              } finally {
+                setSessionLoading(false);
               }
             })();
           }
@@ -509,7 +516,8 @@ function QuarterlyPlanningMeetingPage() {
       joinMeeting(meetingRoom, !hasParticipants);
       
       // Create database session if we're joining as leader, or get existing session if joining as follower
-      if (!hasParticipants) {
+      if (!hasParticipants && !sessionLoading) {
+        setSessionLoading(true);
         (async () => {
           try {
             console.log('📝 Creating database session for Quarterly Planning meeting');
@@ -518,10 +526,13 @@ function QuarterlyPlanningMeetingPage() {
             console.log('✅ Database session created successfully:', result.session.id);
           } catch (error) {
             console.error('❌ Failed to create database session:', error);
+          } finally {
+            setSessionLoading(false);
           }
         })();
-      } else {
+      } else if (!sessionLoading) {
         // Check for existing active session as a follower
+        setSessionLoading(true);
         (async () => {
           try {
             console.log('📋 Checking for existing database session for Quarterly Planning meeting');
@@ -532,6 +543,8 @@ function QuarterlyPlanningMeetingPage() {
             }
           } catch (error) {
             console.error('❌ Failed to get existing database session:', error);
+          } finally {
+            setSessionLoading(false);
           }
         })();
       }
