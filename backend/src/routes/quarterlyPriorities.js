@@ -26,7 +26,10 @@ import {
   uploadPriorityAttachment,
   getPriorityAttachments,
   downloadPriorityAttachment,
-  deletePriorityAttachment
+  deletePriorityAttachment,
+  sharePriority,
+  getPriorityShares,
+  getAvailableTeamsForSharing
 } from '../controllers/quarterlyPrioritiesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -84,6 +87,11 @@ router.post('/priorities/:priorityId/attachments', upload.single('file'), upload
 router.get('/priorities/:priorityId/attachments', getPriorityAttachments);
 router.get('/priorities/:priorityId/attachments/:attachmentId/download', downloadPriorityAttachment);
 router.delete('/priorities/:priorityId/attachments/:attachmentId', deletePriorityAttachment);
+
+// Priority sharing
+router.post('/priorities/:priorityId/shares', sharePriority);
+router.get('/priorities/:priorityId/shares', getPriorityShares);
+router.get('/available-teams', getAvailableTeamsForSharing);
 
 // Admin cleanup function
 router.post('/cleanup-test-priorities', cleanupTestPriorities);

@@ -1741,13 +1741,79 @@ export const getCurrentPriorities = async (req, res) => {
       );
     }
 
+    // Get shared priorities (rocks shared with this team from other teams)
+    let sharedPriorities = [];
+    if (teamId && teamId !== 'null' && teamId !== 'undefined') {
+      const sharedPrioritiesQuery = `
+        SELECT 
+          p.*,
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as owner_name,
+          u.email as owner_email,
+          u.first_name as owner_first_name,
+          u.last_name as owner_last_name,
+          t.name as team_name,
+          t.is_leadership_team as priority_from_leadership_team
+        FROM quarterly_priorities p
+        INNER JOIN priority_shares ps ON p.id = ps.priority_id
+        LEFT JOIN users u ON p.owner_id = u.id
+        LEFT JOIN teams t ON p.team_id = t.id
+        WHERE ps.shared_with_team_id = $1
+        AND p.organization_id = $2
+        AND p.deleted_at IS NULL
+        ORDER BY p.created_at ASC
+      `;
+      
+      const sharedResult = await query(sharedPrioritiesQuery, [teamId, orgId]);
+      
+      // Get milestones and attachments for shared priorities
+      const sharedPriorityIds = sharedResult.rows.map(p => p.id);
+      if (sharedPriorityIds.length > 0) {
+        const sharedMilestonesResult = await query(
+          `SELECT pm.*, u.first_name || ' ' || u.last_name as owner_name
+           FROM priority_milestones pm
+           LEFT JOIN users u ON pm.owner_id = u.id
+           WHERE pm.priority_id = ANY($1)
+           ORDER BY pm.display_order, pm.due_date`,
+          [sharedPriorityIds]
+        );
+        
+        const sharedMilestonesByPriority = {};
+        sharedMilestonesResult.rows.forEach(milestone => {
+          if (!sharedMilestonesByPriority[milestone.priority_id]) {
+            sharedMilestonesByPriority[milestone.priority_id] = [];
+          }
+          sharedMilestonesByPriority[milestone.priority_id].push(milestone);
+        });
+        
+        sharedPriorities = sharedResult.rows.map(priority => ({
+          ...priority,
+          milestones: (sharedMilestonesByPriority[priority.id] || []).map(m => ({
+            ...m,
+            dueDate: m.due_date
+          })),
+          owner: priority.owner_id ? {
+            id: priority.owner_id,
+            name: priority.owner_name,
+            email: priority.owner_email
+          } : null,
+          dueDate: priority.due_date,
+          owner_first_name: priority.owner_first_name,
+          owner_last_name: priority.owner_last_name,
+          teamName: priority.team_name,
+          isFromLeadership: priority.priority_from_leadership_team === true,
+          isShared: true // Mark as shared so frontend can display differently
+        }));
+      }
+    }
+
     // Ensure data types are correct for frontend
     const responseData = {
       companyPriorities: Array.isArray(companyPriorities) ? companyPriorities : [],
       teamMemberPriorities: typeof teamMemberPriorities === 'object' ? teamMemberPriorities : {},
       predictions: typeof predictions === 'object' ? predictions : {},
       teamMembers: Array.isArray(teamMembersResult.rows) ? teamMembersResult.rows : [],
-      myMilestones: Array.isArray(myMilestones) ? myMilestones : [] // Milestones assigned to user on other people's Rocks
+      myMilestones: Array.isArray(myMilestones) ? myMilestones : [], // Milestones assigned to user on other people's Rocks
+      sharedPriorities: Array.isArray(sharedPriorities) ? sharedPriorities : [] // Rocks shared with this team
     };
     
     console.log('Response data structure:', {
@@ -2099,6 +2165,172 @@ export const deletePriorityAttachment = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete attachment'
+    });
+  }
+};
+// ============================================================================
+// PRIORITY SHARING FUNCTIONS
+// ============================================================================
+
+/**
+ * Share a priority (rock) with other teams
+ * POST /organizations/:orgId/teams/:teamId/quarterly-priorities/priorities/:priorityId/shares
+ */
+export const sharePriority = async (req, res) => {
+  const { orgId, teamId, priorityId } = req.params;
+  const { sharedWithTeamIds } = req.body; // Array of team IDs to share with
+  const userId = req.user.id;
+
+  try {
+    // Verify the priority exists and belongs to this organization
+    const priorityCheck = await query(
+      `SELECT id, owner_id, team_id FROM quarterly_priorities 
+       WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+      [priorityId, orgId]
+    );
+
+    if (priorityCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Priority not found'
+      });
+    }
+
+    const priority = priorityCheck.rows[0];
+
+    // Verify user has permission to share (must be owner or on the same team)
+    const userTeamCheck = await query(
+      `SELECT 1 FROM team_members WHERE user_id = $1 AND team_id = $2`,
+      [userId, priority.team_id]
+    );
+
+    if (userTeamCheck.rows.length === 0 && priority.owner_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to share this priority'
+      });
+    }
+
+    // Delete existing shares for this priority
+    await query(
+      `DELETE FROM priority_shares WHERE priority_id = $1`,
+      [priorityId]
+    );
+
+    // Insert new shares
+    if (sharedWithTeamIds && sharedWithTeamIds.length > 0) {
+      const values = sharedWithTeamIds
+        .map((teamId, index) => {
+          const offset = index * 3;
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3})`;
+        })
+        .join(', ');
+
+      const params = sharedWithTeamIds.flatMap(teamId => [
+        uuidv4(),
+        priorityId,
+        teamId,
+        userId
+      ]);
+
+      // Remove userId from the end and adjust the query
+      const insertParams = [];
+      for (let i = 0; i < sharedWithTeamIds.length; i++) {
+        insertParams.push(uuidv4(), priorityId, sharedWithTeamIds[i], userId);
+      }
+
+      const insertValues = sharedWithTeamIds
+        .map((_, index) => {
+          const offset = index * 4;
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`;
+        })
+        .join(', ');
+
+      await query(
+        `INSERT INTO priority_shares (id, priority_id, shared_with_team_id, shared_by)
+         VALUES ${insertValues}
+         ON CONFLICT (priority_id, shared_with_team_id) DO NOTHING`,
+        insertParams
+      );
+    }
+
+    // Get updated shares
+    const sharesResult = await query(
+      `SELECT ps.*, t.name as team_name
+       FROM priority_shares ps
+       LEFT JOIN teams t ON ps.shared_with_team_id = t.id
+       WHERE ps.priority_id = $1`,
+      [priorityId]
+    );
+
+    res.json({
+      success: true,
+      data: sharesResult.rows
+    });
+  } catch (error) {
+    console.error('Error sharing priority:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to share priority'
+    });
+  }
+};
+
+/**
+ * Get teams a priority is shared with
+ * GET /organizations/:orgId/teams/:teamId/quarterly-priorities/priorities/:priorityId/shares
+ */
+export const getPriorityShares = async (req, res) => {
+  const { orgId, priorityId } = req.params;
+
+  try {
+    const sharesResult = await query(
+      `SELECT ps.*, t.name as team_name, t.id as team_id
+       FROM priority_shares ps
+       LEFT JOIN teams t ON ps.shared_with_team_id = t.id
+       WHERE ps.priority_id = $1`,
+      [priorityId]
+    );
+
+    res.json({
+      success: true,
+      data: sharesResult.rows
+    });
+  } catch (error) {
+    console.error('Error getting priority shares:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get priority shares'
+    });
+  }
+};
+
+/**
+ * Get all teams in the organization (for sharing UI)
+ * GET /organizations/:orgId/teams/:teamId/quarterly-priorities/available-teams
+ */
+export const getAvailableTeamsForSharing = async (req, res) => {
+  const { orgId, teamId } = req.params;
+
+  try {
+    // Get all teams in the organization except the current team
+    const teamsResult = await query(
+      `SELECT id, name, is_leadership_team
+       FROM teams
+       WHERE organization_id = $1 AND id != $2
+       ORDER BY is_leadership_team DESC, name ASC`,
+      [orgId, teamId]
+    );
+
+    res.json({
+      success: true,
+      data: teamsResult.rows
+    });
+  } catch (error) {
+    console.error('Error getting available teams:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get available teams'
     });
   }
 };

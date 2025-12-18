@@ -95,6 +95,11 @@ const PriorityDialog = ({
   const [updateText, setUpdateText] = useState('');
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editingUpdateText, setEditingUpdateText] = useState('');
+
+  // Sharing states
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [sharedWithTeamIds, setSharedWithTeamIds] = useState([]);
+  const [loadingShares, setLoadingShares] = useState(false);
   
   // Calculate actual progress from milestones
   const calculatedProgress = priority?.milestones && priority.milestones.length > 0
@@ -156,6 +161,40 @@ const PriorityDialog = ({
       setActiveTab('details');
     }
   }, [open]);
+
+  // Load sharing data when priority changes
+  useEffect(() => {
+    const loadSharingData = async () => {
+      if (!priority?.id || !teamId || !user?.organizationId) return;
+      
+      try {
+        setLoadingShares(true);
+        
+        // Load available teams
+        const teams = await quarterlyPrioritiesService.getAvailableTeamsForSharing(
+          user.organizationId,
+          teamId
+        );
+        setAvailableTeams(teams || []);
+        
+        // Load current shares
+        const shares = await quarterlyPrioritiesService.getPriorityShares(
+          user.organizationId,
+          teamId,
+          priority.id
+        );
+        setSharedWithTeamIds(shares?.map(s => s.team_id) || []);
+      } catch (error) {
+        console.error('Error loading sharing data:', error);
+      } finally {
+        setLoadingShares(false);
+      }
+    };
+    
+    if (open && priority?.id) {
+      loadSharingData();
+    }
+  }, [priority?.id, open, teamId, user?.organizationId]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -282,7 +321,7 @@ const PriorityDialog = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col min-h-[500px]">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="milestones" className="flex items-center gap-1">
               {labels?.milestones_label || 'Milestones'}
@@ -305,6 +344,14 @@ const PriorityDialog = ({
               {priority?.attachments?.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1 text-xs">
                   {priority.attachments.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="sharing" className="flex items-center gap-1" disabled={!priority}>
+              Sharing
+              {sharedWithTeamIds.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1 text-xs">
+                  {sharedWithTeamIds.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -855,6 +902,107 @@ const PriorityDialog = ({
                   </div>
                 </div>
               ))}
+            </TabsContent>
+
+            {/* Sharing Tab */}
+            <TabsContent value="sharing" className="space-y-4">
+              {loadingShares ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading sharing options...</span>
+                </div>
+              ) : (
+                <div className="space-y-4 pt-6">
+                  <div>
+                    <Label className="text-base font-semibold">Share with Teams</Label>
+                    <p className="text-sm text-gray-500 mt-1 mb-4">
+                      Select which teams can view this {labels?.priority_singular?.toLowerCase() || 'priority'}. 
+                      Shared {labels?.priority_plural?.toLowerCase() || 'priorities'} are read-only for other teams.
+                    </p>
+                  </div>
+
+                  {availableTeams.length === 0 ? (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        No other teams available to share with.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-2">
+                      {availableTeams.map(team => (
+                        <div 
+                          key={team.id} 
+                          className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          <Checkbox
+                            id={`team-${team.id}`}
+                            checked={sharedWithTeamIds.includes(team.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSharedWithTeamIds([...sharedWithTeamIds, team.id]);
+                              } else {
+                                setSharedWithTeamIds(sharedWithTeamIds.filter(id => id !== team.id));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`team-${team.id}`}
+                            className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {team.name}
+                            {team.is_leadership_team && (
+                              <Badge variant="outline" className="ml-2">Leadership</Badge>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setSaving(true);
+                          await quarterlyPrioritiesService.sharePriority(
+                            user.organizationId,
+                            teamId,
+                            priority.id,
+                            sharedWithTeamIds
+                          );
+                          setError(null);
+                          // Show success message
+                          const successMsg = sharedWithTeamIds.length > 0 
+                            ? `Shared with ${sharedWithTeamIds.length} team(s)`
+                            : 'Sharing removed';
+                          alert(successMsg); // TODO: Replace with toast notification
+                        } catch (err) {
+                          console.error('Error saving shares:', err);
+                          setError('Failed to update sharing settings');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving}
+                      style={{ backgroundColor: themeColors.primary }}
+                      className="w-full"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Save Sharing Settings
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </div>
         </Tabs>

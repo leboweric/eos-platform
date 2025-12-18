@@ -141,6 +141,7 @@ const QuarterlyPrioritiesPageClean = () => {
   // State for priorities data
   const [companyPriorities, setCompanyPriorities] = useState([]);
   const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
+  const [sharedPriorities, setSharedPriorities] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [archivedQuarters, setArchivedQuarters] = useState({});
   const [completedNotArchivedCount, setCompletedNotArchivedCount] = useState(0);
@@ -297,6 +298,7 @@ const QuarterlyPrioritiesPageClean = () => {
         
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
+        setSharedPriorities(data.sharedPriorities || []); // Rocks shared with this team from other teams
         setTeamMembers(data.teamMembers || []);
         setMyMilestones(data.myMilestones || []); // Milestones assigned to user on other people's Rocks
         
@@ -3152,6 +3154,98 @@ const QuarterlyPrioritiesPageClean = () => {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Shared Priorities from Other Teams */}
+                  {sharedPriorities.length > 0 && (
+                    <div className="space-y-6 mt-8">
+                      <div className="flex items-center gap-3">
+                        <Link className="h-6 w-6" style={{ color: themeColors.accent }} />
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          Shared {labels.priorities_label} from Other Teams
+                        </h3>
+                        <Badge variant="outline">Read Only</Badge>
+                      </div>
+                      <div className="space-y-4">
+                        {sharedPriorities.map(priority => {
+                          const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                          
+                          return (
+                            <Card 
+                              key={priority.id}
+                              className={`max-w-5xl opacity-75 ${isComplete ? 'border-slate-200' : 'bg-gray-50 border-gray-200'}`}
+                              style={{
+                                backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                              }}
+                            >
+                              <CardHeader className="pb-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3">
+                                      {isComplete ? (
+                                        <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
+                                      ) : (
+                                        <Target className="h-5 w-5 text-gray-400" />
+                                      )}
+                                      <h3 className={`text-lg font-semibold ${isComplete ? 'line-through' : 'text-gray-700'}`}
+                                          style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
+                                        {priority.title}
+                                      </h3>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {priority.teamName}
+                                      </Badge>
+                                      <p className="text-sm text-gray-600">
+                                        Owner: {priority.owner?.name || 'Unassigned'} • 
+                                        Progress: {isComplete ? 100 : (priority.progress || 0)}%
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Badge 
+                                    className={`${
+                                      isComplete ? 'text-white' :
+                                      priority.status === 'off-track' ? 'bg-red-100 text-red-800' :
+                                      'text-white'
+                                    }`}
+                                    style={{
+                                      backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                      borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                      opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                    }}
+                                  >
+                                    {isComplete ? 'Complete' :
+                                     priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                  </Badge>
+                                </div>
+                                {priority.description && (
+                                  <p className="text-sm text-gray-600 mt-3">
+                                    {priority.description}
+                                  </p>
+                                )}
+                                {priority.milestones && priority.milestones.length > 0 && (
+                                  <div className="mt-4">
+                                    <p className="text-xs font-semibold text-gray-500 mb-2">
+                                      {labels.milestones_label || 'Milestones'}: {priority.milestones.filter(m => m.completed).length}/{priority.milestones.length}
+                                    </p>
+                                    <div className="space-y-1">
+                                      {priority.milestones.map(milestone => (
+                                        <div key={milestone.id} className="flex items-center gap-2 text-sm">
+                                          <CheckSquare className={`h-4 w-4 ${milestone.completed ? 'text-green-600' : 'text-gray-400'}`} />
+                                          <span className={milestone.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                            {milestone.title}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </CardHeader>
+                            </Card>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
