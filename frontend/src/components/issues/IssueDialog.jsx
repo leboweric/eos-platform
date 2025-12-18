@@ -335,15 +335,23 @@ const IssueDialog = ({
       if (newAttachments.length > 0 && (issue || savedIssue)) {
         setUploadingFiles(true);
         const issueId = issue?.id || savedIssue?.id;
+        const failedFiles = [];
         
         for (const file of newAttachments) {
           try {
             await issuesService.uploadAttachment(issueId, file);
           } catch (error) {
             console.error('Failed to upload file:', file.name, error);
+            failedFiles.push(file.name);
           }
         }
         setUploadingFiles(false);
+        
+        // Show error if any files failed
+        if (failedFiles.length > 0) {
+          setError(`Failed to upload: ${failedFiles.join(', ')}`);
+          setTimeout(() => setError(null), 10000);
+        }
       }
       
       onClose();
@@ -357,7 +365,15 @@ const IssueDialog = ({
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setNewAttachments(prev => [...prev, ...files]);
+    const validFiles = files.filter(file => file.size <= 100 * 1024 * 1024); // 100MB limit
+    
+    if (files.length !== validFiles.length) {
+      setError('Some files exceed 100MB limit and were not added');
+      // Keep error visible longer for user to see
+      setTimeout(() => setError(null), 10000);
+    }
+    
+    setNewAttachments(prev => [...prev, ...validFiles]);
   };
 
   const removeNewAttachment = (index) => {
@@ -408,11 +424,12 @@ const IssueDialog = ({
     setIsDragging(false);
     
     const droppedFiles = Array.from(e.dataTransfer.files);
-    const validFiles = droppedFiles.filter(file => file.size <= 10 * 1024 * 1024); // 10MB limit
+    const validFiles = droppedFiles.filter(file => file.size <= 100 * 1024 * 1024); // 100MB limit
     
     if (droppedFiles.length !== validFiles.length) {
-      setError('Some files exceed 10MB limit and were not added');
-      setTimeout(() => setError(null), 3000);
+      setError('Some files exceed 100MB limit and were not added');
+      // Keep error visible longer for user to see
+      setTimeout(() => setError(null), 10000);
     }
     
     setNewAttachments(prev => [...prev, ...validFiles]);
@@ -748,7 +765,7 @@ const IssueDialog = ({
                     </p>
                   </div>
                 </label>
-                <p className="text-xs text-slate-500">Max file size: 10MB</p>
+                <p className="text-xs text-slate-500">Max file size: 100MB per file</p>
               </div>
             </div>
           </div>
