@@ -63,7 +63,8 @@ import {
   FileText,
   GitBranch,
   BarChart3,
-  Link
+  Link,
+  XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
@@ -422,6 +423,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     }));
   };
 
+  // Toggle expansion for shared priorities sections
+  const toggleSharedPriorities = (ownerId) => {
+    setExpandedSharedPriorities(prev => ({
+      ...prev,
+      [ownerId]: !prev[ownerId]
+    }));
+  };
+
   // Toggle expansion for todo assignee sections
   const toggleTodoAssignees = (assigneeId) => {
     setExpandedSections(prev => ({
@@ -485,8 +494,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
     individualPriorities: {}, // Will be populated with owners on load
-    todoAssignees: {} // Will be populated with assignees on load
+    todoAssignees: {}, // Will be populated with assignees on load
+    sharedPriorities: {} // Will be populated with owner IDs for shared rocks
   });
+
+  const [expandedSharedPriorities, setExpandedSharedPriorities] = useState({});
   
   
   // Close dropdown when clicking outside
@@ -6046,77 +6058,144 @@ const WeeklyAccountabilityMeetingPage = () => {
                 })()}
 
                 {/* Shared Priorities from Other Teams */}
-                {sharedPriorities.length > 0 && (
-                  <div className="mt-8 space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Link className="h-5 w-5 text-slate-400" />
-                      <h3 className="text-lg font-semibold text-slate-700">
-                        Shared {labels.priorities_label} from Other Teams
-                      </h3>
-                      <Badge variant="outline" className="text-xs">Read Only</Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {sharedPriorities.map(priority => {
-                        const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                        const isOnTrack = priority.status === 'on-track';
-                        
-                        return (
-                          <div
-                            key={priority.id}
-                            className="group bg-white border border-slate-200 rounded-lg p-4 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
-                            onClick={() => {
-                              setSelectedPriority(priority);
-                              setShowPriorityDialog(true);
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 mt-1">
-                                {isComplete ? (
-                                  <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
-                                ) : (
-                                  <Target className="h-5 w-5 text-slate-400" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className={`text-sm font-semibold ${
-                                    isComplete ? 'line-through text-slate-400' : 'text-slate-700'
-                                  }`}>
-                                    {priority.title}
-                                  </h4>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {priority.teamName}
-                                  </Badge>
+                {sharedPriorities.length > 0 && (() => {
+                  // Group shared priorities by owner
+                  const groupedShared = sharedPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner_id || 'unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = {
+                        id: ownerId,
+                        name: priority.owner?.name || 'Unassigned',
+                        teamName: priority.teamName,
+                        rocks: []
+                      };
+                    }
+                    acc[ownerId].rocks.push(priority);
+                    return acc;
+                  }, {});
+
+                  return (
+                    <div className="mt-8 space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Link className="h-5 w-5 text-slate-400" />
+                        <h3 className="text-lg font-semibold text-slate-700">
+                          Shared {labels.priorities_label} from Other Teams
+                        </h3>
+                        <Badge variant="outline" className="text-xs">Read Only</Badge>
+                      </div>
+                      <div className="space-y-3">
+                        {Object.values(groupedShared).sort((a, b) => {
+                          const aName = String(a.name || '');
+                          const bName = String(b.name || '');
+                          return aName.localeCompare(bName);
+                        }).map(owner => (
+                          <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                            <CardHeader className="pb-3">
+                              <div 
+                                className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                                onClick={() => toggleSharedPriorities(owner.id)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                    <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                      {(owner.name || 'Unknown').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="text-lg font-bold text-slate-900">{owner.name || 'Unknown User'}</h3>
+                                      <Badge variant="secondary" className="text-xs">
+                                        {owner.teamName}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-slate-500">
-                                  <span>{priority.owner?.name || 'Unassigned'}</span>
-                                  <span>•</span>
-                                  <span>{isComplete ? 100 : (priority.progress || 0)}% complete</span>
-                                </div>
+                                <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                                  expandedSharedPriorities?.[owner.id] ? 'rotate-180' : ''
+                                }`} />
                               </div>
-                              <div className="flex-shrink-0">
-                                <Badge
-                                  className={`text-xs ${
-                                    isComplete ? 'text-white' :
-                                    priority.status === 'off-track' ? 'bg-red-100 text-red-800' :
-                                    'text-white'
-                                  }`}
-                                  style={{
-                                    backgroundColor: isComplete || isOnTrack ? themeColors.primary : undefined,
-                                    opacity: isComplete || isOnTrack ? 0.9 : undefined
-                                  }}
-                                >
-                                  {isComplete ? 'Complete' :
-                                   priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                                </Badge>
+                            </CardHeader>
+                            {expandedSharedPriorities?.[owner.id] && (
+                            <CardContent className="pt-0">
+                              <div className="space-y-2">
+                                {owner.rocks.map(priority => {
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                  const isOnTrack = priority.status === 'on-track';
+                                  const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                  const totalMilestones = (priority.milestones || []).length;
+                                  
+                                  return (
+                                    <div
+                                      key={priority.id}
+                                      className="group bg-white border border-slate-100 rounded-lg p-3 hover:bg-slate-50 transition-all cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedPriority(priority);
+                                        setShowPriorityDialog(true);
+                                      }}
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                          {isComplete ? (
+                                            <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                          ) : isOnTrack ? (
+                                            <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                          ) : (
+                                            <XCircle className="h-4 w-4 text-red-600" />
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className={`text-sm font-medium ${
+                                            isComplete ? 'line-through text-slate-400' : 'text-slate-700'
+                                          }`}>
+                                            {priority.title}
+                                          </h4>
+                                          {totalMilestones > 0 && (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden max-w-[120px]">
+                                                <div 
+                                                  className="h-full rounded-full transition-all duration-300"
+                                                  style={{
+                                                    width: `${(completedMilestones / totalMilestones) * 100}%`,
+                                                    backgroundColor: themeColors.primary
+                                                  }}
+                                                />
+                                              </div>
+                                              <span className="text-xs text-slate-500">
+                                                {completedMilestones}/{totalMilestones}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                          <Badge
+                                            className={`text-xs ${
+                                              isComplete ? 'text-white' :
+                                              priority.status === 'off-track' ? 'bg-red-100 text-red-800' :
+                                              'text-white'
+                                            }`}
+                                            style={{
+                                              backgroundColor: isComplete || isOnTrack ? themeColors.primary : undefined,
+                                              opacity: isComplete || isOnTrack ? 0.9 : undefined
+                                            }}
+                                          >
+                                            {isComplete ? 'Complete' :
+                                             priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            </CardContent>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
           </div>

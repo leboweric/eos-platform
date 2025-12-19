@@ -1,6 +1,6 @@
 import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, addMonths, startOfQuarter, endOfQuarter, addDays } from 'date-fns';
+import { format, addMonths, startOfQuarter, endOfQuarter, addDays, parseISO } from 'date-fns';
 import { formatDateSafe } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
@@ -66,7 +66,8 @@ import {
   Activity,
   Zap,
   Upload,
-  Link
+  Link,
+  XCircle
 } from 'lucide-react';
 
 // Error Boundary Component
@@ -152,7 +153,8 @@ const QuarterlyPrioritiesPageClean = () => {
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
     individualPriorities: {}, // Will be populated with team members on load
-    myMilestones: true // My Milestones section expanded by default
+    myMilestones: true, // My Milestones section expanded by default
+    sharedPriorities: {} // Will be populated with owner IDs for shared rocks
   });
   
   
@@ -1762,6 +1764,16 @@ const QuarterlyPrioritiesPageClean = () => {
       individualPriorities: {
         ...prev.individualPriorities,
         [memberId]: !prev.individualPriorities[memberId]
+      }
+    }));
+  };
+
+  const toggleSharedPriorities = (ownerId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      sharedPriorities: {
+        ...prev.sharedPriorities,
+        [ownerId]: !prev.sharedPriorities[ownerId]
       }
     }));
   };
@@ -4434,111 +4446,169 @@ const QuarterlyPrioritiesPageClean = () => {
           })()}
 
           {/* Shared Priorities from Other Teams */}
-          {!showArchived && sharedPriorities.length > 0 && (
-            <div className="space-y-6 mt-8">
-              <div className="flex items-center gap-3">
-                <Link className="h-6 w-6" style={{ color: themeColors.accent }} />
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Shared {labels.priorities_label} from Other Teams
-                </h3>
-                <Badge variant="outline">Read Only</Badge>
-              </div>
-              <div className="space-y-4">
-                {sharedPriorities.map(priority => {
-                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                  
-                  return (
-                    <Card 
-                      key={priority.id}
-                      className="max-w-5xl bg-white border border-slate-200 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all"
-                      style={{
-                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                      }}
-                      onClick={() => {
-                        setSelectedPriority(priority);
-                        setShowPriorityDialog(true);
-                      }}
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              {isComplete ? (
-                                <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
-                              ) : (
-                                <Target className="h-5 w-5 text-gray-400" />
-                              )}
-                              <h3 className={`text-lg font-semibold ${
-                                isComplete ? 'line-through' : 'text-gray-700'
-                              }`}
-                                  style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
-                                {priority.title}
-                              </h3>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {priority.teamName}
-                              </Badge>
-                              <p className="text-sm text-gray-600">
-                                Owner: {priority.owner?.name || 'Unassigned'} • 
-                                Progress: {isComplete ? 100 : (priority.progress || 0)}%
-                              </p>
+          {!showArchived && sharedPriorities.length > 0 && (() => {
+            // Group shared priorities by owner
+            const groupedShared = sharedPriorities.reduce((acc, priority) => {
+              const ownerId = priority.owner_id || 'unassigned';
+              if (!acc[ownerId]) {
+                acc[ownerId] = {
+                  id: ownerId,
+                  name: priority.owner?.name || 'Unassigned',
+                  teamName: priority.teamName,
+                  rocks: []
+                };
+              }
+              acc[ownerId].rocks.push(priority);
+              return acc;
+            }, {});
+
+            return (
+              <div className="space-y-6 mt-8">
+                <div className="flex items-center gap-3">
+                  <Link className="h-6 w-6" style={{ color: themeColors.accent }} />
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Shared {labels.priorities_label} from Other Teams
+                  </h3>
+                  <Badge variant="outline">Read Only</Badge>
+                </div>
+                <div className="space-y-4">
+                  {Object.values(groupedShared).sort((a, b) => {
+                    const aName = String(a.name || '');
+                    const bName = String(b.name || '');
+                    return aName.localeCompare(bName);
+                  }).map(owner => (
+                    <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer hover:bg-slate-50 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                          onClick={() => toggleSharedPriorities(owner.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-slate-100">
+                              <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                {(owner.name || 'Unknown').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-bold text-slate-900">{owner.name || 'Unknown User'}</h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  {owner.teamName}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                             </div>
                           </div>
-                          <Badge 
-                            className={`${
-                              isComplete ? 'text-white' :
-                              priority.status === 'off-track' ? 'bg-red-100 text-red-800' :
-                              'text-white'
-                            }`}
-                            style={{
-                              backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                              borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                              opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
-                            }}
-                          >
-                            {isComplete ? 'Complete' :
-                             priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                          </Badge>
+                          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
+                            expandedSections.sharedPriorities?.[owner.id] ? 'rotate-180' : ''
+                          }`} />
                         </div>
-                        {priority.description && (
-                          <p className="text-sm text-gray-600 mt-3">
-                            {priority.description}
-                          </p>
-                        )}
-                        {priority.milestones && priority.milestones.length > 0 && (
-                          <div className="mt-4">
-                            <p className="text-xs font-semibold text-gray-500 mb-2">
-                              {labels.milestones_label || 'Milestones'}: {priority.milestones.filter(m => m.completed).length}/{priority.milestones.length}
-                            </p>
-                            <div className="space-y-1">
-                              {priority.milestones.slice(0, 3).map(milestone => (
-                                <div key={milestone.id} className="flex items-center gap-2 text-sm">
-                                  <CheckSquare className={`h-4 w-4 ${
-                                    milestone.completed ? 'text-green-600' : 'text-gray-400'
-                                  }`} />
-                                  <span className={
-                                    milestone.completed ? 'line-through text-gray-500' : 'text-gray-700'
-                                  }>
-                                    {milestone.title}
-                                  </span>
-                                </div>
-                              ))}
-                              {priority.milestones.length > 3 && (
-                                <p className="text-xs text-gray-500 ml-6">
-                                  +{priority.milestones.length - 3} more
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </CardHeader>
+                      {expandedSections.sharedPriorities?.[owner.id] && (
+                      <CardContent className="pt-0">
+                        <div className="space-y-1">
+                          {/* Header Row */}
+                          <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                            <div className="w-10">Status</div>
+                            <div className="flex-1 ml-3">Title</div>
+                            <div className="w-40 text-center">Milestone Progress</div>
+                            <div className="w-20 text-right">Due By</div>
+                          </div>
+                          
+                          {/* Rock Rows */}
+                          {owner.rocks.map(priority => {
+                            const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                            const isOnTrack = priority.status === 'on-track';
+                            const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                            const totalMilestones = (priority.milestones || []).length;
+                            
+                            return (
+                              <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                <div 
+                                  className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedPriority(priority);
+                                    setShowPriorityDialog(true);
+                                  }}
+                                >
+                                  {/* Status Indicator */}
+                                  <div className="w-10 flex items-center">
+                                    <div 
+                                      className="flex items-center justify-center w-7 h-7 rounded-full"
+                                      style={{
+                                        backgroundColor: isComplete ? `${themeColors.primary}20` : 
+                                                       isOnTrack ? `${themeColors.primary}10` : '#FEE2E2'
+                                      }}
+                                    >
+                                      {isComplete ? (
+                                        <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                      ) : isOnTrack ? (
+                                        <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                      ) : (
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Title */}
+                                  <div className="flex-1 ml-3">
+                                    <div className={`text-sm font-medium ${
+                                      isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                                    }`}>
+                                      {priority.title}
+                                    </div>
+                                    {priority.description && (
+                                      <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                                        {priority.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Milestone Progress */}
+                                  <div className="w-40 text-center">
+                                    {totalMilestones > 0 ? (
+                                      <div className="flex items-center justify-center gap-2">
+                                        <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                          <div 
+                                            className="h-full rounded-full transition-all duration-300"
+                                            style={{
+                                              width: `${(completedMilestones / totalMilestones) * 100}%`,
+                                              backgroundColor: themeColors.primary
+                                            }}
+                                          />
+                                        </div>
+                                        <span className="text-xs text-slate-600 font-medium min-w-[3rem]">
+                                          {completedMilestones}/{totalMilestones}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-slate-400">-</span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Due Date */}
+                                  <div className="w-20 text-right">
+                                    {priority.due_date ? (
+                                      <span className="text-xs text-slate-600">
+                                        {format(parseISO(priority.due_date), 'MMM d')}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-slate-400">-</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                      )}
                     </Card>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* My Milestones Section - Shows milestones assigned to user on other people's Rocks */}
           {!showArchived && myMilestones.length > 0 && (
