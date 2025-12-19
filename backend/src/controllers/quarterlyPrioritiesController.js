@@ -1754,7 +1754,7 @@ export const getCurrentPriorities = async (req, res) => {
           t.name as team_name,
           t.is_leadership_team as priority_from_leadership_team
         FROM quarterly_priorities p
-        INNER JOIN priority_shares ps ON p.id = ps.priority_id
+        INNER JOIN quarterly_priority_shares ps ON p.id = ps.priority_id
         LEFT JOIN users u ON p.owner_id = u.id
         LEFT JOIN teams t ON p.team_id = t.id
         WHERE ps.shared_with_team_id = $1
@@ -2213,7 +2213,7 @@ export const sharePriority = async (req, res) => {
 
     // Delete existing shares for this priority
     await query(
-      `DELETE FROM priority_shares WHERE priority_id = $1`,
+      `DELETE FROM quarterly_priority_shares WHERE priority_id = $1`,
       [priorityId]
     );
 
@@ -2247,7 +2247,7 @@ export const sharePriority = async (req, res) => {
         .join(', ');
 
       await query(
-        `INSERT INTO priority_shares (id, priority_id, shared_with_team_id, shared_by)
+        `INSERT INTO quarterly_priority_shares (id, priority_id, shared_with_team_id, shared_by)
          VALUES ${insertValues}
          ON CONFLICT (priority_id, shared_with_team_id) DO NOTHING`,
         insertParams
@@ -2257,7 +2257,7 @@ export const sharePriority = async (req, res) => {
     // Get updated shares
     const sharesResult = await query(
       `SELECT ps.*, t.name as team_name
-       FROM priority_shares ps
+       FROM quarterly_priority_shares ps
        LEFT JOIN teams t ON ps.shared_with_team_id = t.id
        WHERE ps.priority_id = $1`,
       [priorityId]
@@ -2286,7 +2286,7 @@ export const getPriorityShares = async (req, res) => {
   try {
     const sharesResult = await query(
       `SELECT ps.*, t.name as team_name, t.id as team_id
-       FROM priority_shares ps
+       FROM quarterly_priority_shares ps
        LEFT JOIN teams t ON ps.shared_with_team_id = t.id
        WHERE ps.priority_id = $1`,
       [priorityId]
