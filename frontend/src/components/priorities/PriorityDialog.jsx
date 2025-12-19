@@ -165,34 +165,52 @@ const PriorityDialog = ({
   // Load sharing data when priority changes
   useEffect(() => {
     const loadSharingData = async () => {
-      if (!priority?.id || !teamId || !user?.organizationId) return;
+      console.log('[PriorityDialog] loadSharingData called with:', { 
+        priorityId: priority?.id, 
+        teamId, 
+        orgId: user?.organizationId,
+        open 
+      });
+      
+      if (!priority?.id || !teamId || !user?.organizationId) {
+        console.log('[PriorityDialog] Skipping sharing data load - missing required params');
+        return;
+      }
       
       try {
         setLoadingShares(true);
+        console.log('[PriorityDialog] Loading available teams...');
         
         // Load available teams
         const teams = await quarterlyPrioritiesService.getAvailableTeamsForSharing(
           user.organizationId,
           teamId
         );
+        console.log('[PriorityDialog] Available teams response:', teams);
         setAvailableTeams(teams || []);
         
         // Load current shares
+        console.log('[PriorityDialog] Loading current shares...');
         const shares = await quarterlyPrioritiesService.getPriorityShares(
           user.organizationId,
           teamId,
           priority.id
         );
+        console.log('[PriorityDialog] Current shares response:', shares);
         setSharedWithTeamIds(shares?.map(s => s.team_id) || []);
       } catch (error) {
-        console.error('Error loading sharing data:', error);
+        console.error('[PriorityDialog] Error loading sharing data:', error);
+        console.error('[PriorityDialog] Error details:', error.response?.data || error.message);
       } finally {
         setLoadingShares(false);
       }
     };
     
     if (open && priority?.id) {
+      console.log('[PriorityDialog] Conditions met, calling loadSharingData');
       loadSharingData();
+    } else {
+      console.log('[PriorityDialog] Conditions NOT met for loading sharing data:', { open, priorityId: priority?.id });
     }
   }, [priority?.id, open, teamId, user?.organizationId]);
 
