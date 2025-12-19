@@ -3175,7 +3175,7 @@ const QuarterlyPrioritiesPageClean = () => {
                           return (
                             <Card 
                               key={priority.id}
-                              className={`max-w-5xl opacity-75 ${isComplete ? 'border-slate-200' : 'bg-gray-50 border-gray-200'}`}
+                              className={`max-w-5xl bg-white border border-slate-200 hover:shadow-lg hover:scale-[1.02] transition-all ${isComplete ? '' : ''}`}
                               style={{
                                 backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                               }}
@@ -4450,9 +4450,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   return (
                     <Card 
                       key={priority.id}
-                      className={`max-w-5xl opacity-75 cursor-pointer hover:shadow-lg transition-shadow ${
-                        isComplete ? 'border-slate-200' : 'bg-gray-50 border-gray-200'
-                      }`}
+                      className="max-w-5xl bg-white border border-slate-200 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all"
                       style={{
                         backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                       }}

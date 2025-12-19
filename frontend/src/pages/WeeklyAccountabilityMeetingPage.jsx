@@ -6063,7 +6063,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         return (
                           <div
                             key={priority.id}
-                            className="group bg-white/60 backdrop-blur-sm border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+                            className="group bg-white border border-slate-200 rounded-lg p-4 hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
                             onClick={() => {
                               setSelectedPriority(priority);
                               setShowPriorityDialog(true);
