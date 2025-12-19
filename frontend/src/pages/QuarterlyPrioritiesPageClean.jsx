@@ -4500,11 +4500,11 @@ const QuarterlyPrioritiesPageClean = () => {
                             </div>
                           </div>
                           <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
-                            expandedSections.sharedPriorities?.[owner.id] ? 'rotate-180' : ''
+                            (expandedSections.sharedPriorities?.[owner.id] ?? true) ? 'rotate-180' : ''
                           }`} />
                         </div>
                       </CardHeader>
-                      {expandedSections.sharedPriorities?.[owner.id] && (
+                      {(expandedSections.sharedPriorities?.[owner.id] ?? true) && (
                       <CardContent className="pt-0">
                         <div className="space-y-1">
                           {/* Header Row */}

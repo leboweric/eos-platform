@@ -6112,11 +6112,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   </div>
                                 </div>
                                 <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
-                                  expandedSharedPriorities?.[owner.id] ? 'rotate-180' : ''
+                                  (expandedSharedPriorities?.[owner.id] ?? true) ? 'rotate-180' : ''
                                 }`} />
                               </div>
                             </CardHeader>
-                            {expandedSharedPriorities?.[owner.id] && (
+                            {(expandedSharedPriorities?.[owner.id] ?? true) && (
                             <CardContent className="pt-0">
                               <div className="space-y-2">
                                 {owner.rocks.map(priority => {
