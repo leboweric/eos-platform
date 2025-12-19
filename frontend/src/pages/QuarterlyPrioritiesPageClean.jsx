@@ -65,7 +65,8 @@ import {
   Sparkles,
   Activity,
   Zap,
-  Upload
+  Upload,
+  Link
 } from 'lucide-react';
 
 // Error Boundary Component
