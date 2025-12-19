@@ -63,8 +63,7 @@ import {
   FileText,
   GitBranch,
   BarChart3,
-  Link,
-  CheckCircle
+  Link
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
