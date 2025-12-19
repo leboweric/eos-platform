@@ -282,6 +282,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [customGoals, setCustomGoals] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [quarterlyPriorities, setQuarterlyPriorities] = useState([]);
+  const [sharedPriorities, setSharedPriorities] = useState([]);
   const [completedPrioritiesCount, setCompletedPrioritiesCount] = useState(0);
   const [shortTermIssues, setShortTermIssues] = useState([]);
   const [longTermIssues, setLongTermIssues] = useState([]);
@@ -1091,6 +1092,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Extract and flatten priorities
       const companyPriorities = response.companyPriorities || [];
       const teamMemberPriorities = response.teamMemberPriorities || {};
+      const sharedPrioritiesData = response.sharedPriorities || [];
       
       console.log('🚨 Company priorities:', companyPriorities);
       console.log('🚨 Team member priorities:', teamMemberPriorities);
@@ -1107,6 +1109,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       console.log('🔥🔥🔥 ABOUT TO RENDER PRIORITIES:', allPriorities);
       setPriorities(allPriorities);
+      setSharedPriorities(sharedPrioritiesData);
       
       // Update team members from priorities API - this ensures we get team-specific members
       if (response.teamMembers && response.teamMembers.length > 0) {
@@ -6040,6 +6043,79 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   )
                 })()}
+
+                {/* Shared Priorities from Other Teams */}
+                {sharedPriorities.length > 0 && (
+                  <div className="mt-8 space-y-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Link className="h-5 w-5 text-slate-400" />
+                      <h3 className="text-lg font-semibold text-slate-700">
+                        Shared {labels.priorities_label} from Other Teams
+                      </h3>
+                      <Badge variant="outline" className="text-xs">Read Only</Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {sharedPriorities.map(priority => {
+                        const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                        const isOnTrack = priority.status === 'on-track';
+                        
+                        return (
+                          <div
+                            key={priority.id}
+                            className="group bg-white/60 backdrop-blur-sm border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
+                            onClick={() => {
+                              setSelectedPriority(priority);
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-1">
+                                {isComplete ? (
+                                  <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
+                                ) : (
+                                  <Target className="h-5 w-5 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className={`text-sm font-semibold ${
+                                    isComplete ? 'line-through text-slate-400' : 'text-slate-700'
+                                  }`}>
+                                    {priority.title}
+                                  </h4>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {priority.teamName}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-slate-500">
+                                  <span>{priority.owner?.name || 'Unassigned'}</span>
+                                  <span>•</span>
+                                  <span>{isComplete ? 100 : (priority.progress || 0)}% complete</span>
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <Badge
+                                  className={`text-xs ${
+                                    isComplete ? 'text-white' :
+                                    priority.status === 'off-track' ? 'bg-red-100 text-red-800' :
+                                    'text-white'
+                                  }`}
+                                  style={{
+                                    backgroundColor: isComplete || isOnTrack ? themeColors.primary : undefined,
+                                    opacity: isComplete || isOnTrack ? 0.9 : undefined
+                                  }}
+                                >
+                                  {isComplete ? 'Complete' :
+                                   priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
