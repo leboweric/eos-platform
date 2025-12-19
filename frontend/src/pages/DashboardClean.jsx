@@ -2297,6 +2297,7 @@ const DashboardClean = () => {
           open={showPriorityDialog}
           onOpenChange={setShowPriorityDialog}
           priority={selectedPriority}
+          teamId={selectedDepartment?.id}
           teamMembers={dashboardData.teamMembers || []}
           onUpdate={handleUpdatePriority}
           onAddMilestone={handleAddMilestone}

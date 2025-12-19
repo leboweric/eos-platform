@@ -4959,6 +4959,7 @@ const QuarterlyPrioritiesPageClean = () => {
           open={showPriorityDialog}
           onOpenChange={setShowPriorityDialog}
           priority={selectedPriority}
+          teamId={selectedDepartment?.id}
           teamMembers={teamMembers}
           onSave={async (updates) => {
             await handleUpdatePriority(selectedPriority.id, updates);
