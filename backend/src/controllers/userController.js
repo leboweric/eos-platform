@@ -99,19 +99,20 @@ export const createUser = async (req, res) => {
       return res.status(403).json({ error: 'Only consultants and admins can create users directly' });
     }
 
-    // Check plan limits before creating user
-    const limitCheck = await checkUserLimit(organizationId);
-    if (!limitCheck.canAddUsers) {
-      return res.status(403).json({
-        error: 'User limit reached',
-        message: limitCheck.message,
-        upgradeRequired: true,
-        recommendedPlan: limitCheck.recommendedPlan,
-        currentCount: limitCheck.currentCount,
-        maxUsers: limitCheck.maxUsers,
-        upgradeUrl: '/billing'
-      });
-    }
+    // Check plan limits before creating user - DISABLED per client request
+    // Manual monitoring of user counts will be done monthly
+    // const limitCheck = await checkUserLimit(organizationId);
+    // if (!limitCheck.canAddUsers) {
+    //   return res.status(403).json({
+    //     error: 'User limit reached',
+    //     message: limitCheck.message,
+    //     upgradeRequired: true,
+    //     recommendedPlan: limitCheck.recommendedPlan,
+    //     currentCount: limitCheck.currentCount,
+    //     maxUsers: limitCheck.maxUsers,
+    //     upgradeUrl: '/billing'
+    //   });
+    // }
 
     // Check if user already exists
     const existingUser = await query(
@@ -217,19 +218,20 @@ export const inviteUser = async (req, res) => {
       return res.status(403).json({ error: 'Only administrators can invite users' });
     }
 
-    // Check plan limits before inviting
-    const limitCheck = await checkUserLimit(organizationId);
-    if (!limitCheck.canAddUsers) {
-      return res.status(403).json({
-        error: 'User limit reached',
-        message: limitCheck.message,
-        upgradeRequired: true,
-        recommendedPlan: limitCheck.recommendedPlan,
-        currentCount: limitCheck.currentCount,
-        maxUsers: limitCheck.maxUsers,
-        upgradeUrl: '/billing'
-      });
-    }
+    // Check plan limits before inviting - DISABLED per client request
+    // Manual monitoring of user counts will be done monthly
+    // const limitCheck = await checkUserLimit(organizationId);
+    // if (!limitCheck.canAddUsers) {
+    //   return res.status(403).json({
+    //     error: 'User limit reached',
+    //     message: limitCheck.message,
+    //     upgradeRequired: true,
+    //     recommendedPlan: limitCheck.recommendedPlan,
+    //     currentCount: limitCheck.currentCount,
+    //     maxUsers: limitCheck.maxUsers,
+    //     upgradeUrl: '/billing'
+    //   });
+    // }
 
     // Check if user already exists in organization
     const existingUser = await query(
@@ -304,11 +306,11 @@ export const inviteUser = async (req, res) => {
       }
     };
 
-    // Add warning if approaching limit
-    if (limitCheck.remainingSlots && limitCheck.remainingSlots <= 5) {
-      response.warning = limitCheck.message;
-      response.remainingSlots = limitCheck.remainingSlots;
-    }
+    // Add warning if approaching limit - DISABLED per client request
+    // if (limitCheck.remainingSlots && limitCheck.remainingSlots <= 5) {
+    //   response.warning = limitCheck.message;
+    //   response.remainingSlots = limitCheck.remainingSlots;
+    // }
 
     res.json(response);
   } catch (error) {
@@ -347,20 +349,21 @@ export const acceptInvitation = async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Check plan limits before accepting invitation
-    const limitCheck = await checkUserLimit(invitation.organization_id);
-    if (!limitCheck.canAddUsers) {
-      return res.status(403).json({
-        error: 'User limit reached',
-        message: `Cannot accept invitation. ${limitCheck.message}`,
-        upgradeRequired: true,
-        recommendedPlan: limitCheck.recommendedPlan,
-        currentCount: limitCheck.currentCount,
-        maxUsers: limitCheck.maxUsers,
-        contactAdmin: true,
-        adminMessage: 'Please contact your organization administrator to upgrade the plan.'
-      });
-    }
+    // Check plan limits before accepting invitation - DISABLED per client request
+    // Manual monitoring of user counts will be done monthly
+    // const limitCheck = await checkUserLimit(invitation.organization_id);
+    // if (!limitCheck.canAddUsers) {
+    //   return res.status(403).json({
+    //     error: 'User limit reached',
+    //     message: `Cannot accept invitation. ${limitCheck.message}`,
+    //     upgradeRequired: true,
+    //     recommendedPlan: limitCheck.recommendedPlan,
+    //     currentCount: limitCheck.currentCount,
+    //     maxUsers: limitCheck.maxUsers,
+    //     contactAdmin: true,
+    //     adminMessage: 'Please contact your organization administrator to upgrade the plan.'
+    //   });
+    // }
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
