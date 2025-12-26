@@ -94,7 +94,13 @@ const MultiSelect = React.forwardRef(({
         align="start"
         style={{ width: 'var(--radix-popover-trigger-width)' }}
       >
-        <div className="max-h-64 overflow-y-auto overflow-x-hidden">
+        <div 
+          className="max-h-64 overflow-y-auto overflow-x-hidden" 
+          style={{ 
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           {options.map((option) => (
             <div
               key={option.value}
