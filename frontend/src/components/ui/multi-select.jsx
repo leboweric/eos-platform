@@ -92,11 +92,19 @@ const MultiSelect = React.forwardRef(({
       <PopoverContent 
         className="p-0" 
         align="start"
-        style={{ width: 'var(--radix-popover-trigger-width)' }}
+        side="bottom"
+        sideOffset={5}
+        collisionPadding={20}
+        avoidCollisions={true}
+        style={{ 
+          width: 'var(--radix-popover-trigger-width)',
+          maxHeight: '300px'
+        }}
       >
         <div 
-          className="max-h-64 overflow-y-auto overflow-x-hidden" 
+          className="h-full overflow-y-auto overflow-x-hidden" 
           style={{ 
+            maxHeight: '300px',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch'
           }}
