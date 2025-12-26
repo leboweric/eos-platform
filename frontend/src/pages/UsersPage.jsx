@@ -727,73 +727,7 @@ const UsersPage = () => {
                 </DialogContent>
               </Dialog>
             )}
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Invite User
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <form onSubmit={handleInviteUser}>
-                <DialogHeader>
-                  <DialogTitle>Invite Team Member</DialogTitle>
-                  <DialogDescription>
-                    Send an invitation to join your organization. They'll receive an email with instructions.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="colleague@company.com"
-                      value={inviteForm.email}
-                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select
-                      value={inviteForm.role}
-                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={inviteLoading}>
-                    {inviteLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Invitation'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-            </Dialog>
+
           </div>
         )}
       </div>
@@ -905,15 +839,9 @@ const UsersPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Active Users</p>
-              <p className="text-2xl font-bold">{users.length}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Pending Invitations</p>
-              <p className="text-2xl font-bold">{invitations.length}</p>
-            </div>
+          <div>
+            <p className="text-sm text-gray-500">Active Users</p>
+            <p className="text-2xl font-bold">{users.length}</p>
           </div>
         </CardContent>
       </Card>
@@ -923,76 +851,11 @@ const UsersPage = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {successMessage}
-            {invitationLink && (
-              <div className="mt-3 space-y-2">
-                <p className="text-sm font-medium">Invitation link:</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-xs break-all">
-                    {invitationLink}
-                  </code>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(invitationLink);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 3000);
-                      } catch (err) {
-                        // Fallback for Safari or when clipboard permission denied
-                        toast.error('Please manually copy the link above');
-                      }
-                    }}
-                  >
-                    {copiedLink ? (
-                      <>
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSuccessMessage(null);
-                      setInvitationLink(null);
-                      setCopiedLink(false);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
           </AlertDescription>
         </Alert>
       )}
 
-        <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
-            <TabsTrigger 
-              value="active"
-              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              Active Users ({users.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pending"
-              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              Pending Invitations ({invitations.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="active">
+        {/* Active Users Card */}
             <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
               <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
                 <CardTitle className="text-xl font-bold text-slate-900">Active Users</CardTitle>
@@ -1108,70 +971,7 @@ const UsersPage = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-          <TabsContent value="pending">
-            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-                <CardTitle className="text-xl font-bold text-slate-900">Pending Invitations</CardTitle>
-                <CardDescription className="text-slate-600 font-medium">
-                  Invitations sent but not yet accepted
-                </CardDescription>
-              </CardHeader>
-            <CardContent>
-              {invitations.length === 0 ? (
-                <p className="text-center py-8 text-slate-500 font-medium">
-                  No pending invitations
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Invited By</TableHead>
-                      <TableHead>Expires</TableHead>
-                      {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invitations.map((invitation) => (
-                      <TableRow key={invitation.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            {invitation.email}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={invitation.role === 'admin' ? 'default' : 'secondary'}>
-                            {invitation.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{invitation.invited_by_name}</TableCell>
-                        <TableCell>
-                          {format(new Date(invitation.expires_at), 'MMM d, yyyy')}
-                        </TableCell>
-                        {isAdmin && (
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCancelInvitation(invitation.id, invitation.email)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-          </TabsContent>
-        </Tabs>
       </div>
 
       {/* Delete User Confirmation Dialog */}
