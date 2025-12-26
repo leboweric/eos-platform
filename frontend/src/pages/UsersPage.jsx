@@ -39,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MultiSelect } from '@/components/ui/multi-select';
+import { MultiSelectInline } from '@/components/ui/multi-select-inline';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -639,7 +639,7 @@ const UsersPage = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="createDepartments">Departments</Label>
-                        <MultiSelect
+                        <MultiSelectInline
                           options={departments.map(dept => ({
                             value: dept.id,
                             label: dept.name,
@@ -790,7 +790,7 @@ const UsersPage = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editDepartments">Departments</Label>
-                <MultiSelect
+                <MultiSelectInline
                   options={departments.map(dept => ({
                     value: dept.id,
                     label: dept.name,
