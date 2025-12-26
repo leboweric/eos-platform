@@ -89,8 +89,12 @@ const MultiSelect = React.forwardRef(({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
-        <div className="max-h-64 overflow-auto">
+      <PopoverContent 
+        className="p-0" 
+        align="start"
+        style={{ width: 'var(--radix-popover-trigger-width)' }}
+      >
+        <div className="max-h-64 overflow-y-auto overflow-x-hidden">
           {options.map((option) => (
             <div
               key={option.value}
