@@ -26,6 +26,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -55,6 +62,8 @@ import {
   Loader2,
   Users,
   Edit,
+  MoreVertical,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -97,6 +106,10 @@ const UsersPage = () => {
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrgId, setSelectedOrgId] = useState(null);
   const [departments, setDepartments] = useState([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isAdmin = user?.role === 'admin' || user?.isConsultant;
   const isConsultant = user?.isConsultant;
@@ -408,6 +421,51 @@ const UsersPage = () => {
       console.error('Error updating user status:', error);
       toast.error(`Failed to ${action} user`);
     }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    // Validate email confirmation
+    if (deleteConfirmEmail !== userToDelete.email) {
+      toast.error('Email does not match. Please type the exact email address.');
+      return;
+    }
+    
+    setDeleteLoading(true);
+    
+    try {
+      const orgId = selectedOrgId || user?.organizationId;
+      const response = await fetch(`${API_URL}/organizations/${orgId}/users/${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`${userToDelete.email} has been permanently deleted`);
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+        setDeleteConfirmEmail('');
+        fetchUsers();
+      } else {
+        toast.error(data.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const openDeleteDialog = (user) => {
+    setUserToDelete(user);
+    setDeleteConfirmEmail('');
+    setDeleteDialogOpen(true);
   };
 
   const handleCancelInvitation = async (invitationId, email) => {
@@ -1020,13 +1078,27 @@ const UsersPage = () => {
                       )}
                       {isAdmin && (
                         <TableCell className="sticky right-0 z-10 bg-white border-l text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => openDeleteDialog(user)}
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       )}
                     </TableRow>
@@ -1101,6 +1173,73 @@ const UsersPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete User</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the user account and remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          {userToDelete && (
+            <div className="space-y-4 py-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You are about to permanently delete <strong>{userToDelete.first_name} {userToDelete.last_name}</strong> ({userToDelete.email})
+                </AlertDescription>
+              </Alert>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-email">
+                  Type <strong>{userToDelete.email}</strong> to confirm:
+                </Label>
+                <Input
+                  id="confirm-email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={deleteConfirmEmail}
+                  onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setUserToDelete(null);
+                setDeleteConfirmEmail('');
+              }}
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={deleteLoading || deleteConfirmEmail !== userToDelete?.email}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Permanently
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
