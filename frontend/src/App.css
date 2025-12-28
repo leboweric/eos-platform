@@ -553,3 +553,34 @@
   color: #9ca3af;
   cursor: not-allowed;
 }
+
+/* Inline Date Picker Styles */
+.inline-editable-date-container {
+  position: relative;
+}
+
+.inline-editable-date-button {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+  cursor: pointer;
+  background-color: transparent;
+  border: 1px solid transparent;
+}
+
+.inline-editable-date-button:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.inline-editable-date-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-editable-date-disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  font-size: 0.75rem;
+}

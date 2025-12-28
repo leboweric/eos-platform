@@ -26,6 +26,7 @@ import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 import { TodoContextMenu } from '../TodoContextMenu';
 import { parseDateLocal } from '../../utils/dateUtils';
 import { InlineEditableField } from '../ui/InlineEditableField';
+import { InlineEditableDatePicker } from '../ui/InlineEditableDatePicker';
 
 const TodosListClean = ({ 
   todos, 
@@ -527,15 +528,24 @@ const TodosListClean = ({
                             <div className="flex items-center gap-3 flex-shrink-0">
                               {/* Due Date */}
                               <div className="text-right">
-                                {todo.due_date && (
-                                  <span className={`text-xs ${
+                                <InlineEditableDatePicker
+                                  value={todo.due_date}
+                                  onChange={async (newDate) => {
+                                    await todosService.updateTodo(todo.id, {
+                                      ...todo,
+                                      due_date: newDate
+                                    });
+                                    if (onUpdate) await onUpdate();
+                                  }}
+                                  formatDisplay={(date) => formatDueDate(todo)}
+                                  placeholder="Set date"
+                                  className={`${
                                     daysUntilDue === 0 ? 'text-orange-600 font-medium' :
                                     daysUntilDue === 1 ? 'text-yellow-600' :
                                     'text-slate-500'
-                                  }`}>
-                                    {formatDueDate(todo)}
-                                  </span>
-                                )}
+                                  }`}
+                                  disabled={isComplete || showingArchived}
+                                />
                               </div>
                               
                               {/* Actions Space */}
