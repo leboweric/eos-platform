@@ -25,6 +25,7 @@ import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 import { TodoContextMenu } from '../TodoContextMenu';
 import { parseDateLocal } from '../../utils/dateUtils';
+import { InlineEditableField } from '../ui/InlineEditableField';
 
 const TodosListClean = ({ 
   todos, 
@@ -462,14 +463,24 @@ const TodosListClean = ({
                             
                             {/* Title */}
                             <div 
-                              className={`flex-1 ml-3 cursor-pointer ${showingArchived ? 'pr-4' : ''}`}
-                              onClick={() => onEdit && onEdit(todo)}
+                              className={`flex-1 ml-3 ${showingArchived ? 'pr-4' : ''}`}
                             >
                               <div className="flex items-center gap-2 flex-wrap">
                                 <div className={`text-sm font-medium ${
                                   isComplete ? 'text-slate-400 line-through' : 'text-slate-900'
                                 }`}>
-                                  {todo.title}
+                                  <InlineEditableField
+                                    value={todo.title}
+                                    onSave={async (newTitle) => {
+                                      await todosService.updateTodo(todo.id, {
+                                        ...todo,
+                                        title: newTitle
+                                      });
+                                      if (onUpdate) await onUpdate();
+                                    }}
+                                    placeholder="Enter to-do title"
+                                    disabled={isComplete || showingArchived}
+                                  />
                                 </div>
                                 {todo.team_name && (
                                   <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
