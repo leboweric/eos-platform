@@ -129,8 +129,11 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
             count++;
           }
         }
-        // For percentages, use average instead of sum
-        if (metric?.value_type === 'percentage' && count > 0) {
+        // Use average for snapshot metrics (cash balance, utilization) or sum for cumulative metrics (sales, rainmaking)
+        // aggregation_type can be 'average' or 'sum' (default)
+        const shouldUseAverage = metric?.aggregation_type === 'average' || 
+                                 (metric?.aggregation_type === undefined && metric?.value_type === 'percentage');
+        if (shouldUseAverage && count > 0) {
           movingTotal = movingTotal / count;
         }
       }
@@ -312,10 +315,10 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
               </ResponsiveContainer>
               
               <div className="mt-4 text-sm text-gray-600">
-                <p>• The dashed line shows the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'} ({metric?.value_type === 'percentage' ? 'average' : 'sum'} of current week + 2 previous weeks)</p>
-                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.value_type === 'percentage' ? 'average' : 'total'} (calculated using the last 13 weeks for quarterly trend analysis)</p>
+                <p>• The dashed line shows the 3-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} ({metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'sum'} of current week + 2 previous weeks)</p>
+                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} (calculated using the last 13 weeks for quarterly trend analysis)</p>
                 <p>• The solid line shows individual weekly values</p>
-                {metric?.goal && <p>• Green dashed line shows the {metric?.value_type === 'percentage' ? 'goal' : '3-week goal'} target ({getValueFormatter(metric?.value_type === 'percentage' ? metric.goal : metric.goal * 3)})</p>}
+                {metric?.goal && <p>• Green dashed line shows the {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'goal' : '3-week goal'} target ({getValueFormatter((metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage')) ? metric.goal : metric.goal * 3)})</p>}
               </div>
             </CardContent>
           </Card>

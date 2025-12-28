@@ -56,6 +56,7 @@ const MetricsManagerPage = () => {
     type: 'weekly',
     valueType: 'number',
     comparisonOperator: 'greater_equal',
+    aggregationType: 'sum',
     description: '',
     dataSource: '',
     calculationMethod: '',
@@ -218,6 +219,7 @@ const MetricsManagerPage = () => {
         type: formData.type,
         value_type: formData.valueType,
         comparison_operator: formData.comparisonOperator,
+        aggregation_type: formData.aggregationType,
         description: formData.description,
         data_source: formData.dataSource,
         calculation_method: formData.calculationMethod,
@@ -257,6 +259,7 @@ const MetricsManagerPage = () => {
         type: formData.type,
         value_type: formData.valueType,
         comparison_operator: formData.comparisonOperator,
+        aggregation_type: formData.aggregationType,
         description: formData.description,
         data_source: formData.dataSource,
         calculation_method: formData.calculationMethod,
@@ -304,6 +307,7 @@ const MetricsManagerPage = () => {
       type: 'weekly',
       valueType: 'number',
       comparisonOperator: 'greater_equal',
+      aggregationType: 'sum',
       description: '',
       dataSource: '',
       calculationMethod: '',
@@ -325,6 +329,7 @@ const MetricsManagerPage = () => {
       type: metric.type || 'weekly',
       valueType: metric.value_type || 'number',
       comparisonOperator: metric.comparison_operator || 'greater_equal',
+      aggregationType: metric.aggregation_type || 'sum',
       description: metric.description || '',
       dataSource: metric.data_source || '',
       calculationMethod: metric.calculation_method || '',
@@ -756,6 +761,25 @@ const MetricForm = ({
                 <SelectItem value="equal">Equal (=)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="aggregationType">3-Week Calculation Method</Label>
+            <Select
+              value={formData.aggregationType}
+              onValueChange={(value) => setFormData({ ...formData, aggregationType: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sum">Sum (for cumulative metrics like sales, rainmaking)</SelectItem>
+                <SelectItem value="average">Average (for snapshot metrics like cash balance, utilization)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              Determines how the 3-week moving line is calculated: Sum adds up 3 weeks, Average divides by 3
+            </p>
           </div>
 
         </div>
