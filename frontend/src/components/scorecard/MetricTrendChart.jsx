@@ -231,7 +231,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {metric?.name} - 3-Week Moving {metric?.value_type === 'percentage' ? 'Average' : 'Total'} Trend
+            {metric?.name} - 3-Week Moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'} Trend
             {!loading && getTrendIcon()}
           </DialogTitle>
         </DialogHeader>
@@ -285,7 +285,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                     type="monotone" 
                     dataKey="movingTotal" 
                     stroke={themeColors.primary} 
-                    name={`3-Week Moving ${metric?.value_type === 'percentage' ? 'Average' : 'Total'}`}
+                    name={`3-Week Moving ${metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'}`}
                     strokeWidth={3}
                     dot={{ fill: themeColors.primary, r: 5 }}
                     strokeDasharray="5 5"
