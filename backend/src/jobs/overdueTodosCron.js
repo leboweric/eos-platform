@@ -80,7 +80,7 @@ async function createIssueFromOverdueTodo(todo) {
     organization_id: todo.organization_id,
     team_id: todo.team_id,
     title: `Overdue: ${todo.title}`,
-    description: `This to-do is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.\n\nOriginal due date: ${new Date(todo.due_date).toLocaleDateString()}\n\n${todo.description || ''}`,
+    description: `This to-do is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.\n\nOriginal due date: ${todo.due_date}\n\n${todo.description || ''}`,
     timeline: 'short_term',
     priority_level: daysOverdue > 7 ? 'high' : 'normal',
     related_todo_id: todo.id,
