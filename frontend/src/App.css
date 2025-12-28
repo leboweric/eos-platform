@@ -384,3 +384,67 @@
     border: 2px solid red !important;
   } */
 }
+
+/* Enhanced Date Picker Styles */
+.rdp-custom {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #3b82f6;
+  --rdp-background-color: #eff6ff;
+  margin: 0;
+}
+
+.rdp-custom .rdp-day_selected {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.rdp-custom .rdp-day_today {
+  font-weight: bold;
+  color: var(--rdp-accent-color);
+  border: 2px solid var(--rdp-accent-color);
+  border-radius: 4px;
+}
+
+.rdp-custom .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: var(--rdp-background-color);
+  border-radius: 4px;
+}
+
+.rdp-custom .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--rdp-background-color);
+  border-radius: 4px;
+}
+
+.rdp-custom .rdp-day_disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.rdp-custom .rdp-caption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.rdp-custom .rdp-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.rdp-custom .rdp-nav_button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.rdp-custom .rdp-nav_button:hover {
+  background-color: var(--rdp-background-color);
+}

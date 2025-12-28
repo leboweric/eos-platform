@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -483,11 +484,10 @@ const PriorityDialog = ({
 
                   <div>
                     <Label htmlFor="dueDate">Due Date</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
+                    <DatePicker
                       value={formData.dueDate}
-                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                      onChange={(date) => setFormData({ ...formData, dueDate: date })}
+                      placeholder="Select due date"
                       className="mt-1 bg-transparent dark:bg-gray-700/50"
                     />
                   </div>
@@ -563,10 +563,10 @@ const PriorityDialog = ({
                             ))}
                           </SelectContent>
                         </Select>
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={editingMilestone.dueDate}
-                          onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
+                          onChange={(date) => setEditingMilestone({ ...editingMilestone, dueDate: date })}
+                          placeholder="Select date"
                           className="bg-white flex-1"
                         />
                       </div>
@@ -684,10 +684,10 @@ const PriorityDialog = ({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={newMilestone.dueDate}
-                      onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                      onChange={(date) => setNewMilestone({ ...newMilestone, dueDate: date })}
+                      placeholder="Select date"
                       className="bg-white flex-1"
                     />
                   </div>

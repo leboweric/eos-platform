@@ -8,6 +8,7 @@ import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Calendar, User, Users, Paperclip, X, Download, Link, Sparkles, CheckSquare, MessageSquare, Plus, Trash2, Upload, Check, ChevronDown } from 'lucide-react';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
@@ -724,15 +725,14 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                 <Calendar className="h-4 w-4" />
                 Due Date
               </Label>
-              <Input
-                id="dueDate"
-                type="date"
+              <DatePicker
                 value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                required
+                onChange={(date) => setFormData({ ...formData, dueDate: date })}
+                placeholder="Select due date"
+                required={true}
                 className="px-3 py-2 bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
-              <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
+              <p className="text-xs text-slate-500">Quick options: Tomorrow, Next Week, End of Week, End of Month</p>
             </div>
 
             {/* Attachments section */}
