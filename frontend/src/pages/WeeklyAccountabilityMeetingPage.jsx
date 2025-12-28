@@ -782,6 +782,81 @@ const WeeklyAccountabilityMeetingPage = () => {
     console.log('🔍 WeeklyMeeting - Scorecard preference state changed:', scorecardTimePeriodPreference);
   }, [scorecardTimePeriodPreference]);
 
+  // Helper function to calculate days overdue from issue description
+  const getDaysOverdue = (issue) => {
+    if (!issue.description) return 0;
+    
+    // Extract the original due date from the description
+    // Format: "Original due date: 12/25/2025" or "Original due date: 2025-12-26"
+    const dueDateMatch = issue.description.match(/Original due date:\s*([\d\/\-]+)/i);
+    if (!dueDateMatch) return 0;
+    
+    try {
+      const dueDateStr = dueDateMatch[1];
+      const dueDate = new Date(dueDateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffTime = today - dueDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      console.error('Error parsing due date:', error);
+      return 0;
+    }
+  };
+
+  // Helper function to group overdue issues by title
+  const groupOverdueIssues = (issuesList) => {
+    const groups = {};
+    const result = [];
+
+    issuesList.forEach(issue => {
+      // Only group auto-created overdue issues (title starts with "Overdue:")
+      if (issue.title?.startsWith('Overdue:')) {
+        const baseTitle = issue.title;
+        if (!groups[baseTitle]) {
+          groups[baseTitle] = {
+            primaryIssue: issue,
+            relatedIssues: [issue],
+            maxDaysOverdue: getDaysOverdue(issue)
+          };
+        } else {
+          groups[baseTitle].relatedIssues.push(issue);
+          // Update primary issue to the one with most days overdue
+          const daysOverdue = getDaysOverdue(issue);
+          if (daysOverdue > groups[baseTitle].maxDaysOverdue) {
+            groups[baseTitle].maxDaysOverdue = daysOverdue;
+            groups[baseTitle].primaryIssue = issue;
+          }
+        }
+      } else {
+        // Non-overdue issues go directly to result
+        result.push({ type: 'single', issue });
+      }
+    });
+
+    // Add grouped issues to result
+    Object.keys(groups).forEach(title => {
+      const group = groups[title];
+      if (group.relatedIssues.length > 1) {
+        // Multiple issues with same title - create a group
+        result.push({
+          type: 'group',
+          primaryIssue: group.primaryIssue,
+          relatedIssues: group.relatedIssues,
+          groupKey: title,
+          ownerCount: group.relatedIssues.length
+        });
+      } else {
+        // Single issue - treat as regular
+        result.push({ type: 'single', issue: group.primaryIssue });
+      }
+    });
+
+    return result;
+  };
+
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
 
@@ -6981,9 +7056,10 @@ const WeeklyAccountabilityMeetingPage = () => {
               </div>
 
 {(() => {
-                const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
+                const rawIssues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
+                const groupedIssues = groupOverdueIssues(rawIssues);
 
-                if (issues.length === 0) {
+                if (rawIssues.length === 0) {
                   return (
                     <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                       <AlertCircle className="w-12 h-12 text-gray-400 mb-3" />
@@ -6995,7 +7071,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 }
 
-                const closedCount = issues.filter(issue => 
+                const closedCount = rawIssues.filter(issue => 
                   issue.status === 'solved' || issue.status === 'completed' || 
                   issue.status === 'closed' || issue.status === 'resolved'
                 ).length;
@@ -7056,7 +7132,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                           </div>
                           
                           {/* Issue Rows */}
-                          {issues.map((issue, index) => {
+                          {groupedIssues.map((item, index) => {
+                            // Handle both grouped and single issues
+                            const issue = item.type === 'group' ? item.primaryIssue : item.issue;
+                            const isGrouped = item.type === 'group';
+                            const relatedIssues = isGrouped ? item.relatedIssues : [];
+                            const ownerCount = isGrouped ? item.ownerCount : 0;
+                            const isGroupExpanded = isGrouped ? expandedPriorities[item.groupKey] : false;
+                            
                             const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
                             const isExpanded = expandedPriorities[issue.id];
                             const isDragging = draggedIndex === index;
@@ -7145,6 +7228,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           }}
                                         >
                                           {issue.title}
+                                          {isGrouped && (
+                                            <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700 border border-orange-300">
+                                              {ownerCount} owners
+                                            </span>
+                                          )}
                                           {issue.attachment_count > 0 && (
                                             <>
                                               <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
@@ -7152,15 +7240,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             </>
                                           )}
                                         </div>
-                                        {issue.description && (
+                                        {(issue.description || isGrouped) && (
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              togglePriorityExpansion(issue.id, e);
+                                              if (isGrouped) {
+                                                setExpandedPriorities(prev => ({
+                                                  ...prev,
+                                                  [item.groupKey]: !prev[item.groupKey]
+                                                }));
+                                              } else {
+                                                togglePriorityExpansion(issue.id, e);
+                                              }
                                             }}
                                             className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors"
                                           >
-                                            <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                            <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${(isGrouped ? isGroupExpanded : isExpanded) ? 'rotate-90' : ''}`} />
                                           </button>
                                         )}
                                       </div>
@@ -7205,11 +7300,42 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   </div>
                                   
                                   {/* Expanded Details */}
-                                  {isExpanded && issue.description && (
+                                  {isExpanded && issue.description && !isGrouped && (
                                     <div className="px-16 pb-3">
                                       <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
                                         {issue.description}
                                       </p>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Sub-issues for grouped overdue todos */}
+                                  {isGrouped && isGroupExpanded && (
+                                    <div className="bg-orange-50/50 border-t border-orange-100">
+                                      {relatedIssues.map((subIssue, subIndex) => (
+                                        <div
+                                          key={subIssue.id}
+                                          className="flex items-center px-16 py-2 hover:bg-orange-100/50 transition-colors border-b border-orange-100 last:border-0"
+                                        >
+                                          {/* Sub-issue number */}
+                                          <div className="w-8 text-sm font-medium text-slate-500">
+                                            {index + 1}.{subIndex + 1}
+                                          </div>
+                                          
+                                          {/* Days overdue */}
+                                          <div className="ml-3">
+                                            <span className="text-sm font-semibold text-orange-700">
+                                              {getDaysOverdue(subIssue)} days overdue
+                                            </span>
+                                          </div>
+                                          
+                                          {/* Owner */}
+                                          <div className="ml-auto w-32 text-center">
+                                            <span className="text-sm text-slate-600">
+                                              {subIssue.owner_name || 'Unassigned'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
