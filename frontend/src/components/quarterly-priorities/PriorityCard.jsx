@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -480,8 +481,7 @@ const PriorityCard = ({
               <div>
                 <Label className="text-sm text-gray-600">Due Date</Label>
                 {isEditing ? (
-                  <Input
-                    type="date"
+                  <DatePicker placeholder="Select date" 
                     value={editForm.dueDate}
                     onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
                     className="mt-1"

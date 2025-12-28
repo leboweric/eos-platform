@@ -7,6 +7,7 @@ import { teamsService } from '../services/teamsService';
 import MeetingSummaryModal from '../components/MeetingSummaryModal';
 import MeetingDetailDialog from '../components/MeetingDetailDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -505,9 +506,8 @@ const MeetingHistoryPageClean = () => {
               {/* Start Date */}
               <div className="space-y-2">
                 <Label htmlFor="start_date">Start Date</Label>
-                <Input
-                  id="start_date"
-                  type="date"
+                <DatePicker placeholder="Select date" id="start_date"
+                  
                   value={filters.start_date}
                   onChange={(e) => handleFilterChange('start_date', e.target.value)}
                 />
@@ -516,9 +516,8 @@ const MeetingHistoryPageClean = () => {
               {/* End Date */}
               <div className="space-y-2">
                 <Label htmlFor="end_date">End Date</Label>
-                <Input
-                  id="end_date"
-                  type="date"
+                <DatePicker placeholder="Select date" id="end_date"
+                  
                   value={filters.end_date}
                   onChange={(e) => handleFilterChange('end_date', e.target.value)}
                 />

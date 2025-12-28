@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
@@ -553,8 +554,7 @@ const FullPriorityCard = ({
               <div>
                 <Label className="text-sm text-gray-600">Due Date</Label>
                 {isEditing ? (
-                  <Input
-                    type="date"
+                  <DatePicker placeholder="Select date" 
                     value={editForm.dueDate}
                     onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
                     className="mt-1"
@@ -650,8 +650,7 @@ const FullPriorityCard = ({
                             className="flex-1 text-sm"
                             placeholder="Milestone title"
                           />
-                          <Input
-                            type="date"
+                          <DatePicker placeholder="Select date" 
                             value={milestoneForm.dueDate}
                             onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                             className="w-40 text-xs"
@@ -740,8 +739,7 @@ const FullPriorityCard = ({
                         placeholder="New milestone title"
                         className="flex-1 text-sm"
                       />
-                      <Input
-                        type="date"
+                      <DatePicker placeholder="Select date" 
                         value={milestoneForm.dueDate}
                         onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                         className="w-40 text-xs"

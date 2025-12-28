@@ -18,6 +18,7 @@ import RockContextMenu from '../components/priorities/RockContextMenu';
 import TeamMemberSelect from '../components/shared/TeamMemberSelect';
 import ActionPlanModal from '../components/ActionPlanModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -2421,8 +2422,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div>
                   <Label className="text-sm font-medium text-gray-600 mb-2 block">Due Date</Label>
                   {isEditing ? (
-                    <Input
-                      type="date"
+                    <DatePicker placeholder="Select date" 
                       value={editForm.dueDate}
                       onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
                       className="h-9"
@@ -2542,8 +2542,7 @@ const QuarterlyPrioritiesPageClean = () => {
                             className="flex-1 h-8 text-sm"
                             placeholder="Milestone title"
                           />
-                          <Input
-                            type="date"
+                          <DatePicker placeholder="Select date" 
                             value={milestoneForm.dueDate}
                             onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                             className="w-36 h-8 text-xs"
@@ -2633,8 +2632,7 @@ const QuarterlyPrioritiesPageClean = () => {
                         placeholder="New milestone title"
                         className="flex-1 h-8 text-sm"
                       />
-                      <Input
-                        type="date"
+                      <DatePicker placeholder="Select date" 
                         value={milestoneForm.dueDate}
                         onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                         className="w-36 h-8 text-xs"
@@ -3633,8 +3631,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     }
                                                   }}
                                                 />
-                                                <Input
-                                                  type="date"
+                                                <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
                                                   onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                   className="w-44 h-8 text-sm shrink-0"
@@ -4020,8 +4017,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     }
                                                   }}
                                                 />
-                                                <Input
-                                                  type="date"
+                                                <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
                                                   onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                   className="w-44 h-8 text-sm shrink-0"
@@ -4387,8 +4383,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                               }
                                             }}
                                           />
-                                          <Input
-                                            type="date"
+                                          <DatePicker placeholder="Select date" 
                                             value={newMilestone.dueDate}
                                             onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                             className="w-44 h-8 text-sm shrink-0"
@@ -4779,9 +4774,8 @@ const QuarterlyPrioritiesPageClean = () => {
               </div>
               <div>
                 <Label htmlFor="dueDate" className="text-sm font-medium">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
+                <DatePicker placeholder="Select date" id="dueDate"
+                  
                   value={priorityForm.dueDate}
                   onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                   className="mt-2 bg-white"
@@ -4867,8 +4861,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                 )}
                               </SelectContent>
                             </Select>
-                            <Input
-                              type="date"
+                            <DatePicker placeholder="Select date" 
                               value={editMilestoneForm.dueDate}
                               onChange={(e) => {
                                 setEditMilestoneForm({ ...editMilestoneForm, dueDate: e.target.value });
@@ -5040,8 +5033,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       <Label className="text-sm font-medium">
                         Due Date <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        type="date"
+                      <DatePicker placeholder="Select date" 
                         value={addMilestoneForm.dueDate}
                         onChange={(e) => {
                           setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value });

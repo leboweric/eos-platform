@@ -14,6 +14,7 @@ import { MeetingAIRecordingControls } from '../components/MeetingAIRecordingCont
 import { MeetingAISummaryPanel } from '../components/MeetingAISummaryPanel';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -5163,8 +5164,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                         }
                                                       }}
                                                     />
-                                                    <Input
-                                                      type="date"
+                                                    <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
                                                       onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                       className="w-44 h-8 text-sm shrink-0"
@@ -5555,8 +5555,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                         }
                                                       }}
                                                     />
-                                                    <Input
-                                                      type="date"
+                                                    <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
                                                       onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                       className="w-44 h-8 text-sm shrink-0"
@@ -5925,8 +5924,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   }
                                                 }}
                                               />
-                                              <Input
-                                                type="date"
+                                              <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
                                                 onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                 className="w-44 h-8 text-sm shrink-0"

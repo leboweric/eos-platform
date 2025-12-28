@@ -106,8 +106,7 @@ export const EditableMilestones = ({
                   className="flex-1 h-7 text-sm"
                   placeholder="Milestone title"
                 />
-                <Input
-                  type="date"
+                <DatePicker placeholder="Select date" 
                   value={milestoneForm.dueDate}
                   onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                   className="w-44 h-7 text-sm shrink-0"
@@ -193,8 +192,7 @@ export const EditableMilestones = ({
               placeholder="New milestone title"
               autoFocus
             />
-            <Input
-              type="date"
+            <DatePicker placeholder="Select date" 
               value={newMilestone.dueDate}
               onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
               className="w-44 h-7 text-sm shrink-0"

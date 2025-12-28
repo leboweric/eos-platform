@@ -2,6 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Calendar } from 'lucide-react';
 
 /**
@@ -61,8 +62,7 @@ export const EditablePriorityFields = ({
       </div>
       <div>
         <Label className="text-xs text-gray-600">Due Date</Label>
-        <Input
-          type="date"
+        <DatePicker placeholder="Select date" 
           value={editForm.dueDate}
           onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
           className="h-8 mt-1"

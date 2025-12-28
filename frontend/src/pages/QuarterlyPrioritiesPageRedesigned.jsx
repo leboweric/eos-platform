@@ -6,6 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Plus, Brain, AlertCircle, Archive, Building2, Users } from 'lucide-react';
@@ -614,9 +615,8 @@ const QuarterlyPrioritiesPageRedesigned = () => {
               </div>
               <div>
                 <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
+                <DatePicker placeholder="Select date" id="dueDate"
+                  
                   value={priorityForm.dueDate}
                   onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                 />

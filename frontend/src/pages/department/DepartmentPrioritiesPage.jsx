@@ -4,6 +4,7 @@ import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesSe
 import { useAuthStore } from '../../stores/authStore';
 import PriorityCard from '../../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -578,8 +579,7 @@ const DepartmentPrioritiesPage = () => {
                                         }
                                       }}
                                     />
-                                    <Input
-                                      type="date"
+                                    <DatePicker placeholder="Select date" 
                                       value={newMilestone.dueDate}
                                       onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                       className="w-32 h-8 text-sm"
@@ -683,9 +683,8 @@ const DepartmentPrioritiesPage = () => {
               </div>
               <div>
                 <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
+                <DatePicker placeholder="Select date" id="dueDate"
+                  
                   value={priorityForm.dueDate}
                   onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                 />

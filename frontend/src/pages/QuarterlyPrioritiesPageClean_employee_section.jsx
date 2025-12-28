@@ -301,8 +301,7 @@
                                             }
                                           }}
                                         />
-                                        <Input
-                                          type="date"
+                                        <DatePicker placeholder="Select date" 
                                           value={newMilestone.dueDate}
                                           onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                           className="w-32 h-8 text-sm"

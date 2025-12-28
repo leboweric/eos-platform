@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -277,9 +278,8 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
 
             <div className="space-y-2">
               <Label htmlFor="targetDate">Target Date</Label>
-              <Input
-                id="targetDate"
-                type="date"
+              <DatePicker placeholder="Select date" id="targetDate"
+                
                 value={formData.targetDate}
                 onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
                 required

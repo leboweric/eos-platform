@@ -5,6 +5,7 @@ import { format, addDays } from 'date-fns';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -2433,7 +2434,6 @@ function AnnualPlanningMeetingPage() {
                                               />
                                               <div className="flex items-center gap-2">
                                                 <input
-                                                  type="date"
                                                   value={newMilestone.dueDate}
                                                   onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                   className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -3429,8 +3429,7 @@ function AnnualPlanningMeetingPage() {
                                                   }
                                                 }}
                                               />
-                                              <Input
-                                                type="date"
+                                              <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
                                                 onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                 className="w-44 h-8 text-sm shrink-0"
@@ -3994,9 +3993,8 @@ function AnnualPlanningMeetingPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date *</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
+                  <DatePicker placeholder="Select date" id="dueDate"
+                    
                     value={priorityForm.dueDate}
                     onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                   />

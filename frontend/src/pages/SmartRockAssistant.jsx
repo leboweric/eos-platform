@@ -9,6 +9,7 @@ import { teamsService } from '../services/teamsService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { organizationService } from '../services/organizationService';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -781,9 +782,8 @@ const SmartRockAssistant = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-700">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
+                <DatePicker placeholder="Select date" id="dueDate"
+                  
                   value={rockData.dueDate}
                   onChange={(e) => setRockData({ ...rockData, dueDate: e.target.value })}
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
@@ -812,8 +812,7 @@ const SmartRockAssistant = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <Input
-                            type="date"
+                          <DatePicker placeholder="Select date" 
                             value={milestone.dueDate}
                             onChange={(e) => {
                               const updatedMilestones = [...milestones];

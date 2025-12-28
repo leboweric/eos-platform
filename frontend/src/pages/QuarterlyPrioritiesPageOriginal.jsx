@@ -7,6 +7,7 @@ import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -978,8 +979,7 @@ const QuarterlyPrioritiesPage = () => {
               <div>
                 <Label className="text-sm text-gray-600">Due Date</Label>
                 {isEditing ? (
-                  <Input
-                    type="date"
+                  <DatePicker placeholder="Select date" 
                     value={editForm.dueDate}
                     onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
                     className="mt-1"
@@ -1087,8 +1087,7 @@ const QuarterlyPrioritiesPage = () => {
                           className="flex-1 text-sm"
                           placeholder="Milestone title"
                         />
-                        <Input
-                          type="date"
+                        <DatePicker placeholder="Select date" 
                           value={milestoneForm.dueDate}
                           onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                           className="w-40 text-xs"
@@ -1177,8 +1176,7 @@ const QuarterlyPrioritiesPage = () => {
                       placeholder="New milestone title"
                       className="flex-1 text-sm"
                     />
-                    <Input
-                      type="date"
+                    <DatePicker placeholder="Select date" 
                       value={milestoneForm.dueDate}
                       onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
                       className="w-40 text-xs"
@@ -1777,9 +1775,8 @@ const QuarterlyPrioritiesPage = () => {
               </div>
               <div>
                 <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
+                <DatePicker placeholder="Select date" id="dueDate"
+                  
                   value={priorityForm.dueDate}
                   onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                 />

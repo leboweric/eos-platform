@@ -5,6 +5,7 @@ import { format, addDays } from 'date-fns';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -1428,9 +1429,8 @@ function AnnualPlanningMeetingPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date *</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
+                  <DatePicker placeholder="Select date" id="dueDate"
+                    
                     value={priorityForm.dueDate}
                     onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                   />

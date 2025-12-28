@@ -309,7 +309,6 @@ function RockSidePanel({
                 <label className="text-sm font-medium text-gray-700">Due Date</label>
                 <div className="mt-1 relative">
                   <input
-                    type="date"
                     value={editedRock.dueDate || ''}
                     onChange={(e) => handleFieldChange('dueDate', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -413,7 +412,6 @@ function RockSidePanel({
                   />
                   <div className="flex items-center gap-2">
                     <input
-                      type="date"
                       value={newMilestone.dueDate}
                       onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                       className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

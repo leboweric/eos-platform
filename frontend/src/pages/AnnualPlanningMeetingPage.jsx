@@ -11,6 +11,7 @@ import annualCommitmentsService from '../services/annualCommitmentsService';
 import annualPlanningGoalsService from '../services/annualPlanningGoalsService';
 import CommitmentCard from '../components/meetings/CommitmentCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -2967,8 +2968,7 @@ function AnnualPlanningMeetingPage() {
                                                   }
                                                 }}
                                               />
-                                              <Input
-                                                type="date"
+                                              <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
                                                 onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                 className="w-44 h-8 text-sm shrink-0"
@@ -3820,8 +3820,7 @@ function AnnualPlanningMeetingPage() {
                                                   }
                                                 }}
                                               />
-                                              <Input
-                                                type="date"
+                                              <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
                                                 onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
                                                 className="w-44 h-8 text-sm shrink-0"
@@ -4636,9 +4635,8 @@ function AnnualPlanningMeetingPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date *</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
+                  <DatePicker placeholder="Select date" id="dueDate"
+                    
                     value={priorityForm.dueDate}
                     onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
                   />
