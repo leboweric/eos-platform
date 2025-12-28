@@ -75,6 +75,8 @@ export const getScorecard = async (req, res) => {
     }
     // Always include description - the column should exist from migration 028
     selectColumns += ', sm.description';
+    // Include aggregation_type for 3-week moving calculations
+    selectColumns += ', sm.aggregation_type';
     if (hasGroupId) {
       selectColumns += ', sm.group_id, sm.display_order';
     }
