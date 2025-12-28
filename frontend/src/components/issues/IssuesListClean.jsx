@@ -97,11 +97,29 @@ const IssuesListClean = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedGroups, setExpandedGroups] = useState({});  // Track which grouped issues are expanded
 
-  // Helper function to extract days overdue from issue description
+  // Helper function to calculate days overdue dynamically from the due date
   const getDaysOverdue = (issue) => {
     if (!issue.description) return 0;
-    const match = issue.description.match(/(\d+)\s*days?\s*overdue/i);
-    return match ? parseInt(match[1], 10) : 0;
+    
+    // Extract the original due date from the description
+    // Format: "Original due date: 12/25/2025" or "Original due date: 12/25/24"
+    const dueDateMatch = issue.description.match(/Original due date:\s*([\d\/]+)/i);
+    if (!dueDateMatch) return 0;
+    
+    try {
+      const dueDateStr = dueDateMatch[1];
+      const dueDate = new Date(dueDateStr);
+      const now = new Date();
+      
+      // Calculate days difference
+      const diffTime = now - dueDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      console.error('Error parsing due date:', error);
+      return 0;
+    }
   };
 
   // Helper function to group overdue issues by title

@@ -18,6 +18,7 @@ cron.schedule('0 0 * * *', async () => {
   
   try {
     // Find all overdue todos across all organizations
+    // For multi-assignee todos, create one issue per assignee
     const result = await pool.query(`
       SELECT 
         t.id,
@@ -27,14 +28,18 @@ cron.schedule('0 0 * * *', async () => {
         t.owner_id,
         t.team_id,
         t.organization_id,
+        t.is_multi_assignee,
+        COALESCE(ta.user_id, t.assigned_to_id, t.owner_id) as assignee_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
       FROM todos t
+      LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
       WHERE t.due_date < NOW()
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
         SELECT 1 FROM issues i 
         WHERE i.related_todo_id = t.id 
+        AND i.owner_id = COALESCE(ta.user_id, t.assigned_to_id, t.owner_id)
         AND i.deleted_at IS NULL
       )
     `);
@@ -108,7 +113,7 @@ async function createIssueFromOverdueTodo(todo) {
     9999,  // priority_rank = 9999 puts overdue issues at bottom of list
     issueData.related_todo_id,
     issueData.created_by,
-    todo.owner_id  // Set issue owner to the todo owner
+    todo.assignee_id  // Set issue owner to the assignee (handles multi-assignee todos)
   ]);
   
   console.log(`📋 [CRON] Created issue for overdue todo: "${todo.title}"`);
@@ -123,6 +128,7 @@ export async function convertOverdueTodos() {
   
   try {
     // Find all overdue todos across all organizations
+    // For multi-assignee todos, create one issue per assignee
     const result = await pool.query(`
       SELECT 
         t.id,
@@ -132,14 +138,18 @@ export async function convertOverdueTodos() {
         t.owner_id,
         t.team_id,
         t.organization_id,
+        t.is_multi_assignee,
+        COALESCE(ta.user_id, t.assigned_to_id, t.owner_id) as assignee_id,
         EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
       FROM todos t
+      LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
       WHERE t.due_date < NOW()
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
         SELECT 1 FROM issues i 
         WHERE i.related_todo_id = t.id 
+        AND i.owner_id = COALESCE(ta.user_id, t.assigned_to_id, t.owner_id)
         AND i.deleted_at IS NULL
       )
     `);
