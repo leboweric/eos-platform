@@ -30,10 +30,10 @@ cron.schedule('0 0 * * *', async () => {
         t.organization_id,
         t.is_multi_assignee,
         COALESCE(ta.user_id, t.assigned_to_id, t.owner_id) as assignee_id,
-        EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
+        EXTRACT(DAY FROM (CURRENT_DATE - t.due_date)) as days_overdue
       FROM todos t
       LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
-      WHERE t.due_date < NOW()
+      WHERE t.due_date < CURRENT_DATE
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
@@ -140,10 +140,10 @@ export async function convertOverdueTodos() {
         t.organization_id,
         t.is_multi_assignee,
         COALESCE(ta.user_id, t.assigned_to_id, t.owner_id) as assignee_id,
-        EXTRACT(DAY FROM (NOW() - t.due_date)) as days_overdue
+        EXTRACT(DAY FROM (CURRENT_DATE - t.due_date)) as days_overdue
       FROM todos t
       LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
-      WHERE t.due_date < NOW()
+      WHERE t.due_date < CURRENT_DATE
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
