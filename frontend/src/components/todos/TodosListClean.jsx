@@ -25,8 +25,6 @@ import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 import { TodoContextMenu } from '../TodoContextMenu';
 import { parseDateLocal } from '../../utils/dateUtils';
-import { InlineEditableField } from '../ui/InlineEditableField';
-import { InlineEditableDatePicker } from '../ui/InlineEditableDatePicker';
 
 const TodosListClean = ({ 
   todos, 
@@ -464,24 +462,14 @@ const TodosListClean = ({
                             
                             {/* Title */}
                             <div 
-                              className={`flex-1 ml-3 ${showingArchived ? 'pr-4' : ''}`}
+                              className={`flex-1 ml-3 cursor-pointer ${showingArchived ? 'pr-4' : ''}`}
+                              onClick={() => onEdit && onEdit(todo)}
                             >
                               <div className="flex items-center gap-2 flex-wrap">
                                 <div className={`text-sm font-medium ${
                                   isComplete ? 'text-slate-400 line-through' : 'text-slate-900'
                                 }`}>
-                                  <InlineEditableField
-                                    value={todo.title}
-                                    onSave={async (newTitle) => {
-                                      await todosService.updateTodo(todo.id, {
-                                        ...todo,
-                                        title: newTitle
-                                      });
-                                      if (onUpdate) await onUpdate();
-                                    }}
-                                    placeholder="Enter to-do title"
-                                    disabled={isComplete || showingArchived}
-                                  />
+                                  {todo.title}
                                 </div>
                                 {todo.team_name && (
                                   <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
@@ -528,24 +516,15 @@ const TodosListClean = ({
                             <div className="flex items-center gap-3 flex-shrink-0">
                               {/* Due Date */}
                               <div className="text-right">
-                                <InlineEditableDatePicker
-                                  value={todo.due_date}
-                                  onChange={async (newDate) => {
-                                    await todosService.updateTodo(todo.id, {
-                                      ...todo,
-                                      due_date: newDate
-                                    });
-                                    if (onUpdate) await onUpdate();
-                                  }}
-                                  formatDisplay={(date) => formatDueDate(todo)}
-                                  placeholder="Set date"
-                                  className={`${
+                                {todo.due_date && (
+                                  <span className={`text-xs ${
                                     daysUntilDue === 0 ? 'text-orange-600 font-medium' :
                                     daysUntilDue === 1 ? 'text-yellow-600' :
                                     'text-slate-500'
-                                  }`}
-                                  disabled={isComplete || showingArchived}
-                                />
+                                  }`}>
+                                    {formatDueDate(todo)}
+                                  </span>
+                                )}
                               </div>
                               
                               {/* Actions Space */}
