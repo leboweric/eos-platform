@@ -283,7 +283,7 @@ const processTrialEndings = async () => {
        FROM subscriptions s
        JOIN organizations o ON s.organization_id = o.id
        LEFT JOIN users u ON u.organization_id = o.id
-       WHERE s.status = 'trialing' AND s.trial_end_date <= NOW()
+       WHERE s.status = 'trialing' AND DATE(s.trial_end_date) <= CURRENT_DATE
        GROUP BY s.id, o.id`
     );
 
@@ -355,7 +355,7 @@ const sendTrialReminders = async () => {
     // Find all trialing subscriptions
     const trialSubscriptions = await query(
       `SELECT s.*, o.name as organization_name,
-       CEIL(EXTRACT(EPOCH FROM (s.trial_end_date - NOW())) / 86400) as days_remaining
+       CEIL(EXTRACT(EPOCH FROM (DATE(s.trial_end_date) - CURRENT_DATE)) / 86400) as days_remaining
        FROM subscriptions s
        JOIN organizations o ON s.organization_id = o.id
        WHERE s.status = 'trialing'`
