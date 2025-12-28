@@ -18,6 +18,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [showWeeklyValues, setShowWeeklyValues] = useState(true);
 
   useEffect(() => {
     if (isOpen && metricId) {
@@ -115,15 +116,15 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
     // Sort by date
     const sorted = rawData.sort((a, b) => new Date(a.week_date) - new Date(b.week_date));
     
-    // Calculate 3-week moving totals
+    // Calculate 4-week moving totals
     const dataWithMovingTotal = sorted.map((item, index) => {
       let movingTotal = null;
       
-      // Calculate 3-week moving total (current + 2 previous weeks)
-      if (index >= 2) {
+      // Calculate 4-week moving total (current + 3 previous weeks)
+      if (index >= 3) {
         movingTotal = 0;
         let count = 0;
-        for (let i = index - 2; i <= index; i++) {
+        for (let i = index - 3; i <= index; i++) {
           if (sorted[i].value !== null && sorted[i].value !== undefined) {
             movingTotal += parseFloat(sorted[i].value);
             count++;
@@ -231,7 +232,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {metric?.name} - 3-Week Moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'} Trend
+            {metric?.name} - 4-Week Moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'} Trend
             {!loading && getTrendIcon()}
           </DialogTitle>
         </DialogHeader>
@@ -251,6 +252,18 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
         ) : (
           <Card>
             <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="showWeeklyValues"
+                  checked={showWeeklyValues}
+                  onChange={(e) => setShowWeeklyValues(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="showWeeklyValues" className="text-sm text-gray-700 cursor-pointer">
+                  Show weekly values
+                </label>
+              </div>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -270,28 +283,30 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   <Legend />
                   
                   {/* Weekly values */}
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={themeColors.secondary} 
-                    name="Weekly Value"
-                    strokeWidth={2}
-                    dot={{ fill: themeColors.secondary, r: 4 }}
-                    connectNulls={false}
-                  />
+                  {showWeeklyValues && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke={themeColors.secondary} 
+                      name="Weekly Value"
+                      strokeWidth={2}
+                      dot={{ fill: themeColors.secondary, r: 4 }}
+                      connectNulls={false}
+                    />
+                  )}
                   
-                  {/* 3-week moving total */}
+                  {/* 4-week moving total */}
                   <Line 
                     type="monotone" 
                     dataKey="movingTotal" 
                     stroke={themeColors.primary} 
-                    name={`3-Week Moving ${metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'}`}
+                    name={`4-Week Moving ${metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'Average' : 'Total'}`}
                     strokeWidth={3}
                     dot={{ fill: themeColors.primary, r: 5 }}
                     strokeDasharray="5 5"
                   />
                   
-                  {/* Trendline for 3-week moving total */}
+                  {/* Trendline for 4-week moving total */}
                   <Line 
                     type="monotone" 
                     dataKey="trendline" 
@@ -305,20 +320,20 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   {/* Goal line (if applicable) */}
                   {metric?.goal && metric?.comparison_operator !== 'less_equal' && (
                     <ReferenceLine 
-                      y={metric?.value_type === 'percentage' ? parseFloat(metric.goal) : parseFloat(metric.goal) * 3} // For percentages use goal as-is, for others multiply by 3
+                      y={metric?.value_type === 'percentage' ? parseFloat(metric.goal) : parseFloat(metric.goal) * 4} // For percentages use goal as-is, for others multiply by 4
                       stroke="#10b981" 
                       strokeDasharray="3 3"
-                      label={metric?.value_type === 'percentage' ? 'Goal' : '3-Week Goal'}
+                      label={metric?.value_type === 'percentage' ? 'Goal' : '4-Week Goal'}
                     />
                   )}
                 </LineChart>
               </ResponsiveContainer>
               
               <div className="mt-4 text-sm text-gray-600">
-                <p>• The dashed line shows the 3-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} ({metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'sum'} of current week + 2 previous weeks)</p>
-                <p>• The dotted line shows the trend direction for the 3-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} (calculated using the last 13 weeks for quarterly trend analysis)</p>
-                <p>• The solid line shows individual weekly values</p>
-                {metric?.goal && <p>• Green dashed line shows the {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'goal' : '3-week goal'} target ({getValueFormatter((metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage')) ? metric.goal : metric.goal * 3)})</p>}
+                <p>• The dashed line shows the 4-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} ({metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'sum'} of current week + 3 previous weeks)</p>
+                <p>• The dotted line shows the trend direction for the 4-week moving {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'average' : 'total'} (calculated using the last 13 weeks for quarterly trend analysis)</p>
+                {showWeeklyValues && <p>• The solid line shows individual weekly values</p>}
+                {metric?.goal && <p>• Green dashed line shows the {metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage') ? 'goal' : '4-week goal'} target ({getValueFormatter((metric?.aggregation_type === 'average' || (metric?.aggregation_type === undefined && metric?.value_type === 'percentage')) ? metric.goal : metric.goal * 4)})</p>}
               </div>
             </CardContent>
           </Card>
