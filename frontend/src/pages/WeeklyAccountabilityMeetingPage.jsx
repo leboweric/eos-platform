@@ -7300,9 +7300,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   {/* Expanded Details */}
                                   {isExpanded && issue.description && !isGrouped && (
                                     <div className="px-16 pb-3">
-                                      <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
-                                        {issue.description}
-                                      </p>
+                                      <div 
+                                        className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg rich-text-display"
+                                        dangerouslySetInnerHTML={{ __html: issue.description }}
+                                      />
                                     </div>
                                   )}
                                   
