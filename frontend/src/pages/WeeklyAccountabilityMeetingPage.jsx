@@ -5316,7 +5316,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                     />
                                                     <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
-                                                      onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                      onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                       className="w-44 h-8 text-sm shrink-0"
                                                     />
                                                     <Button
@@ -5707,7 +5707,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                     />
                                                     <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
-                                                      onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                      onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                       className="w-44 h-8 text-sm shrink-0"
                                                     />
                                                     <Button
@@ -6076,7 +6076,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               />
                                               <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
-                                                onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                 className="w-44 h-8 text-sm shrink-0"
                                               />
                                               <Button

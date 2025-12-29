@@ -281,7 +281,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
               <DatePicker placeholder="Select date" id="targetDate"
                 
                 value={formData.targetDate}
-                onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, targetDate: value })}
                 required
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}

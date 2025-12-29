@@ -3706,7 +3706,7 @@ function QuarterlyPlanningMeetingPage() {
                                               />
                                               <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
-                                                onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                 className="w-44 h-8 text-sm shrink-0"
                                               />
                                               <Button
@@ -4298,7 +4298,7 @@ function QuarterlyPlanningMeetingPage() {
                   <DatePicker placeholder="Select date" id="dueDate"
                     
                     value={priorityForm.dueDate}
-                    onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                    onChange={(value) => setPriorityForm({ ...priorityForm, dueDate: value })}
                   />
                 </div>
               </div>

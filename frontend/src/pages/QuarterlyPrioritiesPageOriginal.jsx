@@ -981,7 +981,7 @@ const QuarterlyPrioritiesPage = () => {
                 {isEditing ? (
                   <DatePicker placeholder="Select date" 
                     value={editForm.dueDate}
-                    onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                    onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
                     className="mt-1"
                   />
                 ) : (
@@ -1089,7 +1089,7 @@ const QuarterlyPrioritiesPage = () => {
                         />
                         <DatePicker placeholder="Select date" 
                           value={milestoneForm.dueDate}
-                          onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                          onChange={(value) => setMilestoneForm({ ...milestoneForm, dueDate: value })}
                           className="w-40 text-xs"
                         />
                         <Button
@@ -1178,7 +1178,7 @@ const QuarterlyPrioritiesPage = () => {
                     />
                     <DatePicker placeholder="Select date" 
                       value={milestoneForm.dueDate}
-                      onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                      onChange={(value) => setMilestoneForm({ ...milestoneForm, dueDate: value })}
                       className="w-40 text-xs"
                     />
                     <Button
@@ -1778,7 +1778,7 @@ const QuarterlyPrioritiesPage = () => {
                 <DatePicker placeholder="Select date" id="dueDate"
                   
                   value={priorityForm.dueDate}
-                  onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                  onChange={(value) => setPriorityForm({ ...priorityForm, dueDate: value })}
                 />
               </div>
             </div>

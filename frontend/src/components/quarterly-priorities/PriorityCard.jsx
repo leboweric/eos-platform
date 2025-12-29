@@ -483,7 +483,7 @@ const PriorityCard = ({
                 {isEditing ? (
                   <DatePicker placeholder="Select date" 
                     value={editForm.dueDate}
-                    onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                    onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
                     className="mt-1"
                   />
                 ) : (

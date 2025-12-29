@@ -2424,7 +2424,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   {isEditing ? (
                     <DatePicker placeholder="Select date" 
                       value={editForm.dueDate}
-                      onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                      onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
                       className="h-9"
                     />
                   ) : (
@@ -2544,7 +2544,7 @@ const QuarterlyPrioritiesPageClean = () => {
                           />
                           <DatePicker placeholder="Select date" 
                             value={milestoneForm.dueDate}
-                            onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                            onChange={(value) => setMilestoneForm({ ...milestoneForm, dueDate: value })}
                             className="w-36 h-8 text-xs"
                           />
                           <Button
@@ -2634,7 +2634,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       />
                       <DatePicker placeholder="Select date" 
                         value={milestoneForm.dueDate}
-                        onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                        onChange={(value) => setMilestoneForm({ ...milestoneForm, dueDate: value })}
                         className="w-36 h-8 text-xs"
                       />
                       <Button
@@ -3633,7 +3633,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                 />
                                                 <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
-                                                  onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                  onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                   className="w-44 h-8 text-sm shrink-0"
                                                 />
                                                 <Button
@@ -4019,7 +4019,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                 />
                                                 <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
-                                                  onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                  onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                                   className="w-44 h-8 text-sm shrink-0"
                                                 />
                                                 <Button
@@ -4385,7 +4385,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                           />
                                           <DatePicker placeholder="Select date" 
                                             value={newMilestone.dueDate}
-                                            onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                            onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
                                             className="w-44 h-8 text-sm shrink-0"
                                           />
                                           <Button
@@ -4777,7 +4777,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 <DatePicker placeholder="Select date" id="dueDate"
                   
                   value={priorityForm.dueDate}
-                  onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                  onChange={(value) => setPriorityForm({ ...priorityForm, dueDate: value })}
                   className="mt-2 bg-white"
                 />
               </div>

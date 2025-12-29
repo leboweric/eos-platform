@@ -509,7 +509,7 @@ const MeetingHistoryPageClean = () => {
                 <DatePicker placeholder="Select date" id="start_date"
                   
                   value={filters.start_date}
-                  onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                  onChange={(value) => handleFilterChange('start_date', value)}
                 />
               </div>
 
@@ -519,7 +519,7 @@ const MeetingHistoryPageClean = () => {
                 <DatePicker placeholder="Select date" id="end_date"
                   
                   value={filters.end_date}
-                  onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                  onChange={(value) => handleFilterChange('end_date', value)}
                 />
               </div>
             </div>

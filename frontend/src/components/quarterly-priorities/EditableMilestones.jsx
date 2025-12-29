@@ -108,7 +108,7 @@ export const EditableMilestones = ({
                 />
                 <DatePicker placeholder="Select date" 
                   value={milestoneForm.dueDate}
-                  onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                  onChange={(value) => setMilestoneForm({ ...milestoneForm, dueDate: value })}
                   className="w-44 h-7 text-sm shrink-0"
                 />
                 <Button
@@ -194,7 +194,7 @@ export const EditableMilestones = ({
             />
             <DatePicker placeholder="Select date" 
               value={newMilestone.dueDate}
-              onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+              onChange={(value) => setNewMilestone({ ...newMilestone, dueDate: value })}
               className="w-44 h-7 text-sm shrink-0"
             />
             <Button

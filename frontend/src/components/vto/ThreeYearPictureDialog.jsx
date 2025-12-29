@@ -283,7 +283,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
               <DatePicker placeholder="Select date" id="futureDate"
                 
                 value={formData.futureDate}
-                onChange={(e) => setFormData({ ...formData, futureDate: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, futureDate: value })}
                 required
                 className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
                 style={{ '--focus-color': themeColors.primary }}

@@ -1432,7 +1432,7 @@ function AnnualPlanningMeetingPage() {
                   <DatePicker placeholder="Select date" id="dueDate"
                     
                     value={priorityForm.dueDate}
-                    onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                    onChange={(value) => setPriorityForm({ ...priorityForm, dueDate: value })}
                   />
                 </div>
               </div>

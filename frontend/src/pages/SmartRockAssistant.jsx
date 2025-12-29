@@ -785,7 +785,7 @@ const SmartRockAssistant = () => {
                 <DatePicker placeholder="Select date" id="dueDate"
                   
                   value={rockData.dueDate}
-                  onChange={(e) => setRockData({ ...rockData, dueDate: e.target.value })}
+                  onChange={(value) => setRockData({ ...rockData, dueDate: value })}
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>

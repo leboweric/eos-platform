@@ -64,7 +64,7 @@ export const EditablePriorityFields = ({
         <Label className="text-xs text-gray-600">Due Date</Label>
         <DatePicker placeholder="Select date" 
           value={editForm.dueDate}
-          onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+          onChange={(value) => setEditForm({ ...editForm, dueDate: value })}
           className="h-8 mt-1"
         />
       </div>
