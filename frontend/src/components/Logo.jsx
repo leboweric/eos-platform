@@ -256,11 +256,13 @@ export const LogoIcon = ({ size = 32, className = '' }) => {
 };
 
 // Text-based logo for navigation and places where we need pure text
+// Now uses the new gradient logo image instead of plain text
 export const LogoText = ({ 
   size = 'text-5xl',
   className = '',
   useThemeColors = false,
-  gradient = true
+  gradient = true,
+  height = 'h-10'
 }) => {
   const { user } = useAuthStore();
   const [themeColors, setThemeColors] = useState({
@@ -305,34 +307,13 @@ export const LogoText = ({
     loadTheme();
   }, [useThemeColors, user]);
 
-  if (gradient && useThemeColors && themeColors.primary && themeColors.secondary) {
-    return (
-      <span 
-        className={`${size} font-bold bg-gradient-to-r bg-clip-text text-transparent ${className}`}
-        style={{
-          backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`
-        }}
-      >
-        AXP
-      </span>
-    );
-  }
-
-  if (gradient) {
-    return (
-      <span className={`${size} font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent ${className}`}>
-        AXP
-      </span>
-    );
-  }
-
+  // Use the new gradient logo image
   return (
-    <span 
-      className={`${size} font-bold ${className}`}
-      style={{ color: useThemeColors ? themeColors.primary : '#3B82F6' }}
-    >
-      AXP
-    </span>
+    <img 
+      src="/axp-logo.png" 
+      alt="AXP - Adaptive Execution Platform" 
+      className={`${height} w-auto ${className}`}
+    />
   );
 };
 
