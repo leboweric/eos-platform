@@ -21,7 +21,9 @@ export const DatePicker = ({
   const [isOpen, setIsOpen] = useState(false);
 
   // Parse value if it's a string (YYYY-MM-DD format from backend)
-  const selectedDate = value ? (typeof value === 'string' ? new Date(value + 'T12:00:00') : value) : null;
+  // Validate the date to prevent RangeError from date-fns format()
+  const parsedDate = value ? (typeof value === 'string' ? new Date(value + 'T12:00:00') : value) : null;
+  const selectedDate = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null;
 
   // Quick date options
   const quickDates = [
