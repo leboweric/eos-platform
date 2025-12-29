@@ -69,7 +69,7 @@ const LoginPage = () => {
         {/* Logo at top */}
         <div className="p-8 lg:p-12">
           <Link to="/" className="inline-block">
-            <LogoText useThemeColors={false} />
+            <LogoText useThemeColors={false} height="h-14" />
           </Link>
         </div>
 
