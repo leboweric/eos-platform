@@ -256,7 +256,7 @@ export const LogoIcon = ({ size = 32, className = '' }) => {
 };
 
 // Text-based logo for navigation and places where we need pure text
-// Now uses the new gradient logo image instead of plain text
+// Now uses the new gradient logo image with dynamic color support
 export const LogoText = ({ 
   size = 'text-5xl',
   className = '',
@@ -266,9 +266,9 @@ export const LogoText = ({
 }) => {
   const { user } = useAuthStore();
   const [themeColors, setThemeColors] = useState({
-    primary: '#3B82F6',
-    secondary: '#1E40AF',
-    accent: '#60A5FA'
+    primary: '#0D9488', // Default teal (matches the logo)
+    secondary: '#0F766E',
+    accent: '#14B8A6'
   });
 
   useEffect(() => {
@@ -287,9 +287,9 @@ export const LogoText = ({
               const orgData = await organizationService.getOrganization();
               if (orgData && orgData.theme_primary_color) {
                 const theme = {
-                  primary: orgData.theme_primary_color || '#3B82F6',
-                  secondary: orgData.theme_secondary_color || '#1E40AF',
-                  accent: orgData.theme_accent_color || '#60A5FA'
+                  primary: orgData.theme_primary_color || '#0D9488',
+                  secondary: orgData.theme_secondary_color || '#0F766E',
+                  accent: orgData.theme_accent_color || '#14B8A6'
                 };
                 setThemeColors(theme);
                 saveOrgTheme(orgId, theme);
@@ -307,12 +307,45 @@ export const LogoText = ({
     loadTheme();
   }, [useThemeColors, user]);
 
-  // Use the new gradient logo image
+  // Calculate hue rotation based on theme color
+  // The base logo is teal (~174 degrees hue)
+  const getHueRotation = (hexColor) => {
+    if (!hexColor || hexColor === '#0D9488') return 0; // No rotation for default teal
+    
+    // Convert hex to HSL to get hue
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16) / 255;
+    const g = parseInt(hex.substr(2, 2), 16) / 255;
+    const b = parseInt(hex.substr(4, 2), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    
+    if (max !== min) {
+      const d = max - min;
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    
+    const targetHue = h * 360;
+    const baseHue = 174; // Teal hue
+    return targetHue - baseHue;
+  };
+
+  const hueRotation = useThemeColors ? getHueRotation(themeColors.primary) : 0;
+  const filterStyle = hueRotation !== 0 ? { filter: `hue-rotate(${hueRotation}deg)` } : {};
+
+  // Use the new gradient logo image with optional hue rotation
   return (
     <img 
       src="/axp-logo.png" 
       alt="AXP - Adaptive Execution Platform" 
       className={`${height} w-auto ${className}`}
+      style={filterStyle}
     />
   );
 };
