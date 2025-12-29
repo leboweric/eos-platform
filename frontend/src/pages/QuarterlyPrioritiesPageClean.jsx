@@ -4863,8 +4863,8 @@ const QuarterlyPrioritiesPageClean = () => {
                             </Select>
                             <DatePicker placeholder="Select date" 
                               value={editMilestoneForm.dueDate}
-                              onChange={(e) => {
-                                setEditMilestoneForm({ ...editMilestoneForm, dueDate: e.target.value });
+                              onChange={(value) => {
+                                setEditMilestoneForm({ ...editMilestoneForm, dueDate: value });
                                 if (editMilestoneError) setEditMilestoneError('');
                               }}
                               className={`bg-white flex-1 ${
@@ -5035,8 +5035,8 @@ const QuarterlyPrioritiesPageClean = () => {
                       </Label>
                       <DatePicker placeholder="Select date" 
                         value={addMilestoneForm.dueDate}
-                        onChange={(e) => {
-                          setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value });
+                        onChange={(value) => {
+                          setAddMilestoneForm({ ...addMilestoneForm, dueDate: value });
                           if (milestoneError) setMilestoneError('');
                         }}
                         className={`bg-white mt-1 ${
