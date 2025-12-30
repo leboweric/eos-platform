@@ -1,4 +1,4 @@
-import { sendEmail } from './emailService.js';
+import sgMail from '@sendgrid/mail';
 
 /**
  * Send notification when a new trial starts
@@ -7,8 +7,8 @@ export const notifyNewTrial = async (userData) => {
   try {
     const { firstName, lastName, email, organizationName } = userData;
     
-    // Admin notification email
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'eric@profitbuildernetwork.com';
+    // Admin notification email - hardcoded to ensure delivery
+    const adminEmail = 'eric@profitbuildernetwork.com';
     
     const subject = `🎉 New Trial Signup: ${organizationName}`;
     
@@ -58,14 +58,25 @@ Next Steps:
 - Check if they need help with data migration
     `;
     
-    await sendEmail(
-      adminEmail,
-      subject,
-      textContent,
-      htmlContent
-    );
+    // Send directly via SendGrid (bypass template system)
+    if (!process.env.SENDGRID_API_KEY) {
+      console.warn('SendGrid API key not configured. Trial notification not sent.');
+      console.log('Would have sent to:', adminEmail, 'Subject:', subject);
+      return;
+    }
     
-    console.log('✅ Admin notified of new trial:', organizationName);
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    
+    const msg = {
+      to: adminEmail,
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axplatform.app',
+      subject: subject,
+      text: textContent,
+      html: htmlContent
+    };
+    
+    await sgMail.send(msg);
+    console.log('✅ Admin notified of new trial:', organizationName, '- sent to:', adminEmail);
     
   } catch (error) {
     console.error('Failed to send trial notification:', error);
@@ -78,7 +89,8 @@ Next Steps:
  */
 export const notifyTrialConverted = async (organizationName, planName, amount) => {
   try {
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'eric@profitbuildernetwork.com';
+    // Admin notification email - hardcoded to ensure delivery
+    const adminEmail = 'eric@profitbuildernetwork.com';
     
     const subject = `💰 Trial Converted: ${organizationName} → ${planName}`;
     
@@ -99,12 +111,27 @@ export const notifyTrialConverted = async (organizationName, planName, amount) =
       </div>
     `;
     
-    await sendEmail(
-      adminEmail,
-      subject,
-      `${organizationName} converted to ${planName} - $${amount}/month`,
-      htmlContent
-    );
+    const textContent = `${organizationName} converted to ${planName} - $${amount}/month`;
+    
+    // Send directly via SendGrid (bypass template system)
+    if (!process.env.SENDGRID_API_KEY) {
+      console.warn('SendGrid API key not configured. Conversion notification not sent.');
+      console.log('Would have sent to:', adminEmail, 'Subject:', subject);
+      return;
+    }
+    
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    
+    const msg = {
+      to: adminEmail,
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axplatform.app',
+      subject: subject,
+      text: textContent,
+      html: htmlContent
+    };
+    
+    await sgMail.send(msg);
+    console.log('✅ Admin notified of trial conversion:', organizationName, '- sent to:', adminEmail);
     
   } catch (error) {
     console.error('Failed to send conversion notification:', error);
