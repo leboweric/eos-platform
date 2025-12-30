@@ -16,6 +16,8 @@ export const getSubscriptionStatus = async (req, res) => {
         s.*,
         o.trial_started_at,
         o.trial_ends_at,
+        o.has_custom_pricing,
+        o.custom_pricing_amount,
         CASE 
           WHEN s.status = 'trialing' AND s.trial_end_date IS NOT NULL 
           THEN GREATEST(0, CEIL(EXTRACT(EPOCH FROM (s.trial_end_date - NOW())) / 86400))
@@ -61,7 +63,9 @@ export const getSubscriptionStatus = async (req, res) => {
       created_at: subscription.created_at,
       updated_at: subscription.updated_at,
       current_period_start: subscription.current_period_start,
-      current_period_end: subscription.current_period_end
+      current_period_end: subscription.current_period_end,
+      hasCustomPricing: subscription.has_custom_pricing || false,
+      customPricingAmount: subscription.custom_pricing_amount ? parseFloat(subscription.custom_pricing_amount) : null
     });
     
   } catch (error) {
