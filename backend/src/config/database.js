@@ -151,14 +151,12 @@ export const beginTransaction = async () => {
 
 // Helper function to commit transaction
 export const commitTransaction = async (client) => {
-  await client.query('COMMIT');
-  client.release();
+  await client.query("COMMIT");
 };
 
 // Helper function to rollback transaction
 export const rollbackTransaction = async (client) => {
-  await client.query('ROLLBACK');
-  client.release();
+  await client.query("ROLLBACK");
 };
 
 // Named export for pool direct access
