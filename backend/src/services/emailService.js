@@ -768,6 +768,42 @@ const templates = {
   //   text: `Meeting summary text content...`
   // }),
   
+  subscriptionConfirmation: (data) => ({
+    subject: `Your AXP Subscription is Active - ${data.planName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Subscription Confirmed!</h2>
+        <p>Hi ${data.firstName},</p>
+        <p>Your subscription to the <strong>${data.planName}</strong> plan is now active.</p>
+        <p>Your plan details:</p>
+        <ul style="list-style-type: none; padding: 0; margin: 15px 0;">
+          <li style="margin-bottom: 5px;"><strong>Plan:</strong> ${data.planName}</li>
+          <li style="margin-bottom: 5px;"><strong>Price:</strong> ${data.price}</li>
+          <li style="margin-bottom: 5px;"><strong>Next Billing Date:</strong> ${data.nextBillingDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
+        </ul>
+        <p>Thank you for subscribing! You can manage your subscription anytime from your billing page.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/billing" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Manage Subscription
+          </a>
+        </div>
+      </div>
+    `,
+    text: `
+      Subscription Confirmed!
+      
+      Hi ${data.firstName},
+      
+      Your subscription to the ${data.planName} plan is now active.
+      
+      Plan: ${data.planName}
+      Price: ${data.price}
+      Next Billing Date: ${data.nextBillingDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+      
+      Manage your subscription here: ${process.env.FRONTEND_URL || 'https://axplatform.app'}/billing
+    `
+  }),
+
   // Meeting error alert template
   meetingAlert: (data) => ({
     subject: data.subject,
