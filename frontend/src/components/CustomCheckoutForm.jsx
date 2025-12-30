@@ -103,7 +103,7 @@ const CustomCheckoutForm = ({ customAmount, onSuccess }) => {
           </>
         ) : (
           <>
-            Activate Custom Plan - ${customAmount}/month
+            Activate Plan - ${customAmount}/month
             <ArrowRight className="ml-2 h-4 w-4" />
           </>
         )}

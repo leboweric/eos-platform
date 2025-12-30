@@ -235,14 +235,14 @@ const BillingPageV2 = () => {
               Your Subscription
             </h1>
             <p className="text-xl text-gray-600">
-              Custom pricing plan - All features included
+              Your Plan - All features included
             </p>
           </div>
 
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Custom Plan</span>
+                <span>Your Plan</span>
                 <Badge className="bg-green-100 text-green-800">Active</Badge>
               </CardTitle>
             </CardHeader>
@@ -292,16 +292,16 @@ const BillingPageV2 = () => {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <SEO 
-          title="Subscribe - Custom Plan"
-          description="Subscribe to your custom AXP plan"
+	          title="Subscribe"
+	          description="Subscribe to your AXP plan"
           noindex={true}
         />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">
-            Your Custom Plan
+	            Your Plan
           </h1>
           <p className="text-xl text-gray-600">
-            Special pricing arrangement - ${subscription.customPricingAmount || 500}/month
+	            ${subscription.customPricingAmount || 500}/month
           </p>
         </div>
 
@@ -311,11 +311,11 @@ const BillingPageV2 = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-purple-500" />
-                Custom Plan
+	                Your Plan
               </CardTitle>
-              <CardDescription>
-                Your exclusive pricing arrangement
-              </CardDescription>
+	              <CardDescription>
+	                All features included
+	              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center py-4">
