@@ -1,4 +1,5 @@
 import { pool } from '../config/database.js';
+import { logMeetingError } from '../services/meetingAlertService.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {
@@ -68,6 +69,18 @@ export const startSession = async (req, res) => {
     });
   } catch (error) {
     console.error('Error starting meeting session:', error);
+    
+    // Log to meeting alert system
+    await logMeetingError({
+      organizationId: orgId,
+      userId,
+      errorType: 'start_failed',
+      errorMessage: error.message,
+      errorStack: error.stack,
+      context: { teamId, meeting_type, userAgent: req.headers['user-agent'] },
+      meetingType: meeting_type
+    }).catch(err => console.error('Failed to log meeting error:', err));
+    
     res.status(500).json({ error: 'Failed to start meeting session' });
   } finally {
     client.release();
@@ -618,6 +631,29 @@ export const updateMeetingSession = async (req, res) => {
         }
       } catch (conclusionError) {
         console.error('❌ [Conclude] Error processing meeting conclusion:', conclusionError);
+        
+        // Log critical error - potential data loss
+        await logMeetingError({
+          organizationId: session.organization_id,
+          sessionId: sessionId,
+          userId: req.user?.id,
+          errorType: 'conclude_failed',
+          severity: 'critical',
+          errorMessage: conclusionError.message,
+          errorStack: conclusionError.stack,
+          context: { 
+            meetingData: meetingData ? { 
+              hasTodos: !!meetingData.todos,
+              hasIssues: !!meetingData.issues,
+              hasHeadlines: !!meetingData.headlines,
+              rating: meetingData.rating
+            } : null,
+            sendEmail 
+          },
+          meetingType: session.meeting_type,
+          meetingPhase: 'conclusion'
+        }).catch(err => console.error('Failed to log meeting error:', err));
+        
         // Don't fail the whole request - session was updated successfully
       }
     }
@@ -629,6 +665,25 @@ export const updateMeetingSession = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ [Conclude] Error updating meeting session:', error);
+    
+    // Log critical error
+    const { id: sessionId } = req.params;
+    const { meetingData } = req.body;
+    await logMeetingError({
+      organizationId: req.user?.organizationId,
+      sessionId: sessionId,
+      userId: req.user?.id,
+      errorType: 'conclude_failed',
+      severity: 'critical',
+      errorMessage: error.message,
+      errorStack: error.stack,
+      context: { 
+        phase: 'session_update',
+        hasMeetingData: !!meetingData
+      },
+      meetingPhase: 'conclusion'
+    }).catch(err => console.error('Failed to log meeting error:', err));
+    
     res.status(500).json({ error: 'Failed to update meeting session' });
   } finally {
     client.release();

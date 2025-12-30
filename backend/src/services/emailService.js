@@ -765,7 +765,14 @@ const templates = {
   //   subject: `${data.teamName} Meeting Summary - ${data.organizationName}`,
   //   html: generateMeetingSummaryHTML(data),
   //   text: `Meeting summary text content...`
-  // })
+  // }),
+  
+  // Meeting error alert template
+  meetingAlert: (data) => ({
+    subject: data.subject,
+    html: data.htmlContent,
+    text: `Meeting Error Alert\n\nOrganization: ${data.orgName}\nError Type: ${data.errorType}\nSeverity: ${data.severity}\nError ID: ${data.errorId}\n\nView details at: https://axplatform.app/admin/meeting-health`
+  })
 };
 
 // Send email function

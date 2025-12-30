@@ -79,6 +79,7 @@ const FailedOperationsPage = lazy(() => import('./pages/admin/FailedOperationsPa
 const UserActivityPage = lazy(() => import('./pages/admin/UserActivityPage'));
 const DataIsolationDashboard = lazy(() => import('./pages/admin/DataIsolationDashboard'));
 const AIMonitoringPage = lazy(() => import('./pages/AIMonitoringPage'));
+const MeetingHealthPage = lazy(() => import('./pages/admin/MeetingHealthPage'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -265,6 +266,7 @@ function App() {
           <Route path="/admin/user-activity" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><UserActivityPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/data-isolation" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><DataIsolationDashboard /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/ai-monitoring" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><AIMonitoringPage /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/meeting-health" element={user && (user.role === 'admin' || user.role === 'owner') ? <Layout><MeetingHealthPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-scorecard" element={user && user.role === 'admin' ? <Layout><ScorecardImportPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-todos" element={user && user.role === 'admin' ? <Layout><ImportTodosPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />

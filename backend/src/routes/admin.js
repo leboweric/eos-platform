@@ -12,6 +12,7 @@ import systemHealthController from '../controllers/systemHealthController.js';
 import failedOperationsController from '../controllers/failedOperationsController.js';
 import userActivityController from '../controllers/userActivityController.js';
 import dataIsolationController from '../controllers/dataIsolationController.js';
+import meetingHealthController from '../controllers/meetingHealthController.js';
 
 const router = express.Router();
 
@@ -75,6 +76,13 @@ router.get('/isolation/tables', dataIsolationController.getMultiTenantTables);
 
 // Active meetings dashboard
 router.get('/active-meetings', getActiveMeetings);
+
+// Meeting health monitoring
+router.get('/meeting-health', meetingHealthController.getMeetingHealth);
+router.get('/meeting-health/errors', meetingHealthController.getRecentMeetingErrors);
+router.post('/meeting-health/errors/:id/acknowledge', meetingHealthController.acknowledgeMeetingError);
+router.get('/meeting-health/stuck-sessions', meetingHealthController.getStuckSessions);
+router.post('/meeting-health/sessions/:id/force-end', meetingHealthController.forceEndSession);
 
 // Online users monitoring
 router.get('/users/online', getOnlineUsers);
