@@ -406,6 +406,74 @@ const BillingPageV2 = () => {
     );
   }
 
+  // Show custom pricing message for organizations with special pricing arrangements
+  if (subscription?.hasCustomPricing) {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <SEO 
+          title="Billing"
+          description="Manage your AXP subscription"
+          noindex={true}
+        />
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4">
+            Your Subscription
+          </h1>
+          <p className="text-xl text-gray-600">
+            You have a custom pricing arrangement
+          </p>
+        </div>
+
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Custom Plan</span>
+              <Badge className="bg-purple-100 text-purple-800">Custom Pricing</Badge>
+            </CardTitle>
+            <CardDescription>
+              Your organization has a special pricing arrangement
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Status</span>
+              <span className="font-medium capitalize flex items-center">
+                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                Active
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Monthly Rate</span>
+              <span className="font-medium">
+                ${subscription.customPricingAmount?.toLocaleString() || 'Contact support'}/month
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Users</span>
+              <span className="font-medium">{currentUsers} active users</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Features</span>
+              <span className="font-medium">All features included</span>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-blue-800 font-medium">Custom Pricing Arrangement</p>
+                  <p className="text-blue-700 text-sm mt-1">
+                    For billing questions, plan changes, or invoice requests, please contact your account representative or email support@axplatform.app
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Show active subscription management if user has one
   if (subscription?.status === 'active') {
     const activePlan = PLANS[subscription.plan_id] || PLANS.starter;

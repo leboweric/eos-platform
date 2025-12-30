@@ -101,6 +101,8 @@ const getSubscriptionStatus = async (req, res) => {
         o.trial_started_at,
         o.trial_ends_at,
         o.subscription_tier,
+        o.has_custom_pricing,
+        o.custom_pricing_amount,
         CASE 
          WHEN status = 'trialing' THEN GREATEST(0, CEIL(EXTRACT(EPOCH FROM (trial_end_date - NOW())) / 86400))
          ELSE 0 
@@ -132,7 +134,9 @@ const getSubscriptionStatus = async (req, res) => {
       currentPeriodEnd: subscription.current_period_end,
       userCount: subscription.user_count,
       pricePerUser: subscription.price_per_user,
-      monthlyTotal: parseFloat(subscription.monthly_total)
+      monthlyTotal: parseFloat(subscription.monthly_total),
+      hasCustomPricing: subscription.has_custom_pricing || false,
+      customPricingAmount: subscription.custom_pricing_amount ? parseFloat(subscription.custom_pricing_amount) : null
     });
   } catch (error) {
     console.error('Get subscription error:', error);
