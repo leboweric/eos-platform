@@ -778,6 +778,7 @@ const templates = {
 
 // Send email function
 export const sendEmail = async (to, templateName, data) => {
+  let emailContent = null;
   if (!process.env.SENDGRID_API_KEY) {
     console.warn('SendGrid API key not configured. Email not sent to:', to);
     console.log('Email data:', { templateName, data });
@@ -788,7 +789,7 @@ export const sendEmail = async (to, templateName, data) => {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
   try {
-    let emailContent;
+    
     
     // Handle special case for dailyActiveUsers where content is pre-formatted
     if (templateName === 'dailyActiveUsers') {
