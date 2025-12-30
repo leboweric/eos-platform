@@ -26,13 +26,7 @@ export const getOrganization = async (req, res) => {
 
     const result = await query(
       `SELECT 
-        o.id, o.name, o.slug, o.logo_url, o.logo_mime_type, o.logo_updated_at, o.logo_size, o.created_at, 
-        o.revenue_metric_type, o.revenue_metric_label, o.theme_primary_color, o.theme_secondary_color, o.theme_accent_color, 
-        o.scorecard_time_period_preference, o.rock_display_preference,
-        b.primary_color AS branding_primary_color, b.logo_url AS branding_logo_url
-      FROM organizations o
-      LEFT JOIN organization_branding b ON o.id = b.organization_id
-      WHERE o.id = $1`,
+        * FROM organizations WHERE id = $1`,
       [organizationId]
     );
 
