@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import { getClient } from '../config/database.js';
 import aiTranscriptionService from './aiTranscriptionService.js';
+import { logMeetingError } from './meetingAlertService.js';
 
 class TranscriptionService {
   constructor() {
@@ -134,6 +135,17 @@ class TranscriptionService {
             totalConnections: this.activeConnections.size,
             attempts: retryAttempt + 1
           });
+          
+          // Log to meeting alert system
+          logMeetingError({
+            organizationId,
+            errorType: 'transcription_connection_failed',
+            severity: 'error',
+            errorMessage: `WebSocket connection timeout after ${maxRetries} attempts`,
+            context: { transcriptId, attempts: retryAttempt + 1 },
+            meetingPhase: 'transcription'
+          }).catch(err => console.error('Failed to log transcription error:', err));
+          
           reject(new Error(`WebSocket connection timeout after ${maxRetries} attempts`));
         }, currentTimeout);
         
@@ -295,6 +307,16 @@ class TranscriptionService {
             fullError: error
           });
           
+          // Log to meeting alert system
+          logMeetingError({
+            organizationId,
+            errorType: 'transcription_websocket_error',
+            severity: 'error',
+            errorMessage: error.message,
+            context: { transcriptId, code: error.code, errno: error.errno },
+            meetingPhase: 'transcription'
+          }).catch(err => console.error('Failed to log transcription error:', err));
+          
           // STEP 3: Update connection to failed status instead of just marking inactive
           connectionData.status = 'failed';
           connectionData.isActive = false;
@@ -382,6 +404,18 @@ class TranscriptionService {
             }
           } catch (error) {
             console.error(`❌ [CloseHandler] Failed to save transcript for ${transcriptId}:`, error);
+            
+            // Log to meeting alert system - this is critical data loss
+            logMeetingError({
+              organizationId,
+              errorType: 'transcription_save_failed',
+              severity: 'critical',
+              errorMessage: `Failed to save transcript: ${error.message}`,
+              errorStack: error.stack,
+              context: { transcriptId, chunksCount: connectionData.transcriptChunks?.length || 0 },
+              meetingPhase: 'transcription'
+            }).catch(err => console.error('Failed to log transcription error:', err));
+            
             // Still update status to failed
             try {
               await this.updateTranscriptStatus(transcriptId, 'failed', {
@@ -431,6 +465,17 @@ class TranscriptionService {
         syscall: error.syscall
       });
       
+      // Log to meeting alert system
+      logMeetingError({
+        organizationId,
+        errorType: 'transcription_start_failed',
+        severity: 'error',
+        errorMessage: error.message,
+        errorStack: error.stack,
+        context: { transcriptId, errorCode: error.code, errorName: error.name },
+        meetingPhase: 'transcription'
+      }).catch(err => console.error('Failed to log transcription error:', err));
+      
       // Update transcript status to failed
       try {
         await this.updateTranscriptStatus(transcriptId, 'failed', {
@@ -440,9 +485,9 @@ class TranscriptionService {
       } catch (updateError) {
         console.error('❌ [TranscriptionService] Failed to update transcript status:', updateError.message);
       }
-
       throw error;
     }
+  }
   }
 
   /**

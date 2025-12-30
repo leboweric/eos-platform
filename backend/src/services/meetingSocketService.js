@@ -4,6 +4,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import transcriptionService from './transcriptionService.js';
 import aiSummaryService from './aiSummaryService.js';
+import { logMeetingError } from './meetingAlertService.js';
 
 // Feature flag - can be disabled instantly via environment variable
 const ENABLE_MEETINGS = process.env.ENABLE_MEETINGS === 'true';
@@ -709,6 +710,19 @@ class MeetingSocketService {
           console.log(`✅ AI recording started for transcript ${transcriptId}`);
         } catch (error) {
           console.error('❌ Failed to start AI recording:', error);
+          
+          // Log to meeting alert system
+          const userData = userSocketMap.get(socket.id);
+          logMeetingError({
+            organizationId: organizationId,
+            errorType: 'ai_recording_start_failed',
+            severity: 'error',
+            errorMessage: `Failed to start AI recording: ${error.message}`,
+            errorStack: error.stack,
+            context: { transcriptId, meetingCode: userData?.meetingCode },
+            meetingPhase: 'recording'
+          }).catch(err => console.error('Failed to log AI recording error:', err));
+          
           socket.emit('ai-recording-error', { 
             message: 'Failed to start AI recording',
             error: error.message 
@@ -811,6 +825,16 @@ class MeetingSocketService {
               .catch(error => {
                 console.error(`❌ AI summary failed for transcript ${transcriptId}:`, error);
                 
+                // Log to meeting alert system
+                logMeetingError({
+                  organizationId: userData?.organizationId,
+                  errorType: 'ai_summary_generation_failed',
+                  severity: 'error',
+                  errorMessage: `AI summary generation failed: ${error.message}`,
+                  context: { transcriptId, meetingId, meetingCode: userData?.meetingCode },
+                  meetingPhase: 'summary'
+                }).catch(err => console.error('Failed to log AI summary error:', err));
+                
                 if (userData) {
                   this.io.to(userData.meetingCode).emit('ai-recording-error', {
                     message: 'Failed to generate AI summary',
@@ -823,6 +847,19 @@ class MeetingSocketService {
           console.log(`✅ AI recording stopped for transcript ${transcriptId}`);
         } catch (error) {
           console.error('❌ Failed to stop AI recording:', error);
+          
+          // Log to meeting alert system
+          const userData = userSocketMap.get(socket.id);
+          logMeetingError({
+            organizationId: userData?.organizationId,
+            errorType: 'ai_recording_stop_failed',
+            severity: 'error',
+            errorMessage: `Failed to stop AI recording: ${error.message}`,
+            errorStack: error.stack,
+            context: { transcriptId, meetingId, meetingCode: userData?.meetingCode },
+            meetingPhase: 'recording'
+          }).catch(err => console.error('Failed to log AI recording error:', err));
+          
           socket.emit('ai-recording-error', { 
             message: 'Failed to stop AI recording',
             error: error.message 

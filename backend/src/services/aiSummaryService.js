@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import emailService from './emailService.js';
+import { logMeetingError } from './meetingAlertService.js';
 
 class AISummaryService {
   constructor() {
@@ -63,6 +64,17 @@ class AISummaryService {
         }
       } catch (emailError) {
         console.error(`❌ Failed to send summary email for ${transcriptId}:`, emailError);
+        
+        // Log to meeting alert system
+        logMeetingError({
+          organizationId: meetingContext?.organizationId,
+          errorType: 'meeting_email_failed',
+          severity: 'warning',
+          errorMessage: `Failed to send summary email: ${emailError.message}`,
+          context: { transcriptId, recipientCount: meetingData?.recipients?.length || 0 },
+          meetingPhase: 'email'
+        }).catch(err => console.error('Failed to log email error:', err));
+        
         // Don't throw - AI summary was saved successfully, just log the email failure
       }
 
@@ -80,6 +92,18 @@ class AISummaryService {
       return aiSummary;
     } catch (error) {
       console.error(`❌ Failed to generate AI summary for ${transcriptId}:`, error);
+      
+      // Log to meeting alert system - this is critical
+      logMeetingError({
+        organizationId: meetingContext?.organizationId,
+        errorType: 'ai_summary_failed',
+        severity: 'error',
+        errorMessage: `Failed to generate AI summary: ${error.message}`,
+        errorStack: error.stack,
+        context: { transcriptId },
+        meetingPhase: 'summary'
+      }).catch(err => console.error('Failed to log AI summary error:', err));
+      
       await this.updateTranscriptStatus(transcriptId, 'failed', {
         error_message: error.message
       });
@@ -143,6 +167,17 @@ class AISummaryService {
       return aiSummary;
     } catch (error) {
       console.error('OpenAI API error:', error);
+      
+      // Log to meeting alert system
+      logMeetingError({
+        organizationId: context?.organizationId,
+        errorType: 'openai_api_error',
+        severity: 'error',
+        errorMessage: `OpenAI API error: ${error.message}`,
+        context: { model: 'gpt-4o', errorCode: error.code, errorType: error.type },
+        meetingPhase: 'summary'
+      }).catch(err => console.error('Failed to log OpenAI error:', err));
+      
       throw new Error('Failed to generate AI summary');
     }
   }

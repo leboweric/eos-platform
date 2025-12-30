@@ -1,6 +1,7 @@
 import sgMail from '@sendgrid/mail';
 import db from '../config/database.js';
 import failedOperationsService from './failedOperationsService.js';
+import { logMeetingError } from './meetingAlertService.js';
 
 // Function to fetch AI summary for meeting emails
 async function getAISummaryForMeeting(meetingId, organizationId) {
@@ -877,6 +878,20 @@ export const sendMeetingSummary = async (recipients, meetingData) => {
     
     // Track failed email send
     global.lastEmailError = Date.now();
+    
+    // Log to meeting alert system
+    logMeetingError({
+      organizationId: meetingData?.organizationId,
+      errorType: 'meeting_summary_email_failed',
+      severity: 'warning',
+      errorMessage: `Failed to send meeting summary email: ${error.message}`,
+      context: { 
+        teamName: meetingData?.teamName,
+        meetingType: meetingData?.meetingType,
+        recipientCount: Array.isArray(recipients) ? recipients.length : 1
+      },
+      meetingPhase: 'email'
+    }).catch(err => console.error('Failed to log email error:', err));
     
     // Log failure to database
     await failedOperationsService.logEmailFailure(

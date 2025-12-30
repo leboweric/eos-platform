@@ -5,6 +5,7 @@ import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 import transcriptionService from '../services/transcriptionService.js';
 import logger from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
+import { logMeetingError } from '../services/meetingAlertService.js';
 
 // Create a new meeting record in database
 export const createMeeting = async (req, res) => {
@@ -87,6 +88,20 @@ export const createMeeting = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Error creating meeting:', error);
+    
+    // Log to meeting alert system
+    logMeetingError({
+      organizationId: req.params.orgId,
+      teamId: req.params.teamId,
+      userId: req.user?.id,
+      errorType: 'start_failed',
+      severity: 'error',
+      errorMessage: `Failed to create meeting: ${error.message}`,
+      errorStack: error.stack,
+      context: { meetingType: req.body?.meetingType },
+      meetingPhase: 'start'
+    }).catch(err => console.error('Failed to log create meeting error:', err));
+    
     res.status(500).json({ 
       error: 'Failed to create meeting',
       details: error.message 
@@ -992,6 +1007,21 @@ export const concludeMeeting = async (req, res) => {
 
   } catch (error) {
     logger.error('Error concluding meeting:', error.message);
+    
+    // Log to meeting alert system - this is critical
+    logMeetingError({
+      organizationId: req.params.orgId,
+      teamId: req.params.teamId,
+      userId: req.user?.id,
+      userName: req.user?.firstName + ' ' + req.user?.lastName,
+      errorType: 'conclude_failed',
+      severity: 'critical',
+      errorMessage: `Meeting conclusion failed: ${error.message}`,
+      errorStack: error.stack,
+      context: { meetingType: req.body?.meetingType },
+      meetingPhase: 'conclude'
+    }).catch(err => console.error('Failed to log conclude error:', err));
+    
     res.status(500).json({
       success: false,
       message: 'Failed to conclude meeting',
