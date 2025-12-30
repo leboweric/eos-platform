@@ -245,10 +245,32 @@ export const forceEndSession = async (req, res) => {
   }
 };
 
+// Cleanup all stuck meetings (manual trigger)
+export const cleanupAllStuckMeetings = async (req, res) => {
+  try {
+    const { cleanupStuckMeetings } = await import('../jobs/meetingCleanupCron.js');
+    const result = await cleanupStuckMeetings();
+    
+    res.json({
+      success: true,
+      message: `Cleaned up ${result.cleaned} stuck meetings`,
+      ...result
+    });
+  } catch (error) {
+    console.error('Error cleaning up stuck meetings:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to cleanup stuck meetings',
+      message: error.message
+    });
+  }
+};
+
 export default {
   getMeetingHealth,
   getRecentMeetingErrors,
   acknowledgeMeetingError,
   getStuckSessions,
-  forceEndSession
+  forceEndSession,
+  cleanupAllStuckMeetings
 };

@@ -30,6 +30,7 @@ import accountabilityRoutes from './routes/accountabilityRoutes.js';
 
 // Import scheduled jobs
 import './jobs/overdueTodosCron.js';
+import './jobs/meetingCleanupCron.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import subscriptionRoutesV2 from './routes/subscriptionRoutesV2.js';
 import webhookRoutes from './routes/webhookRoutes.js';

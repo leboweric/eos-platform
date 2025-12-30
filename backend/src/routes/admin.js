@@ -83,6 +83,7 @@ router.get('/meeting-health/errors', meetingHealthController.getRecentMeetingErr
 router.post('/meeting-health/errors/:id/acknowledge', meetingHealthController.acknowledgeMeetingError);
 router.get('/meeting-health/stuck-sessions', meetingHealthController.getStuckSessions);
 router.post('/meeting-health/sessions/:id/force-end', meetingHealthController.forceEndSession);
+router.post('/meeting-health/cleanup-all', meetingHealthController.cleanupAllStuckMeetings);
 
 // Online users monitoring
 router.get('/users/online', getOnlineUsers);
