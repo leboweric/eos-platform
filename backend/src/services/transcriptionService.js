@@ -488,9 +488,8 @@ class TranscriptionService {
       throw error;
     }
   }
-  }
 
-  /**
+  /***
    * Set up event handlers for the transcriber
    */
   setupTranscriberEvents(transcriber, transcriptId) {
