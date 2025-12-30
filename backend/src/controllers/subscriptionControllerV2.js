@@ -91,6 +91,12 @@ const convertTrialToPaid = async (req, res) => {
       customerId = customer.id;
     } else {
       // Update existing customer's payment method
+      // 1. Attach the new payment method to the customer
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+      
+      // 2. Set the newly attached payment method as the default
       await stripe.customers.update(customerId, {
         invoice_settings: {
           default_payment_method: paymentMethodId
