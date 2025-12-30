@@ -8,7 +8,8 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_YOUR_TEST_KEY');
 // Note: This should be a per-seat price ID from Stripe Dashboard
 const STRIPE_PRICES = {
   pro: process.env.STRIPE_PRO_PRICE_ID || 'price_1Rj5XuK5ClkyxluBanf9wvuL', // Legacy per-user pricing (migrating to flat-rate)
-  enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_YOUR_ENTERPRISE_PRICE_ID'
+  enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_YOUR_ENTERPRISE_PRICE_ID',
+  custom: process.env.STRIPE_CUSTOM_PRICE_ID || 'price_1Sk6EeK5ClkyxluBGHd8lZe7' // Custom $500/month flat rate
 };
 
 // Webhook secret for validating Stripe webhooks

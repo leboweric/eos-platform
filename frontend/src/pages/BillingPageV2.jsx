@@ -33,6 +33,7 @@ import {
   Star,
   Info
 } from 'lucide-react';
+import CustomCheckoutForm from '../components/CustomCheckoutForm';
 import axios from '../services/axiosConfig';
 
 // Initialize Stripe
@@ -127,195 +128,7 @@ const PLANS = {
 };
 
 // Payment form component
-const CheckoutForm = ({ selectedPlan, billingInterval, onSuccess }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [error, setError] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [email, setEmail] = useState('');
-  const [promoCode, setPromoCode] = useState('');
-  const [discount, setDiscount] = useState(null);
 
-  const handlePromoCode = async () => {
-    if (!promoCode) return;
-    
-    try {
-      const response = await axios.post('/subscription/apply-promo', { code: promoCode });
-      setDiscount(response.data.discount);
-      setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid promo code');
-      setDiscount(null);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) return;
-
-    setProcessing(true);
-    setError(null);
-
-    // Create payment method
-    const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: elements.getElement(CardElement),
-      billing_details: { email }
-    });
-
-    if (stripeError) {
-      setError(stripeError.message);
-      setProcessing(false);
-      return;
-    }
-
-    try {
-      const response = await axios.post('/subscription/convert-trial', {
-        paymentMethodId: paymentMethod.id,
-        planId: selectedPlan,
-        billingInterval,
-        promoCode: discount ? promoCode : null
-      });
-
-      onSuccess(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Payment failed. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const plan = PLANS[selectedPlan];
-  const price = billingInterval === 'annual' ? plan.annual : plan.monthly;
-  const discountedPrice = discount 
-    ? price * (1 - discount.amount / 100)
-    : price;
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Selected Plan Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <h4 className="font-semibold">{plan.name} Plan</h4>
-            <p className="text-sm text-gray-600">
-              {billingInterval === 'annual' ? 'Billed annually' : 'Billed monthly'}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold">
-              ${billingInterval === 'annual' ? Math.round(discountedPrice / 12) : discountedPrice}
-              <span className="text-sm font-normal text-gray-600">/mo</span>
-            </p>
-            {billingInterval === 'annual' && (
-              <p className="text-sm text-green-600">
-                Save ${plan.monthly * 12 - plan.annual}/year
-              </p>
-            )}
-            {discount && (
-              <Badge className="mt-1 bg-green-100 text-green-800">
-                {discount.description}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Email Input */}
-      <div className="space-y-2">
-        <Label htmlFor="email">Billing Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="billing@company.com"
-          required
-        />
-      </div>
-
-      {/* Promo Code */}
-      <div className="space-y-2">
-        <Label htmlFor="promo">Promo Code (Optional)</Label>
-        <div className="flex gap-2">
-          <Input
-            id="promo"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-            placeholder="e.g., NINETY50"
-          />
-          <Button type="button" variant="outline" onClick={handlePromoCode}>
-            Apply
-          </Button>
-        </div>
-        {promoCode === 'NINETY50' && !discount && (
-          <p className="text-xs text-blue-600">
-            🎉 Switching from Ninety.io? This code gives you 50% off for 6 months!
-          </p>
-        )}
-      </div>
-
-      {/* Card Input */}
-      <div className="space-y-2">
-        <Label>Payment Method</Label>
-        <div className="p-3 border rounded-md">
-          <CardElement 
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': { color: '#aab7c4' }
-                }
-              }
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Security Badge */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <Shield className="h-4 w-4" />
-        <span>Your payment information is encrypted and secure</span>
-      </div>
-
-      {/* Submit Button */}
-      <Button 
-        type="submit" 
-        className="w-full" 
-        size="lg"
-        disabled={!stripe || processing}
-      >
-        {processing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          <>
-            Start {plan.name} Plan
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </>
-        )}
-      </Button>
-
-      {/* Terms */}
-      <p className="text-xs text-center text-gray-500">
-        By subscribing, you agree to our Terms of Service and Privacy Policy.
-        You can cancel or change your plan anytime.
-      </p>
-    </form>
-  );
-};
 
 // Main billing page component
 const BillingPageV2 = () => {
@@ -406,70 +219,164 @@ const BillingPageV2 = () => {
     );
   }
 
-  // Show custom pricing message for organizations with special pricing arrangements
+  // Show custom pricing checkout for organizations with special pricing arrangements
   if (subscription?.hasCustomPricing) {
+    // If already active with custom pricing, show management view
+    if (subscription?.status === 'active') {
+      return (
+        <div className="container mx-auto p-6 max-w-4xl">
+          <SEO 
+            title="Billing"
+            description="Manage your AXP subscription"
+            noindex={true}
+          />
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4">
+              Your Subscription
+            </h1>
+            <p className="text-xl text-gray-600">
+              Custom pricing plan - All features included
+            </p>
+          </div>
+
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Custom Plan</span>
+                <Badge className="bg-green-100 text-green-800">Active</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Status</span>
+                <span className="font-medium capitalize flex items-center">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                  Active
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Monthly Rate</span>
+                <span className="font-medium">
+                  ${subscription.customPricingAmount?.toLocaleString() || '500'}/month
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Users</span>
+                <span className="font-medium">{currentUsers} active users (unlimited)</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Features</span>
+                <span className="font-medium">All features included</span>
+              </div>
+              
+              <div className="pt-4 space-y-3">
+                <Button 
+                  onClick={openCustomerPortal}
+                  className="w-full"
+                  variant="default"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Manage Billing
+                </Button>
+                <p className="text-sm text-gray-500 text-center">
+                  Update payment method or download invoices
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Show checkout form for custom pricing (not yet active)
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <SEO 
-          title="Billing"
-          description="Manage your AXP subscription"
+          title="Subscribe - Custom Plan"
+          description="Subscribe to your custom AXP plan"
           noindex={true}
         />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">
-            Your Subscription
+            Your Custom Plan
           </h1>
           <p className="text-xl text-gray-600">
-            You have a custom pricing arrangement
+            Special pricing arrangement - ${subscription.customPricingAmount || 500}/month
           </p>
         </div>
 
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Custom Plan</span>
-              <Badge className="bg-purple-100 text-purple-800">Custom Pricing</Badge>
-            </CardTitle>
-            <CardDescription>
-              Your organization has a special pricing arrangement
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Status</span>
-              <span className="font-medium capitalize flex items-center">
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                Active
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Monthly Rate</span>
-              <span className="font-medium">
-                ${subscription.customPricingAmount?.toLocaleString() || 'Contact support'}/month
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Users</span>
-              <span className="font-medium">{currentUsers} active users</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-gray-600">Features</span>
-              <span className="font-medium">All features included</span>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-              <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div>
-                  <p className="text-blue-800 font-medium">Custom Pricing Arrangement</p>
-                  <p className="text-blue-700 text-sm mt-1">
-                    For billing questions, plan changes, or invoice requests, please contact your account representative or email support@axplatform.app
-                  </p>
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Plan Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-purple-500" />
+                Custom Plan
+              </CardTitle>
+              <CardDescription>
+                Your exclusive pricing arrangement
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center py-4">
+                <p className="text-4xl font-bold">
+                  ${subscription.customPricingAmount || 500}
+                  <span className="text-lg font-normal text-gray-600">/month</span>
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Unlimited users</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>All features included</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Priority support</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>AI meeting transcription</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Custom branding</span>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              {subscription?.trialDaysRemaining > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                  <p className="text-yellow-800 text-sm">
+                    <Calendar className="h-4 w-4 inline mr-1" />
+                    {subscription.trialDaysRemaining} days left in trial
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Checkout Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Details</CardTitle>
+              <CardDescription>
+                Enter your payment information to activate your subscription
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Elements stripe={stripePromise}>
+                <CustomCheckoutForm 
+                  customAmount={subscription.customPricingAmount || 500}
+                  onSuccess={handleSuccess}
+                />
+              </Elements>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

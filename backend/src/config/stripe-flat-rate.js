@@ -16,6 +16,9 @@ const STRIPE_PRICES = {
   growth_annual: process.env.STRIPE_GROWTH_ANNUAL || 'price_growth_3350', // $3,350/year (save $838)
   scale_annual: process.env.STRIPE_SCALE_ANNUAL || 'price_scale_5750', // $5,750/year (save $1,438)
   enterprise_annual: process.env.STRIPE_ENTERPRISE_ANNUAL || 'price_enterprise_9590', // $9,590/year (save $2,398)
+  
+  // Custom pricing (for special arrangements)
+  custom_monthly: process.env.STRIPE_CUSTOM_MONTHLY || 'price_1Sk6EeK5ClkyxluBGHd8lZe7', // $500/month flat rate
 };
 
 // Special offer codes
@@ -112,6 +115,26 @@ const PLAN_FEATURES = {
     ],
     limits: {
       users: null, // unlimited
+      priorities: null,
+      scorecard_metrics: null,
+      documents: null,
+      document_size_mb: 100,
+      departments: null
+    }
+  },
+  custom: {
+    name: 'Custom',
+    price_monthly: 500,
+    price_annual: 6000,
+    max_users: null, // unlimited
+    features: [
+      'Unlimited users',
+      'All features included',
+      'Priority support',
+      'Custom pricing arrangement'
+    ],
+    limits: {
+      users: null,
       priorities: null,
       scorecard_metrics: null,
       documents: null,
