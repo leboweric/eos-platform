@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { processDailyActiveUsersReport } from './dailyActiveUsersService.js';
 import { sendTodoReminders } from './todoReminderService.js';
 import { archiveExpiredCascadingMessages } from './cascadingMessageExpirationService.js';
+import { initErrorAlertCron } from './errorAlertService.js';
 
 /**
  * Initialize all scheduled jobs
@@ -63,7 +64,15 @@ export const initializeScheduledJobs = () => {
     timezone: process.env.TZ || 'America/New_York' // Default to EST
   });
   
+  // Initialize error alert monitoring (every 5 minutes)
+  try {
+    initErrorAlertCron();
+  } catch (error) {
+    console.error('Failed to initialize error alert cron:', error);
+  }
+  
   console.log('Scheduled jobs initialized:');
+  console.log('- Error alert monitoring: every 5 minutes');
   console.log('- Cascading message expiration: 2:00 AM daily (7-day auto-archive)');
   console.log('- Daily active users report: 8:00 AM daily');
   console.log('- Todo reminders: 9:00 AM daily (skipping Nov 5, 2025 due to manual trigger)');
