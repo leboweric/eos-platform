@@ -50,6 +50,13 @@ export const adminService = {
     return response.data;
   },
 
+  getDailySummary: async (days = 30) => {
+    const response = await axios.get(`${API_BASE}/failed-operations/daily-summary`, {
+      params: { days }
+    });
+    return response.data;
+  },
+
   // Download bulk import template
   downloadBulkImportTemplate: async () => {
     const response = await axios.get(`${API_BASE}/users/bulk-import/template`, {

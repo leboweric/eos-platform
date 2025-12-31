@@ -189,11 +189,42 @@ export const getRecentFailures = async (req, res) => {
   }
 };
 
+/**
+ * Get daily summary of failures
+ */
+export const getDailySummary = async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    
+    const [dailySummary, failuresByDay] = await Promise.all([
+      failedOperationsService.getDailySummary(parseInt(days)),
+      failedOperationsService.getFailuresByDay(parseInt(days))
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        dailySummary,
+        failuresByDay,
+        days: parseInt(days)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching daily summary:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch daily summary',
+      message: error.message
+    });
+  }
+};
+
 export default {
   getFailedOperations,
   getFailureStatistics,
   resolveFailure,
   bulkResolveFailures,
   getCriticalFailures,
-  getRecentFailures
+  getRecentFailures,
+  getDailySummary
 };

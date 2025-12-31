@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -12,7 +12,11 @@ import {
   Clock,
   Filter,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Calendar,
+  BarChart3,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 
@@ -20,8 +24,11 @@ const FailedOperationsPage = () => {
   const navigate = useNavigate();
   const [failures, setFailures] = useState([]);
   const [statistics, setStatistics] = useState(null);
+  const [dailySummary, setDailySummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFailures, setSelectedFailures] = useState(new Set());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'list'
   
   // Filters
   const [filters, setFilters] = useState({
@@ -29,7 +36,9 @@ const FailedOperationsPage = () => {
     severity: '',
     resolved: 'false',
     limit: 50,
-    offset: 0
+    offset: 0,
+    start_date: '',
+    end_date: ''
   });
 
   // Get icon for operation type
@@ -93,11 +102,25 @@ const FailedOperationsPage = () => {
     }
   }, []);
 
+  // Fetch daily summary
+  const fetchDailySummary = useCallback(async () => {
+    try {
+      const response = await adminService.getDailySummary(30);
+      
+      if (response.success) {
+        setDailySummary(response.data.dailySummary || []);
+      }
+    } catch (error) {
+      console.error('Error fetching daily summary:', error);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchFailures();
     fetchStatistics();
-  }, [fetchFailures, fetchStatistics]);
+    fetchDailySummary();
+  }, [fetchFailures, fetchStatistics, fetchDailySummary]);
 
   // Handle filter change
   const handleFilterChange = (key, value) => {
@@ -105,6 +128,34 @@ const FailedOperationsPage = () => {
       ...prev,
       [key]: value,
       offset: 0 // Reset pagination on filter change
+    }));
+  };
+
+  // Handle date click - filter to that day
+  const handleDateClick = (date) => {
+    const dateStr = new Date(date).toISOString().split('T')[0];
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().split('T')[0];
+    
+    setSelectedDate(dateStr);
+    setFilters(prev => ({
+      ...prev,
+      start_date: dateStr,
+      end_date: nextDayStr,
+      offset: 0
+    }));
+    setViewMode('list');
+  };
+
+  // Clear date filter
+  const clearDateFilter = () => {
+    setSelectedDate(null);
+    setFilters(prev => ({
+      ...prev,
+      start_date: '',
+      end_date: '',
+      offset: 0
     }));
   };
 
@@ -117,6 +168,7 @@ const FailedOperationsPage = () => {
         // Refresh data
         fetchFailures();
         fetchStatistics();
+        fetchDailySummary();
       }
     } catch (error) {
       console.error('Error resolving failure:', error);
@@ -134,6 +186,7 @@ const FailedOperationsPage = () => {
         setSelectedFailures(new Set());
         fetchFailures();
         fetchStatistics();
+        fetchDailySummary();
       }
     } catch (error) {
       console.error('Error bulk resolving failures:', error);
@@ -154,6 +207,14 @@ const FailedOperationsPage = () => {
   // Format date
   const formatDate = (date) => {
     return new Date(date).toLocaleString();
+  };
+
+  // Format date short
+  const formatDateShort = (date) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   // Format time ago
@@ -179,7 +240,24 @@ const FailedOperationsPage = () => {
     return 'just now';
   };
 
-  if (loading && !failures.length) {
+  // Calculate max for chart scaling
+  const maxDailyCount = Math.max(...dailySummary.map(d => parseInt(d.total_count) || 0), 1);
+
+  // Calculate trend
+  const getTrend = () => {
+    if (dailySummary.length < 2) return null;
+    const today = parseInt(dailySummary[0]?.total_count) || 0;
+    const yesterday = parseInt(dailySummary[1]?.total_count) || 0;
+    if (yesterday === 0) return today > 0 ? 'up' : 'same';
+    const change = ((today - yesterday) / yesterday) * 100;
+    if (change > 10) return 'up';
+    if (change < -10) return 'down';
+    return 'same';
+  };
+
+  const trend = getTrend();
+
+  if (loading && !failures.length && !dailySummary.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -213,6 +291,7 @@ const FailedOperationsPage = () => {
                 onClick={() => {
                   fetchFailures();
                   fetchStatistics();
+                  fetchDailySummary();
                 }}
                 disabled={loading}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
@@ -225,14 +304,127 @@ const FailedOperationsPage = () => {
         </div>
       </div>
 
+      {/* Daily Summary Chart */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="w-5 h-5 text-gray-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Errors by Day (Last 30 Days)</h2>
+              {trend && (
+                <span className={`flex items-center gap-1 text-sm ${
+                  trend === 'up' ? 'text-red-600' : trend === 'down' ? 'text-green-600' : 'text-gray-500'
+                }`}>
+                  {trend === 'up' ? <TrendingUp className="w-4 h-4" /> : 
+                   trend === 'down' ? <TrendingDown className="w-4 h-4" /> : null}
+                  {trend === 'up' ? 'Increasing' : trend === 'down' ? 'Decreasing' : 'Stable'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode('daily')}
+                className={`px-3 py-1 text-sm rounded ${viewMode === 'daily' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                Daily View
+              </button>
+              <button
+                onClick={() => { setViewMode('list'); clearDateFilter(); }}
+                className={`px-3 py-1 text-sm rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                List View
+              </button>
+            </div>
+          </div>
+
+          {/* Bar Chart */}
+          <div className="flex items-end gap-1 h-40 mt-4 overflow-x-auto pb-2">
+            {dailySummary.slice().reverse().map((day, index) => {
+              const total = parseInt(day.total_count) || 0;
+              const critical = parseInt(day.critical_count) || 0;
+              const error = parseInt(day.error_count) || 0;
+              const warning = parseInt(day.warning_count) || 0;
+              const height = (total / maxDailyCount) * 100;
+              const isSelected = selectedDate === day.date;
+              
+              return (
+                <div 
+                  key={day.date} 
+                  className="flex flex-col items-center min-w-[40px] cursor-pointer group"
+                  onClick={() => handleDateClick(day.date)}
+                >
+                  <div className="relative w-8 flex flex-col justify-end" style={{ height: '120px' }}>
+                    {/* Stacked bar */}
+                    <div 
+                      className={`w-full rounded-t transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'group-hover:opacity-80'}`}
+                      style={{ height: `${Math.max(height, 4)}%` }}
+                    >
+                      {critical > 0 && (
+                        <div 
+                          className="w-full bg-red-500 rounded-t"
+                          style={{ height: `${(critical / total) * 100}%` }}
+                        />
+                      )}
+                      {error > 0 && (
+                        <div 
+                          className="w-full bg-orange-500"
+                          style={{ height: `${(error / total) * 100}%` }}
+                        />
+                      )}
+                      {warning > 0 && (
+                        <div 
+                          className="w-full bg-yellow-400"
+                          style={{ height: `${(warning / total) * 100}%` }}
+                        />
+                      )}
+                      {total === 0 && (
+                        <div className="w-full bg-gray-200 rounded-t h-1" />
+                      )}
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 pointer-events-none">
+                      <div className="font-medium">{formatDateShort(day.date)}</div>
+                      <div>Total: {total}</div>
+                      {critical > 0 && <div className="text-red-300">Critical: {critical}</div>}
+                      {error > 0 && <div className="text-orange-300">Error: {error}</div>}
+                      {warning > 0 && <div className="text-yellow-300">Warning: {warning}</div>}
+                    </div>
+                  </div>
+                  <span className={`text-xs mt-1 ${isSelected ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                    {formatDateShort(day.date)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded" />
+              <span className="text-sm text-gray-600">Critical</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-orange-500 rounded" />
+              <span className="text-sm text-gray-600">Error</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-400 rounded" />
+              <span className="text-sm text-gray-600">Warning</span>
+            </div>
+            <span className="text-sm text-gray-500 ml-auto">Click a bar to view details for that day</span>
+          </div>
+        </div>
+      </div>
+
       {/* Statistics Cards */}
       {statistics && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white rounded-lg shadow-md p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Failures</p>
+                  <p className="text-sm text-gray-600">Total (24h)</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {statistics.statistics?.total_failures || 0}
                   </p>
@@ -300,6 +492,19 @@ const FailedOperationsPage = () => {
               <Filter className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Filters:</span>
             </div>
+
+            {selectedDate && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-sm">
+                <Calendar className="w-4 h-4" />
+                <span>{formatDateShort(selectedDate)}</span>
+                <button 
+                  onClick={clearDateFilter}
+                  className="ml-1 hover:text-blue-900"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             <select
               value={filters.operation_type}
@@ -394,7 +599,7 @@ const FailedOperationsPage = () => {
               {failures.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
-                    No failures found
+                    {selectedDate ? `No failures found for ${formatDateShort(selectedDate)}` : 'No failures found'}
                   </td>
                 </tr>
               ) : (

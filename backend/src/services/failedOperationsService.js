@@ -364,6 +364,54 @@ class FailedOperationsService {
   }
 
   /**
+   * Get failures aggregated by day for the last N days
+   */
+  async getFailuresByDay(days = 30) {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        operation_type,
+        severity,
+        COUNT(*) as count,
+        COUNT(*) FILTER (WHERE resolved_at IS NULL) as unresolved_count
+      FROM failed_operations
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(created_at), operation_type, severity
+      ORDER BY date DESC, count DESC
+    `;
+
+    const result = await database.query(query);
+    return result.rows;
+  }
+
+  /**
+   * Get daily summary totals for the last N days
+   */
+  async getDailySummary(days = 30) {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as total_count,
+        COUNT(*) FILTER (WHERE severity = 'critical') as critical_count,
+        COUNT(*) FILTER (WHERE severity = 'error') as error_count,
+        COUNT(*) FILTER (WHERE severity = 'warning') as warning_count,
+        COUNT(*) FILTER (WHERE resolved_at IS NULL) as unresolved_count,
+        COUNT(*) FILTER (WHERE operation_type = 'email') as email_count,
+        COUNT(*) FILTER (WHERE operation_type = 'stripe') as stripe_count,
+        COUNT(*) FILTER (WHERE operation_type = 'oauth') as oauth_count,
+        COUNT(*) FILTER (WHERE operation_type = 'socket') as socket_count,
+        COUNT(*) FILTER (WHERE operation_type = 'file') as file_count
+      FROM failed_operations
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+    `;
+
+    const result = await database.query(query);
+    return result.rows;
+  }
+
+  /**
    * Check if similar failure already exists (deduplication)
    */
   async checkSimilarFailure(operationType, operationName, errorMessage, minutes = 5) {

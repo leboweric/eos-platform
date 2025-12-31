@@ -51,6 +51,7 @@ router.get('/failed-operations/critical', failedOperationsController.getCritical
 router.get('/failed-operations/recent', failedOperationsController.getRecentFailures);
 router.post('/failed-operations/:id/resolve', failedOperationsController.resolveFailure);
 router.post('/failed-operations/bulk-resolve', failedOperationsController.bulkResolveFailures);
+router.get('/failed-operations/daily-summary', failedOperationsController.getDailySummary);
 
 // User Activity monitoring
 router.get('/activity/stats', userActivityController.getActivityStats);
