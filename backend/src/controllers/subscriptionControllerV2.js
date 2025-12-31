@@ -172,6 +172,8 @@ const convertTrialToPaid = async (req, res) => {
         status,
         plan_id,
         trial_type,
+        trial_start_date,
+        trial_end_date,
         trial_converted_at,
         current_period_start,
         current_period_end,
@@ -180,7 +182,7 @@ const convertTrialToPaid = async (req, res) => {
         billing_interval,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'paid', NOW(), $7, $8, $9, $10, $11, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'paid', NOW(), NOW(), NOW(), $7, $8, $9, $10, $11, NOW(), NOW())
       ON CONFLICT (organization_id) DO UPDATE SET
         stripe_customer_id = EXCLUDED.stripe_customer_id,
         stripe_subscription_id = EXCLUDED.stripe_subscription_id,
