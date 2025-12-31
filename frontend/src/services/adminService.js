@@ -89,5 +89,32 @@ export const adminService = {
       }
     });
     return response.data;
+  },
+
+  // Railway Logs APIs
+  getRailwayLogs: async (params = {}) => {
+    const response = await axios.get(`${API_BASE}/railway-logs`, { params });
+    return response.data;
+  },
+
+  getRailwayLogsSummary: async (days = 7) => {
+    const response = await axios.get(`${API_BASE}/railway-logs/summary`, {
+      params: { days }
+    });
+    return response.data;
+  },
+
+  getRailwayErrors: async (limit = 50) => {
+    const response = await axios.get(`${API_BASE}/railway-logs/errors`, {
+      params: { limit }
+    });
+    return response.data;
+  },
+
+  searchRailwayLogs: async (query, limit = 100) => {
+    const response = await axios.get(`${API_BASE}/railway-logs/search`, {
+      params: { q: query, limit }
+    });
+    return response.data;
   }
 };

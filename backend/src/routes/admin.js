@@ -13,6 +13,7 @@ import failedOperationsController from '../controllers/failedOperationsControlle
 import userActivityController from '../controllers/userActivityController.js';
 import dataIsolationController from '../controllers/dataIsolationController.js';
 import meetingHealthController from '../controllers/meetingHealthController.js';
+import railwayLogsController from '../controllers/railwayLogsController.js';
 
 const router = express.Router();
 
@@ -90,6 +91,12 @@ router.post('/meeting-health/cleanup-all', meetingHealthController.cleanupAllStu
 router.get('/users/online', getOnlineUsers);
 router.post('/users/heartbeat', updateHeartbeat);
 router.post('/users/cleanup-sessions', cleanupExpiredSessions);
+
+// Railway logs monitoring
+router.get('/railway-logs', railwayLogsController.getLogs);
+router.get('/railway-logs/summary', railwayLogsController.getLogsSummary);
+router.get('/railway-logs/errors', railwayLogsController.getRecentErrors);
+router.get('/railway-logs/search', railwayLogsController.searchLogs);
 
 // Bulk user import routes
 router.get('/users/bulk-import/template', downloadTemplate);
