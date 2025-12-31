@@ -13,11 +13,10 @@ function TooltipProvider({
 function Tooltip({
   ...props
 }) {
-  return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-    </TooltipProvider>
-  );
+  // Note: Do NOT wrap in TooltipProvider here - it causes infinite re-renders
+  // when Tooltip is used inside an existing TooltipProvider context.
+  // The parent component should wrap with TooltipProvider instead.
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
 function TooltipTrigger({

@@ -3,7 +3,7 @@ import { AlertTriangle, Loader2, CheckCircle, Edit2, Archive, Check, X, Calendar
 import { issuesService } from '../../services/issuesService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 export const HeadlineItem = ({
   headline,
@@ -137,6 +137,7 @@ const newIssue = await issuesService.createIssue(issueData);
           
           <div className="ml-4 flex-shrink-0">
             {/* Action buttons container - modernized icons */}
+            <TooltipProvider>
             <div className="flex items-center gap-1">
               {/* Create Issue button - modern styling */}
               {!headline.has_related_issue && !localIssueCreated && (
@@ -211,6 +212,7 @@ const newIssue = await issuesService.createIssue(issueData);
                 </Tooltip>
               )}
             </div>
+            </TooltipProvider>
           </div>
         </div>
       )}
