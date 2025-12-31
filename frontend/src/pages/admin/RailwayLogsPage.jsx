@@ -144,9 +144,9 @@ const RailwayLogsPage = () => {
                 <Clock className="h-3 w-3 inline mr-1" />
                 {formatTimestamp(log.timestamp)}
               </span>
-              {log.tags?.serviceName && (
+              {log.tags?.serviceId && (
                 <Badge variant="outline" className="text-xs">
-                  {log.tags.serviceName}
+                  {log.tags.serviceId}
                 </Badge>
               )}
             </div>

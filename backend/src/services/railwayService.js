@@ -70,7 +70,6 @@ async function getEnvironmentLogs(options = {}) {
           deploymentId
           deploymentInstanceId
           serviceId
-          serviceName
         }
       }
     }
