@@ -9,6 +9,75 @@ const RAILWAY_PROJECT_ID = process.env.RAILWAY_PROJECT_ID || '9fafe66a-9ed2-42cb
 const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || '1184158c-ccb5-447b-8c6e-84dd350d7e2a';
 
 /**
+ * Patterns that are false-positive errors (actually informational)
+ * These get reclassified from 'error' to 'info'
+ */
+const FALSE_POSITIVE_ERROR_PATTERNS = [
+  // PostgreSQL routine checkpoint logs - these are normal maintenance
+  /checkpoint starting:/i,
+  /checkpoint complete:/i,
+  /LOG:\s+checkpoint/i,
+  /UTC \[\d+\] LOG:/i,
+  
+  // NPM warnings that get misclassified
+  /npm warn config production/i,
+  /Use `--omit=dev` instead/i,
+  
+  // Build process noise
+  /Compressing objects:/i,
+  /Writing objects:/i,
+  /Enumerating objects:/i,
+  
+  // Health check logs
+  /Health check:/i,
+];
+
+/**
+ * Patterns that indicate a real error (upgrade from info to error if matched)
+ */
+const REAL_ERROR_PATTERNS = [
+  /Error:/i,
+  /FATAL:/i,
+  /PANIC:/i,
+  /exception/i,
+  /failed to/i,
+  /cannot connect/i,
+  /timeout exceeded/i,
+  /ECONNREFUSED/i,
+  /ENOTFOUND/i,
+  /violates.*constraint/i,
+  /null value in column/i,
+];
+
+/**
+ * Check if a log message matches any pattern in a list
+ */
+function matchesAnyPattern(message, patterns) {
+  if (!message) return false;
+  return patterns.some(pattern => pattern.test(message));
+}
+
+/**
+ * Apply smart severity classification to a log entry
+ */
+function classifyLogSeverity(log) {
+  const message = log.message || '';
+  let severity = log.severity?.toLowerCase() || 'info';
+  
+  // Downgrade false-positive errors to info
+  if (severity === 'error' && matchesAnyPattern(message, FALSE_POSITIVE_ERROR_PATTERNS)) {
+    return { ...log, severity: 'info', originalSeverity: 'error', reclassified: true };
+  }
+  
+  // Upgrade real errors that might be misclassified as info
+  if (severity === 'info' && matchesAnyPattern(message, REAL_ERROR_PATTERNS)) {
+    return { ...log, severity: 'error', originalSeverity: 'info', reclassified: true };
+  }
+  
+  return log;
+}
+
+/**
  * Execute a GraphQL query against Railway API
  */
 async function executeQuery(query, variables = {}) {
@@ -43,9 +112,10 @@ async function executeQuery(query, variables = {}) {
  * @param {string} options.beforeDate - Get logs before this date (ISO string)
  * @param {string} options.afterDate - Get logs after this date (ISO string)
  * @param {string} options.severity - Filter by severity (error, warn, info)
+ * @param {boolean} options.skipClassification - Skip smart severity classification
  */
 async function getEnvironmentLogs(options = {}) {
-  const { limit = 100, filter = '', beforeDate, afterDate, severity } = options;
+  const { limit = 100, filter = '', beforeDate, afterDate, severity, skipClassification = false } = options;
 
   let filterStr = filter;
   
@@ -86,7 +156,12 @@ async function getEnvironmentLogs(options = {}) {
   const data = await executeQuery(query, variables);
   let logs = data.environmentLogs || [];
 
-  // Filter by severity if specified
+  // Apply smart severity classification
+  if (!skipClassification) {
+    logs = logs.map(classifyLogSeverity);
+  }
+
+  // Filter by severity if specified (after reclassification)
   if (severity) {
     const severities = severity.split(',').map(s => s.trim().toLowerCase());
     logs = logs.filter(log => severities.includes(log.severity?.toLowerCase()));
