@@ -162,23 +162,41 @@ const convertTrialToPaid = async (req, res) => {
       pricePerUser = planFeatures.price_monthly;
     }
 
-    // Update database subscription
+    // Upsert database subscription (INSERT if not exists, UPDATE if exists)
     await client.query(
-      `UPDATE subscriptions SET
-        stripe_customer_id = $1,
-        stripe_subscription_id = $2,
-        stripe_payment_method_id = $3,
-        status = $4,
-        plan_id = $5,
+      `INSERT INTO subscriptions (
+        organization_id,
+        stripe_customer_id,
+        stripe_subscription_id,
+        stripe_payment_method_id,
+        status,
+        plan_id,
+        trial_type,
+        trial_converted_at,
+        current_period_start,
+        current_period_end,
+        price_per_user,
+        user_count,
+        billing_interval,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'paid', NOW(), $7, $8, $9, $10, $11, NOW(), NOW())
+      ON CONFLICT (organization_id) DO UPDATE SET
+        stripe_customer_id = EXCLUDED.stripe_customer_id,
+        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+        stripe_payment_method_id = EXCLUDED.stripe_payment_method_id,
+        status = EXCLUDED.status,
+        plan_id = EXCLUDED.plan_id,
         trial_type = 'paid',
         trial_converted_at = NOW(),
-        current_period_start = $6,
-        current_period_end = $7,
-        price_per_user = $8,
-        user_count = $9,
-        billing_interval = $10
-      WHERE organization_id = $11`,
+        current_period_start = EXCLUDED.current_period_start,
+        current_period_end = EXCLUDED.current_period_end,
+        price_per_user = EXCLUDED.price_per_user,
+        user_count = EXCLUDED.user_count,
+        billing_interval = EXCLUDED.billing_interval,
+        updated_at = NOW()`,
       [
+        organizationId,
         customerId,
         stripeSubscription.id,
         paymentMethodId,
@@ -188,8 +206,7 @@ const convertTrialToPaid = async (req, res) => {
         stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         pricePerUser,
         userCount,
-        billingInterval,
-        organizationId
+        billingInterval
       ]
     );
 
