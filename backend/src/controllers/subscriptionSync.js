@@ -216,6 +216,7 @@ export const syncSubscriptionFromStripe = async (req, res) => {
       error: 'Failed to sync subscription',
       message: error.message 
     });
+  } finally {
+    client.release();
   }
-  // Note: client.release() is called by commitTransaction/rollbackTransaction
 };
