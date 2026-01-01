@@ -17,8 +17,8 @@ const upload = multer({
 });
 
 /**
- * Filter out email signatures from text
- * More conservative approach - only remove clear signature patterns
+ * Filter out email signatures and forwarded content from text
+ * Handles forwarded emails, reply chains, and signature blocks
  */
 function filterSignature(text) {
   if (!text) return '';
@@ -28,34 +28,77 @@ function filterSignature(text) {
              .replace(/\r\n/g, '\n') // Normalize line endings
              .replace(/\n{3,}/g, '\n\n'); // Collapse multiple blank lines
   
-  // Only look for clear signature separators that appear on their own line
-  // These patterns are more specific to avoid false positives
-  const signaturePatterns = [
-    /\n--\s*\n/,  // Standard email signature separator (-- on its own line)
-    /\n_{3,}\s*\n/,  // Underscore separators (3+ underscores)
-    /\nSent from my (iPhone|iPad|Android|Galaxy|Samsung)/i,  // Mobile signatures
-    /\nGet Outlook for (iOS|Android)/i,  // Outlook mobile signatures
-    /\n--_/,  // MIME boundaries
+  // Patterns that indicate the start of forwarded content or signatures
+  // These are checked in order of priority
+  const cutoffPatterns = [
+    // Forwarded email headers (Outlook style)
+    /\nFrom:\s+[^\n]+\nDate:\s+/i,
+    /\nFrom:\s+[^\n]+\nSent:\s+/i,
+    // Original message markers
+    /\n-+\s*Original Message\s*-+/i,
+    /\n_{5,}/,  // Long underscore lines (often before signatures)
+    // Standard signature separator
+    /\n--\s*\n/,
+    // Mobile signatures
+    /\nSent from my (iPhone|iPad|Android|Galaxy|Samsung)/i,
+    /\nGet Outlook for (iOS|Android)/i,
+    // MIME boundaries
+    /\n--_/,
+    // Contact info blocks (phone, email, address patterns on consecutive lines)
+    /\n[^\n]*\d{3}[-.\s]?\d{3}[-.\s]?\d{4}[^\n]*\n[^\n]*@[^\n]+/i,  // Phone followed by email
   ];
   
-  // Find the earliest clear signature indicator
+  // Find the earliest cutoff point
   let earliestIndex = text.length;
-  for (const pattern of signaturePatterns) {
+  for (const pattern of cutoffPatterns) {
     const match = text.search(pattern);
     if (match >= 0 && match < earliestIndex) {
       earliestIndex = match;
     }
   }
   
-  // Only cut if we found a clear signature pattern AND there's meaningful content before it
+  // Only cut if we found a pattern AND there's meaningful content before it (at least 20 chars)
   if (earliestIndex < text.length && earliestIndex > 20) {
     text = text.substring(0, earliestIndex);
+  }
+  
+  // Additional cleanup for common signature elements at the end
+  // Remove trailing lines that look like contact info
+  const lines = text.split('\n');
+  let lastContentLine = lines.length - 1;
+  
+  // Work backwards to find where actual content ends
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    // Skip empty lines
+    if (!line) continue;
+    
+    // Check if this line looks like signature/contact info
+    const isSignatureLine = 
+      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(line) ||  // Phone number
+      /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(line) ||  // Email only
+      /^(Web|Website|Fax|Direct|Main|Phone|Cell|Mobile):/i.test(line) ||  // Contact labels
+      /^(www\.|http)/i.test(line) ||  // URLs
+      /^\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Boulevard|Blvd)/i.test(line) ||  // Address
+      /^[A-Z][a-z]+,\s*[A-Z]{2}\s+\d{5}/i.test(line) ||  // City, State ZIP
+      /Family Owned|Authorized|Dealer/i.test(line);  // Company taglines
+    
+    if (isSignatureLine) {
+      lastContentLine = i - 1;
+    } else {
+      // Found actual content, stop looking
+      break;
+    }
+  }
+  
+  // Reconstruct text without trailing signature lines
+  if (lastContentLine < lines.length - 1 && lastContentLine >= 0) {
+    text = lines.slice(0, lastContentLine + 1).join('\n');
   }
   
   // Final cleanup
   text = text.trim();
   
-  // Return the text even if it seems short - let the caller decide
   return text || '';
 }
 
