@@ -74,13 +74,13 @@ export const deleteCommitment = async (req, res) => {
   }
 };
 
-// Get all commitments for an organization (across all teams)
+// Get all commitments for an organization (filtered by team)
 export const getOrganizationCommitments = async (req, res) => {
   try {
     const { orgId } = req.params;
+    const { teamId } = req.query;
     
-    const result = await db.query(
-      `SELECT 
+    let query = `SELECT 
         ac.id,
         ac.organization_id,
         ac.team_id,
@@ -99,10 +99,19 @@ export const getOrganizationCommitments = async (req, res) => {
       LEFT JOIN teams t ON ac.team_id = t.id
       WHERE ac.organization_id = $1 
         AND ac.commitment_text IS NOT NULL
-        AND ac.commitment_text != ''
-      ORDER BY ac.year DESC, t.name, u.first_name, u.last_name`,
-      [orgId]
-    );
+        AND ac.commitment_text != ''`;
+    
+    const params = [orgId];
+    
+    // Filter by team if teamId is provided
+    if (teamId) {
+      query += ` AND ac.team_id = $2`;
+      params.push(teamId);
+    }
+    
+    query += ` ORDER BY ac.year DESC, t.name, u.first_name, u.last_name`;
+    
+    const result = await db.query(query, params);
     
     res.json(result.rows);
   } catch (error) {

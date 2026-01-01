@@ -19,7 +19,7 @@ import {
 
 const AnnualCommitmentsPage = () => {
   const { user } = useAuthStore();
-  const { selectedDepartment } = useDepartment();
+  const { selectedDepartment, loading: departmentLoading } = useDepartment();
   const { labels } = useTerminology();
   
   const [commitments, setCommitments] = useState([]);
@@ -28,18 +28,21 @@ const AnnualCommitmentsPage = () => {
   const [expandedTeams, setExpandedTeams] = useState({});
 
   useEffect(() => {
-    fetchCommitments();
-  }, [user?.organizationId]);
+    if (selectedDepartment?.id) {
+      fetchCommitments();
+    }
+  }, [user?.organizationId, selectedDepartment?.id]);
 
   const fetchCommitments = async () => {
-    if (!user?.organizationId) return;
+    if (!user?.organizationId || !selectedDepartment?.id) return;
     
     setLoading(true);
     setError(null);
     
     try {
       const data = await annualCommitmentsService.getOrganizationCommitments(
-        user.organizationId
+        user.organizationId,
+        selectedDepartment.id
       );
       setCommitments(data || []);
       
@@ -69,7 +72,7 @@ const AnnualCommitmentsPage = () => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'U';
   };
 
-  // Group commitments by team
+  // Group commitments by team (though with team filtering, there should only be one team)
   const commitmentsByTeam = commitments.reduce((acc, commitment) => {
     const teamId = commitment.team_id;
     const teamName = commitment.team_name || 'No Team';
@@ -94,7 +97,7 @@ const AnnualCommitmentsPage = () => {
   // Get unique years from commitments
   const years = [...new Set(commitments.map(c => c.year))].sort((a, b) => b - a);
 
-  if (loading) {
+  if (loading || departmentLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -111,7 +114,11 @@ const AnnualCommitmentsPage = () => {
           Annual Commitments
         </h1>
         <p className="text-gray-600 mt-1">
-          View all team members' annual commitments for accountability and alignment
+          {selectedDepartment?.name ? (
+            <>View {selectedDepartment.name} team members' annual commitments</>
+          ) : (
+            <>View team members' annual commitments for accountability and alignment</>
+          )}
         </p>
       </div>
 
@@ -132,48 +139,43 @@ const AnnualCommitmentsPage = () => {
               No Commitments Found
             </h3>
             <p className="text-gray-600 max-w-md mx-auto">
-              No annual commitments have been set yet. 
+              No annual commitments have been set for {selectedDepartment?.name || 'this team'} yet. 
               Commitments are typically set during Annual Planning meetings.
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Commitments by Team */}
-      {teamGroups.map(({ teamId, teamName, teamColor, commitments: teamCommitments }) => (
-        <Card key={teamId} className="mb-4 overflow-hidden">
+      {/* Commitments List - simplified since we're filtering by team */}
+      {commitments.length > 0 && (
+        <Card className="mb-4 overflow-hidden">
           {/* Team Header */}
           <div 
-            className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => toggleTeam(teamId)}
-            style={{ borderLeft: `4px solid ${teamColor}` }}
+            className="flex items-center justify-between p-4"
+            style={{ borderLeft: `4px solid ${selectedDepartment?.color || '#6366f1'}` }}
           >
             <div className="flex items-center gap-3">
-              {expandedTeams[teamId] ? (
-                <ChevronDown className="h-5 w-5 text-gray-500" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-gray-500" />
-              )}
               <div 
                 className="p-2 rounded-lg"
-                style={{ backgroundColor: `${teamColor}15` }}
+                style={{ backgroundColor: `${selectedDepartment?.color || '#6366f1'}15` }}
               >
-                <Users className="h-5 w-5" style={{ color: teamColor }} />
+                <Users className="h-5 w-5" style={{ color: selectedDepartment?.color || '#6366f1' }} />
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900">{teamName}</h2>
+                <h2 className="font-semibold text-gray-900">{selectedDepartment?.name || 'Team'}</h2>
                 <p className="text-sm text-gray-500">
-                  {teamCommitments.length} commitment{teamCommitments.length !== 1 ? 's' : ''}
+                  {commitments.length} commitment{commitments.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Team Commitments */}
-          {expandedTeams[teamId] && (
-            <CardContent className="pt-0 pb-4">
-              <div className="space-y-4 mt-2">
-                {teamCommitments.map((commitment) => (
+          <CardContent className="pt-0 pb-4">
+            <div className="space-y-4 mt-2">
+              {commitments.map((commitment) => {
+                const teamColor = commitment.team_color || selectedDepartment?.color || '#6366f1';
+                return (
                   <div 
                     key={commitment.id}
                     className="bg-gray-50 rounded-lg p-4 border border-gray-100"
@@ -243,12 +245,12 @@ const AnnualCommitmentsPage = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          )}
+                );
+              })}
+            </div>
+          </CardContent>
         </Card>
-      ))}
+      )}
 
       {/* Summary Stats */}
       {commitments.length > 0 && (
@@ -259,11 +261,6 @@ const AnnualCommitmentsPage = () => {
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">{commitments.length}</div>
                   <div className="text-sm text-gray-600">Total Commitments</div>
-                </div>
-                <div className="h-10 w-px bg-gray-200" />
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{teamGroups.length}</div>
-                  <div className="text-sm text-gray-600">Teams</div>
                 </div>
                 <div className="h-10 w-px bg-gray-200" />
                 <div className="text-center">
