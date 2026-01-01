@@ -18,25 +18,27 @@ const upload = multer({
 
 /**
  * Filter out email signatures from text
+ * More conservative approach - only remove clear signature patterns
  */
 function filterSignature(text) {
   if (!text) return '';
   
-  // Remove various signature patterns
+  // First, clean up common artifacts
+  text = text.replace(/\[cid:.*?\]/gi, '') // Remove inline image references
+             .replace(/\r\n/g, '\n') // Normalize line endings
+             .replace(/\n{3,}/g, '\n\n'); // Collapse multiple blank lines
+  
+  // Only look for clear signature separators that appear on their own line
+  // These patterns are more specific to avoid false positives
   const signaturePatterns = [
-    /^--_/m,  // Email boundaries
-    /\[cid:.*?\]/gi,  // Inline image references
-    /\[.*Material Handling.*\]/i,  // Company logos/names in brackets
-    /^(Regards|Best|Thanks|Sincerely|Sent from|Get Outlook)/im,  // Common signature starters
-    /^-{2,}/m,  // Signature separator lines (-- or more)
-    /^_{2,}/m,  // Underscore separators
-    /^From:\s/im,  // Forwarded message headers
-    /^Sent:\s/im,
-    /^To:\s/im,
-    /^Subject:\s/im
+    /\n--\s*\n/,  // Standard email signature separator (-- on its own line)
+    /\n_{3,}\s*\n/,  // Underscore separators (3+ underscores)
+    /\nSent from my (iPhone|iPad|Android|Galaxy|Samsung)/i,  // Mobile signatures
+    /\nGet Outlook for (iOS|Android)/i,  // Outlook mobile signatures
+    /\n--_/,  // MIME boundaries
   ];
   
-  // Find the earliest signature indicator
+  // Find the earliest clear signature indicator
   let earliestIndex = text.length;
   for (const pattern of signaturePatterns) {
     const match = text.search(pattern);
@@ -45,34 +47,16 @@ function filterSignature(text) {
     }
   }
   
-  // Also check for lines that look like contact info
-  const contactInfoIndex = text.search(/^.*(Direct:|Main:|Phone:|Cell:|Mobile:|Email:|Web:|Website:|Fax:|Chief|Officer|Manager|Director)/im);
-  if (contactInfoIndex >= 0 && contactInfoIndex < earliestIndex) {
-    const lineStart = text.lastIndexOf('\n', contactInfoIndex);
-    if (lineStart >= 0) {
-      earliestIndex = lineStart;
-    } else {
-      earliestIndex = contactInfoIndex;
-    }
-  }
-  
-  // Cut the text at the earliest signature indicator
-  if (earliestIndex < text.length) {
+  // Only cut if we found a clear signature pattern AND there's meaningful content before it
+  if (earliestIndex < text.length && earliestIndex > 20) {
     text = text.substring(0, earliestIndex);
   }
   
-  // Clean up any remaining artifacts
-  text = text.replace(/\[cid:.*?\]/gi, '') // Remove any inline image references
-             .replace(/\r\n/g, '\n') // Normalize line endings
-             .replace(/\n{3,}/g, '\n\n') // Collapse multiple blank lines
-             .trim();
+  // Final cleanup
+  text = text.trim();
   
-  // If the result is empty or just whitespace, return a default message
-  if (!text || text.length === 0) {
-    return '[No text content - see attachments]';
-  }
-  
-  return text;
+  // Return the text even if it seems short - let the caller decide
+  return text || '';
 }
 
 /**
@@ -226,15 +210,39 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     
     console.log(`[EmailInbound] Processing email from ${senderEmail} to ${recipientEmail}`);
     console.log(`[EmailInbound] Subject: ${emailData.subject}`);
-    console.log(`[EmailInbound] Body text length: ${emailData.text.length}`);
-    console.log(`[EmailInbound] Clean text preview: ${emailData.text.substring(0, 100)}...`);
+    console.log(`[EmailInbound] req.body.text length: ${(req.body.text || '').length}`);
+    console.log(`[EmailInbound] cleanText length: ${cleanText.length}`);
+    console.log(`[EmailInbound] Final text length: ${emailData.text.length}`);
+    console.log(`[EmailInbound] HTML length: ${emailData.html.length}`);
+    console.log(`[EmailInbound] Text preview: ${emailData.text.substring(0, 200)}...`);
+    
+    // Determine the best body content to use
+    let bodyContent = emailData.text;
+    
+    // If text is empty or very short, try to extract from HTML
+    if ((!bodyContent || bodyContent.length < 10) && emailData.html) {
+      console.log('[EmailInbound] Text body empty/short, extracting from HTML');
+      // Strip HTML tags and decode entities
+      bodyContent = emailData.html
+        .replace(/<style[^>]*>.*?<\/style>/gis, '') // Remove style tags
+        .replace(/<script[^>]*>.*?<\/script>/gis, '') // Remove script tags
+        .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ') // Collapse whitespace
+        .trim();
+      console.log(`[EmailInbound] Extracted ${bodyContent.length} chars from HTML`);
+    }
     
     // Process the email and create an issue
     const result = await emailInboundService.processInboundEmail({
       senderEmail,
       recipientEmail,
       subject: emailData.subject,
-      body: emailData.text || emailData.html,
+      body: bodyContent || '',
       html: emailData.html,
       attachments: emailData.attachments,
       headers: emailData.headers
