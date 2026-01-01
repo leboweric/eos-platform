@@ -17,8 +17,9 @@ const upload = multer({
 });
 
 /**
- * Filter out email signatures and forwarded content from text
+ * Extract the actual message content from email text
  * Handles forwarded emails, reply chains, and signature blocks
+ * Returns the original/forwarded message content, not the forwarder's signature
  */
 function filterSignature(text) {
   if (!text) return '';
@@ -28,78 +29,79 @@ function filterSignature(text) {
              .replace(/\r\n/g, '\n') // Normalize line endings
              .replace(/\n{3,}/g, '\n\n'); // Collapse multiple blank lines
   
-  // Patterns that indicate the start of forwarded content or signatures
-  // These are checked in order of priority
-  const cutoffPatterns = [
-    // Forwarded email headers (Outlook style)
-    /\nFrom:\s+[^\n]+\nDate:\s+/i,
-    /\nFrom:\s+[^\n]+\nSent:\s+/i,
-    // Original message markers
-    /\n-+\s*Original Message\s*-+/i,
-    /\n_{5,}/,  // Long underscore lines (often before signatures)
-    // Standard signature separator
-    /\n--\s*\n/,
-    // Mobile signatures
-    /\nSent from my (iPhone|iPad|Android|Galaxy|Samsung)/i,
-    /\nGet Outlook for (iOS|Android)/i,
-    // MIME boundaries
-    /\n--_/,
-    // Contact info blocks (phone, email, address patterns on consecutive lines)
-    /\n[^\n]*\d{3}[-.\s]?\d{3}[-.\s]?\d{4}[^\n]*\n[^\n]*@[^\n]+/i,  // Phone followed by email
+  console.log('[EmailInbound] Raw text to filter:', text.substring(0, 500));
+  
+  // Check if this is a forwarded email - look for forwarded message markers
+  // If found, extract the content AFTER the forward marker
+  const forwardPatterns = [
+    /From:\s+[^\n]+\n(?:Date|Sent):\s+[^\n]+\n(?:To:\s+[^\n]+\n)?(?:Cc:\s+[^\n]+\n)?Subject:\s+[^\n]+\n/i,
+    /-+\s*Original Message\s*-+/i,
+    /-+\s*Forwarded message\s*-+/i,
   ];
   
-  // Find the earliest cutoff point
-  let earliestIndex = text.length;
-  for (const pattern of cutoffPatterns) {
-    const match = text.search(pattern);
-    if (match >= 0 && match < earliestIndex) {
-      earliestIndex = match;
+  let messageContent = text;
+  
+  for (const pattern of forwardPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      // Found a forward marker - extract content after it
+      const forwardIndex = text.indexOf(match[0]);
+      const afterForward = text.substring(forwardIndex + match[0].length).trim();
+      
+      if (afterForward.length > 20) {
+        console.log('[EmailInbound] Found forwarded content, extracting message after forward header');
+        messageContent = afterForward;
+        break;
+      }
     }
   }
   
-  // Only cut if we found a pattern AND there's meaningful content before it (at least 20 chars)
-  if (earliestIndex < text.length && earliestIndex > 20) {
-    text = text.substring(0, earliestIndex);
-  }
-  
-  // Additional cleanup for common signature elements at the end
-  // Remove trailing lines that look like contact info
-  const lines = text.split('\n');
-  let lastContentLine = lines.length - 1;
+  // Now clean up the message content - remove signatures from the END
+  const lines = messageContent.split('\n');
+  let contentEndIndex = lines.length;
   
   // Work backwards to find where actual content ends
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i].trim();
-    // Skip empty lines
-    if (!line) continue;
+    
+    // Skip empty lines at the end
+    if (!line) {
+      contentEndIndex = i;
+      continue;
+    }
     
     // Check if this line looks like signature/contact info
     const isSignatureLine = 
-      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(line) ||  // Phone number
-      /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(line) ||  // Email only
-      /^(Web|Website|Fax|Direct|Main|Phone|Cell|Mobile):/i.test(line) ||  // Contact labels
+      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(line) ||  // Phone number starting line
+      /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(line) ||  // Email only on line
+      /^(Web|Website|Fax|Direct|Main|Phone|Cell|Mobile|Email):/i.test(line) ||  // Contact labels
       /^(www\.|http)/i.test(line) ||  // URLs
-      /^\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Boulevard|Blvd)/i.test(line) ||  // Address
+      /^\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Boulevard|Blvd|Jackson)/i.test(line) ||  // Address
       /^[A-Z][a-z]+,\s*[A-Z]{2}\s+\d{5}/i.test(line) ||  // City, State ZIP
-      /Family Owned|Authorized|Dealer/i.test(line);  // Company taglines
+      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\s*-\s*(Office|Fax|Direct|Main)/i.test(line) ||  // Phone with label
+      /Family Owned|Authorized|Dealer/i.test(line) ||  // Company taglines
+      /^[A-Z]+\s+[A-Z]+$/i.test(line) && line.length < 30 ||  // ALL CAPS name
+      /Accounts Receivable|Credit|Manager|Director|Officer|Chief/i.test(line);  // Job titles
     
     if (isSignatureLine) {
-      lastContentLine = i - 1;
+      contentEndIndex = i;
     } else {
       // Found actual content, stop looking
       break;
     }
   }
   
-  // Reconstruct text without trailing signature lines
-  if (lastContentLine < lines.length - 1 && lastContentLine >= 0) {
-    text = lines.slice(0, lastContentLine + 1).join('\n');
+  // Extract just the content portion
+  if (contentEndIndex < lines.length) {
+    messageContent = lines.slice(0, contentEndIndex).join('\n');
   }
   
   // Final cleanup
-  text = text.trim();
+  messageContent = messageContent.trim();
   
-  return text || '';
+  console.log('[EmailInbound] Filtered message content:', messageContent.substring(0, 200));
+  
+  return messageContent || '';
 }
 
 /**
