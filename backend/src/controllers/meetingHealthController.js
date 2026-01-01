@@ -245,15 +245,15 @@ export const forceEndSession = async (req, res) => {
   }
 };
 
-// Cleanup all stuck meetings (manual trigger)
+// Cleanup all stuck meetings and sessions (manual trigger)
 export const cleanupAllStuckMeetings = async (req, res) => {
   try {
-    const { cleanupStuckMeetings } = await import('../jobs/meetingCleanupCron.js');
-    const result = await cleanupStuckMeetings();
+    const { runAllCleanup } = await import('../jobs/meetingCleanupCron.js');
+    const result = await runAllCleanup();
     
     res.json({
       success: true,
-      message: `Cleaned up ${result.cleaned} stuck meetings`,
+      message: `Cleaned up ${result.meetings.cleaned} stuck meetings and ${result.sessions.cleaned} stuck sessions`,
       ...result
     });
   } catch (error) {

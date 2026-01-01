@@ -4,6 +4,7 @@ import { logMeetingError } from '../services/meetingAlertService.js';
 
 // Cleanup stuck meetings that have been in-progress for more than 8 hours
 const STUCK_MEETING_THRESHOLD_HOURS = 8;
+const STUCK_SESSION_THRESHOLD_HOURS = 4; // Sessions stuck for more than 4 hours
 
 /**
  * Mark stuck meetings as abandoned
@@ -100,19 +101,126 @@ async function cleanupStuckMeetings() {
   }
 }
 
-// Schedule the cleanup job to run daily at 3 AM
-cron.schedule('0 3 * * *', async () => {
-  console.log('⏰ [CRON] Running scheduled meeting cleanup...');
+// Schedule the cleanup job to run every 4 hours (more frequent to catch stuck sessions sooner)
+cron.schedule('0 */4 * * *', async () => {
+  console.log('⏰ [CRON] Running scheduled meeting/session cleanup...');
   try {
-    const result = await cleanupStuckMeetings();
-    console.log(`⏰ [CRON] Meeting cleanup completed: ${result.cleaned} meetings cleaned`);
+    const meetingsResult = await cleanupStuckMeetings();
+    const sessionsResult = await cleanupStuckSessions();
+    console.log(`⏰ [CRON] Cleanup completed: ${meetingsResult.cleaned} meetings, ${sessionsResult.cleaned} sessions cleaned`);
   } catch (error) {
-    console.error('⏰ [CRON] Meeting cleanup failed:', error);
+    console.error('⏰ [CRON] Cleanup failed:', error);
   }
 });
 
-console.log('⏰ [CRON] Meeting cleanup job scheduled - runs daily at 3 AM');
+console.log('⏰ [CRON] Meeting/session cleanup job scheduled - runs every 4 hours');
+
+/**
+ * Cleanup stuck meeting sessions from meeting_sessions table
+ * These are the active transcription/recording sessions shown in admin dashboard
+ */
+async function cleanupStuckSessions() {
+  console.log('🧹 [CLEANUP] Starting stuck session cleanup job...');
+  
+  try {
+    // Find all sessions that have been active for more than 4 hours
+    const stuckSessions = await db.query(`
+      SELECT 
+        ms.id,
+        ms.organization_id,
+        ms.team_id,
+        ms.facilitator_id,
+        ms.start_time,
+        o.name as organization_name,
+        t.name as team_name,
+        u.email as facilitator_email,
+        CONCAT(u.first_name, ' ', u.last_name) as facilitator_name,
+        EXTRACT(EPOCH FROM (NOW() - ms.start_time)) / 3600 as hours_stuck
+      FROM meeting_sessions ms
+      LEFT JOIN organizations o ON ms.organization_id = o.id
+      LEFT JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
+      WHERE ms.is_active = TRUE
+        AND ms.start_time < NOW() - INTERVAL '${STUCK_SESSION_THRESHOLD_HOURS} hours'
+      ORDER BY ms.start_time ASC
+    `);
+    
+    if (stuckSessions.rows.length === 0) {
+      console.log('🧹 [CLEANUP] No stuck sessions found');
+      return { cleaned: 0 };
+    }
+    
+    console.log(`🧹 [CLEANUP] Found ${stuckSessions.rows.length} stuck sessions to clean up`);
+    
+    // Update all stuck sessions to inactive
+    const sessionIds = stuckSessions.rows.map(s => s.id);
+    
+    const updateResult = await db.query(`
+      UPDATE meeting_sessions
+      SET 
+        is_active = FALSE,
+        updated_at = NOW()
+      WHERE id = ANY($1)
+      RETURNING id
+    `, [sessionIds]);
+    
+    console.log(`🧹 [CLEANUP] Marked ${updateResult.rowCount} sessions as inactive`);
+    
+    // Log each abandoned session for visibility
+    for (const session of stuckSessions.rows) {
+      console.log(`  📋 ${session.organization_name} / ${session.team_name} - ${Math.round(session.hours_stuck)} hours stuck`);
+      
+      // Log to meeting errors for tracking
+      await logMeetingError({
+        sessionId: session.id,
+        organizationId: session.organization_id,
+        teamId: session.team_id,
+        userId: session.facilitator_id,
+        userName: session.facilitator_name,
+        errorType: 'session_orphaned',
+        severity: 'warning',
+        errorMessage: `Session auto-ended after ${Math.round(session.hours_stuck)} hours stuck active`,
+        context: {
+          organizationName: session.organization_name,
+          teamName: session.team_name,
+          facilitatorEmail: session.facilitator_email,
+          startTime: session.start_time,
+          hoursStuck: Math.round(session.hours_stuck)
+        },
+        meetingPhase: 'cleanup'
+      }).catch(err => console.error('Failed to log orphaned session:', err));
+    }
+    
+    return { 
+      cleaned: updateResult.rowCount,
+      sessions: stuckSessions.rows.map(s => ({
+        id: s.id,
+        organization: s.organization_name,
+        team: s.team_name,
+        hoursStuck: Math.round(s.hours_stuck)
+      }))
+    };
+    
+  } catch (error) {
+    console.error('🧹 [CLEANUP] Error cleaning up stuck sessions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Run all cleanup tasks
+ */
+async function runAllCleanup() {
+  const meetingsResult = await cleanupStuckMeetings();
+  const sessionsResult = await cleanupStuckSessions();
+  
+  return {
+    meetings: meetingsResult,
+    sessions: sessionsResult,
+    totalCleaned: meetingsResult.cleaned + sessionsResult.cleaned
+  };
+}
 
 // Export for manual triggering via admin endpoint
-export { cleanupStuckMeetings };
-export default { cleanupStuckMeetings };
+export { cleanupStuckMeetings, cleanupStuckSessions, runAllCleanup };
+export default { cleanupStuckMeetings, cleanupStuckSessions, runAllCleanup };
