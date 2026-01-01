@@ -3,7 +3,8 @@ import {
   getTeamCommitments, 
   upsertCommitment, 
   deleteCommitment,
-  getUserCurrentCommitment
+  getUserCurrentCommitment,
+  getOrganizationCommitments
 } from '../controllers/annualCommitmentsController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -11,6 +12,12 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// Get all commitments for an organization (across all teams)
+router.get(
+  '/organizations/:orgId/annual-commitments',
+  getOrganizationCommitments
+);
 
 // Get commitments for a team/year
 router.get(

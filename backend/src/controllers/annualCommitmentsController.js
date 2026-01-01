@@ -74,6 +74,47 @@ export const deleteCommitment = async (req, res) => {
   }
 };
 
+// Get all commitments for an organization (across all teams)
+export const getOrganizationCommitments = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { year } = req.query;
+    
+    const currentYear = year || new Date().getFullYear() + 1; // Default to next year
+    
+    const result = await db.query(
+      `SELECT 
+        ac.id,
+        ac.organization_id,
+        ac.team_id,
+        ac.user_id,
+        ac.year,
+        ac.commitment_text,
+        ac.created_at,
+        ac.updated_at,
+        u.first_name,
+        u.last_name,
+        u.email,
+        t.name as team_name,
+        t.color as team_color
+      FROM annual_commitments ac
+      JOIN users u ON ac.user_id = u.id
+      LEFT JOIN teams t ON ac.team_id = t.id
+      WHERE ac.organization_id = $1 
+        AND ac.year = $2
+        AND ac.commitment_text IS NOT NULL
+        AND ac.commitment_text != ''
+      ORDER BY t.name, u.first_name, u.last_name`,
+      [orgId, currentYear]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching organization commitments:', error);
+    res.status(500).json({ error: 'Failed to fetch commitments' });
+  }
+};
+
 // Get user's current commitment for dashboard
 export const getUserCurrentCommitment = async (req, res) => {
   try {

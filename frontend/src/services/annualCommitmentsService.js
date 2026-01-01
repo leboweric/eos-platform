@@ -1,6 +1,15 @@
 import axios from './axiosConfig';
 
 const annualCommitmentsService = {
+  // Get all commitments for an organization (across all teams)
+  getOrganizationCommitments: async (organizationId, year) => {
+    const response = await axios.get(
+      `/organizations/${organizationId}/annual-commitments`,
+      { params: { year } }
+    );
+    return response.data;
+  },
+
   // Get all commitments for a team/year
   getTeamCommitments: async (organizationId, teamId, year) => {
     const response = await axios.get(

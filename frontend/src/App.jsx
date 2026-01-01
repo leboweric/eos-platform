@@ -81,6 +81,7 @@ const DataIsolationDashboard = lazy(() => import('./pages/admin/DataIsolationDas
 const AIMonitoringPage = lazy(() => import('./pages/AIMonitoringPage'));
 const MeetingHealthPage = lazy(() => import('./pages/admin/MeetingHealthPage'));
 const RailwayLogsPage = lazy(() => import('./pages/admin/RailwayLogsPage'));
+const AnnualCommitmentsPage = lazy(() => import('./pages/AnnualCommitmentsPage'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -219,6 +220,7 @@ function App() {
           <Route path="/dashboard-redesigned" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
           <Route path="/dashboard-original" element={user ? <Layout><DashboardOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/annual-commitments" element={user ? <Layout><AnnualCommitmentsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities-redesigned" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
