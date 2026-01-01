@@ -28,25 +28,59 @@ class EmailInboundService {
       const userName = `${user.first_name} ${user.last_name}`.trim();
       console.log(`[EmailInbound] Found user: ${userName} (${user.id})`);
 
-      // 2. Determine organization and team from recipient email
+      // 2. Determine organization and team
       let organizationId = user.organization_id;
       
-      // Find user's team - prioritize Leadership Team if they're on it
-      const teamResult = await pool.query(`
+      // Get all teams the user is a member of
+      const userTeamsResult = await pool.query(`
         SELECT t.id, t.name, t.is_leadership_team 
         FROM teams t
         JOIN team_members tm ON t.id = tm.team_id
         WHERE tm.user_id = $1 AND t.organization_id = $2
-        ORDER BY t.is_leadership_team DESC, t.created_at ASC
-        LIMIT 1
+        ORDER BY t.is_leadership_team DESC, t.name ASC
       `, [user.id, organizationId]);
       
-      let teamId = teamResult.rows[0]?.id || null;
-      const teamName = teamResult.rows[0]?.name || 'Organization';
+      const userTeams = userTeamsResult.rows;
       
-      console.log(`[EmailInbound] Issue will be assigned to ${teamName} team`);
+      // Parse team tag from subject line [TeamName]
+      const teamTagResult = this.parseTeamTag(subject, userTeams);
+      
+      let teamId = null;
+      let teamName = 'Organization';
+      let teamTagNotFound = null;
+      let cleanSubject = subject;
+      
+      if (teamTagResult.tagFound) {
+        if (teamTagResult.matchedTeam) {
+          // Team tag found and matched
+          teamId = teamTagResult.matchedTeam.id;
+          teamName = teamTagResult.matchedTeam.name;
+          cleanSubject = teamTagResult.cleanSubject;
+          console.log(`[EmailInbound] Team tag [${teamTagResult.tagValue}] matched to: ${teamName}`);
+        } else {
+          // Team tag found but no match - use default and note the issue
+          teamTagNotFound = teamTagResult.tagValue;
+          cleanSubject = teamTagResult.cleanSubject;
+          console.log(`[EmailInbound] Team tag [${teamTagResult.tagValue}] not found in user's teams`);
+          
+          // Fall back to default team
+          const defaultTeam = userTeams.find(t => t.is_leadership_team) || userTeams[0];
+          if (defaultTeam) {
+            teamId = defaultTeam.id;
+            teamName = defaultTeam.name;
+          }
+        }
+      } else {
+        // No team tag - use default team (prioritize Leadership Team)
+        const defaultTeam = userTeams.find(t => t.is_leadership_team) || userTeams[0];
+        if (defaultTeam) {
+          teamId = defaultTeam.id;
+          teamName = defaultTeam.name;
+        }
+        console.log(`[EmailInbound] No team tag found, using default: ${teamName}`);
+      }
 
-      // Parse recipient email for org/team routing
+      // Parse recipient email for org/team routing (legacy support)
       const recipientParts = recipientEmail.split('@')[0];
       if (recipientParts.includes('-')) {
         const parts = recipientParts.split('-');
@@ -80,8 +114,8 @@ class EmailInboundService {
         }
       }
 
-      // 3. Parse email content for metadata
-      const parsedData = this.parseEmailContent(subject, body, html, attachments);
+      // 3. Parse email content for metadata (use clean subject without team tag)
+      const parsedData = this.parseEmailContent(cleanSubject, body, html, attachments);
 
       // 4. Create the issue
       const issueQuery = `
@@ -123,8 +157,16 @@ class EmailInboundService {
         await this.processAttachments(issue.id, attachments, user.id);
       }
 
-      // 6. Send confirmation email
-      await this.sendConfirmationEmail(senderEmail, issue, userName, attachments?.length || 0, teamName);
+      // 6. Send confirmation email (include team tag info and available teams)
+      await this.sendConfirmationEmail(
+        senderEmail, 
+        issue, 
+        userName, 
+        attachments?.length || 0, 
+        teamName,
+        userTeams,
+        teamTagNotFound
+      );
 
       return {
         success: true,
@@ -138,6 +180,82 @@ class EmailInboundService {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Parse team tag from subject line
+   * Supports formats like: [Leadership] Issue title, [Ops] Issue title
+   * Returns: { tagFound, tagValue, matchedTeam, cleanSubject }
+   */
+  parseTeamTag(subject, userTeams) {
+    const result = {
+      tagFound: false,
+      tagValue: null,
+      matchedTeam: null,
+      cleanSubject: subject
+    };
+
+    // Look for [TeamName] pattern at the start of subject
+    const tagMatch = subject.match(/^\s*\[([^\]]+)\]\s*/i);
+    
+    if (!tagMatch) {
+      return result;
+    }
+
+    result.tagFound = true;
+    result.tagValue = tagMatch[1].trim();
+    result.cleanSubject = subject.replace(tagMatch[0], '').trim();
+
+    if (!userTeams || userTeams.length === 0) {
+      return result;
+    }
+
+    const tagLower = result.tagValue.toLowerCase();
+
+    // Try exact match first (case-insensitive)
+    let matchedTeam = userTeams.find(t => 
+      t.name.toLowerCase() === tagLower
+    );
+
+    // Try partial match (tag is contained in team name or vice versa)
+    if (!matchedTeam) {
+      matchedTeam = userTeams.find(t => {
+        const teamNameLower = t.name.toLowerCase();
+        return teamNameLower.includes(tagLower) || tagLower.includes(teamNameLower);
+      });
+    }
+
+    // Try word-based match (any word in tag matches any word in team name)
+    if (!matchedTeam) {
+      const tagWords = tagLower.split(/\s+/);
+      matchedTeam = userTeams.find(t => {
+        const teamWords = t.name.toLowerCase().split(/\s+/);
+        return tagWords.some(tw => teamWords.some(tnw => 
+          tnw.includes(tw) || tw.includes(tnw)
+        ));
+      });
+    }
+
+    // Try abbreviation match (e.g., "LT" for "Leadership Team", "Ops" for "Operations")
+    if (!matchedTeam) {
+      matchedTeam = userTeams.find(t => {
+        const teamNameLower = t.name.toLowerCase();
+        // Check if tag could be an abbreviation
+        const initials = t.name.split(/\s+/).map(w => w[0]).join('').toLowerCase();
+        return initials === tagLower || 
+               teamNameLower.startsWith(tagLower) ||
+               // Common abbreviations
+               (tagLower === 'ops' && teamNameLower.includes('operation')) ||
+               (tagLower === 'lt' && teamNameLower.includes('leadership')) ||
+               (tagLower === 'hr' && teamNameLower.includes('human resource'));
+      });
+    }
+
+    if (matchedTeam) {
+      result.matchedTeam = matchedTeam;
+    }
+
+    return result;
   }
 
   /**
@@ -263,7 +381,7 @@ class EmailInboundService {
   /**
    * Send confirmation email to sender
    */
-  async sendConfirmationEmail(recipientEmail, issue, userName, attachmentCount = 0, teamName = 'Organization') {
+  async sendConfirmationEmail(recipientEmail, issue, userName, attachmentCount = 0, teamName = 'Organization', userTeams = [], teamTagNotFound = null) {
     const attachmentText = attachmentCount > 0 
       ? `<p><strong>Attachments:</strong> ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached</p>` 
       : '';
@@ -272,6 +390,26 @@ class EmailInboundService {
     const descriptionPreview = issue.description && issue.description.length > 200 
       ? issue.description.substring(0, 200) + '...' 
       : issue.description || 'No description provided';
+    
+    // Build team tag not found warning
+    const teamTagWarning = teamTagNotFound 
+      ? `<p style="color: #dc2626; background: #fef2f2; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+          <strong>Note:</strong> Team tag [${teamTagNotFound}] was not found in your teams. 
+          The issue was added to <strong>${teamName}</strong> instead.
+        </p>`
+      : '';
+    
+    // Build available teams list
+    const teamsListHtml = userTeams.length > 0
+      ? `<p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+          <strong>Your available team tags:</strong><br>
+          ${userTeams.map(t => `[${t.name}]`).join(', ')}
+        </p>`
+      : '';
+    
+    const teamsListText = userTeams.length > 0
+      ? `Your available team tags: ${userTeams.map(t => `[${t.name}]`).join(', ')}`
+      : '';
       
     const emailData = {
       to: recipientEmail,
@@ -280,6 +418,7 @@ class EmailInboundService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Issue Created Successfully</h2>
           <p>Hi ${userName},</p>
+          ${teamTagWarning}
           <p>Your issue has been created in AXP and added to the <strong>${teamName}</strong> issues list.</p>
           <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Subject:</strong> ${issue.title}</p>
@@ -291,7 +430,15 @@ class EmailInboundService {
           <p>You can view and manage this issue in AXP.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
           <p style="color: #6b7280; font-size: 14px;">
-            <strong>Pro tip:</strong> Include these keywords in your emails to automatically set properties:
+            <strong>Pro tip:</strong> Include a team tag in your subject line to route issues to specific teams:
+          </p>
+          <p style="color: #6b7280; font-size: 14px; font-style: italic;">
+            Example: [Leadership] Server needs attention
+          </p>
+          ${teamsListHtml}
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #6b7280; font-size: 14px;">
+            <strong>Other keywords:</strong>
           </p>
           <ul style="color: #6b7280; font-size: 14px;">
             <li>Timeline: short_term or long_term</li>
@@ -303,7 +450,7 @@ class EmailInboundService {
         Issue Created Successfully
         
         Hi ${userName},
-        
+        ${teamTagNotFound ? `\nNote: Team tag [${teamTagNotFound}] was not found. Issue added to ${teamName} instead.\n` : ''}
         Your issue has been created in AXP and added to the ${teamName} issues list.
         
         Subject: ${issue.title}
@@ -313,6 +460,16 @@ class EmailInboundService {
         ${attachmentCount > 0 ? `Attachments: ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached` : ''}
         
         You can view and manage this issue in AXP.
+        
+        ---
+        Pro tip: Include a team tag in your subject line to route issues to specific teams.
+        Example: [Leadership] Server needs attention
+        
+        ${teamsListText}
+        
+        Other keywords:
+        - Timeline: short_term or long_term
+        - Assign: @username
       `
     };
 
@@ -354,6 +511,7 @@ class EmailInboundService {
         Unable to Create Issue
         
         We were unable to create an issue from your email.
+        
         Reason: ${reason}
         
         If you believe this is an error, please contact your AXP administrator.
@@ -361,7 +519,6 @@ class EmailInboundService {
     };
 
     try {
-      // Set API key
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       
       const msg = {
@@ -380,4 +537,4 @@ class EmailInboundService {
   }
 }
 
-export const emailInboundService = new EmailInboundService();
+export default new EmailInboundService();
