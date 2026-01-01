@@ -78,9 +78,6 @@ export const deleteCommitment = async (req, res) => {
 export const getOrganizationCommitments = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { year } = req.query;
-    
-    const currentYear = year || new Date().getFullYear() + 1; // Default to next year
     
     const result = await db.query(
       `SELECT 
@@ -101,11 +98,10 @@ export const getOrganizationCommitments = async (req, res) => {
       JOIN users u ON ac.user_id = u.id
       LEFT JOIN teams t ON ac.team_id = t.id
       WHERE ac.organization_id = $1 
-        AND ac.year = $2
         AND ac.commitment_text IS NOT NULL
         AND ac.commitment_text != ''
-      ORDER BY t.name, u.first_name, u.last_name`,
-      [orgId, currentYear]
+      ORDER BY ac.year DESC, t.name, u.first_name, u.last_name`,
+      [orgId]
     );
     
     res.json(result.rows);

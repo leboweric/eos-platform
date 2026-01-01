@@ -4,10 +4,8 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import annualCommitmentsService from '../services/annualCommitmentsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Target, 
@@ -16,8 +14,7 @@ import {
   Loader2,
   AlertCircle,
   ChevronDown,
-  ChevronRight,
-  User
+  ChevronRight
 } from 'lucide-react';
 
 const AnnualCommitmentsPage = () => {
@@ -28,21 +25,11 @@ const AnnualCommitmentsPage = () => {
   const [commitments, setCommitments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear() + 1);
   const [expandedTeams, setExpandedTeams] = useState({});
-  
-  // Generate year options (current year -1 to current year +2)
-  const currentYear = new Date().getFullYear();
-  const yearOptions = [
-    currentYear - 1,
-    currentYear,
-    currentYear + 1,
-    currentYear + 2
-  ];
 
   useEffect(() => {
     fetchCommitments();
-  }, [user?.organizationId, selectedYear]);
+  }, [user?.organizationId]);
 
   const fetchCommitments = async () => {
     if (!user?.organizationId) return;
@@ -52,8 +39,7 @@ const AnnualCommitmentsPage = () => {
     
     try {
       const data = await annualCommitmentsService.getOrganizationCommitments(
-        user.organizationId,
-        selectedYear
+        user.organizationId
       );
       setCommitments(data || []);
       
@@ -105,6 +91,9 @@ const AnnualCommitmentsPage = () => {
     a.teamName.localeCompare(b.teamName)
   );
 
+  // Get unique years from commitments
+  const years = [...new Set(commitments.map(c => c.year))].sort((a, b) => b - a);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -116,37 +105,14 @@ const AnnualCommitmentsPage = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Target className="h-7 w-7 text-primary" />
-            Annual Commitments
-          </h1>
-          <p className="text-gray-600 mt-1">
-            View all team members' annual commitments for accountability and alignment
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <Select 
-              value={selectedYear.toString()} 
-              onValueChange={(value) => setSelectedYear(parseInt(value))}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {yearOptions.map(year => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Target className="h-7 w-7 text-primary" />
+          Annual Commitments
+        </h1>
+        <p className="text-gray-600 mt-1">
+          View all team members' annual commitments for accountability and alignment
+        </p>
       </div>
 
       {/* Error State */}
@@ -166,7 +132,7 @@ const AnnualCommitmentsPage = () => {
               No Commitments Found
             </h3>
             <p className="text-gray-600 max-w-md mx-auto">
-              No annual commitments have been set for {selectedYear} yet. 
+              No annual commitments have been set yet. 
               Commitments are typically set during Annual Planning meetings.
             </p>
           </CardContent>
@@ -201,15 +167,6 @@ const AnnualCommitmentsPage = () => {
                 </p>
               </div>
             </div>
-            <Badge 
-              variant="secondary"
-              style={{ 
-                backgroundColor: `${teamColor}15`,
-                color: teamColor 
-              }}
-            >
-              {selectedYear}
-            </Badge>
           </div>
 
           {/* Team Commitments */}
@@ -245,6 +202,16 @@ const AnnualCommitmentsPage = () => {
                               You
                             </Badge>
                           )}
+                          <Badge 
+                            variant="secondary"
+                            className="text-xs"
+                            style={{ 
+                              backgroundColor: `${teamColor}15`,
+                              color: teamColor 
+                            }}
+                          >
+                            {commitment.year}
+                          </Badge>
                         </div>
                         
                         {/* Commitment Text */}
@@ -305,10 +272,15 @@ const AnnualCommitmentsPage = () => {
                   </div>
                   <div className="text-sm text-gray-600">Team Members</div>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-600">Planning Year</div>
-                <div className="text-xl font-semibold text-primary">{selectedYear}</div>
+                {years.length > 0 && (
+                  <>
+                    <div className="h-10 w-px bg-gray-200" />
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">{years.join(', ')}</div>
+                      <div className="text-sm text-gray-600">Year{years.length > 1 ? 's' : ''}</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
