@@ -39,18 +39,11 @@ const AnnualCommitmentsPage = () => {
     setLoading(true);
     setError(null);
     
-    console.log('[AnnualCommitments] Fetching commitments for:', {
-      organizationId: user.organizationId,
-      teamId: selectedDepartment.id,
-      teamName: selectedDepartment.name
-    });
-    
     try {
       const data = await annualCommitmentsService.getOrganizationCommitments(
         user.organizationId,
         selectedDepartment.id
       );
-      console.log('[AnnualCommitments] Received data:', data?.length, 'commitments');
       setCommitments(data || []);
       
       // Auto-expand all teams by default

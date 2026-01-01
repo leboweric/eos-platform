@@ -80,8 +80,6 @@ export const getOrganizationCommitments = async (req, res) => {
     const { orgId } = req.params;
     const { teamId } = req.query;
     
-    console.log('[AnnualCommitments API] Request params:', { orgId, teamId, query: req.query });
-    
     let query = `SELECT 
         ac.id,
         ac.organization_id,
