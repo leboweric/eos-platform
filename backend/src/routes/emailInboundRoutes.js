@@ -72,16 +72,18 @@ function filterSignature(text) {
     
     // Check if this line looks like signature/contact info
     const isSignatureLine = 
-      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(line) ||  // Phone number starting line
+      /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(line) ||  // Any phone number in line
       /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(line) ||  // Email only on line
-      /^(Web|Website|Fax|Direct|Main|Phone|Cell|Mobile|Email):/i.test(line) ||  // Contact labels
+      /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(line) && line.length < 50 ||  // Short line with email
+      /^(Web|Website|Fax|Direct|Main|Phone|Cell|Mobile|Email):/i.test(line) ||  // Contact labels at start
+      /\s+-\s+(Direct|Office|Fax|Main|Cell|Mobile)$/i.test(line) ||  // Labels at end like "952-224-5727 - Direct"
       /^(www\.|http)/i.test(line) ||  // URLs
       /^\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Boulevard|Blvd|Jackson)/i.test(line) ||  // Address
       /^[A-Z][a-z]+,\s*[A-Z]{2}\s+\d{5}/i.test(line) ||  // City, State ZIP
-      /^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\s*-\s*(Office|Fax|Direct|Main)/i.test(line) ||  // Phone with label
       /Family Owned|Authorized|Dealer/i.test(line) ||  // Company taglines
-      /^[A-Z]+\s+[A-Z]+$/i.test(line) && line.length < 30 ||  // ALL CAPS name
-      /Accounts Receivable|Credit|Manager|Director|Officer|Chief/i.test(line);  // Job titles
+      /^[A-Z][A-Z]+\s+[A-Z][A-Z]+$/.test(line) && line.length < 40 ||  // ALL CAPS name (2+ chars each word)
+      /^[A-Z][a-z]+\s+[A-Z][a-z]+$/.test(line) && line.length < 30 ||  // Title Case name only
+      /Accounts Receivable|Accounts Payable|Credit|Manager|Director|Officer|Chief|President|VP|Vice President/i.test(line);  // Job titles
     
     if (isSignatureLine) {
       contentEndIndex = i;
