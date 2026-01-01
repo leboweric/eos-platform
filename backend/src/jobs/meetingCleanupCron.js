@@ -101,8 +101,8 @@ async function cleanupStuckMeetings() {
   }
 }
 
-// Schedule the cleanup job to run every 4 hours (more frequent to catch stuck sessions sooner)
-cron.schedule('0 */4 * * *', async () => {
+// Schedule the cleanup job to run daily at 3 AM
+cron.schedule('0 3 * * *', async () => {
   console.log('⏰ [CRON] Running scheduled meeting/session cleanup...');
   try {
     const meetingsResult = await cleanupStuckMeetings();
@@ -113,7 +113,7 @@ cron.schedule('0 */4 * * *', async () => {
   }
 });
 
-console.log('⏰ [CRON] Meeting/session cleanup job scheduled - runs every 4 hours');
+console.log('⏰ [CRON] Meeting/session cleanup job scheduled - runs daily at 3 AM');
 
 /**
  * Cleanup stuck meeting sessions from meeting_sessions table
