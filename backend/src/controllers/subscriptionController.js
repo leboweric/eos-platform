@@ -293,6 +293,24 @@ const processTrialEndings = async () => {
 
     for (const subscription of expiredTrials.rows) {
       try {
+        // Skip if no Stripe customer ID (incomplete setup or free trial)
+        if (!subscription.stripe_customer_id) {
+          console.log(`Skipping trial conversion for organization ${subscription.organization_id} - no Stripe customer ID (likely free trial or incomplete setup)`);
+          
+          // Mark as expired instead of trying to convert
+          await query(
+            'UPDATE subscriptions SET status = $1 WHERE id = $2',
+            ['expired', subscription.id]
+          );
+          
+          await query(
+            'UPDATE organizations SET has_active_subscription = false WHERE id = $1',
+            [subscription.organization_id]
+          );
+          
+          continue;
+        }
+
         const userCount = parseInt(subscription.current_user_count) || 1;
 
         // Update user count before creating subscription
