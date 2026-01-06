@@ -34,6 +34,7 @@ cron.schedule('0 0 * * *', async () => {
       FROM todos t
       LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
       WHERE t.due_date < CURRENT_DATE
+      AND t.due_date >= '2026-01-06'  -- Only process todos that became overdue from Jan 6, 2026 forward
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
@@ -144,6 +145,7 @@ export async function convertOverdueTodos() {
       FROM todos t
       LEFT JOIN todo_assignees ta ON t.id = ta.todo_id AND t.is_multi_assignee = TRUE
       WHERE t.due_date < CURRENT_DATE
+      AND t.due_date >= '2026-01-06'  -- Only process todos that became overdue from Jan 6, 2026 forward
       AND t.status NOT IN ('complete', 'cancelled')
       AND t.deleted_at IS NULL
       AND NOT EXISTS (
