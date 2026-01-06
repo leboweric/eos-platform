@@ -45,20 +45,20 @@ async function cleanupStuckMeetings() {
     
     console.log(`🧹 [CLEANUP] Found ${stuckMeetings.rows.length} stuck meetings to clean up`);
     
-    // Update all stuck meetings to 'abandoned' status
+    // Update all stuck meetings to 'cancelled' status
     const meetingIds = stuckMeetings.rows.map(m => m.id);
     
     const updateResult = await db.query(`
       UPDATE meetings
       SET 
-        status = 'abandoned',
+        status = 'cancelled',
         updated_at = NOW(),
-        notes = COALESCE(notes, '') || E'\n[Auto-cleanup] Meeting marked as abandoned after being stuck for more than ${STUCK_MEETING_THRESHOLD_HOURS} hours.'
+        notes = COALESCE(notes, '') || E'\n[Auto-cleanup] Meeting cancelled after being stuck in-progress for more than ${STUCK_MEETING_THRESHOLD_HOURS} hours.'
       WHERE id = ANY($1)
       RETURNING id
     `, [meetingIds]);
     
-    console.log(`🧹 [CLEANUP] Marked ${updateResult.rowCount} meetings as abandoned`);
+    console.log(`🧹 [CLEANUP] Marked ${updateResult.rowCount} meetings as cancelled`);
     
     // Log each abandoned meeting for visibility
     for (const meeting of stuckMeetings.rows) {
