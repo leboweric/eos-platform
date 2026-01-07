@@ -297,6 +297,16 @@ if (orgValidationEnabled) {
       return next();
     }
 
+    // Defensive check: Ensure orgId is a valid string UUID format
+    // This catches cases where an object is accidentally passed instead of a string
+    if (typeof orgId !== 'string' || !orgId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      console.error(`[Security] Invalid orgId format - type: ${typeof orgId}, value: ${JSON.stringify(orgId).substring(0, 100)}`);
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid organization ID format.' 
+      });
+    }
+
     // Skip validation for public logo GET requests
     if (req.path.endsWith('/logo') && req.method === 'GET') {
       return next();

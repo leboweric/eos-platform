@@ -2802,7 +2802,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       return;
     }
 
-    const issues = shortTermIssues || [];
+    // Use the correct issues list based on current timeline
+    const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
     // Reorder the issues
     const newIssues = [...issues];
     const [movedIssue] = newIssues.splice(draggedIndex, 1);
@@ -2814,8 +2815,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       priority_rank: index
     }));
 
-    // Update state optimistically
-    setShortTermIssues(updatedIssues);
+    // Update state optimistically - use correct setter based on timeline
+    if (issueTimeline === 'short_term') {
+      setShortTermIssues(updatedIssues);
+    } else {
+      setLongTermIssues(updatedIssues);
+    }
     
     // Reset drag state
     setDraggedIssue(null);
@@ -2828,8 +2833,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         await handleReorderIssues(updatedIssues);
       } catch (error) {
         console.error('Failed to reorder issues:', error);
-        // Revert on error
-        setShortTermIssues(issues);
+        // Revert on error - use correct setter based on timeline
+        if (issueTimeline === 'short_term') {
+          setShortTermIssues(issues);
+        } else {
+          setLongTermIssues(issues);
+        }
       }
     }
   };

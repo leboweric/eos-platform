@@ -28,9 +28,9 @@ export const submitFeedback = async (req, res) => {
       
       <h3>User Information:</h3>
       <ul>
-        <li><strong>Name:</strong> ${user.firstName} ${user.lastName}</li>
+        <li><strong>Name:</strong> ${user.first_name || 'Unknown'} ${user.last_name || ''}</li>
         <li><strong>Email:</strong> ${user.email}</li>
-        <li><strong>Organization:</strong> ${user.organizationName}</li>
+        <li><strong>Organization ID:</strong> ${user.organization_id || 'Unknown'}</li>
         <li><strong>Role:</strong> ${user.role}</li>
       </ul>
       
