@@ -108,17 +108,14 @@ class MeetingSocketService {
               meetings.delete(existingSocketData.meetingCode);
               console.log(`🗑️ Old meeting ${existingSocketData.meetingCode} deleted (no participants)`);
             } else if (wasLeaderOfOldMeeting) {
-              // Transfer leadership if user was leader
-              const nextParticipant = oldMeeting.participants.values().next().value;
-              if (nextParticipant) {
-                oldMeeting.leader = nextParticipant.id;
-                this.io.to(existingSocketData.meetingCode).emit('leader-changed', {
-                  newLeader: nextParticipant.id,
-                  newLeaderName: nextParticipant.name,
-                  reason: 'previous-leader-joined-different-meeting'
-                });
-                console.log(`👑 Leadership in ${existingSocketData.meetingCode} transferred to ${nextParticipant.name}`);
-              }
+              // LEADER PROTECTION: Don't transfer leadership, just mark as disconnected
+              oldMeeting.leaderDisconnected = true;
+              this.io.to(existingSocketData.meetingCode).emit('leader-disconnected', {
+                leaderId: userId,
+                leaderName: userName,
+                message: 'The meeting leader has left. Waiting for them to return...'
+              });
+              console.log(`⚠️ Leader left meeting ${existingSocketData.meetingCode} - NOT transferring leadership`);
             }
             
             // Broadcast updated active meetings
@@ -168,6 +165,8 @@ class MeetingSocketService {
           meetings.set(meetingCode, {
             code: meetingCode,
             leader: isLeader ? userId : null,
+            originalLeader: isLeader ? userId : null,  // Store original leader - never changes
+            leaderDisconnected: false,  // Track if leader is currently disconnected
             participants: new Map(),
             ratings: new Map(),  // Initialize ratings Map
             currentRoute: initialRoute,
@@ -184,8 +183,13 @@ class MeetingSocketService {
         // Restore leadership if user was leader before disconnect
         if (shouldRestoreLeadership) {
           meeting.leader = userId;
+          meeting.leaderDisconnected = false;  // Clear disconnected flag
           console.log(`👑 Leadership restored to ${userName} after reconnection`);
           // Notify all participants about leadership restoration
+          this.io.to(meetingCode).emit('leader-reconnected', {
+            leaderId: userId,
+            leaderName: userName
+          });
           this.io.to(meetingCode).emit('presenter-changed', {
             newPresenter: userId,
             presenterName: userName,
@@ -216,6 +220,8 @@ class MeetingSocketService {
           meeting: {
             code: meetingCode,
             leader: meeting.leader,
+            originalLeader: meeting.originalLeader,
+            leaderDisconnected: meeting.leaderDisconnected,
             currentRoute: meeting.currentRoute,
             currentSection: meeting.currentSection,
             scrollPosition: meeting.scrollPosition,
@@ -498,8 +504,18 @@ class MeetingSocketService {
 
         if (!meeting) return;
 
-        // Update leader
+        // LEADER PROTECTION: Only the original leader can claim presenter role
+        if (meeting.originalLeader && meeting.originalLeader !== userId) {
+          console.warn(`⛔ User ${userData.userName} attempted to claim presenter but is not the original leader`);
+          socket.emit('claim-presenter-denied', {
+            reason: 'Only the original meeting leader can control this meeting'
+          });
+          return;
+        }
+
+        // Update leader (only if they are the original leader)
         meeting.leader = userId;
+        meeting.leaderDisconnected = false;
 
         // Broadcast new presenter to ALL participants INCLUDING the claimer
         // Using this.io.to() instead of socket.to() so the sender also receives the event
@@ -1012,16 +1028,15 @@ class MeetingSocketService {
       meetings.delete(meetingCode);
       console.log(`🗑️ Meeting ${meetingCode} ended (no participants)`);
     } else if (wasLeader) {
-      // Transfer leadership to next participant only after grace period
-      const nextParticipant = meeting.participants.values().next().value;
-      if (nextParticipant) {
-        meeting.leader = nextParticipant.id;
-        this.io.to(meetingCode).emit('leader-changed', {
-          newLeader: nextParticipant.id,
-          reason: 'previous-leader-left'
-        });
-        console.log(`👑 Leadership transferred to ${nextParticipant.name} (original leader didn't reconnect)`);
-      }
+      // LEADER PROTECTION: Never auto-transfer leadership
+      // Instead, mark the leader as disconnected and notify participants
+      meeting.leaderDisconnected = true;
+      this.io.to(meetingCode).emit('leader-disconnected', {
+        leaderId: userId,
+        leaderName: userName,
+        message: 'The meeting leader has disconnected. Waiting for them to reconnect...'
+      });
+      console.log(`⚠️ Leader ${userName} disconnected from meeting ${meetingCode} - NOT transferring leadership`);
     }
   }
 

@@ -254,6 +254,26 @@ const useMeeting = () => {
       setIsLeader(data.newLeader === user?.id);
     });
 
+    // Handle leader disconnected (leader protection - no auto-transfer)
+    newSocket.on('leader-disconnected', (data) => {
+      console.log('⚠️ Leader disconnected:', data.leaderName);
+      // Dispatch event so meeting page can show a notification
+      const disconnectEvent = new CustomEvent('meeting-leader-disconnected', {
+        detail: data
+      });
+      window.dispatchEvent(disconnectEvent);
+    });
+
+    // Handle leader reconnected
+    newSocket.on('leader-reconnected', (data) => {
+      console.log('✅ Leader reconnected:', data.leaderName);
+      // Dispatch event so meeting page can clear the notification
+      const reconnectEvent = new CustomEvent('meeting-leader-reconnected', {
+        detail: data
+      });
+      window.dispatchEvent(reconnectEvent);
+    });
+
     // Handle participant follow status change
     newSocket.on('participant-follow-changed', (data) => {
       console.log('👀 Follow status changed:', data);
