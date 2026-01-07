@@ -2774,6 +2774,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Drag and drop handlers for issues
   const handleDragStart = (e, issue, index) => {
+    console.log('🎯 [DRAG-DROP] handleDragStart:', { issue: issue?.title, index });
     setDraggedIssue(issue);
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -2798,16 +2799,22 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault();
     
+    console.log('🎯 [DRAG-DROP] handleDrop called:', { draggedIndex, dropIndex, draggedIssue: draggedIssue?.title });
+    
     if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
+      console.log('🎯 [DRAG-DROP] Early return:', { draggedIndexNull: draggedIndex === null, sameIndex: draggedIndex === dropIndex, noDraggedIssue: !draggedIssue });
       return;
     }
 
     // Use the correct issues list based on current timeline
     const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
+    console.log('🎯 [DRAG-DROP] Timeline:', issueTimeline, 'Issues count:', issues.length);
+    
     // Reorder the issues
     const newIssues = [...issues];
     const [movedIssue] = newIssues.splice(draggedIndex, 1);
     newIssues.splice(dropIndex, 0, movedIssue);
+    console.log('🎯 [DRAG-DROP] Reordered - moved:', movedIssue?.title, 'from index', draggedIndex, 'to index', dropIndex);
 
     // Update priority ranks
     const updatedIssues = newIssues.map((issue, index) => ({
