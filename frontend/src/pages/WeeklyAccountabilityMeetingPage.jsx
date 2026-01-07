@@ -7534,6 +7534,88 @@ const WeeklyAccountabilityMeetingPage = () => {
                   })()}
                 </div>
 
+                {/* Cascading Messages - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
+                    <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Cascading Messages
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    What key information needs to be communicated to other teams?
+                  </p>
+                  <textarea
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none focus:ring-2 focus:border-transparent mb-4"
+                    style={{ 
+                      focusRingColor: themeColors.primary,
+                      focusBorderColor: themeColors.primary
+                    }}
+                    rows={3}
+                    placeholder="Enter any messages to cascade to other teams..."
+                    value={cascadeMessage}
+                    onChange={(e) => {
+                      setCascadeMessage(e.target.value);
+                      // Load teams if not already loaded
+                      if (e.target.value && availableTeams.length === 0) {
+                        teamsService.getTeams().then(response => {
+                          const teams = response.data || response;
+                          setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
+                        }).catch(error => {
+                          console.error('Failed to load teams:', error);
+                        });
+                      }
+                    }}
+                  />
+                  
+                  {cascadeMessage.trim() && (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="cascade-all"
+                          checked={cascadeToAll}
+                          onCheckedChange={(checked) => {
+                            setCascadeToAll(checked);
+                            if (checked) setSelectedTeams([]);
+                          }}
+                        />
+                        <label htmlFor="cascade-all" className="text-sm font-medium text-slate-700 cursor-pointer">
+                          Send to all teams
+                        </label>
+                      </div>
+                      
+                      {!cascadeToAll && availableTeams.length > 0 && (
+                        <div className="animate-in fade-in duration-200">
+                          <p className="text-sm text-slate-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white/50">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                    }
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-slate-700 cursor-pointer">
+                                  {team.name}
+                                  {team.is_leadership_team && (
+                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                ) : null}
+
                 {/* Meeting Rating */}
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                   <h4 className="font-medium mb-2 text-slate-900">Rate this meeting</h4>
@@ -7839,88 +7921,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Cascading Messages - Only show to facilitator */}
-                {(!meetingCode || isLeader) ? (
-                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
-                  <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
-                    <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    Cascading Messages
-                  </h4>
-                  <p className="text-sm text-slate-600 mb-3">
-                    What key information needs to be communicated to other teams?
-                  </p>
-                  <textarea
-                    className="w-full p-3 border border-slate-200 rounded-lg resize-none focus:ring-2 focus:border-transparent mb-4"
-                    style={{ 
-                      focusRingColor: themeColors.primary,
-                      focusBorderColor: themeColors.primary
-                    }}
-                    rows={3}
-                    placeholder="Enter any messages to cascade to other teams..."
-                    value={cascadeMessage}
-                    onChange={(e) => {
-                      setCascadeMessage(e.target.value);
-                      // Load teams if not already loaded
-                      if (e.target.value && availableTeams.length === 0) {
-                        teamsService.getTeams().then(response => {
-                          const teams = response.data || response;
-                          setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
-                        }).catch(error => {
-                          console.error('Failed to load teams:', error);
-                        });
-                      }
-                    }}
-                  />
-                  
-                  {cascadeMessage.trim() && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="cascade-all"
-                          checked={cascadeToAll}
-                          onCheckedChange={(checked) => {
-                            setCascadeToAll(checked);
-                            if (checked) setSelectedTeams([]);
-                          }}
-                        />
-                        <label htmlFor="cascade-all" className="text-sm font-medium text-slate-700 cursor-pointer">
-                          Send to all teams
-                        </label>
-                      </div>
-                      
-                      {!cascadeToAll && availableTeams.length > 0 && (
-                        <div className="animate-in fade-in duration-200">
-                          <p className="text-sm text-slate-600 mb-2">Or select specific teams:</p>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white/50">
-                            {availableTeams.map(team => (
-                              <div key={team.id} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`team-${team.id}`}
-                                  checked={selectedTeams.includes(team.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTeams([...selectedTeams, team.id]);
-                                    } else {
-                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`team-${team.id}`} className="text-sm text-slate-700 cursor-pointer">
-                                  {team.name}
-                                  {team.is_leadership_team && (
-                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
-                                  )}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                ) : null}
 
                 {/* Meeting Conclusion Options - Only show to facilitator */}
                 {(!meetingCode || isLeader) ? (
