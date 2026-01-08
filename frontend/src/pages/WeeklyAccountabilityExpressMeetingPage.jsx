@@ -7669,12 +7669,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                         className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
                           aiRecordingState.isRecording 
                             ? "bg-gray-400 cursor-not-allowed opacity-50" 
-                            : ""
+                            : "animate-pulse"
                         }`}
                         style={{
                           background: aiRecordingState.isRecording 
                             ? undefined 
-                            : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                            : `linear-gradient(135deg, ${themeColors.primary} 0%, #22c55e 50%, ${themeColors.secondary} 100%)`
                         }}
                         onClick={() => {
                           if (!aiRecordingState.isRecording) {
@@ -7693,7 +7693,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         ) : (
                           <>
                             <CheckSquare className="mr-2 h-5 w-5" />
-                            Conclude Meeting
+                            End Meeting
                           </>
                         )}
                       </Button>
