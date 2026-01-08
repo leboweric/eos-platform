@@ -2435,11 +2435,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
   const handleReorderIssues = (reorderedIssues) => {
-    console.log('🎯 [DRAG-DROP] handleReorderIssues called with', reorderedIssues.length, 'issues');
-    console.log('🎯 [DRAG-DROP] New order:', reorderedIssues.map((i, idx) => `${idx}: ${i.title?.substring(0, 20)}`));
-    
     // Update local state optimistically FIRST
-    console.log('🎯 [DRAG-DROP] Setting state optimistically, timeline:', issueTimeline);
     if (issueTimeline === 'short_term') {
       setShortTermIssues(reorderedIssues);
     } else {
@@ -2451,16 +2447,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       id: issue.id,
       priority_rank: index
     }));
-    console.log('🎯 [DRAG-DROP] API updates:', updates);
-
     const orgId = user?.organizationId || user?.organization_id;
     const effectiveTeamId = getEffectiveTeamId(teamId, user);
-    console.log('🎯 [DRAG-DROP] Calling API with orgId:', orgId, 'teamId:', effectiveTeamId);
     
     // Fire and forget - don't await to prevent request cancellation on re-render
     issuesService.updateIssueOrder(orgId, effectiveTeamId, updates)
       .then(result => {
-        console.log('🎯 [DRAG-DROP] API result:', result);
         
         // Broadcast the reordering to other meeting participants
         if (meetingCode && broadcastIssueListUpdate) {
@@ -2472,7 +2464,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       })
       .catch(error => {
-        console.error('🎯 [DRAG-DROP] Failed to reorder issues:', error);
+        console.error('[DRAG-DROP] Failed to reorder:', error);
         // Refresh to get correct order on error
         fetchIssuesData();
       });
@@ -2787,23 +2779,17 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Drag and drop handlers for issues
   const handleDragStart = (e, issue, index) => {
-    console.log('🎯 [DRAG-DROP] handleDragStart called', { issueId: issue?.id, issueTitle: issue?.title?.substring(0, 30), index });
     setDraggedIssue(issue);
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    // Set drag data for debugging
     e.dataTransfer.setData('text/plain', issue?.id || '');
-    console.log('🎯 [DRAG-DROP] draggedIssue set, draggedIndex:', index);
   };
 
   const handleDragEnd = async () => {
-    console.log('🎯 [DRAG-DROP] handleDragEnd called', { draggedIndex, dragOverIndex, hasDraggedIssue: !!draggedIssue });
-    
     // If we have a valid drag over index and it's different from dragged index,
     // the user likely intended to drop but the drop event didn't fire
     // This can happen due to timing issues with React re-renders
     if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex && draggedIssue) {
-      console.log('🎯 [DRAG-DROP] handleDragEnd - performing fallback drop', { from: draggedIndex, to: dragOverIndex });
       
       // Use the correct issues list based on current timeline
       const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
@@ -2829,9 +2815,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (handleReorderIssues) {
         try {
           await handleReorderIssues(updatedIssues);
-          console.log('🎯 [DRAG-DROP] Fallback drop successful');
         } catch (error) {
-          console.error('🎯 [DRAG-DROP] Fallback drop failed:', error);
+          console.error('[DRAG-DROP] Fallback drop failed:', error);
           // Revert on error
           if (issueTimeline === 'short_term') {
             setShortTermIssues(issues);
@@ -2851,25 +2836,20 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleDragOver = (e, index) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    // Also set dragOverIndex here as a backup - dragOver fires continuously
     if (dragOverIndex !== index) {
-      console.log('🎯 [DRAG-DROP] handleDragOver setting dragOverIndex', { index, currentDragOverIndex: dragOverIndex });
       setDragOverIndex(index);
     }
   };
 
   const handleDragEnter = (e, index) => {
     e.preventDefault();
-    console.log('🎯 [DRAG-DROP] handleDragEnter called', { index, currentDragOverIndex: dragOverIndex });
     setDragOverIndex(index);
   };
 
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault();
-    console.log('🎯 [DRAG-DROP] handleDrop called', { dropIndex, draggedIndex, hasDraggedIssue: !!draggedIssue });
     
     if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
-      console.log('🎯 [DRAG-DROP] handleDrop early return - invalid state', { draggedIndex, dropIndex, hasDraggedIssue: !!draggedIssue });
       return;
     }
 
@@ -7252,17 +7232,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     onDragOver={(e) => handleDragOver(e, index)}
                                     onDragEnter={(e) => handleDragEnter(e, index)}
                                     onDragLeave={(e) => {
-                                      // Only clear if leaving the row entirely, not just moving between children
                                       const isLeavingRow = !e.currentTarget.contains(e.relatedTarget);
-                                      console.log('🎯 [DRAG-DROP] onDragLeave', { isLeavingRow, dragOverIndex });
                                       if (isLeavingRow) {
                                         setDragOverIndex(null);
                                       }
                                     }}
-                                    onDrop={(e) => {
-                                      console.log('🎯 [DRAG-DROP] onDrop event triggered on row', index);
-                                      handleDrop(e, index);
-                                    }}
+                                    onDrop={(e) => handleDrop(e, index)}
                                   >
                                     {/* Drag Handle - Always visible with subtle opacity */}
                                     <div 
@@ -7270,12 +7245,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       draggable="true"
                                       onDragStart={(e) => {
                                         e.stopPropagation();
-                                        console.log('🎯 [DRAG-DROP] onDragStart event triggered');
                                         handleDragStart(e, issue, index);
                                       }}
                                       onDragEnd={(e) => {
                                         e.stopPropagation();
-                                        console.log('🎯 [DRAG-DROP] onDragEnd event triggered');
                                         handleDragEnd();
                                       }}
                                       onMouseDown={(e) => e.stopPropagation()}
