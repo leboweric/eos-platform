@@ -807,13 +807,15 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Helper function to group overdue issues by title
+  // Helper function to group overdue issues by title while PRESERVING ORDER
+  // This is critical for drag-and-drop reordering to work correctly
   const groupOverdueIssues = (issuesList) => {
     const groups = {};
+    const processedGroups = new Set(); // Track which groups we've already added to result
     const result = [];
 
+    // First pass: identify all groups and their members
     issuesList.forEach(issue => {
-      // Only group auto-created overdue issues (title starts with "Overdue:")
       if (issue.title?.startsWith('Overdue:')) {
         const baseTitle = issue.title;
         if (!groups[baseTitle]) {
@@ -824,34 +826,42 @@ const WeeklyAccountabilityMeetingPage = () => {
           };
         } else {
           groups[baseTitle].relatedIssues.push(issue);
-          // Update primary issue to the one with most days overdue
           const daysOverdue = getDaysOverdue(issue);
           if (daysOverdue > groups[baseTitle].maxDaysOverdue) {
             groups[baseTitle].maxDaysOverdue = daysOverdue;
             groups[baseTitle].primaryIssue = issue;
           }
         }
-      } else {
-        // Non-overdue issues go directly to result
-        result.push({ type: 'single', issue });
       }
     });
 
-    // Add grouped issues to result
-    Object.keys(groups).forEach(title => {
-      const group = groups[title];
-      if (group.relatedIssues.length > 1) {
-        // Multiple issues with same title - create a group
-        result.push({
-          type: 'group',
-          primaryIssue: group.primaryIssue,
-          relatedIssues: group.relatedIssues,
-          groupKey: title,
-          ownerCount: group.relatedIssues.length
-        });
+    // Second pass: build result array preserving original order
+    // Insert groups at the position of their FIRST occurrence
+    issuesList.forEach(issue => {
+      if (issue.title?.startsWith('Overdue:')) {
+        const baseTitle = issue.title;
+        // Only add the group once, at the position of the first issue in the group
+        if (!processedGroups.has(baseTitle)) {
+          processedGroups.add(baseTitle);
+          const group = groups[baseTitle];
+          if (group.relatedIssues.length > 1) {
+            // Multiple issues with same title - create a group
+            result.push({
+              type: 'group',
+              primaryIssue: group.primaryIssue,
+              relatedIssues: group.relatedIssues,
+              groupKey: baseTitle,
+              ownerCount: group.relatedIssues.length
+            });
+          } else {
+            // Single overdue issue - treat as regular
+            result.push({ type: 'single', issue: group.primaryIssue });
+          }
+        }
+        // Skip subsequent issues in the same group (they're already included)
       } else {
-        // Single issue - treat as regular
-        result.push({ type: 'single', issue: group.primaryIssue });
+        // Non-overdue issues go directly to result at their original position
+        result.push({ type: 'single', issue });
       }
     });
 
