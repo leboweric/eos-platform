@@ -8006,40 +8006,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                   )}
                 </div>
 
-                {/* Meeting Conclusion Options - Only show to facilitator */}
-                {(!meetingCode || isLeader) ? (
-                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm space-y-3">
-                  <h4 className="font-medium text-slate-900 mb-3">Meeting Conclusion Options</h4>
-                  
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="send-email"
-                      checked={sendSummaryEmail}
-                      onCheckedChange={(checked) => setSendSummaryEmail(checked)}
-                      className="h-5 w-5"
-                    />
-                    <label htmlFor="send-email" className="text-sm text-slate-700 cursor-pointer select-none">
-                      Send summary email to all team members
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="archive-completed"
-                      checked={archiveCompleted}
-                      onCheckedChange={(checked) => setArchiveCompleted(checked)}
-                      className="h-5 w-5"
-                    />
-                    <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
-                      Archive all completed To-Dos, solved Issues, and Headlines
-                    </label>
-                  </div>
-                </div>
-                ) : null}
-
-                {/* Conclude Meeting Button - Only for Facilitator */}
+                {/* Conclude Meeting Button - Only for Facilitator - MOVED ABOVE OPTIONS */}
                 <div className="flex justify-center">
-                  {/* Debug logging removed for cleaner console */}
                   {/* Show button if: no collaborative meeting OR user is the leader */}
                   {!meetingCode || (meetingCode && isLeader) ? (
                     <div className="text-center space-y-3">
@@ -8114,6 +8082,37 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Meeting Conclusion Options - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm space-y-3">
+                  <h4 className="font-medium text-slate-900 mb-3">Meeting Conclusion Options</h4>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="send-email"
+                      checked={sendSummaryEmail}
+                      onCheckedChange={(checked) => setSendSummaryEmail(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="send-email" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Send summary email to all team members
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="archive-completed"
+                      checked={archiveCompleted}
+                      onCheckedChange={(checked) => setArchiveCompleted(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Archive all completed To-Dos, solved Issues, and Headlines
+                    </label>
+                  </div>
+                </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>
