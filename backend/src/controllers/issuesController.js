@@ -1093,6 +1093,12 @@ export const deleteIssueUpdate = async (req, res) => {
 
 // Update issue order for drag-and-drop reordering
 export const updateIssueOrder = async (req, res) => {
+  // Set no-cache headers to prevent Railway edge caching
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  
   console.log('🔥🔥🔥 [REORDER] updateIssueOrder called');
   console.log('🔥 [REORDER] Request params:', req.params);
   console.log('🔥 [REORDER] Request body:', JSON.stringify(req.body, null, 2));
