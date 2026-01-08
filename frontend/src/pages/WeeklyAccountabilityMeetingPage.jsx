@@ -7188,8 +7188,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div 
                                       className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
                                       draggable="true"
-                                      onDragStart={(e) => handleDragStart(e, issue, index)}
-                                      onDragEnd={handleDragEnd}
+                                      onDragStart={(e) => {
+                                        e.stopPropagation();
+                                        handleDragStart(e, issue, index);
+                                      }}
+                                      onDragEnd={(e) => {
+                                        e.stopPropagation();
+                                        handleDragEnd();
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onPointerDown={(e) => e.stopPropagation()}
                                     >
                                       <GripVertical className="h-4 w-4 text-slate-400" />
                                     </div>
