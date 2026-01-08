@@ -263,16 +263,9 @@ export const issuesService = {
 
   // Update issue order (for drag-and-drop reordering)
   updateIssueOrder: async (orgId, teamId, updates) => {
-    const response = await axios.put(
-      `/organizations/${orgId}/teams/${teamId}/issues/reorder?_t=${Date.now()}`,
-      { issues: updates },
-      {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }
+    const response = await axios.post(
+      `/organizations/${orgId}/teams/${teamId}/issues/reorder`,
+      { issues: updates }
     );
     return response.data;
   }

@@ -37,7 +37,7 @@ router.route('/priorities')
   .put(updateIssuePriority);
 
 router.route('/reorder')
-  .put(updateIssueOrder);
+  .post(updateIssueOrder);
 
 router.route('/archive-closed')
   .post(archiveClosedIssues);
