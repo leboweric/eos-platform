@@ -451,10 +451,35 @@ const IssuesListClean = ({
       setSortDirection('asc');
     }
 
-    // Create new order array
+    // IMPORTANT: Find the actual indices in sortedIssues using issue IDs
+    // The display indices from groupedIssuesForDisplay don't match sortedIssues indices
+    // because grouping changes the array structure
+    const draggedItem = groupedIssuesForDisplay[draggedIssueIndex];
+    const dropItem = groupedIssuesForDisplay[dropIndex];
+    
+    // Get the actual issue from each item (handle both 'single' and 'group' types)
+    const draggedIssueId = draggedItem?.type === 'group' ? draggedItem.primaryIssue?.id : draggedItem?.issue?.id;
+    const dropIssueId = dropItem?.type === 'group' ? dropItem.primaryIssue?.id : dropItem?.issue?.id;
+    
+    // Find actual indices in sortedIssues
+    const actualDragIndex = sortedIssues.findIndex(i => i.id === draggedIssueId);
+    const actualDropIndex = sortedIssues.findIndex(i => i.id === dropIssueId);
+    
+    console.log('🔄 Index mapping:', { 
+      displayDrag: draggedIssueIndex, actualDrag: actualDragIndex,
+      displayDrop: dropIndex, actualDrop: actualDropIndex,
+      draggedId: draggedIssueId, dropId: dropIssueId
+    });
+    
+    if (actualDragIndex === -1 || actualDropIndex === -1) {
+      console.error('❌ Could not find issues in sortedIssues array');
+      return;
+    }
+
+    // Create new order array using actual indices
     const newOrder = [...sortedIssues];
-    const [movedIssue] = newOrder.splice(draggedIssueIndex, 1);
-    newOrder.splice(dropIndex, 0, movedIssue);
+    const [movedIssue] = newOrder.splice(actualDragIndex, 1);
+    newOrder.splice(actualDropIndex, 0, movedIssue);
 
     // Update display order for all affected issues
     const updatedIssues = newOrder.map((issue, index) => ({
