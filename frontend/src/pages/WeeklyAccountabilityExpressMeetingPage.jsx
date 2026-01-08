@@ -2832,9 +2832,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     setDragOverIndex(null);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, index) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    // Also set dragOverIndex here as a backup - dragOver fires continuously
+    if (dragOverIndex !== index) {
+      console.log('🎯 [DRAG-DROP] handleDragOver setting dragOverIndex', { index, currentDragOverIndex: dragOverIndex });
+      setDragOverIndex(index);
+    }
   };
 
   const handleDragEnter = (e, index) => {
@@ -6921,7 +6926,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     className={`flex items-center px-3 py-3 group ${
                                       isDragging ? 'opacity-50' : ''
                                     } ${isDragOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
-                                    onDragOver={handleDragOver}
+                                    onDragOver={(e) => handleDragOver(e, index)}
                                     onDragEnter={(e) => handleDragEnter(e, index)}
                                     onDragLeave={(e) => {
                                       // Only clear if leaving the row entirely, not just moving between children
