@@ -88,7 +88,9 @@ async function createIssueFromOverdueTodo(todo) {
     created_by: todo.owner_id
   };
   
-  await pool.query(`
+  // Use ON CONFLICT DO NOTHING to gracefully handle the unique constraint
+  // This prevents errors when an issue already exists for this todo
+  const result = await pool.query(`
     INSERT INTO issues (
       organization_id,
       team_id,
@@ -104,6 +106,8 @@ async function createIssueFromOverdueTodo(todo) {
       archived,
       created_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'open', false, NOW())
+    ON CONFLICT (related_todo_id) DO NOTHING
+    RETURNING id
   `, [
     issueData.organization_id,
     issueData.team_id,
@@ -117,7 +121,11 @@ async function createIssueFromOverdueTodo(todo) {
     todo.assignee_id  // Set issue owner to the assignee (handles multi-assignee todos)
   ]);
   
-  console.log(`📋 [CRON] Created issue for overdue todo: "${todo.title}"`);
+  if (result.rowCount > 0) {
+    console.log(`📋 [CRON] Created issue for overdue todo: "${todo.title}"`);
+  } else {
+    console.log(`⏭️ [CRON] Issue already exists for todo: "${todo.title}" - skipped`);
+  }
 }
 
 /**
