@@ -2343,37 +2343,44 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
-  const handleReorderIssues = async (reorderedIssues) => {
-    try {
-      // Update local state optimistically
-      setShortTermIssues(issueTimeline === 'short_term' ? reorderedIssues : shortTermIssues);
-      setLongTermIssues(issueTimeline === 'long_term' ? reorderedIssues : longTermIssues);
-
-      // Call API to persist the new order
-      const updates = reorderedIssues.map((issue, index) => ({
-        id: issue.id,
-        priority_rank: index
-      }));
-
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      
-      await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
-      
-      // Broadcast the reordering to other meeting participants
-      if (meetingCode && broadcastIssueListUpdate) {
-        broadcastIssueListUpdate({
-          action: 'reorder',
-          timeline: issueTimeline,
-          issues: reorderedIssues
-        });
-      }
-    } catch (error) {
-      console.error('Failed to reorder issues:', error);
-      // Refresh to get correct order on error
-      fetchIssuesData();
-      throw error;
+  const handleReorderIssues = (reorderedIssues) => {
+    console.log('🎯 [DRAG-DROP] handleReorderIssues called with', reorderedIssues.length, 'issues');
+    
+    // Update local state optimistically FIRST
+    if (issueTimeline === 'short_term') {
+      setShortTermIssues(reorderedIssues);
+    } else {
+      setLongTermIssues(reorderedIssues);
     }
+
+    // Call API to persist the new order - DO NOT AWAIT to prevent cancellation
+    const updates = reorderedIssues.map((issue, index) => ({
+      id: issue.id,
+      priority_rank: index
+    }));
+
+    const orgId = user?.organizationId || user?.organization_id;
+    const effectiveTeamId = getEffectiveTeamId(teamId, user);
+    
+    // Fire and forget - don't await to prevent request cancellation on re-render
+    issuesService.updateIssueOrder(orgId, effectiveTeamId, updates)
+      .then(result => {
+        console.log('🎯 [DRAG-DROP] API result:', result);
+        
+        // Broadcast the reordering to other meeting participants
+        if (meetingCode && broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'reorder',
+            timeline: issueTimeline,
+            issues: reorderedIssues
+          });
+        }
+      })
+      .catch(error => {
+        console.error('🎯 [DRAG-DROP] Failed to reorder issues:', error);
+        // Refresh to get correct order on error
+        fetchIssuesData();
+      });
   };
 
   // Score editing handlers

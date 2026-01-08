@@ -2434,43 +2434,48 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
-  const handleReorderIssues = async (reorderedIssues) => {
+  const handleReorderIssues = (reorderedIssues) => {
     console.log('🎯 [DRAG-DROP] handleReorderIssues called with', reorderedIssues.length, 'issues');
     console.log('🎯 [DRAG-DROP] New order:', reorderedIssues.map((i, idx) => `${idx}: ${i.title?.substring(0, 20)}`));
-    try {
-      // Update local state optimistically
-      console.log('🎯 [DRAG-DROP] Setting state optimistically, timeline:', issueTimeline);
-      setShortTermIssues(issueTimeline === 'short_term' ? reorderedIssues : shortTermIssues);
-      setLongTermIssues(issueTimeline === 'long_term' ? reorderedIssues : longTermIssues);
-
-      // Call API to persist the new order
-      const updates = reorderedIssues.map((issue, index) => ({
-        id: issue.id,
-        priority_rank: index
-      }));
-      console.log('🎯 [DRAG-DROP] API updates:', updates);
-
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      console.log('🎯 [DRAG-DROP] Calling API with orgId:', orgId, 'teamId:', effectiveTeamId);
-      
-      const result = await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
-      console.log('🎯 [DRAG-DROP] API result:', result);
-      
-      // Broadcast the reordering to other meeting participants
-      if (meetingCode && broadcastIssueListUpdate) {
-        broadcastIssueListUpdate({
-          action: 'reorder',
-          timeline: issueTimeline,
-          issues: reorderedIssues
-        });
-      }
-    } catch (error) {
-      console.error('Failed to reorder issues:', error);
-      // Refresh to get correct order on error
-      fetchIssuesData();
-      throw error;
+    
+    // Update local state optimistically FIRST
+    console.log('🎯 [DRAG-DROP] Setting state optimistically, timeline:', issueTimeline);
+    if (issueTimeline === 'short_term') {
+      setShortTermIssues(reorderedIssues);
+    } else {
+      setLongTermIssues(reorderedIssues);
     }
+
+    // Call API to persist the new order - DO NOT AWAIT to prevent cancellation
+    const updates = reorderedIssues.map((issue, index) => ({
+      id: issue.id,
+      priority_rank: index
+    }));
+    console.log('🎯 [DRAG-DROP] API updates:', updates);
+
+    const orgId = user?.organizationId || user?.organization_id;
+    const effectiveTeamId = getEffectiveTeamId(teamId, user);
+    console.log('🎯 [DRAG-DROP] Calling API with orgId:', orgId, 'teamId:', effectiveTeamId);
+    
+    // Fire and forget - don't await to prevent request cancellation on re-render
+    issuesService.updateIssueOrder(orgId, effectiveTeamId, updates)
+      .then(result => {
+        console.log('🎯 [DRAG-DROP] API result:', result);
+        
+        // Broadcast the reordering to other meeting participants
+        if (meetingCode && broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'reorder',
+            timeline: issueTimeline,
+            issues: reorderedIssues
+          });
+        }
+      })
+      .catch(error => {
+        console.error('🎯 [DRAG-DROP] Failed to reorder issues:', error);
+        // Refresh to get correct order on error
+        fetchIssuesData();
+      });
   };
 
   // Create To-Do from Issue
