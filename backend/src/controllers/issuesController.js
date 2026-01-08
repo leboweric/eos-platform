@@ -1093,11 +1093,20 @@ export const deleteIssueUpdate = async (req, res) => {
 
 // Update issue order for drag-and-drop reordering
 export const updateIssueOrder = async (req, res) => {
+  console.log('🔥🔥🔥 [REORDER] updateIssueOrder called');
+  console.log('🔥 [REORDER] Request params:', req.params);
+  console.log('🔥 [REORDER] Request body:', JSON.stringify(req.body, null, 2));
+  
   try {
     const { orgId, teamId } = req.params;
     const { issues } = req.body; // Array of { id, priority_rank }
     
+    console.log('🔥 [REORDER] orgId:', orgId);
+    console.log('🔥 [REORDER] teamId:', teamId);
+    console.log('🔥 [REORDER] issues count:', issues?.length);
+    
     if (!issues || !Array.isArray(issues)) {
+      console.log('🔥 [REORDER] ERROR: Issues array is missing or not an array');
       return res.status(400).json({
         success: false,
         message: 'Issues array is required'
@@ -1105,29 +1114,46 @@ export const updateIssueOrder = async (req, res) => {
     }
     
     // Start a transaction
+    console.log('🔥 [REORDER] Starting transaction...');
     await db.query('BEGIN');
     
     try {
       // Update each issue's priority_rank and set manual_sort = true
+      let updatedCount = 0;
       for (const issue of issues) {
-        await db.query(
+        console.log(`🔥 [REORDER] Updating issue ${issue.id} to priority_rank ${issue.priority_rank}`);
+        const result = await db.query(
           'UPDATE issues SET priority_rank = $1, manual_sort = true WHERE id = $2 AND organization_id = $3',
           [issue.priority_rank, issue.id, orgId]
         );
+        console.log(`🔥 [REORDER] Update result for ${issue.id}: rowCount=${result.rowCount}`);
+        updatedCount += result.rowCount;
       }
       
+      console.log(`🔥 [REORDER] Total rows updated: ${updatedCount}`);
+      console.log('🔥 [REORDER] Committing transaction...');
       await db.query('COMMIT');
+      console.log('🔥 [REORDER] Transaction committed successfully');
+      
+      // Verify the update by querying the issues
+      const verifyResult = await db.query(
+        'SELECT id, title, priority_rank FROM issues WHERE organization_id = $1 AND timeline = $2 ORDER BY priority_rank ASC LIMIT 10',
+        [orgId, 'short_term']
+      );
+      console.log('🔥 [REORDER] Verification - current order:', verifyResult.rows.map(r => `${r.priority_rank}: ${r.title?.substring(0, 20)}`));
       
       res.json({
         success: true,
-        message: 'Issue order updated successfully'
+        message: 'Issue order updated successfully',
+        updatedCount: updatedCount
       });
     } catch (error) {
+      console.log('🔥 [REORDER] ERROR in transaction, rolling back:', error.message);
       await db.query('ROLLBACK');
       throw error;
     }
   } catch (error) {
-    console.error('Error updating issue order:', error);
+    console.error('🔥 [REORDER] FATAL ERROR:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update issue order',
