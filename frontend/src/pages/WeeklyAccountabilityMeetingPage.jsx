@@ -2785,8 +2785,53 @@ const WeeklyAccountabilityMeetingPage = () => {
     console.log('🎯 [DRAG-DROP] draggedIssue set, draggedIndex:', index);
   };
 
-  const handleDragEnd = () => {
-    console.log('🎯 [DRAG-DROP] handleDragEnd called - clearing drag state');
+  const handleDragEnd = async () => {
+    console.log('🎯 [DRAG-DROP] handleDragEnd called', { draggedIndex, dragOverIndex, hasDraggedIssue: !!draggedIssue });
+    
+    // If we have a valid drag over index and it's different from dragged index,
+    // the user likely intended to drop but the drop event didn't fire
+    // This can happen due to timing issues with React re-renders
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex && draggedIssue) {
+      console.log('🎯 [DRAG-DROP] handleDragEnd - performing fallback drop', { from: draggedIndex, to: dragOverIndex });
+      
+      // Use the correct issues list based on current timeline
+      const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
+      // Reorder the issues
+      const newIssues = [...issues];
+      const [movedIssue] = newIssues.splice(draggedIndex, 1);
+      newIssues.splice(dragOverIndex, 0, movedIssue);
+
+      // Update priority ranks
+      const updatedIssues = newIssues.map((issue, index) => ({
+        ...issue,
+        priority_rank: index
+      }));
+
+      // Update state optimistically
+      if (issueTimeline === 'short_term') {
+        setShortTermIssues(updatedIssues);
+      } else {
+        setLongTermIssues(updatedIssues);
+      }
+
+      // Call reorder handler
+      if (handleReorderIssues) {
+        try {
+          await handleReorderIssues(updatedIssues);
+          console.log('🎯 [DRAG-DROP] Fallback drop successful');
+        } catch (error) {
+          console.error('🎯 [DRAG-DROP] Fallback drop failed:', error);
+          // Revert on error
+          if (issueTimeline === 'short_term') {
+            setShortTermIssues(issues);
+          } else {
+            setLongTermIssues(issues);
+          }
+        }
+      }
+    }
+    
+    // Clear drag state
     setDraggedIssue(null);
     setDraggedIndex(null);
     setDragOverIndex(null);
