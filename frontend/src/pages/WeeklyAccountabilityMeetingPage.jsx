@@ -2435,8 +2435,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   }, [user, teamId, editingTodo, meetingCode, broadcastTodoUpdate, fetchTodosData, meetingStarted, fetchTodaysTodos, setSuccess, setError, setShowTodoDialog, setEditingTodo, setTodoFromIssue]);
 
   const handleReorderIssues = async (reorderedIssues) => {
+    console.log('🎯 [DRAG-DROP] handleReorderIssues called with', reorderedIssues.length, 'issues');
+    console.log('🎯 [DRAG-DROP] New order:', reorderedIssues.map((i, idx) => `${idx}: ${i.title?.substring(0, 20)}`));
     try {
       // Update local state optimistically
+      console.log('🎯 [DRAG-DROP] Setting state optimistically, timeline:', issueTimeline);
       setShortTermIssues(issueTimeline === 'short_term' ? reorderedIssues : shortTermIssues);
       setLongTermIssues(issueTimeline === 'long_term' ? reorderedIssues : longTermIssues);
 
@@ -2445,11 +2448,14 @@ const WeeklyAccountabilityMeetingPage = () => {
         id: issue.id,
         priority_rank: index
       }));
+      console.log('🎯 [DRAG-DROP] API updates:', updates);
 
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      console.log('🎯 [DRAG-DROP] Calling API with orgId:', orgId, 'teamId:', effectiveTeamId);
       
-      await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
+      const result = await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
+      console.log('🎯 [DRAG-DROP] API result:', result);
       
       // Broadcast the reordering to other meeting participants
       if (meetingCode && broadcastIssueListUpdate) {
