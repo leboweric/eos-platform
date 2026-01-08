@@ -7186,27 +7186,40 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   <div 
                                     className={`flex items-center px-3 py-3 group ${
                                       isDragging ? 'opacity-50' : ''
-                                    } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
+                                    } ${isDragOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
                                     onDragOver={handleDragOver}
                                     onDragEnter={(e) => handleDragEnter(e, index)}
-                                    onDrop={(e) => handleDrop(e, index)}
+                                    onDragLeave={(e) => {
+                                      // Only clear if leaving the row entirely, not just moving between children
+                                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                                        setDragOverIndex(null);
+                                      }
+                                    }}
+                                    onDrop={(e) => {
+                                      console.log('🎯 [DRAG-DROP] onDrop event triggered on row', index);
+                                      handleDrop(e, index);
+                                    }}
                                   >
-                                    {/* Drag Handle */}
+                                    {/* Drag Handle - Always visible with subtle opacity */}
                                     <div 
-                                      className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="w-8 flex items-center justify-center cursor-move text-slate-300 hover:text-slate-500 transition-colors"
                                       draggable="true"
                                       onDragStart={(e) => {
                                         e.stopPropagation();
+                                        console.log('🎯 [DRAG-DROP] onDragStart event triggered');
                                         handleDragStart(e, issue, index);
                                       }}
                                       onDragEnd={(e) => {
                                         e.stopPropagation();
+                                        console.log('🎯 [DRAG-DROP] onDragEnd event triggered');
                                         handleDragEnd();
                                       }}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onPointerDown={(e) => e.stopPropagation()}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onContextMenu={(e) => e.stopPropagation()}
                                     >
-                                      <GripVertical className="h-4 w-4 text-slate-400" />
+                                      <GripVertical className="h-4 w-4" />
                                     </div>
                                     
                                     {/* Status Checkbox */}
