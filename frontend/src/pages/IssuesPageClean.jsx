@@ -468,9 +468,9 @@ const IssuesPageClean = () => {
   const handleReorderIssues = async (reorderedIssues) => {
     try {
       // Update local state optimistically
-      if (activeTab === 'short-term') {
+      if (activeTab === 'short_term') {
         setShortTermIssues(reorderedIssues);
-      } else if (activeTab === 'long-term') {
+      } else if (activeTab === 'long_term') {
         setLongTermIssues(reorderedIssues);
       }
 
