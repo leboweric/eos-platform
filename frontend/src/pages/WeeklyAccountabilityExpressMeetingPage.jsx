@@ -2839,6 +2839,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleDragEnter = (e, index) => {
     e.preventDefault();
+    console.log('🎯 [DRAG-DROP] handleDragEnter called', { index, currentDragOverIndex: dragOverIndex });
     setDragOverIndex(index);
   };
 
@@ -6924,7 +6925,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     onDragEnter={(e) => handleDragEnter(e, index)}
                                     onDragLeave={(e) => {
                                       // Only clear if leaving the row entirely, not just moving between children
-                                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                                      const isLeavingRow = !e.currentTarget.contains(e.relatedTarget);
+                                      console.log('🎯 [DRAG-DROP] onDragLeave', { isLeavingRow, dragOverIndex });
+                                      if (isLeavingRow) {
                                         setDragOverIndex(null);
                                       }
                                     }}
