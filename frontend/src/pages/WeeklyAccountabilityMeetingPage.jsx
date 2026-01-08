@@ -2776,12 +2776,17 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Drag and drop handlers for issues
   const handleDragStart = (e, issue, index) => {
+    console.log('🎯 [DRAG-DROP] handleDragStart called', { issueId: issue?.id, issueTitle: issue?.title?.substring(0, 30), index });
     setDraggedIssue(issue);
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    // Set drag data for debugging
+    e.dataTransfer.setData('text/plain', issue?.id || '');
+    console.log('🎯 [DRAG-DROP] draggedIssue set, draggedIndex:', index);
   };
 
   const handleDragEnd = () => {
+    console.log('🎯 [DRAG-DROP] handleDragEnd called - clearing drag state');
     setDraggedIssue(null);
     setDraggedIndex(null);
     setDragOverIndex(null);
@@ -2799,8 +2804,10 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault();
+    console.log('🎯 [DRAG-DROP] handleDrop called', { dropIndex, draggedIndex, hasDraggedIssue: !!draggedIssue });
     
     if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
+      console.log('🎯 [DRAG-DROP] handleDrop early return - invalid state', { draggedIndex, dropIndex, hasDraggedIssue: !!draggedIssue });
       return;
     }
 

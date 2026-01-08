@@ -2781,6 +2781,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleDragEnd = () => {
+    console.log('🎯 [DRAG-DROP] handleDragEnd called - clearing drag state');
     setDraggedIssue(null);
     setDraggedIndex(null);
     setDragOverIndex(null);
