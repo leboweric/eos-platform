@@ -2470,7 +2470,14 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Create To-Do from Issue
   const handleCreateTodoFromIssue = (issue) => {
-    setTodoFromIssue(issue);
+    // Transform issue object to include proper fields for TodoDialog
+    setTodoFromIssue({
+      title: issue.title || '',
+      description: issue.description || '',
+      linkedIssueId: issue.id,
+      owner_id: issue.owner_id,
+      assignedToId: issue.owner_id
+    });
     // Don't set editingTodo for new todos - that's only for existing todos
     setEditingTodo(null);
     setShowTodoDialog(true);
