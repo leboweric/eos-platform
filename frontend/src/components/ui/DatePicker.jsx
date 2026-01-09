@@ -16,7 +16,8 @@ export const DatePicker = ({
   minDate = null,
   maxDate = null,
   showQuickDates = true,
-  required = false
+  required = false,
+  hideIcon = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -88,7 +89,7 @@ export const DatePicker = ({
           )}
           disabled={disabled}
         >
-          <Calendar className="mr-2 h-4 w-4" />
+          {!hideIcon && <Calendar className="mr-2 h-4 w-4" />}
           {selectedDate ? format(selectedDate, 'PPP') : placeholder}
           {required && !selectedDate && <span className="text-red-500 ml-1">*</span>}
         </Button>

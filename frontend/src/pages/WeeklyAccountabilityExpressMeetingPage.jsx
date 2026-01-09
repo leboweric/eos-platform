@@ -5231,6 +5231,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                           value={inlineEditForm.dueDate}
                                                           onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
                                                           className="w-32 h-8 text-xs flex-shrink-0"
+                                                          hideIcon={true}
                                                         />
                                                         <Button
                                                           size="sm"
@@ -5744,6 +5745,7 @@ setAddingMilestoneFor(priority.id);
                                                           value={inlineEditForm.dueDate}
                                                           onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
                                                           className="w-32 h-8 text-xs flex-shrink-0"
+                                                          hideIcon={true}
                                                         />
                                                         <Button
                                                           size="sm"
@@ -6235,6 +6237,7 @@ setAddingMilestoneFor(priority.id);
                                                     value={inlineEditForm.dueDate}
                                                     onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
                                                     className="w-32 h-8 text-xs flex-shrink-0"
+                                                    hideIcon={true}
                                                   />
                                                   <Button
                                                     size="sm"
