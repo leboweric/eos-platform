@@ -29,6 +29,7 @@ import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { useDepartment } from '../contexts/DepartmentContext';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import { DatePicker } from '@/components/ui/DatePicker';
 import HeadlineItem from '../components/headlines/HeadlineItem';
 import ConfirmationDialog, { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { toast } from 'sonner';
@@ -56,7 +57,8 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronRight,
-  Check
+  Check,
+  Pencil
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -143,6 +145,10 @@ const DashboardClean = () => {
     }
   });
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
+  
+  // State for inline milestone editing on dashboard
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [editingMilestoneForm, setEditingMilestoneForm] = useState({ title: '', dueDate: '' });
   
   // Confirmation dialog for delete actions
   const deleteConfirmation = useConfirmationDialog();
@@ -276,6 +282,46 @@ const DashboardClean = () => {
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
       // Use default colors on error
+    }
+  };
+
+  // Handle saving milestone edits from dashboard
+  const handleSaveMilestoneEdit = async (milestone) => {
+    if (!editingMilestoneForm.title.trim()) {
+      toast.error('Milestone title is required');
+      return;
+    }
+
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updateMilestone(
+        orgId,
+        teamId,
+        milestone.rock.id,
+        milestone.id,
+        {
+          title: editingMilestoneForm.title.trim(),
+          due_date: editingMilestoneForm.dueDate || null
+        }
+      );
+
+      // Update local state
+      setDashboardData(prev => ({
+        ...prev,
+        myMilestones: prev.myMilestones.map(m =>
+          m.id === milestone.id
+            ? { ...m, title: editingMilestoneForm.title.trim(), dueDate: editingMilestoneForm.dueDate }
+            : m
+        )
+      }));
+
+      setEditingMilestoneId(null);
+      toast.success('Milestone updated');
+    } catch (err) {
+      console.error('Failed to update milestone:', err);
+      toast.error('Failed to update milestone');
     }
   };
 
@@ -1925,14 +1971,16 @@ const DashboardClean = () => {
                     const isComplete = milestone.completed;
                     const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null;
                     const isOverdueMilestone = dueDate && !isComplete && dueDate < new Date();
+                    const isEditing = editingMilestoneId === milestone.id;
 
                     return (
-                      <div key={milestone.id} className="flex items-center px-3 py-2 hover:bg-amber-100/50 rounded-lg transition-colors">
+                      <div key={milestone.id} className="group flex items-center px-3 py-2 hover:bg-amber-100/50 rounded-lg transition-colors">
                         {/* Checkbox */}
                         <div className="w-8 flex items-center justify-center">
                           <input
                             type="checkbox"
                             checked={milestone.completed}
+                            disabled={isEditing}
                             onChange={async (e) => {
                               e.stopPropagation();
                               const newCompleted = e.target.checked;
@@ -1970,24 +2018,89 @@ const DashboardClean = () => {
                           />
                         </div>
 
-                        {/* Milestone Title */}
-                        <div className="flex-1 ml-2">
-                          <span className={`text-sm font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                            {milestone.title}
-                          </span>
-                          <div className="text-xs text-slate-500">
-                            {milestone.rock?.owner?.name}'s Rock: {milestone.rock?.title?.length > 30
-                              ? milestone.rock.title.substring(0, 30) + '...'
-                              : milestone.rock?.title || 'Unknown'}
-                          </div>
-                        </div>
+                        {isEditing ? (
+                          /* Inline Edit Mode */
+                          <>
+                            <div className="flex-1 ml-2 flex items-center gap-2">
+                              <Input
+                                value={editingMilestoneForm.title}
+                                onChange={(e) => setEditingMilestoneForm(prev => ({ ...prev, title: e.target.value }))}
+                                className="h-7 text-sm flex-1"
+                                placeholder="Milestone title"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    // Save on Enter
+                                    handleSaveMilestoneEdit(milestone);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingMilestoneId(null);
+                                  }
+                                }}
+                              />
+                              <DatePicker
+                                placeholder="Due date"
+                                value={editingMilestoneForm.dueDate}
+                                onChange={(value) => setEditingMilestoneForm(prev => ({ ...prev, dueDate: value }))}
+                                className="w-28 h-7 text-xs"
+                                hideIcon={true}
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-green-100"
+                                onClick={() => handleSaveMilestoneEdit(milestone)}
+                              >
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-red-100"
+                                onClick={() => setEditingMilestoneId(null)}
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          /* Display Mode */
+                          <>
+                            {/* Milestone Title */}
+                            <div className="flex-1 ml-2">
+                              <span className={`text-sm font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                {milestone.title}
+                              </span>
+                              <div className="text-xs text-slate-500">
+                                {milestone.rock?.owner?.name}'s Rock: {milestone.rock?.title?.length > 30
+                                  ? milestone.rock.title.substring(0, 30) + '...'
+                                  : milestone.rock?.title || 'Unknown'}
+                              </div>
+                            </div>
 
-                        {/* Due Date */}
-                        <div className="w-20 text-right">
-                          <span className={`text-xs font-medium ${isOverdueMilestone ? 'text-red-600' : 'text-slate-500'}`}>
-                            {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : '-'}
-                          </span>
-                        </div>
+                            {/* Due Date */}
+                            <div className="w-20 text-right">
+                              <span className={`text-xs font-medium ${isOverdueMilestone ? 'text-red-600' : 'text-slate-500'}`}>
+                                {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : '-'}
+                              </span>
+                            </div>
+
+                            {/* Edit Button */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 ml-2 opacity-0 group-hover:opacity-100 hover:bg-amber-100"
+                              onClick={() => {
+                                setEditingMilestoneId(milestone.id);
+                                setEditingMilestoneForm({
+                                  title: milestone.title,
+                                  dueDate: milestone.dueDate || ''
+                                });
+                              }}
+                            >
+                              <Pencil className="h-3 w-3 text-amber-600" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     );
                   })}
