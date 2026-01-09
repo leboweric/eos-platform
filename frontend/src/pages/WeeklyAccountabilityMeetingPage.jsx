@@ -65,7 +65,8 @@ import {
   GitBranch,
   BarChart3,
   Link,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
