@@ -3691,6 +3691,20 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     >
                                                       {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
                                                     </span>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-opacity"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (window.confirm('Are you sure you want to delete this milestone?')) {
+                                                          handleDeleteMilestone(priority.id, milestone.id);
+                                                        }
+                                                      }}
+                                                      title="Delete milestone"
+                                                    >
+                                                      <Trash2 className="h-3 w-3 text-red-500" />
+                                                    </Button>
                                                   </>
                                                 )}
                                               </div>
@@ -4171,6 +4185,20 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     >
                                                       {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
                                                     </span>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-opacity"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (window.confirm('Are you sure you want to delete this milestone?')) {
+                                                          handleDeleteMilestone(priority.id, milestone.id);
+                                                        }
+                                                      }}
+                                                      title="Delete milestone"
+                                                    >
+                                                      <Trash2 className="h-3 w-3 text-red-500" />
+                                                    </Button>
                                                   </>
                                                 )}
                                               </div>
@@ -4630,6 +4658,20 @@ const QuarterlyPrioritiesPageClean = () => {
                                               >
                                                 {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
                                               </span>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-opacity"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  if (window.confirm('Are you sure you want to delete this milestone?')) {
+                                                    handleDeleteMilestone(priority.id, milestone.id);
+                                                  }
+                                                }}
+                                                title="Delete milestone"
+                                              >
+                                                <Trash2 className="h-3 w-3 text-red-500" />
+                                              </Button>
                                             </>
                                           )}
                                         </div>
