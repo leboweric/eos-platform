@@ -90,6 +90,7 @@ const PriorityDialog = ({
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
+  const [milestoneError, setMilestoneError] = useState('');
 
   // Update states
   const [showAddUpdate, setShowAddUpdate] = useState(false);
@@ -661,12 +662,22 @@ const PriorityDialog = ({
 
               {showAddMilestone ? (
                 <div className="p-3 bg-blue-50/30 rounded-lg space-y-2">
+                  {/* Error message */}
+                  {milestoneError && (
+                    <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{milestoneError}</p>
+                    </div>
+                  )}
                   <Input
                     value={newMilestone.title}
-                    onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                    placeholder="Milestone title"
+                    onChange={(e) => {
+                      setNewMilestone({ ...newMilestone, title: e.target.value });
+                      if (milestoneError) setMilestoneError('');
+                    }}
+                    placeholder="Milestone title *"
                     autoFocus
-                    className="bg-white"
+                    className={`bg-white ${milestoneError && !newMilestone.title ? 'border-red-300' : ''}`}
                   />
                   <div className="flex gap-2">
                     <Select
@@ -686,33 +697,54 @@ const PriorityDialog = ({
                     </Select>
                     <DatePicker
                       value={newMilestone.dueDate}
-                      onChange={(date) => setNewMilestone({ ...newMilestone, dueDate: date })}
-                      placeholder="Select date"
-                      className="bg-white flex-1"
+                      onChange={(date) => {
+                        setNewMilestone({ ...newMilestone, dueDate: date });
+                        if (milestoneError) setMilestoneError('');
+                      }}
+                      placeholder="Due date *"
+                      className={`bg-white flex-1 ${milestoneError && !newMilestone.dueDate ? 'border-red-300' : ''}`}
                     />
                   </div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={async () => {
-                        if (onAddMilestone && newMilestone.title) {
+                        // Clear previous error
+                        setMilestoneError('');
+                        
+                        // Validate title
+                        if (!newMilestone.title || newMilestone.title.trim() === '') {
+                          setMilestoneError('Please enter a milestone title');
+                          return;
+                        }
+                        
+                        // Validate due date
+                        if (!newMilestone.dueDate) {
+                          setMilestoneError('Please select a due date for the milestone');
+                          return;
+                        }
+                        
+                        if (onAddMilestone) {
                           // Ensure ownerId is set - use selected value or default to form's current owner
                           const milestoneToAdd = {
                             ...newMilestone,
+                            title: newMilestone.title.trim(),
                             ownerId: newMilestone.ownerId || formData.ownerId || priority?.owner?.id || ''
                           };
                           try {
                             await onAddMilestone(priority.id, milestoneToAdd);
                             // Clear form but keep it open for adding more milestones
+                            // Default the due date to Rock's due date for next milestone
+                            const rockDueDate = priority?.dueDate || priority?.due_date;
                             setNewMilestone({ 
                               title: '', 
-                              dueDate: '', 
+                              dueDate: rockDueDate ? rockDueDate.split('T')[0] : '', 
                               ownerId: newMilestone.ownerId || formData.ownerId || priority?.owner?.id || '' 
                             });
-                            // Don't hide the form - let user add more milestones or manually close
-                            // setShowAddMilestone(false);
+                            setMilestoneError('');
                           } catch (error) {
                             console.error('Failed to add milestone:', error);
+                            setMilestoneError('Failed to add milestone. Please try again.');
                           }
                         }
                       }}
@@ -729,6 +761,7 @@ const PriorityDialog = ({
                       onClick={() => {
                         setShowAddMilestone(false);
                         setNewMilestone({ title: '', dueDate: '', ownerId: '' });
+                        setMilestoneError('');
                       }}
                     >
                       Cancel
@@ -738,7 +771,17 @@ const PriorityDialog = ({
               ) : (
                 <Button
                   variant="outline"
-                  onClick={() => setShowAddMilestone(true)}
+                  onClick={() => {
+                    // Default the due date to the Rock's due date
+                    const rockDueDate = priority?.dueDate || priority?.due_date;
+                    setNewMilestone({ 
+                      title: '', 
+                      dueDate: rockDueDate ? rockDueDate.split('T')[0] : '', 
+                      ownerId: priority?.owner?.id || '' 
+                    });
+                    setMilestoneError('');
+                    setShowAddMilestone(true);
+                  }}
                   className="w-full"
                 >
                   <Plus className="h-4 w-4 mr-2" />
