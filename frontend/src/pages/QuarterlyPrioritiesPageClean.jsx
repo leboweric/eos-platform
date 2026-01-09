@@ -210,7 +210,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: null });
   const [editingInlineMilestone, setEditingInlineMilestone] = useState(null);
-  const [inlineEditForm, setInlineEditForm] = useState({ title: '', dueDate: '' });
+  const [inlineEditForm, setInlineEditForm] = useState({ title: '', dueDate: '', ownerId: null });
 
   // Helper function to show confirmation dialogs
   const showConfirmation = (type, title, message, onConfirm) => {
@@ -3590,6 +3590,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                           handleEditMilestone(priority.id, milestone.id, {
                                                             title: inlineEditForm.title,
                                                             dueDate: inlineEditForm.dueDate,
+                                                            ownerId: inlineEditForm.ownerId,
                                                             completed: milestone.completed
                                                           });
                                                           setEditingInlineMilestone(null);
@@ -3599,6 +3600,21 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         }
                                                       }}
                                                     />
+                                                    <Select
+                                                      value={inlineEditForm.ownerId || ''}
+                                                      onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                                    >
+                                                      <SelectTrigger className="w-32 h-8 text-xs">
+                                                        <SelectValue placeholder="Owner" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {(teamMembers || []).filter(member => member.id).map(member => (
+                                                          <SelectItem key={member.id} value={member.id}>
+                                                            {member.name || `${member.first_name} ${member.last_name}`}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
                                                     <DatePicker
                                                       placeholder="Select date"
                                                       value={inlineEditForm.dueDate}
@@ -3613,6 +3629,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         handleEditMilestone(priority.id, milestone.id, {
                                                           title: inlineEditForm.title,
                                                           dueDate: inlineEditForm.dueDate,
+                                                          ownerId: inlineEditForm.ownerId,
                                                           completed: milestone.completed
                                                         });
                                                         setEditingInlineMilestone(null);
@@ -3637,7 +3654,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                         setInlineEditForm({
                                                           title: milestone.title || '',
-                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                          ownerId: milestone.owner_id || milestone.ownerId || null
                                                         });
                                                       }}
                                                       title="Click to edit"
@@ -3655,7 +3673,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                         setInlineEditForm({
                                                           title: milestone.title || '',
-                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                          ownerId: milestone.owner_id || milestone.ownerId || null
                                                         });
                                                       }}
                                                       title="Click to edit"
@@ -4051,6 +4070,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                           handleEditMilestone(priority.id, milestone.id, {
                                                             title: inlineEditForm.title,
                                                             dueDate: inlineEditForm.dueDate,
+                                                            ownerId: inlineEditForm.ownerId,
                                                             completed: milestone.completed
                                                           });
                                                           setEditingInlineMilestone(null);
@@ -4060,6 +4080,21 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         }
                                                       }}
                                                     />
+                                                    <Select
+                                                      value={inlineEditForm.ownerId || ''}
+                                                      onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                                    >
+                                                      <SelectTrigger className="w-32 h-8 text-xs">
+                                                        <SelectValue placeholder="Owner" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {(teamMembers || []).filter(member => member.id).map(member => (
+                                                          <SelectItem key={member.id} value={member.id}>
+                                                            {member.name || `${member.first_name} ${member.last_name}`}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
                                                     <DatePicker
                                                       placeholder="Select date"
                                                       value={inlineEditForm.dueDate}
@@ -4074,6 +4109,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         handleEditMilestone(priority.id, milestone.id, {
                                                           title: inlineEditForm.title,
                                                           dueDate: inlineEditForm.dueDate,
+                                                          ownerId: inlineEditForm.ownerId,
                                                           completed: milestone.completed
                                                         });
                                                         setEditingInlineMilestone(null);
@@ -4098,7 +4134,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                         setInlineEditForm({
                                                           title: milestone.title || '',
-                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                          ownerId: milestone.owner_id || milestone.ownerId || null
                                                         });
                                                       }}
                                                       title="Click to edit"
@@ -4116,7 +4153,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                         setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                         setInlineEditForm({
                                                           title: milestone.title || '',
-                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                          ownerId: milestone.owner_id || milestone.ownerId || null
                                                         });
                                                       }}
                                                       title="Click to edit"
@@ -4490,16 +4528,32 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   if (e.key === 'Enter') {
                                                     handleEditMilestone(priority.id, milestone.id, {
                                                       title: inlineEditForm.title,
-                                                      dueDate: inlineEditForm.dueDate,
-                                                      completed: milestone.completed
-                                                    });
-                                                    setEditingInlineMilestone(null);
-                                                  }
-                                                  if (e.key === 'Escape') {
-                                                    setEditingInlineMilestone(null);
-                                                  }
-                                                }}
-                                              />
+                                                    dueDate: inlineEditForm.dueDate,
+                                                    ownerId: inlineEditForm.ownerId,
+                                                    completed: milestone.completed
+                                                  });
+                                                  setEditingInlineMilestone(null);
+                                                }
+                                                if (e.key === 'Escape') {
+                                                  setEditingInlineMilestone(null);
+                                                }
+                                              }}
+                                            />
+                                              <Select
+                                                value={inlineEditForm.ownerId || ''}
+                                                onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                              >
+                                                <SelectTrigger className="w-32 h-8 text-xs">
+                                                  <SelectValue placeholder="Owner" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {(teamMembers || []).filter(member => member.id).map(member => (
+                                                    <SelectItem key={member.id} value={member.id}>
+                                                      {member.name || `${member.first_name} ${member.last_name}`}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
                                               <DatePicker
                                                 placeholder="Select date"
                                                 value={inlineEditForm.dueDate}
@@ -4514,6 +4568,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   handleEditMilestone(priority.id, milestone.id, {
                                                     title: inlineEditForm.title,
                                                     dueDate: inlineEditForm.dueDate,
+                                                    ownerId: inlineEditForm.ownerId,
                                                     completed: milestone.completed
                                                   });
                                                   setEditingInlineMilestone(null);
@@ -4538,7 +4593,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                   setInlineEditForm({
                                                     title: milestone.title || '',
-                                                    dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                    dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                    ownerId: milestone.owner_id || milestone.ownerId || null
                                                   });
                                                 }}
                                                 title="Click to edit"
@@ -4556,7 +4612,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
                                                   setInlineEditForm({
                                                     title: milestone.title || '',
-                                                    dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
+                                                    dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                    ownerId: milestone.owner_id || milestone.ownerId || null
                                                   });
                                                 }}
                                                 title="Click to edit"
