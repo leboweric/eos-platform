@@ -872,13 +872,23 @@ const QuarterlyPrioritiesPageClean = () => {
       console.log('Updating milestone with:', { priorityId, milestoneId, updates });
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
+      // If ownerId was updated, also look up the owner_name for display
+      let updatesWithOwnerName = { ...updates };
+      if (updates.ownerId) {
+        const owner = teamMembers?.find(m => m.id === updates.ownerId);
+        if (owner) {
+          updatesWithOwnerName.owner_name = owner.name || `${owner.first_name} ${owner.last_name}`;
+          updatesWithOwnerName.owner_id = updates.ownerId; // Also set owner_id for consistency
+        }
+      }
+      
       // Update local state
       const updatePriorityMilestone = (p) => {
         if (p.id !== priorityId) return p;
         return {
           ...p,
           milestones: p.milestones?.map(m =>
-            m.id === milestoneId ? { ...m, ...updates } : m
+            m.id === milestoneId ? { ...m, ...updatesWithOwnerName } : m
           ) || []
         };
       };
