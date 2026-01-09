@@ -5390,12 +5390,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                           placeholder="Select date"
                                                           value={inlineEditForm.dueDate}
                                                           onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
-                                                          className="w-36 h-8 text-sm"
+                                                          className="w-32 h-8 text-xs flex-shrink-0"
                                                         />
                                                         <Button
                                                           size="sm"
                                                           variant="ghost"
-                                                          className="h-8 w-8 p-0 hover:bg-green-100"
+                                                          className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                           onClick={() => {
                                                             handleEditMilestone(priority.id, milestone.id, {
                                                               title: inlineEditForm.title,
@@ -5411,7 +5411,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                         <Button
                                                           size="sm"
                                                           variant="ghost"
-                                                          className="h-8 w-8 p-0 hover:bg-red-100"
+                                                          className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                           onClick={() => setEditingInlineMilestone(null)}
                                                         >
                                                           <X className="h-4 w-4 text-red-600" />
@@ -5534,7 +5534,7 @@ setAddingMilestoneFor(priority.id);
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
-                                                      className="h-8 w-8 p-0 hover:bg-green-100"
+                                                      className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                       onClick={() => handleAddMilestone(priority.id)}
                                                     >
                                                       <Check className="h-4 w-4 text-green-600" />
@@ -5542,7 +5542,7 @@ setAddingMilestoneFor(priority.id);
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
-                                                      className="h-8 w-8 p-0 hover:bg-red-100"
+                                                      className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                       onClick={() => {
                                                         setAddingMilestoneFor(null);
                                                         setNewMilestone({ title: '', dueDate: '' });
@@ -5903,12 +5903,12 @@ setAddingMilestoneFor(priority.id);
                                                           placeholder="Select date"
                                                           value={inlineEditForm.dueDate}
                                                           onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
-                                                          className="w-36 h-8 text-sm"
+                                                          className="w-32 h-8 text-xs flex-shrink-0"
                                                         />
                                                         <Button
                                                           size="sm"
                                                           variant="ghost"
-                                                          className="h-8 w-8 p-0 hover:bg-green-100"
+                                                          className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                           onClick={() => {
                                                             handleEditMilestone(priority.id, milestone.id, {
                                                               title: inlineEditForm.title,
@@ -5924,7 +5924,7 @@ setAddingMilestoneFor(priority.id);
                                                         <Button
                                                           size="sm"
                                                           variant="ghost"
-                                                          className="h-8 w-8 p-0 hover:bg-red-100"
+                                                          className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                           onClick={() => setEditingInlineMilestone(null)}
                                                         >
                                                           <X className="h-4 w-4 text-red-600" />
@@ -6047,7 +6047,7 @@ setAddingMilestoneFor(priority.id);
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
-                                                      className="h-8 w-8 p-0 hover:bg-green-100"
+                                                      className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                       onClick={() => handleAddMilestone(priority.id)}
                                                     >
                                                       <Check className="h-4 w-4 text-green-600" />
@@ -6055,7 +6055,7 @@ setAddingMilestoneFor(priority.id);
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
-                                                      className="h-8 w-8 p-0 hover:bg-red-100"
+                                                      className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                       onClick={() => {
                                                         setAddingMilestoneFor(null);
                                                         setNewMilestone({ title: '', dueDate: '' });
@@ -6394,12 +6394,12 @@ setAddingMilestoneFor(priority.id);
                                                     placeholder="Select date"
                                                     value={inlineEditForm.dueDate}
                                                     onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
-                                                    className="w-36 h-8 text-sm"
+                                                    className="w-32 h-8 text-xs flex-shrink-0"
                                                   />
                                                   <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-green-100"
+                                                    className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                     onClick={() => {
                                                       handleEditMilestone(priority.id, milestone.id, {
                                                         title: inlineEditForm.title,
@@ -6415,7 +6415,7 @@ setAddingMilestoneFor(priority.id);
                                                   <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-red-100"
+                                                    className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                     onClick={() => setEditingInlineMilestone(null)}
                                                   >
                                                     <X className="h-4 w-4 text-red-600" />
@@ -6538,7 +6538,7 @@ setAddingMilestoneFor(priority.id);
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-8 w-8 p-0 hover:bg-green-100"
+                                                className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
                                                 onClick={() => handleAddMilestone(priority.id)}
                                               >
                                                 <Check className="h-4 w-4 text-green-600" />
@@ -6546,7 +6546,7 @@ setAddingMilestoneFor(priority.id);
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                                className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                 onClick={() => {
                                                   setAddingMilestoneFor(null);
                                                   setNewMilestone({ title: '', dueDate: '' });
