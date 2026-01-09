@@ -647,6 +647,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       return;
     }
     
+    if (!newMilestone.dueDate) {
+      toast.error('Please select a due date for the milestone');
+      return;
+    }
+    
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
@@ -667,7 +672,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const milestone = await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, {
         title: newMilestone.title,
-        dueDate: newMilestone.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd')
+        dueDate: newMilestone.dueDate
       });
       
       console.log('✅ [Milestone] Created milestone:', milestone);
@@ -5312,11 +5317,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                         variant="outline"
                                                         className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                                                         onClick={() => {
-                                                          setAddingMilestoneFor(priority.id);
-                                                          setNewMilestone({ 
-                                                            title: '', 
-                                                            dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
-                                                          });
+setAddingMilestoneFor(priority.id);
+                                                           // Default to Rock's due date
+                                                           const rockDueDate = priority.dueDate || priority.due_date;
+                                                           setNewMilestone({ 
+                                                             title: '', 
+                                                             dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                           });
                                                         }}
                                                       >
                                                         <Plus className="h-4 w-4 mr-2" />
@@ -5374,11 +5381,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   <button
                                                     className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
                                                     onClick={() => {
-                                                      setAddingMilestoneFor(priority.id);
-                                                      setNewMilestone({ 
-                                                        title: '', 
-                                                        dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
-                                                      });
+setAddingMilestoneFor(priority.id);
+                                                       // Default to Rock's due date
+                                                       const rockDueDate = priority.dueDate || priority.due_date;
+                                                       setNewMilestone({ 
+                                                         title: '', 
+                                                         dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                       });
                                                     }}
                                                   >
                                                     <Plus className="h-3 w-3" />
@@ -5807,11 +5816,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                         variant="outline"
                                                         className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                                                         onClick={() => {
-                                                          setAddingMilestoneFor(priority.id);
-                                                          setNewMilestone({ 
-                                                            title: '', 
-                                                            dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
-                                                          });
+setAddingMilestoneFor(priority.id);
+                                                     // Default to Rock's due date
+                                                     const rockDueDate = priority.dueDate || priority.due_date;
+                                                     setNewMilestone({ 
+                                                       title: '', 
+                                                       dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                     });
                                                         }}
                                                       >
                                                         <Plus className="h-4 w-4 mr-2" />
@@ -5869,11 +5880,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   <button
                                                     className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
                                                     onClick={() => {
-                                                      setAddingMilestoneFor(priority.id);
-                                                      setNewMilestone({ 
-                                                        title: '', 
-                                                        dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
-                                                      });
+setAddingMilestoneFor(priority.id);
+                                                 // Default to Rock's due date
+                                                 const rockDueDate = priority.dueDate || priority.due_date;
+                                                 setNewMilestone({ 
+                                                   title: '', 
+                                                   dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                 });
                                                     }}
                                                   >
                                                     <Plus className="h-3 w-3" />
@@ -6281,9 +6294,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                                                   onClick={() => {
                                                     setAddingMilestoneFor(priority.id);
+                                                    // Default to Rock's due date
+                                                    const rockDueDate = priority.dueDate || priority.due_date;
                                                     setNewMilestone({ 
                                                       title: '', 
-                                                      dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                      dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
                                                     });
                                                   }}
                                                 >
@@ -6343,9 +6358,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
                                               onClick={() => {
                                                 setAddingMilestoneFor(priority.id);
+                                                // Default to Rock's due date
+                                                const rockDueDate = priority.dueDate || priority.due_date;
                                                 setNewMilestone({ 
                                                   title: '', 
-                                                  dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                  dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
                                                 });
                                               }}
                                             >
