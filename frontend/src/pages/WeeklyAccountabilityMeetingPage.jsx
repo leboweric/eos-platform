@@ -375,6 +375,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  const [editingInlineMilestone, setEditingInlineMilestone] = useState(null); // { priorityId, milestoneId }
+  const [inlineEditForm, setInlineEditForm] = useState({ title: '', dueDate: '', ownerId: null });
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [todoSortBy, setTodoSortBy] = useState('assignee'); // For Conclude section todo sorting - default to assignee/owner
   
@@ -3515,12 +3517,22 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, updates);
       
+      // If ownerId was updated, also look up the owner_name for display
+      let updatesWithOwnerName = { ...updates };
+      if (updates.ownerId) {
+        const owner = teamMembers?.find(m => m.id === updates.ownerId);
+        if (owner) {
+          updatesWithOwnerName.owner_name = owner.name || `${owner.first_name} ${owner.last_name}`;
+          updatesWithOwnerName.owner_id = updates.ownerId;
+        }
+      }
+      
       // Update local state immediately
       setPriorities(prev => prev.map(p => {
         if (p.id !== priorityId) return p;
         
         const updatedMilestones = p.milestones?.map(m => 
-          m.id === milestoneId ? { ...m, ...updates } : m
+          m.id === milestoneId ? { ...m, ...updatesWithOwnerName } : m
         ) || [];
         
         return {
@@ -3534,7 +3546,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setSelectedPriority(prev => ({
           ...prev,
           milestones: prev.milestones?.map(m => 
-            m.id === milestoneId ? { ...m, ...updates } : m
+            m.id === milestoneId ? { ...m, ...updatesWithOwnerName } : m
           ) || []
         }));
       }
@@ -5327,23 +5339,127 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       type="checkbox"
                                                       checked={milestone.completed}
                                                       onChange={(e) => {
-                                                        e.stopPropagation(); // Prevent event bubbling to parent containers
-                                                        console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
+                                                        e.stopPropagation();
                                                         handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                       }}
                                                       className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                                     />
-                                                    <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                                      {milestone.title}
-                                                    </span>
-                                                    {milestone.owner_name && (
-                                                      <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
-                                                        {milestone.owner_name}
-                                                      </span>
+                                                    {editingInlineMilestone?.priorityId === priority.id && editingInlineMilestone?.milestoneId === milestone.id ? (
+                                                      <>
+                                                        <Input
+                                                          value={inlineEditForm.title}
+                                                          onChange={(e) => setInlineEditForm(prev => ({ ...prev, title: e.target.value }))}
+                                                          className="flex-1 h-8 text-sm"
+                                                          autoFocus
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                              handleEditMilestone(priority.id, milestone.id, {
+                                                                title: inlineEditForm.title,
+                                                                dueDate: inlineEditForm.dueDate,
+                                                                ownerId: inlineEditForm.ownerId,
+                                                                completed: milestone.completed
+                                                              });
+                                                              setEditingInlineMilestone(null);
+                                                            }
+                                                            if (e.key === 'Escape') {
+                                                              setEditingInlineMilestone(null);
+                                                            }
+                                                          }}
+                                                        />
+                                                        <Select
+                                                          value={inlineEditForm.ownerId || ''}
+                                                          onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                                        >
+                                                          <SelectTrigger className="w-32 h-8 text-xs">
+                                                            <SelectValue placeholder="Owner" />
+                                                          </SelectTrigger>
+                                                          <SelectContent>
+                                                            {(teamMembers || []).filter(member => member.id).map(member => (
+                                                              <SelectItem key={member.id} value={member.id}>
+                                                                {member.name || `${member.first_name} ${member.last_name}`}
+                                                              </SelectItem>
+                                                            ))}
+                                                          </SelectContent>
+                                                        </Select>
+                                                        <DatePicker
+                                                          placeholder="Select date"
+                                                          value={inlineEditForm.dueDate}
+                                                          onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
+                                                          className="w-36 h-8 text-sm"
+                                                        />
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          className="h-8 w-8 p-0 hover:bg-green-100"
+                                                          onClick={() => {
+                                                            handleEditMilestone(priority.id, milestone.id, {
+                                                              title: inlineEditForm.title,
+                                                              dueDate: inlineEditForm.dueDate,
+                                                              ownerId: inlineEditForm.ownerId,
+                                                              completed: milestone.completed
+                                                            });
+                                                            setEditingInlineMilestone(null);
+                                                          }}
+                                                        >
+                                                          <Check className="h-4 w-4 text-green-600" />
+                                                        </Button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          className="h-8 w-8 p-0 hover:bg-red-100"
+                                                          onClick={() => setEditingInlineMilestone(null)}
+                                                        >
+                                                          <X className="h-4 w-4 text-red-600" />
+                                                        </Button>
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <span
+                                                          className={`text-sm flex-1 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
+                                                          onClick={() => {
+                                                            setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                            setInlineEditForm({
+                                                              title: milestone.title || '',
+                                                              dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                              ownerId: milestone.owner_id || milestone.ownerId || null
+                                                            });
+                                                          }}
+                                                          title="Click to edit"
+                                                        >
+                                                          {milestone.title}
+                                                        </span>
+                                                        {milestone.owner_name && (
+                                                          <span
+                                                            className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium cursor-pointer hover:bg-blue-200"
+                                                            onClick={() => {
+                                                              setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                              setInlineEditForm({
+                                                                title: milestone.title || '',
+                                                                dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                                ownerId: milestone.owner_id || milestone.ownerId || null
+                                                              });
+                                                            }}
+                                                            title="Click to edit"
+                                                          >
+                                                            {milestone.owner_name}
+                                                          </span>
+                                                        )}
+                                                        <span
+                                                          className="text-xs text-slate-500 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded"
+                                                          onClick={() => {
+                                                            setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                            setInlineEditForm({
+                                                              title: milestone.title || '',
+                                                              dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                              ownerId: milestone.owner_id || milestone.ownerId || null
+                                                            });
+                                                          }}
+                                                          title="Click to edit"
+                                                        >
+                                                          {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
+                                                        </span>
+                                                      </>
                                                     )}
-                                                    <span className="text-xs text-slate-500">
-                                                      {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
-                                                    </span>
                                                   </div>
                                                 ))}
                                                 
@@ -5718,23 +5834,127 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       type="checkbox"
                                                       checked={milestone.completed}
                                                       onChange={(e) => {
-                                                        e.stopPropagation(); // Prevent event bubbling to parent containers
-                                                        console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
+                                                        e.stopPropagation();
                                                         handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                       }}
                                                       className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                                     />
-                                                    <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                                      {milestone.title}
-                                                    </span>
-                                                    {milestone.owner_name && (
-                                                      <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
-                                                        {milestone.owner_name}
-                                                      </span>
+                                                    {editingInlineMilestone?.priorityId === priority.id && editingInlineMilestone?.milestoneId === milestone.id ? (
+                                                      <>
+                                                        <Input
+                                                          value={inlineEditForm.title}
+                                                          onChange={(e) => setInlineEditForm(prev => ({ ...prev, title: e.target.value }))}
+                                                          className="flex-1 h-8 text-sm"
+                                                          autoFocus
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                              handleEditMilestone(priority.id, milestone.id, {
+                                                                title: inlineEditForm.title,
+                                                                dueDate: inlineEditForm.dueDate,
+                                                                ownerId: inlineEditForm.ownerId,
+                                                                completed: milestone.completed
+                                                              });
+                                                              setEditingInlineMilestone(null);
+                                                            }
+                                                            if (e.key === 'Escape') {
+                                                              setEditingInlineMilestone(null);
+                                                            }
+                                                          }}
+                                                        />
+                                                        <Select
+                                                          value={inlineEditForm.ownerId || ''}
+                                                          onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                                        >
+                                                          <SelectTrigger className="w-32 h-8 text-xs">
+                                                            <SelectValue placeholder="Owner" />
+                                                          </SelectTrigger>
+                                                          <SelectContent>
+                                                            {(teamMembers || []).filter(member => member.id).map(member => (
+                                                              <SelectItem key={member.id} value={member.id}>
+                                                                {member.name || `${member.first_name} ${member.last_name}`}
+                                                              </SelectItem>
+                                                            ))}
+                                                          </SelectContent>
+                                                        </Select>
+                                                        <DatePicker
+                                                          placeholder="Select date"
+                                                          value={inlineEditForm.dueDate}
+                                                          onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
+                                                          className="w-36 h-8 text-sm"
+                                                        />
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          className="h-8 w-8 p-0 hover:bg-green-100"
+                                                          onClick={() => {
+                                                            handleEditMilestone(priority.id, milestone.id, {
+                                                              title: inlineEditForm.title,
+                                                              dueDate: inlineEditForm.dueDate,
+                                                              ownerId: inlineEditForm.ownerId,
+                                                              completed: milestone.completed
+                                                            });
+                                                            setEditingInlineMilestone(null);
+                                                          }}
+                                                        >
+                                                          <Check className="h-4 w-4 text-green-600" />
+                                                        </Button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          className="h-8 w-8 p-0 hover:bg-red-100"
+                                                          onClick={() => setEditingInlineMilestone(null)}
+                                                        >
+                                                          <X className="h-4 w-4 text-red-600" />
+                                                        </Button>
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <span
+                                                          className={`text-sm flex-1 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
+                                                          onClick={() => {
+                                                            setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                            setInlineEditForm({
+                                                              title: milestone.title || '',
+                                                              dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                              ownerId: milestone.owner_id || milestone.ownerId || null
+                                                            });
+                                                          }}
+                                                          title="Click to edit"
+                                                        >
+                                                          {milestone.title}
+                                                        </span>
+                                                        {milestone.owner_name && (
+                                                          <span
+                                                            className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium cursor-pointer hover:bg-blue-200"
+                                                            onClick={() => {
+                                                              setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                              setInlineEditForm({
+                                                                title: milestone.title || '',
+                                                                dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                                ownerId: milestone.owner_id || milestone.ownerId || null
+                                                              });
+                                                            }}
+                                                            title="Click to edit"
+                                                          >
+                                                            {milestone.owner_name}
+                                                          </span>
+                                                        )}
+                                                        <span
+                                                          className="text-xs text-slate-500 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded"
+                                                          onClick={() => {
+                                                            setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                            setInlineEditForm({
+                                                              title: milestone.title || '',
+                                                              dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                              ownerId: milestone.owner_id || milestone.ownerId || null
+                                                            });
+                                                          }}
+                                                          title="Click to edit"
+                                                        >
+                                                          {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
+                                                        </span>
+                                                      </>
                                                     )}
-                                                    <span className="text-xs text-slate-500">
-                                                      {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
-                                                    </span>
                                                   </div>
                                                 ))}
                                                 
@@ -6087,23 +6307,127 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 type="checkbox"
                                                 checked={milestone.completed}
                                                 onChange={(e) => {
-                                                  e.stopPropagation(); // Prevent event bubbling to parent containers
-                                                  console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
+                                                  e.stopPropagation();
                                                   handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
                                                 className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                               />
-                                              <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                                {milestone.title}
-                                              </span>
-                                              {milestone.owner_name && (
-                                                <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium">
-                                                  {milestone.owner_name}
-                                                </span>
+                                              {editingInlineMilestone?.priorityId === priority.id && editingInlineMilestone?.milestoneId === milestone.id ? (
+                                                <>
+                                                  <Input
+                                                    value={inlineEditForm.title}
+                                                    onChange={(e) => setInlineEditForm(prev => ({ ...prev, title: e.target.value }))}
+                                                    className="flex-1 h-8 text-sm"
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        handleEditMilestone(priority.id, milestone.id, {
+                                                          title: inlineEditForm.title,
+                                                          dueDate: inlineEditForm.dueDate,
+                                                          ownerId: inlineEditForm.ownerId,
+                                                          completed: milestone.completed
+                                                        });
+                                                        setEditingInlineMilestone(null);
+                                                      }
+                                                      if (e.key === 'Escape') {
+                                                        setEditingInlineMilestone(null);
+                                                      }
+                                                    }}
+                                                  />
+                                                  <Select
+                                                    value={inlineEditForm.ownerId || ''}
+                                                    onValueChange={(value) => setInlineEditForm(prev => ({ ...prev, ownerId: value }))}
+                                                  >
+                                                    <SelectTrigger className="w-32 h-8 text-xs">
+                                                      <SelectValue placeholder="Owner" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      {(teamMembers || []).filter(member => member.id).map(member => (
+                                                        <SelectItem key={member.id} value={member.id}>
+                                                          {member.name || `${member.first_name} ${member.last_name}`}
+                                                        </SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                  <DatePicker
+                                                    placeholder="Select date"
+                                                    value={inlineEditForm.dueDate}
+                                                    onChange={(value) => setInlineEditForm(prev => ({ ...prev, dueDate: value }))}
+                                                    className="w-36 h-8 text-sm"
+                                                  />
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 p-0 hover:bg-green-100"
+                                                    onClick={() => {
+                                                      handleEditMilestone(priority.id, milestone.id, {
+                                                        title: inlineEditForm.title,
+                                                        dueDate: inlineEditForm.dueDate,
+                                                        ownerId: inlineEditForm.ownerId,
+                                                        completed: milestone.completed
+                                                      });
+                                                      setEditingInlineMilestone(null);
+                                                    }}
+                                                  >
+                                                    <Check className="h-4 w-4 text-green-600" />
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 p-0 hover:bg-red-100"
+                                                    onClick={() => setEditingInlineMilestone(null)}
+                                                  >
+                                                    <X className="h-4 w-4 text-red-600" />
+                                                  </Button>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <span
+                                                    className={`text-sm flex-1 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
+                                                    onClick={() => {
+                                                      setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                      setInlineEditForm({
+                                                        title: milestone.title || '',
+                                                        dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                        ownerId: milestone.owner_id || milestone.ownerId || null
+                                                      });
+                                                    }}
+                                                    title="Click to edit"
+                                                  >
+                                                    {milestone.title}
+                                                  </span>
+                                                  {milestone.owner_name && (
+                                                    <span
+                                                      className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-medium cursor-pointer hover:bg-blue-200"
+                                                      onClick={() => {
+                                                        setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                        setInlineEditForm({
+                                                          title: milestone.title || '',
+                                                          dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                          ownerId: milestone.owner_id || milestone.ownerId || null
+                                                        });
+                                                      }}
+                                                      title="Click to edit"
+                                                    >
+                                                      {milestone.owner_name}
+                                                    </span>
+                                                  )}
+                                                  <span
+                                                    className="text-xs text-slate-500 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded"
+                                                    onClick={() => {
+                                                      setEditingInlineMilestone({ priorityId: priority.id, milestoneId: milestone.id });
+                                                      setInlineEditForm({
+                                                        title: milestone.title || '',
+                                                        dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : '',
+                                                        ownerId: milestone.owner_id || milestone.ownerId || null
+                                                      });
+                                                    }}
+                                                    title="Click to edit"
+                                                  >
+                                                    {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : 'No date'}
+                                                  </span>
+                                                </>
                                               )}
-                                              <span className="text-xs text-slate-500">
-                                                {milestone.dueDate ? formatDateSafe(milestone.dueDate, 'MMM d') : ''}
-                                              </span>
                                             </div>
                                           ))}
                                           
