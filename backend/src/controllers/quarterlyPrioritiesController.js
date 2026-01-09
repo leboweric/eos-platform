@@ -1500,6 +1500,7 @@ export const getCurrentPriorities = async (req, res) => {
          AND p.owner_id != $1
          AND p.organization_id = $2
          AND p.deleted_at IS NULL
+         AND p.status != 'archived'
        ORDER BY pm.due_date ASC NULLS LAST, pm.created_at ASC`,
       [req.user.id, orgId]
     );
