@@ -68,7 +68,8 @@ import {
   Zap,
   Upload,
   Link,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 
 // Error Boundary Component
