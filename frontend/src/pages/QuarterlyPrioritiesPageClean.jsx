@@ -1928,7 +1928,8 @@ const QuarterlyPrioritiesPageClean = () => {
         priorityId,
         {
           title: newMilestone.title,
-          dueDate: newMilestone.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd')
+          dueDate: newMilestone.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+          ownerId: newMilestone.ownerId || null
         }
       );
       
@@ -1953,7 +1954,7 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // Reset form
       setAddingMilestoneFor(null);
-      setNewMilestone({ title: '', dueDate: '' });
+      setNewMilestone({ title: '', dueDate: '', ownerId: null });
       setSuccess('Milestone added');
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
@@ -3749,10 +3750,25 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     }
                                                     if (e.key === 'Escape') {
                                                       setAddingMilestoneFor(null);
-                                                      setNewMilestone({ title: '', dueDate: '' });
+                                                      setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                     }
                                                   }}
                                                 />
+                                                <Select
+                                                  value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                                  onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                                >
+                                                  <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                                    <SelectValue placeholder="Owner" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {teamMembers.map(member => (
+                                                      <SelectItem key={member.id} value={member.id}>
+                                                        {member.name}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
                                                 <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
                                                   onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -3772,7 +3788,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   className="h-8 w-8 p-0 hover:bg-red-100"
                                                   onClick={() => {
                                                     setAddingMilestoneFor(null);
-                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                    setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                   }}
                                                 >
                                                   <X className="h-4 w-4 text-red-600" />
@@ -3785,7 +3801,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   setAddingMilestoneFor(priority.id);
                                                   setNewMilestone({ 
                                                     title: '', 
-                                                    dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                    dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                                    ownerId: priority.owner_id || priority.owner?.id || null
                                                   });
                                                 }}
                                               >
@@ -4244,10 +4261,25 @@ const QuarterlyPrioritiesPageClean = () => {
                                                     }
                                                     if (e.key === 'Escape') {
                                                       setAddingMilestoneFor(null);
-                                                      setNewMilestone({ title: '', dueDate: '' });
+                                                      setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                     }
                                                   }}
                                                 />
+                                                <Select
+                                                  value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                                  onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                                >
+                                                  <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                                    <SelectValue placeholder="Owner" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {teamMembers.map(member => (
+                                                      <SelectItem key={member.id} value={member.id}>
+                                                        {member.name}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
                                                 <DatePicker placeholder="Select date" 
                                                   value={newMilestone.dueDate}
                                                   onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -4267,7 +4299,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   className="h-8 w-8 p-0 hover:bg-red-100"
                                                   onClick={() => {
                                                     setAddingMilestoneFor(null);
-                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                    setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                   }}
                                                 >
                                                   <X className="h-4 w-4 text-red-600" />
@@ -4280,7 +4312,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                                   setAddingMilestoneFor(priority.id);
                                                   setNewMilestone({ 
                                                     title: '', 
-                                                    dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                    dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                                    ownerId: priority.owner_id || priority.owner?.id || null
                                                   });
                                                 }}
                                               >
@@ -4719,10 +4752,25 @@ const QuarterlyPrioritiesPageClean = () => {
                                               }
                                               if (e.key === 'Escape') {
                                                 setAddingMilestoneFor(null);
-                                                setNewMilestone({ title: '', dueDate: '' });
+                                                setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                               }
                                             }}
                                           />
+                                          <Select
+                                            value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                            onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                          >
+                                            <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                              <SelectValue placeholder="Owner" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {teamMembers.map(member => (
+                                                <SelectItem key={member.id} value={member.id}>
+                                                  {member.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
                                           <DatePicker placeholder="Select date" 
                                             value={newMilestone.dueDate}
                                             onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -4742,7 +4790,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                             className="h-8 w-8 p-0 hover:bg-red-100"
                                             onClick={() => {
                                               setAddingMilestoneFor(null);
-                                              setNewMilestone({ title: '', dueDate: '' });
+                                              setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                             }}
                                           >
                                             <X className="h-4 w-4 text-red-600" />
@@ -4755,7 +4803,8 @@ const QuarterlyPrioritiesPageClean = () => {
                                             setAddingMilestoneFor(priority.id);
                                             setNewMilestone({ 
                                               title: '', 
-                                              dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                              dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                              ownerId: priority.owner_id || priority.owner?.id || null
                                             });
                                           }}
                                         >
