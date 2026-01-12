@@ -687,7 +687,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const milestone = await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, {
         title: newMilestone.title,
-        dueDate: newMilestone.dueDate
+        dueDate: newMilestone.dueDate,
+        ownerId: newMilestone.ownerId || null
       });
       
       console.log('✅ [Milestone] Created milestone:', milestone);
@@ -703,7 +704,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       ));
       
       // Reset form
-      setNewMilestone({ title: '', dueDate: '' });
+      setNewMilestone({ title: '', dueDate: '', ownerId: null });
       setAddingMilestoneFor(null);
       
       // Success feedback
@@ -5524,10 +5525,25 @@ setAddingMilestoneFor(priority.id);
                                                         }
                                                         if (e.key === 'Escape') {
                                                           setAddingMilestoneFor(null);
-                                                          setNewMilestone({ title: '', dueDate: '' });
+                                                          setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                         }
                                                       }}
                                                     />
+                                                    <Select
+                                                      value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                                      onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                                    >
+                                                      <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                                        <SelectValue placeholder="Owner" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {teamMembers.map(member => (
+                                                          <SelectItem key={member.id} value={member.id}>
+                                                            {member.name}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
                                                     <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
                                                       onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -5547,7 +5563,7 @@ setAddingMilestoneFor(priority.id);
                                                       className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                       onClick={() => {
                                                         setAddingMilestoneFor(null);
-                                                        setNewMilestone({ title: '', dueDate: '' });
+                                                        setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                       }}
                                                     >
                                                       <X className="h-4 w-4 text-red-600" />
@@ -5562,7 +5578,8 @@ setAddingMilestoneFor(priority.id);
                                                        const rockDueDate = priority.dueDate || priority.due_date;
                                                        setNewMilestone({ 
                                                          title: '', 
-                                                         dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                         dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                                         ownerId: priority.owner_id || priority.owner?.id || null
                                                        });
                                                     }}
                                                   >
@@ -6038,10 +6055,25 @@ setAddingMilestoneFor(priority.id);
                                                         }
                                                         if (e.key === 'Escape') {
                                                           setAddingMilestoneFor(null);
-                                                          setNewMilestone({ title: '', dueDate: '' });
+                                                          setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                         }
                                                       }}
                                                     />
+                                                    <Select
+                                                      value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                                      onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                                    >
+                                                      <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                                        <SelectValue placeholder="Owner" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {teamMembers.map(member => (
+                                                          <SelectItem key={member.id} value={member.id}>
+                                                            {member.name}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
                                                     <DatePicker placeholder="Select date" 
                                                       value={newMilestone.dueDate}
                                                       onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -6061,7 +6093,7 @@ setAddingMilestoneFor(priority.id);
                                                       className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                       onClick={() => {
                                                         setAddingMilestoneFor(null);
-                                                        setNewMilestone({ title: '', dueDate: '' });
+                                                        setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                       }}
                                                     >
                                                       <X className="h-4 w-4 text-red-600" />
@@ -6076,7 +6108,8 @@ setAddingMilestoneFor(priority.id);
                                                  const rockDueDate = priority.dueDate || priority.due_date;
                                                  setNewMilestone({ 
                                                    title: '', 
-                                                   dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                   dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                                   ownerId: priority.owner_id || priority.owner?.id || null
                                                  });
                                                     }}
                                                   >
@@ -6530,10 +6563,25 @@ setAddingMilestoneFor(priority.id);
                                                   }
                                                   if (e.key === 'Escape') {
                                                     setAddingMilestoneFor(null);
-                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                    setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                   }
                                                 }}
                                               />
+                                              <Select
+                                                value={newMilestone.ownerId || priority.owner_id || priority.owner?.id || ''}
+                                                onValueChange={(value) => setNewMilestone(prev => ({ ...prev, ownerId: value }))}
+                                              >
+                                                <SelectTrigger className="w-32 h-8 text-sm shrink-0">
+                                                  <SelectValue placeholder="Owner" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {teamMembers.map(member => (
+                                                    <SelectItem key={member.id} value={member.id}>
+                                                      {member.name}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
                                               <DatePicker placeholder="Select date" 
                                                 value={newMilestone.dueDate}
                                                 onChange={(value) => setNewMilestone(prev => ({ ...prev, dueDate: value }))}
@@ -6553,7 +6601,7 @@ setAddingMilestoneFor(priority.id);
                                                 className="h-8 w-8 p-0 hover:bg-red-100 flex-shrink-0"
                                                 onClick={() => {
                                                   setAddingMilestoneFor(null);
-                                                  setNewMilestone({ title: '', dueDate: '' });
+                                                  setNewMilestone({ title: '', dueDate: '', ownerId: null });
                                                 }}
                                               >
                                                 <X className="h-4 w-4 text-red-600" />
@@ -6568,7 +6616,8 @@ setAddingMilestoneFor(priority.id);
                                                 const rockDueDate = priority.dueDate || priority.due_date;
                                                 setNewMilestone({ 
                                                   title: '', 
-                                                  dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                  dueDate: rockDueDate ? rockDueDate.split('T')[0] : format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                                                  ownerId: priority.owner_id || priority.owner?.id || null
                                                 });
                                               }}
                                             >
