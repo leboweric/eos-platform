@@ -395,12 +395,6 @@ export const updateTodo = async (req, res) => {
       // Don't update the main todo status here - it will be calculated after
       console.log(`Multi-assignee todo ${todoId}: User ${userId} marking as ${status}`);
       
-      // For multi-assignee todos, use the assigneeId from the request (which assignee's copy to mark)
-      // This allows facilitators to mark specific assignees' copies as complete
-      const targetUserId = assigneeId || userId; // Use assigneeId if provided, otherwise current user
-      
-      console.log(`🔍 Target assignee ID: ${targetUserId} (provided: ${assigneeId}, current user: ${userId})`);
-      
       // Debug: Check what assignees exist for this todo
       const existingAssignees = await query(
         `SELECT user_id, completed FROM todo_assignees WHERE todo_id = $1`,
@@ -408,23 +402,38 @@ export const updateTodo = async (req, res) => {
       );
       console.log(`🔍 Existing assignees for todo:`, existingAssignees.rows);
       
-      // Check if the target assignee exists before attempting update
-      const assigneeExists = existingAssignees.rows.some(a => a.user_id === targetUserId);
-      if (!assigneeExists) {
-        console.log(`⚠️ Assignee ${targetUserId} not found in todo_assignees table`);
-        
-        // If no assigneeId was provided and the current user isn't an assignee,
-        // this is likely a facilitator trying to mark someone else's todo
-        if (!assigneeId) {
-          console.log(`ℹ️ No assigneeId provided and current user ${userId} is not an assignee`);
+      // Determine which assignee to mark as complete
+      // Priority: 1) Explicit assigneeId from request, 2) Current user if they're an assignee, 3) Auto-select if only one assignee
+      let targetUserId = assigneeId;
+      
+      if (!targetUserId) {
+        // Check if current user is an assignee
+        const currentUserIsAssignee = existingAssignees.rows.some(a => a.user_id === userId);
+        if (currentUserIsAssignee) {
+          targetUserId = userId;
+          console.log(`🎯 Using current user as assignee: ${targetUserId}`);
+        } else if (existingAssignees.rows.length === 1) {
+          // Auto-select the only assignee (facilitator marking someone else's todo)
+          targetUserId = existingAssignees.rows[0].user_id;
+          console.log(`🎯 Auto-selecting single assignee: ${targetUserId}`);
+        } else {
+          // Multiple assignees and current user isn't one of them - need explicit selection
+          console.log(`⚠️ Multiple assignees exist and current user ${userId} is not one of them`);
           console.log(`ℹ️ Available assignees:`, existingAssignees.rows.map(a => a.user_id));
           return res.status(400).json({
             success: false,
-            error: `Cannot mark this to-do complete: you are not assigned to it. Please specify which assignee's copy to mark complete.`,
+            error: `This to-do has multiple assignees. Please specify which assignee's copy to mark complete.`,
             availableAssignees: existingAssignees.rows.map(a => a.user_id)
           });
         }
-        
+      }
+      
+      console.log(`🔍 Target assignee ID: ${targetUserId} (provided: ${assigneeId}, current user: ${userId})`);
+      
+      // Verify the target assignee exists
+      const assigneeExists = existingAssignees.rows.some(a => a.user_id === targetUserId);
+      if (!assigneeExists) {
+        console.log(`⚠️ Assignee ${targetUserId} not found in todo_assignees table`);
         return res.status(404).json({
           success: false,
           error: `The specified assignee is not assigned to this to-do. It may have been reassigned to someone else.`
