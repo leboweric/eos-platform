@@ -24,6 +24,18 @@ export class ActivityTrackingService {
     durationMs = null
   }) {
     try {
+      // Skip tracking if required fields are missing
+      // This can happen during login before the user's organization is loaded
+      if (!userId || !organizationId) {
+        console.log('[ActivityTracking] Skipping activity tracking - missing userId or organizationId', {
+          userId: userId || 'missing',
+          organizationId: organizationId || 'missing',
+          actionType,
+          featureName
+        });
+        return null;
+      }
+
       const query = `
         INSERT INTO user_activity (
           user_id, organization_id, action_type, feature_name,
