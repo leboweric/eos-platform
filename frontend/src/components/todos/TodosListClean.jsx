@@ -445,6 +445,15 @@ const TodosListClean = ({
                                     if (todo._currentAssignee) {
                                       updateData.assigneeId = todo._currentAssignee.id;
                                       console.log('✅ Adding assigneeId to request:', updateData.assigneeId);
+                                    } else if (todo.assignees && todo.assignees.length > 0) {
+                                      // Fallback: if _currentAssignee is not set but this is a multi-assignee todo,
+                                      // use the first assignee if there's only one, otherwise log a warning
+                                      if (todo.assignees.length === 1) {
+                                        updateData.assigneeId = todo.assignees[0].id;
+                                        console.log('✅ Using single assignee:', todo.assignees[0].id);
+                                      } else {
+                                        console.log('⚠️ Multi-assignee todo without _currentAssignee, cannot determine which assignee to mark');
+                                      }
                                     } else {
                                       console.log('⚠️ No _currentAssignee found, not adding assigneeId');
                                     }

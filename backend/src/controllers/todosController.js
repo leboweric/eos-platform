@@ -412,9 +412,22 @@ export const updateTodo = async (req, res) => {
       const assigneeExists = existingAssignees.rows.some(a => a.user_id === targetUserId);
       if (!assigneeExists) {
         console.log(`⚠️ Assignee ${targetUserId} not found in todo_assignees table`);
+        
+        // If no assigneeId was provided and the current user isn't an assignee,
+        // this is likely a facilitator trying to mark someone else's todo
+        if (!assigneeId) {
+          console.log(`ℹ️ No assigneeId provided and current user ${userId} is not an assignee`);
+          console.log(`ℹ️ Available assignees:`, existingAssignees.rows.map(a => a.user_id));
+          return res.status(400).json({
+            success: false,
+            error: `Cannot mark this to-do complete: you are not assigned to it. Please specify which assignee's copy to mark complete.`,
+            availableAssignees: existingAssignees.rows.map(a => a.user_id)
+          });
+        }
+        
         return res.status(404).json({
           success: false,
-          error: `You are not assigned to this to-do. It may have been reassigned to someone else.`
+          error: `The specified assignee is not assigned to this to-do. It may have been reassigned to someone else.`
         });
       }
       

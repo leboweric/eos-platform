@@ -2610,6 +2610,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (todo._currentAssignee) {
         updateData.assigneeId = todo._currentAssignee.id;
         console.log('🎯 Level 10 Meeting: Marking multi-assignee todo for assignee:', todo._currentAssignee.id);
+      } else if (todo.assignees && todo.assignees.length > 0) {
+        // Fallback: if _currentAssignee is not set but this is a multi-assignee todo,
+        // try to find the current user in the assignees list
+        const currentUserAssignee = todo.assignees.find(a => a.id === user?.id);
+        if (currentUserAssignee) {
+          updateData.assigneeId = currentUserAssignee.id;
+          console.log('🎯 Level 10 Meeting: Found current user in assignees:', currentUserAssignee.id);
+        } else if (todo.assignees.length === 1) {
+          // If there's only one assignee, use that one
+          updateData.assigneeId = todo.assignees[0].id;
+          console.log('🎯 Level 10 Meeting: Using single assignee:', todo.assignees[0].id);
+        } else {
+          console.log('⚠️ Level 10 Meeting: Multi-assignee todo without _currentAssignee, cannot determine which assignee to mark');
+        }
       }
       
       await todosService.updateTodo(todo.id, updateData);
