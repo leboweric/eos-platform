@@ -18,7 +18,8 @@ const userSocketMap = new Map();
 const disconnectedUsers = new Map();
 
 // Grace period in milliseconds before fully removing a disconnected user
-const DISCONNECT_GRACE_PERIOD_MS = 45000; // 45 seconds
+// Increased from 45s to 5 minutes to handle longer network interruptions during meetings
+const DISCONNECT_GRACE_PERIOD_MS = 300000; // 5 minutes
 
 class MeetingSocketService {
   constructor() {

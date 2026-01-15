@@ -9,6 +9,7 @@ const ENABLE_MEETINGS = import.meta.env.VITE_ENABLE_MEETINGS === 'true';
 const useMeeting = () => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);  // Track if we're attempting to reconnect
   const [meetingCode, setMeetingCode] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [isLeader, setIsLeader] = useState(false);
@@ -56,7 +57,8 @@ const useMeeting = () => {
       path: '/meeting-socket',
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,  // Cap delay at 5 seconds
+      reconnectionAttempts: Infinity,  // Keep trying to reconnect indefinitely
       transports: ['websocket', 'polling']
     });
 
@@ -65,6 +67,7 @@ const useMeeting = () => {
       console.log('📡 Connected to meeting server');
       console.log('📡 Socket ID:', newSocket.id);
       setIsConnected(true);
+      setIsReconnecting(false);  // Clear reconnecting state on successful connect
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -72,6 +75,26 @@ const useMeeting = () => {
       console.error('📡 Room:', meetingCode || 'No room joined');
       console.log('📡 Disconnected from meeting server:', reason);
       setIsConnected(false);
+      // Only set reconnecting if it wasn't a clean disconnect
+      if (reason !== 'io client disconnect' && reason !== 'io server disconnect') {
+        setIsReconnecting(true);
+      }
+    });
+
+    // Track reconnection attempts
+    newSocket.io.on('reconnect_attempt', (attempt) => {
+      console.log(`🔄 Reconnection attempt ${attempt}...`);
+      setIsReconnecting(true);
+    });
+
+    newSocket.io.on('reconnect', (attempt) => {
+      console.log(`✅ Reconnected after ${attempt} attempts`);
+      setIsReconnecting(false);
+    });
+
+    newSocket.io.on('reconnect_failed', () => {
+      console.error('❌ Reconnection failed after all attempts');
+      setIsReconnecting(false);
     });
 
     newSocket.on('connect_error', (error) => {
@@ -651,6 +674,7 @@ const useMeeting = () => {
     // Connection status
     isEnabled: ENABLE_MEETINGS,
     isConnected,
+    isReconnecting,  // True when attempting to reconnect after disconnect
 
     // Meeting state
     meetingCode,
