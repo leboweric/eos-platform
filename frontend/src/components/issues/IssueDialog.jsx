@@ -102,7 +102,10 @@ const IssueDialog = ({
   }, [user]);
 
   useEffect(() => {
-    // Reset initialization flag when issue changes (dialog opens)
+    // Only run when dialog opens (open changes to true)
+    if (!open) return;
+    
+    // Reset initialization flag when dialog opens
     isInitializedRef.current = false;
     
     // Clear error state when dialog opens (for both new and existing issues)
@@ -117,6 +120,7 @@ const IssueDialog = ({
         status: issue.status || 'open'
       });
       // Load existing attachments and updates if editing
+      // Always fetch fresh data when dialog opens
       fetchAttachments(issue.id);
       fetchUpdates(issue.id);
       
@@ -145,7 +149,7 @@ const IssueDialog = ({
     setUpdateText('');
     setShowAddUpdate(false);
     setCreatedIssueId(null); // Reset auto-created issue ID
-  }, [issue]);
+  }, [open, issue]);
 
   // Clear form when dialog opens without an issue
   useEffect(() => {
