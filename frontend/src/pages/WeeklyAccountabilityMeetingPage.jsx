@@ -7391,15 +7391,17 @@ setAddingMilestoneFor(priority.id);
                                                 prevTodos.map(t => {
                                                   if (t.id !== todo.id) return t;
                                                   
-                                                  // For multi-assignee todos, update the specific assignee's completion
-                                                  if (todo._currentAssignee && t.assignees) {
-                                                    const updatedAssignees = t.assignees.map(assignee => 
-                                                      assignee.id === todo._currentAssignee.id
-                                                        ? { ...assignee, completed: !isComplete, completed_at: !isComplete ? new Date().toISOString() : null }
-                                                        : assignee
-                                                    );
-                                                    return { ...t, assignees: updatedAssignees };
-                                                  }
+                                              // For multi-assignee todos, update the specific assignee's completion AND the main status
+                                              if (todo._currentAssignee && t.assignees) {
+                                                const updatedAssignees = t.assignees.map(assignee => 
+                                                  assignee.id === todo._currentAssignee.id
+                                                    ? { ...assignee, completed: !isComplete, completed_at: !isComplete ? new Date().toISOString() : null }
+                                                    : assignee
+                                                );
+                                                // Check if all assignees are now complete
+                                                const allComplete = updatedAssignees.every(a => a.completed);
+                                                return { ...t, assignees: updatedAssignees, status: allComplete ? 'complete' : 'incomplete' };
+                                              }
                                                   
                                                   // For single-assignee todos, update the main status
                                                   return { ...t, status: newStatus };
