@@ -122,21 +122,33 @@ const MultiSelectInline = React.forwardRef(({
                 <div
                   key={option.value}
                   className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
-                  onClick={() => handleToggle(option.value)}
+                  onClick={(e) => {
+                    // Only handle toggle if the click wasn't on the checkbox itself
+                    // The checkbox has its own onCheckedChange handler
+                    if (e.target.closest('[data-slot="checkbox"]')) {
+                      return;
+                    }
+                    handleToggle(option.value);
+                  }}
                 >
                   <Checkbox
                     checked={value.includes(option.value)}
                     onCheckedChange={() => handleToggle(option.value)}
-                    onClick={(e) => e.stopPropagation()}
                   />
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1">
+                  <span 
+                    className="text-sm font-medium leading-none cursor-pointer flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggle(option.value);
+                    }}
+                  >
                     {option.label}
                     {option.description && (
                       <span className="text-xs text-muted-foreground ml-2">
                         {option.description}
                       </span>
                     )}
-                  </label>
+                  </span>
                 </div>
               ))
             )}
