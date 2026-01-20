@@ -628,42 +628,133 @@ const templates = {
   }),
 
   'user-created': (data) => ({
-    subject: `Your account has been created - ${data.organizationName}`,
+    subject: `${data.createdByName} invited you to ${data.organizationName} on AXP`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to AXP!</h2>
-        <p>Hi ${data.firstName},</p>
-        <p>${data.createdByName} has created an account for you to access ${data.organizationName}'s business management system.</p>
-        <p>Here are your login credentials:</p>
-        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
-          <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${data.temporaryPassword}</p>
-        </div>
-        <p style="color: #DC2626; font-weight: bold;">Important: Please change your password after your first login.</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${data.loginUrl}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-            Log In Now
-          </a>
-        </div>
-        <p>If you have any questions, please contact ${data.createdByName} or your organization administrator.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                <!-- Header -->
+                <tr>
+                  <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                    ${data.logoUrl ? `<img src="${data.logoUrl}" alt="${data.organizationName}" style="max-height: 60px; max-width: 200px; margin-bottom: 20px;">` : ''}
+                    <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #111827;">Welcome to ${data.organizationName}!</h1>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 40px;">
+                    <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #374151;">
+                      Hi ${data.firstName},
+                    </p>
+                    <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #374151;">
+                      <strong>${data.createdByName}</strong> has added you to <strong>${data.organizationName}</strong>'s team on AXP.
+                    </p>
+                    
+                    <!-- What is AXP -->
+                    <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 16px 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #166534;">
+                        <strong>What is AXP?</strong><br>
+                        AXP is your team's platform for running on EOS® — manage your Rocks, To-Dos, Issues, Scorecards, and L10 meetings all in one place.
+                      </p>
+                    </div>
+                    
+                    <!-- Credentials Box -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Your Login Credentials</p>
+                      <p style="margin: 0 0 8px 0; font-size: 15px; color: #334155;">
+                        <strong>Email:</strong> <a href="mailto:${data.email}" style="color: #3b82f6; text-decoration: none;">${data.email}</a>
+                      </p>
+                      <p style="margin: 0; font-size: 15px; color: #334155;">
+                        <strong>Temporary Password:</strong> <code style="background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-family: monospace;">${data.temporaryPassword}</code>
+                      </p>
+                    </div>
+                    
+                    <!-- Security Notice -->
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #dc2626; font-weight: 500;">
+                      ⚠️ Important: Please change your password after your first login.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0;">
+                      <a href="${data.loginUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
+                        Log In to AXP
+                      </a>
+                    </div>
+                    
+                    <!-- What's Next -->
+                    <div style="background-color: #fafafa; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 600; color: #111827;">What's Next?</p>
+                      <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
+                        <li>Complete your profile settings</li>
+                        <li>Check your assigned Rocks and To-Dos</li>
+                        <li>Review your team's Scorecard</li>
+                        <li>Join your first L10 meeting</li>
+                      </ul>
+                    </div>
+                    
+                    <!-- Help Text -->
+                    <p style="margin: 24px 0 0 0; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                      If you have any questions, please contact <strong>${data.createdByName}</strong> or your organization administrator.
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+                    <p style="margin: 0 0 8px 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                      You're receiving this email because ${data.createdByName} added you to ${data.organizationName} on AXP.
+                    </p>
+                    <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                      © ${new Date().getFullYear()} AXP Platform • <a href="https://axplatform.co" style="color: #9ca3af;">axplatform.co</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `,
     text: `
-      Welcome to AXP!
-      
-      Hi ${data.firstName},
-      
-      ${data.createdByName} has created an account for you to access ${data.organizationName}'s business management system.
-      
-      Your login credentials:
-      Email: ${data.email}
-      Temporary Password: ${data.temporaryPassword}
-      
-      Important: Please change your password after your first login.
-      
-      Log in here: ${data.loginUrl}
-      
-      If you have any questions, please contact ${data.createdByName} or your organization administrator.
+Welcome to ${data.organizationName}!
+
+Hi ${data.firstName},
+
+${data.createdByName} has added you to ${data.organizationName}'s team on AXP.
+
+What is AXP?
+AXP is your team's platform for running on EOS® — manage your Rocks, To-Dos, Issues, Scorecards, and L10 meetings all in one place.
+
+Your Login Credentials:
+- Email: ${data.email}
+- Temporary Password: ${data.temporaryPassword}
+
+⚠️ Important: Please change your password after your first login.
+
+Log in here: ${data.loginUrl}
+
+What's Next?
+- Complete your profile settings
+- Check your assigned Rocks and To-Dos
+- Review your team's Scorecard
+- Join your first L10 meeting
+
+If you have any questions, please contact ${data.createdByName} or your organization administrator.
+
+---
+You're receiving this email because ${data.createdByName} added you to ${data.organizationName} on AXP.
+© ${new Date().getFullYear()} AXP Platform • axplatform.co
     `
   }),
 

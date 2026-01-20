@@ -163,6 +163,7 @@ export const createUser = async (req, res) => {
     // Get organization details for email
     const orgResult = await query(
       `SELECT o.name as organization_name, 
+              o.logo_url,
               u.first_name || ' ' || u.last_name as created_by_name
        FROM organizations o
        JOIN users u ON u.id = $1
@@ -170,7 +171,7 @@ export const createUser = async (req, res) => {
       [createdBy, organizationId]
     );
 
-    const { organization_name, created_by_name } = orgResult.rows[0];
+    const { organization_name, created_by_name, logo_url } = orgResult.rows[0];
     const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
 
     // Send welcome email with temporary password
@@ -182,7 +183,8 @@ export const createUser = async (req, res) => {
           createdByName: created_by_name,
           email,
           temporaryPassword,
-          loginUrl
+          loginUrl,
+          logoUrl: logo_url
         });
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
