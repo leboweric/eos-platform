@@ -1969,9 +1969,38 @@ function AnnualPlanningMeetingPage() {
 
   const handleCreateTodoFromIssue = async (issue) => {
     try {
+      // Fetch issue updates (discussion notes) to include in the To-Do description
+      let fullDescription = issue.description || '';
+      
+      const updatesResponse = await issuesService.getIssueUpdates(issue.id);
+      const updates = updatesResponse?.data || [];
+      
+      if (updates.length > 0) {
+        // Format updates with timestamps and authors
+        const formattedUpdates = updates
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // Oldest first
+          .map(update => {
+            const date = new Date(update.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            });
+            const author = update.created_by_name || 'Unknown';
+            return `[${date} - ${author}]\n${update.update_text}`;
+          })
+          .join('\n\n');
+        
+        // Combine original description with discussion notes
+        if (fullDescription) {
+          fullDescription = `${fullDescription}\n\n--- Discussion Notes ---\n\n${formattedUpdates}`;
+        } else {
+          fullDescription = `--- Discussion Notes ---\n\n${formattedUpdates}`;
+        }
+      }
+      
       const todoData = {
         title: issue.title,
-        description: issue.description,
+        description: fullDescription,
         priority: issue.priority_level || 'normal',
         assigned_to_id: issue.owner_id,
         due_date: null,

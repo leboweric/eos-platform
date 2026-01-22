@@ -2491,18 +2491,61 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   // Create To-Do from Issue
-  const handleCreateTodoFromIssue = (issue) => {
-    // Transform issue object to include proper fields for TodoDialog
-    setTodoFromIssue({
-      title: issue.title || '',
-      description: issue.description || '',
-      linkedIssueId: issue.id,
-      owner_id: issue.owner_id,
-      assignedToId: issue.owner_id
-    });
-    // Don't set editingTodo for new todos - that's only for existing todos
-    setEditingTodo(null);
-    setShowTodoDialog(true);
+  const handleCreateTodoFromIssue = async (issue) => {
+    try {
+      // Fetch issue updates (discussion notes) to include in the To-Do description
+      let fullDescription = issue.description || '';
+      
+      const updatesResponse = await issuesService.getIssueUpdates(issue.id);
+      const updates = updatesResponse?.data || [];
+      
+      if (updates.length > 0) {
+        // Format updates with timestamps and authors
+        const formattedUpdates = updates
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // Oldest first
+          .map(update => {
+            const date = new Date(update.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            });
+            const author = update.created_by_name || 'Unknown';
+            return `[${date} - ${author}]\n${update.update_text}`;
+          })
+          .join('\n\n');
+        
+        // Combine original description with discussion notes
+        if (fullDescription) {
+          fullDescription = `${fullDescription}\n\n--- Discussion Notes ---\n\n${formattedUpdates}`;
+        } else {
+          fullDescription = `--- Discussion Notes ---\n\n${formattedUpdates}`;
+        }
+      }
+      
+      // Transform issue object to include proper fields for TodoDialog
+      setTodoFromIssue({
+        title: issue.title || '',
+        description: fullDescription,
+        linkedIssueId: issue.id,
+        owner_id: issue.owner_id,
+        assignedToId: issue.owner_id
+      });
+      // Don't set editingTodo for new todos - that's only for existing todos
+      setEditingTodo(null);
+      setShowTodoDialog(true);
+    } catch (error) {
+      console.error('Failed to fetch issue updates for todo:', error);
+      // Fall back to original behavior without updates
+      setTodoFromIssue({
+        title: issue.title || '',
+        description: issue.description || '',
+        linkedIssueId: issue.id,
+        owner_id: issue.owner_id,
+        assignedToId: issue.owner_id
+      });
+      setEditingTodo(null);
+      setShowTodoDialog(true);
+    }
   };
 
   // Todo context menu handlers
