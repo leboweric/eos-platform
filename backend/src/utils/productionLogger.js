@@ -46,7 +46,17 @@ export function initProductionLogging() {
 
   // Override console.log in production
   console.log = (...args) => {
-    const message = args.join(' ');
+    // Safely convert args to string, handling objects
+    const message = args.map(arg => {
+      if (typeof arg === 'string') return arg;
+      if (arg === null) return 'null';
+      if (arg === undefined) return 'undefined';
+      try {
+        return JSON.stringify(arg);
+      } catch (e) {
+        return String(arg);
+      }
+    }).join(' ');
     
     // Check if message matches whitelist
     const shouldLog = whitelistPatterns.some(pattern => pattern.test(message));
