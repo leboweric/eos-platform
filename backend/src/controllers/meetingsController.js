@@ -940,7 +940,7 @@ export const concludeMeeting = async (req, res) => {
         const snapshotData = {
           issues: filteredIssues,
           todos: filteredTodos,
-          attendees: individualRatings || attendees || [],
+          attendees: attendeeNames || individualRatings || attendees || [],
           notes: notes || meetingToSnapshot?.notes || '',
           rating: rating || meetingToSnapshot?.rating,
           metrics: metrics || [],
