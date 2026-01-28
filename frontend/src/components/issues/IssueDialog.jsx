@@ -321,8 +321,10 @@ const IssueDialog = ({
       console.log('user?.id:', user?.id);
       
       // Save the issue first - include the ID if editing an existing issue
+      // Also check createdIssueId in case auto-save already created this issue
+      const existingId = issue?.id || createdIssueId;
       const issueData = {
-        ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing
+        ...(existingId ? { id: existingId } : {}), // Include ID if editing or auto-saved
         title: formData.title,
         description: formData.description,
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),

@@ -4292,10 +4292,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       if (action === 'create' && issue) {
         // Add new issue to the beginning of the appropriate list
+        // Check for duplicates to prevent broadcast echo from adding same issue twice
         if (issue.timeline === 'short_term') {
-          setShortTermIssues(prev => [issue, ...prev]);
+          setShortTermIssues(prev => {
+            if (prev.some(i => i.id === issue.id)) return prev; // Already exists
+            return [issue, ...prev];
+          });
         } else {
-          setLongTermIssues(prev => [issue, ...prev]);
+          setLongTermIssues(prev => {
+            if (prev.some(i => i.id === issue.id)) return prev; // Already exists
+            return [issue, ...prev];
+          });
         }
       } else if (action === 'update' && issue) {
         // Update existing issue - replace entire issue with updated one
