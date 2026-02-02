@@ -108,8 +108,14 @@ const IssueDialog = ({
     // Reset initialization flag when dialog opens
     isInitializedRef.current = false;
     
+    // CRITICAL: Reset hasUnsavedChanges when dialog opens to prevent false saves
+    setHasUnsavedChanges(false);
+    
     // Clear error state when dialog opens (for both new and existing issues)
     setError(null);
+    
+    // Debug logging to track issue ID
+    console.log('🔧 IssueDialog opened with issue:', issue?.id ? `ID: ${issue.id}` : 'NEW ISSUE');
     
     if (issue) {
       setFormData({
@@ -226,10 +232,19 @@ const IssueDialog = ({
     // Require at least a title to auto-save
     if (!formData.title.trim()) return;
     
+    // CRITICAL: Get the issue ID - must exist for editing
+    const issueId = issue?.id || createdIssueId;
+    
+    // Debug logging to track the save
+    console.log('💾 performAutoSave called:', {
+      issueId,
+      'issue?.id': issue?.id,
+      createdIssueId,
+      title: formData.title.substring(0, 30)
+    });
+    
     try {
       setAutoSaving(true);
-      // Use createdIssueId if we've already created this issue via auto-save
-      const issueId = issue?.id || createdIssueId;
       
       const savedIssue = await onSave({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
@@ -902,9 +917,20 @@ const IssueDialog = ({
               onClick={issue?.id ? async () => {
                 // Clear any validation errors first
                 setError(null);
+                
+                // Debug logging
+                console.log('🔘 Close button clicked:', {
+                  hasUnsavedChanges,
+                  'issue?.id': issue?.id,
+                  'formData.title': formData.title.substring(0, 30)
+                });
+                
                 // If there are unsaved changes, save before closing
                 if (hasUnsavedChanges && formData.title.trim()) {
+                  console.log('💾 Triggering save before close...');
                   await performAutoSave();
+                } else {
+                  console.log('✅ No unsaved changes, just closing');
                 }
                 onClose();
               } : undefined}
