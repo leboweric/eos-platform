@@ -4849,7 +4849,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                 // Include quarterly metrics in weekly view since they track weekly data points
                 const filteredMetrics = scorecardMetrics.filter(m => 
                   m.type === scorecardViewType || (scorecardViewType === 'weekly' && m.type === 'quarterly')
-                );
+                ).sort((a, b) => {
+                  // Sort by group_id first (null groups go last), then by display_order
+                  if (a.group_id === b.group_id) {
+                    return (a.display_order || 0) - (b.display_order || 0);
+                  }
+                  if (a.group_id === null) return 1;
+                  if (b.group_id === null) return -1;
+                  return a.group_id.localeCompare(b.group_id);
+                });
                 console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
                   viewType: scorecardViewType,
                   totalMetrics: scorecardMetrics.length,
