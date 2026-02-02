@@ -15,6 +15,9 @@ const MultiSelectInline = React.forwardRef(({
 }, ref) => {
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef(null);
+  
+  // Use a ref to track if we're currently processing a toggle to prevent double-firing
+  const isTogglingRef = React.useRef(false);
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -30,12 +33,24 @@ const MultiSelectInline = React.forwardRef(({
     }
   }, [open]);
 
-  const handleToggle = (optionValue) => {
+  const handleToggle = React.useCallback((optionValue) => {
+    // Prevent double-firing
+    if (isTogglingRef.current) {
+      return;
+    }
+    
+    isTogglingRef.current = true;
+    
     const newValue = value.includes(optionValue)
       ? value.filter(v => v !== optionValue)
       : [...value, optionValue];
     onChange?.(newValue);
-  };
+    
+    // Reset the flag after a short delay to allow the state update to complete
+    setTimeout(() => {
+      isTogglingRef.current = false;
+    }, 100);
+  }, [value, onChange]);
 
   const handleRemove = (optionValue, e) => {
     e.stopPropagation();
@@ -123,24 +138,24 @@ const MultiSelectInline = React.forwardRef(({
                   key={option.value}
                   className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer"
                   onClick={(e) => {
-                    // Only handle toggle if the click wasn't on the checkbox itself
-                    // The checkbox has its own onCheckedChange handler
-                    if (e.target.closest('[data-slot="checkbox"]')) {
-                      return;
-                    }
+                    // Stop propagation and handle toggle for the entire row
+                    e.stopPropagation();
                     handleToggle(option.value);
                   }}
                 >
                   <Checkbox
                     checked={value.includes(option.value)}
-                    onCheckedChange={() => handleToggle(option.value)}
+                    onClick={(e) => {
+                      // Stop the click from bubbling to parent div
+                      e.stopPropagation();
+                    }}
+                    onCheckedChange={() => {
+                      // This is triggered by Radix when checkbox state changes
+                      handleToggle(option.value);
+                    }}
                   />
                   <span 
                     className="text-sm font-medium leading-none cursor-pointer flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggle(option.value);
-                    }}
                   >
                     {option.label}
                     {option.description && (
