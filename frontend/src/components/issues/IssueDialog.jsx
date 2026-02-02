@@ -913,27 +913,40 @@ const IssueDialog = ({
               Cancel
             </Button>
             <Button 
-              type={issue?.id ? 'button' : 'submit'}
-              onClick={issue?.id ? async () => {
-                // Clear any validation errors first
-                setError(null);
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault(); // Prevent any form submission
+                
+                // Get the current issue ID - check both the prop and createdIssueId
+                const currentIssueId = issue?.id || createdIssueId;
                 
                 // Debug logging
-                console.log('🔘 Close button clicked:', {
-                  hasUnsavedChanges,
+                console.log('🔘 Save/Close button clicked:', {
+                  currentIssueId,
                   'issue?.id': issue?.id,
+                  createdIssueId,
+                  hasUnsavedChanges,
                   'formData.title': formData.title.substring(0, 30)
                 });
                 
-                // If there are unsaved changes, save before closing
-                if (hasUnsavedChanges && formData.title.trim()) {
-                  console.log('💾 Triggering save before close...');
-                  await performAutoSave();
+                // If this is an existing issue (editing), just close
+                if (currentIssueId) {
+                  // If there are unsaved changes, save before closing
+                  if (hasUnsavedChanges && formData.title.trim()) {
+                    console.log('💾 Triggering save before close...');
+                    setError(null);
+                    await performAutoSave();
+                  } else {
+                    console.log('✅ No unsaved changes, just closing');
+                  }
+                  onClose();
                 } else {
-                  console.log('✅ No unsaved changes, just closing');
+                  // This is a new issue - trigger form submission via handleSubmit
+                  console.log('📝 Creating new issue via handleSubmit...');
+                  // Call handleSubmit directly instead of form submission
+                  await handleSubmit(e);
                 }
-                onClose();
-              } : undefined}
+              }}
               disabled={loading || uploadingFiles}
               className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
               style={{
@@ -948,7 +961,7 @@ const IssueDialog = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {issue?.id ? 'Close' : 'Create'}
+                  {(issue?.id || createdIssueId) ? 'Close' : 'Create'}
                 </>
               )}
             </Button>
