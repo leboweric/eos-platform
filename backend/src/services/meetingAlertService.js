@@ -13,6 +13,13 @@ const ALERT_CONFIG = {
   // Email recipient for meeting alerts (platform admin)
   alertEmail: process.env.MEETING_ALERT_EMAIL || 'eric@profitbuildernetwork.com',
   
+  // Organization-specific additional recipients
+  // These recipients will receive alerts IN ADDITION to the main alertEmail
+  orgSpecificRecipients: {
+    // Boyum IT Consulting - also send to Travis Noe
+    'ed4b6ac8-77b8-4842-a67a-7198ec7c9c5e': ['tnoe@myboyum.com']
+  },
+  
   // Severity levels that trigger immediate email alerts
   emailAlertSeverities: ['error', 'critical'],
   
@@ -199,15 +206,26 @@ ${errorDetails.errorMessage}
       </div>
     `;
     
-    // Send the email
-    await sendEmail(ALERT_CONFIG.alertEmail, 'meetingAlert', {
-      subject,
-      htmlContent,
-      errorId,
-      orgName,
-      errorType: errorDetails.errorType,
-      severity: errorDetails.severity
-    });
+    // Build list of recipients - main alert email plus any org-specific recipients
+    const recipients = [ALERT_CONFIG.alertEmail];
+    const orgSpecificRecipients = ALERT_CONFIG.orgSpecificRecipients[errorDetails.organizationId] || [];
+    recipients.push(...orgSpecificRecipients);
+    
+    // Send the email to all recipients
+    const emailPromises = recipients.map(recipient => 
+      sendEmail(recipient, 'meetingAlert', {
+        subject,
+        htmlContent,
+        errorId,
+        orgName,
+        errorType: errorDetails.errorType,
+        severity: errorDetails.severity
+      }).catch(err => {
+        console.error(`🚨 [MeetingAlert] Failed to send to ${recipient}:`, err.message);
+      })
+    );
+    
+    await Promise.all(emailPromises);
     
     // Mark alert as sent
     await db.query(
@@ -215,7 +233,7 @@ ${errorDetails.errorMessage}
       [errorId]
     );
     
-    console.log(`🚨 [MeetingAlert] Email alert sent for error ${errorId}`);
+    console.log(`🚨 [MeetingAlert] Email alert sent for error ${errorId} to ${recipients.length} recipients: ${recipients.join(', ')}`);
   } catch (err) {
     console.error('🚨 [MeetingAlert] Failed to send alert email:', err.message);
   }
