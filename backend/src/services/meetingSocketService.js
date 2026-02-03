@@ -301,21 +301,38 @@ class MeetingSocketService {
       // Handle navigation events (leader only)
       socket.on('navigate', (data) => {
         const userInfo = userSocketMap.get(socket.id);
-        if (!userInfo) return;
+        if (!userInfo) {
+          console.log(`⚠️ [NAV] Navigate event received but no userInfo for socket ${socket.id}`);
+          return;
+        }
 
         const meeting = meetings.get(userInfo.meetingCode);
-        if (!meeting) return;
+        if (!meeting) {
+          console.log(`⚠️ [NAV] Navigate event but meeting not found: ${userInfo.meetingCode}`);
+          return;
+        }
 
         // Only leader can broadcast navigation
         if (meeting.leader !== userInfo.userId) {
+          console.log(`⚠️ [NAV] Non-leader ${userInfo.userName} (${userInfo.userId}) tried to navigate. Leader is: ${meeting.leader}`);
           socket.emit('error', { message: 'Only leader can control navigation' });
           return;
         }
 
         // Update meeting state
+        const previousSection = meeting.currentSection;
         meeting.currentRoute = data.route;
         meeting.currentSection = data.section;
         meeting.scrollPosition = data.scrollPosition || 0;
+
+        // Get participant count for logging
+        const participantCount = meeting.participants.size;
+        const participantNames = Array.from(meeting.participants.values()).map(p => p.name).join(', ');
+
+        // ALWAYS log navigation events for debugging (critical for Boyum meeting diagnosis)
+        console.log(`📍 [NAV] Leader ${userInfo.userName} navigated: ${previousSection || 'start'} → ${data.section || 'none'}`);
+        console.log(`📍 [NAV] Meeting: ${userInfo.meetingCode}, Participants (${participantCount}): ${participantNames}`);
+        console.log(`📍 [NAV] Broadcasting navigation-update to ${participantCount - 1} followers`);
 
         // Broadcast to all participants
         socket.to(userInfo.meetingCode).emit('navigation-update', {
@@ -323,11 +340,6 @@ class MeetingSocketService {
           section: data.section,
           scrollPosition: data.scrollPosition
         });
-
-        if (process.env.LOG_LEVEL === 'debug') {
-          console.log(`📍 Leader ${userInfo.userId} navigated to route: ${data.route}, section: ${data.section || 'none'}`);
-          console.log(`📍 Broadcasting to meeting: ${userInfo.meetingCode}`);
-        }
       });
 
       // Handle follow toggle
@@ -340,7 +352,11 @@ class MeetingSocketService {
 
         const participant = meeting.participants.get(userInfo.userId);
         if (participant) {
+          const wasFollowing = participant.isFollowing;
           participant.isFollowing = data.isFollowing;
+          
+          // Log follow status changes (important for diagnosing "not following" issues)
+          console.log(`👁️ [FOLLOW] ${userInfo.userName} changed follow status: ${wasFollowing} → ${data.isFollowing} in meeting ${userInfo.meetingCode}`);
           
           // Notify others of follow status change
           socket.to(userInfo.meetingCode).emit('participant-follow-changed', {
@@ -993,6 +1009,19 @@ class MeetingSocketService {
     const userName = participant ? participant.name : 'Unknown';
     const wasLeader = meeting.leader === userInfo.userId;
     const { meetingCode, userId } = userInfo;
+
+    // Log disconnect with full context for debugging
+    const remainingParticipants = meeting.participants.size - 1; // -1 because this user is leaving
+    const participantNames = Array.from(meeting.participants.values())
+      .filter(p => p.id !== userId)
+      .map(p => p.name)
+      .join(', ');
+    
+    console.log(`🔌 [DISCONNECT] ${userName} disconnecting from meeting ${meetingCode}`);
+    console.log(`🔌 [DISCONNECT] Was leader: ${wasLeader}, Remaining participants (${remainingParticipants}): ${participantNames || 'none'}`);
+    if (meeting.dbSessionId) {
+      console.log(`🔌 [DISCONNECT] Meeting has active DB session: ${meeting.dbSessionId}`);
+    }
 
     // Remove socket mapping immediately (socket is no longer valid)
     userSocketMap.delete(socket.id);
