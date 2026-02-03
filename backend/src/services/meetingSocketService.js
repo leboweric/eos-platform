@@ -5,6 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import transcriptionService from './transcriptionService.js';
 import aiSummaryService from './aiSummaryService.js';
 import { logMeetingError } from './meetingAlertService.js';
+import { pool } from '../config/database.js';
 
 // Feature flag - can be disabled instantly via environment variable
 const ENABLE_MEETINGS = process.env.ENABLE_MEETINGS === 'true';
@@ -71,7 +72,7 @@ class MeetingSocketService {
       }
 
       // Handle joining a meeting
-      socket.on('join-meeting', (data) => {
+      socket.on('join-meeting', async (data) => {
         const { meetingCode, userId, userName, isLeader } = data;
 
         if (!meetingCode) {
@@ -104,10 +105,23 @@ class MeetingSocketService {
             
             console.log(`✅ User ${userName} removed from old meeting ${existingSocketData.meetingCode}`);
             
-            // Clean up empty meetings
+            // Clean up empty meetings - but check database first
             if (oldMeeting.participants.size === 0) {
-              meetings.delete(existingSocketData.meetingCode);
-              console.log(`🗑️ Old meeting ${existingSocketData.meetingCode} deleted (no participants)`);
+              // Check if there's an active database session before deleting
+              const oldIds = this.extractIdsFromMeetingCode(existingSocketData.meetingCode);
+              if (oldIds) {
+                const oldDbSession = await this.checkActiveDatabaseSession(oldIds.orgId, oldIds.teamId, oldIds.meetingType);
+                if (oldDbSession) {
+                  console.log(`📊 [SYNC] Preserving meeting ${existingSocketData.meetingCode} - active database session exists`);
+                  // Don't delete - keep the meeting shell for reconnections
+                } else {
+                  meetings.delete(existingSocketData.meetingCode);
+                  console.log(`🗑️ Old meeting ${existingSocketData.meetingCode} deleted (no participants, no active DB session)`);
+                }
+              } else {
+                meetings.delete(existingSocketData.meetingCode);
+                console.log(`🗑️ Old meeting ${existingSocketData.meetingCode} deleted (no participants)`);
+              }
             } else if (wasLeaderOfOldMeeting) {
               // LEADER PROTECTION: Don't transfer leadership, just mark as disconnected
               oldMeeting.leaderDisconnected = true;
@@ -141,6 +155,19 @@ class MeetingSocketService {
 
         // Create meeting if it doesn't exist
         if (!meetings.has(meetingCode)) {
+          // CRITICAL FIX: Check for active database session before creating new in-memory meeting
+          // This ensures we sync with the database state and don't create orphaned meetings
+          const meetingIds = this.extractIdsFromMeetingCode(meetingCode);
+          let dbSession = null;
+          
+          if (meetingIds) {
+            dbSession = await this.checkActiveDatabaseSession(meetingIds.orgId, meetingIds.teamId, meetingIds.meetingType);
+            if (dbSession) {
+              console.log(`📊 [SYNC] Found active database session - syncing in-memory state`);
+              console.log(`📊 [SYNC] DB Session ID: ${dbSession.sessionId}, Facilitator: ${dbSession.facilitatorName}`);
+            }
+          }
+          
           // Determine initial route based on meeting type
           let initialRoute = '/';
           if (meetingCode.includes('-weekly-accountability')) {
@@ -163,20 +190,45 @@ class MeetingSocketService {
             initialRoute = `/meetings/annual-planning/${teamId}`;
           }
           
+          // If there's an active database session, sync the leader from it
+          // This prevents the "first joiner becomes leader" issue when the original leader disconnected
+          let syncedLeader = isLeader ? userId : null;
+          let syncedOriginalLeader = isLeader ? userId : null;
+          let syncedLeaderDisconnected = false;
+          
+          if (dbSession) {
+            // If the current user is the original facilitator from the database, make them leader
+            if (userId === dbSession.facilitatorId) {
+              syncedLeader = userId;
+              syncedOriginalLeader = userId;
+              syncedLeaderDisconnected = false;
+              console.log(`👑 [SYNC] User ${userName} is the original facilitator - restoring leadership`);
+            } else {
+              // Someone else is joining - the original facilitator is the leader but disconnected
+              syncedLeader = dbSession.facilitatorId;
+              syncedOriginalLeader = dbSession.facilitatorId;
+              syncedLeaderDisconnected = true;
+              console.log(`⚠️ [SYNC] User ${userName} joining - original facilitator (${dbSession.facilitatorName}) is disconnected`);
+            }
+          }
+          
           meetings.set(meetingCode, {
             code: meetingCode,
-            leader: isLeader ? userId : null,
-            originalLeader: isLeader ? userId : null,  // Store original leader - never changes
-            leaderDisconnected: false,  // Track if leader is currently disconnected
+            leader: syncedLeader,
+            originalLeader: syncedOriginalLeader,
+            leaderDisconnected: syncedLeaderDisconnected,
             participants: new Map(),
             ratings: new Map(),  // Initialize ratings Map
             currentRoute: initialRoute,
-            currentSection: null,
+            currentSection: dbSession?.currentSection || null,  // Sync section from database
             scrollPosition: 0,
-            createdAt: new Date(),
+            createdAt: dbSession?.startTime || new Date(),
             timerStartTime: null,
-            timerPaused: false
+            timerPaused: dbSession?.isPaused || false,
+            dbSessionId: dbSession?.sessionId || null  // Store database session ID for reference
           });
+          
+          console.log(`🆕 [SYNC] Created in-memory meeting ${meetingCode} (synced with DB: ${!!dbSession})`);
         }
 
         const meeting = meetings.get(meetingCode);
@@ -996,7 +1048,7 @@ class MeetingSocketService {
   }
 
   // Called after grace period expires - fully removes user from meeting
-  finalizeUserRemoval(meetingCode, userId, userName, wasLeader) {
+  async finalizeUserRemoval(meetingCode, userId, userName, wasLeader) {
     const disconnectKey = `${meetingCode}:${userId}`;
 
     // Check if user reconnected during grace period
@@ -1024,10 +1076,34 @@ class MeetingSocketService {
     // Broadcast updated active meetings
     this.broadcastActiveMeetings();
 
-    // Clean up empty meetings
+    // Clean up empty meetings - but check database session first
     if (meeting.participants.size === 0) {
-      meetings.delete(meetingCode);
-      console.log(`🗑️ Meeting ${meetingCode} ended (no participants)`);
+      // CRITICAL FIX: Check if there's an active database session before deleting
+      // This prevents the "split-brain" issue where the in-memory meeting is deleted
+      // but the database session is still active, causing reconnection issues
+      const meetingIds = this.extractIdsFromMeetingCode(meetingCode);
+      let shouldPreserveMeeting = false;
+      
+      if (meetingIds) {
+        try {
+          const dbSession = await this.checkActiveDatabaseSession(meetingIds.orgId, meetingIds.teamId, meetingIds.meetingType);
+          if (dbSession) {
+            shouldPreserveMeeting = true;
+            console.log(`📊 [SYNC] Preserving empty meeting ${meetingCode} - active database session exists (ID: ${dbSession.sessionId})`);
+            // Keep the meeting shell but mark it as having no participants
+            // This allows reconnecting users to join the same meeting
+          }
+        } catch (error) {
+          console.error(`⚠️ [SYNC] Error checking database session for ${meetingCode}:`, error);
+          // On error, preserve the meeting to be safe
+          shouldPreserveMeeting = true;
+        }
+      }
+      
+      if (!shouldPreserveMeeting) {
+        meetings.delete(meetingCode);
+        console.log(`🗑️ Meeting ${meetingCode} ended (no participants, no active DB session)`);
+      }
     } else if (wasLeader) {
       // LEADER PROTECTION: Never auto-transfer leadership
       // Instead, mark the leader as disconnected and notify participants
@@ -1091,6 +1167,88 @@ class MeetingSocketService {
   // Method to check if meetings are enabled
   static isEnabled() {
     return ENABLE_MEETINGS;
+  }
+
+  // Check for active database session for a team
+  // This syncs the WebSocket in-memory state with the database session
+  async checkActiveDatabaseSession(orgId, teamId, meetingType) {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          SELECT 
+            ms.*,
+            CONCAT(u.first_name, ' ', u.last_name) as facilitator_name
+          FROM meeting_sessions ms
+          LEFT JOIN users u ON ms.facilitator_id = u.id
+          WHERE ms.team_id = $1 
+            AND ms.meeting_type = $2 
+            AND ms.is_active = true
+          ORDER BY ms.created_at DESC
+          LIMIT 1
+        `, [teamId, meetingType]);
+
+        if (result.rows.length > 0) {
+          const session = result.rows[0];
+          console.log(`📊 [SYNC] Found active database session for team ${teamId}: ${session.id}`);
+          return {
+            sessionId: session.id,
+            facilitatorId: session.facilitator_id,
+            facilitatorName: session.facilitator_name,
+            startTime: session.start_time,
+            isPaused: session.is_paused,
+            currentSection: session.current_section
+          };
+        }
+        return null;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error checking active database session:', error);
+      return null;
+    }
+  }
+
+  // Extract orgId and teamId from meeting code
+  extractIdsFromMeetingCode(meetingCode) {
+    try {
+      // Determine meeting type suffix
+      let meetingType = null;
+      if (meetingCode.includes('-weekly-express')) meetingType = 'weekly';
+      else if (meetingCode.includes('-weekly-accountability')) meetingType = 'weekly';
+      else if (meetingCode.includes('-quarterly-planning')) meetingType = 'quarterly';
+      else if (meetingCode.includes('-annual-planning')) meetingType = 'annual';
+      
+      if (!meetingType) return null;
+
+      // Extract the suffix to remove
+      let suffix;
+      if (meetingCode.includes('-weekly-express')) suffix = '-weekly-express';
+      else if (meetingCode.includes('-weekly-accountability')) suffix = '-weekly-accountability';
+      else if (meetingCode.includes('-quarterly-planning')) suffix = '-quarterly-planning';
+      else if (meetingCode.includes('-annual-planning')) suffix = '-annual-planning';
+
+      const withoutSuffix = meetingCode.slice(0, -suffix.length);
+      
+      let orgId, teamId;
+      if (withoutSuffix.length === 73) {
+        // New format: orgId-teamId (73 characters: 36 + 1 + 36)
+        orgId = withoutSuffix.slice(0, 36);
+        teamId = withoutSuffix.slice(-36);
+      } else if (withoutSuffix.length === 36) {
+        // Legacy format: just teamId
+        teamId = withoutSuffix;
+        orgId = null;
+      } else {
+        return null;
+      }
+
+      return { orgId, teamId, meetingType };
+    } catch (error) {
+      console.error('Error extracting IDs from meeting code:', error);
+      return null;
+    }
   }
 
   // Method to get meeting stats (for monitoring)
