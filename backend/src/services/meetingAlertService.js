@@ -28,7 +28,14 @@ const ALERT_CONFIG = {
     'snapshot_failed': 'error',
     'data_loss': 'critical',
     'session_orphaned': 'error',
-    'unexpected_error': 'error'
+    'unexpected_error': 'error',
+    // WebSocket sync errors (added for Boyum meeting diagnosis)
+    'leader_disconnected_no_return': 'error',  // Leader left and didn't come back
+    'split_brain_detected': 'critical',  // Participants in different meeting states
+    'navigation_broadcast_failed': 'error',  // Navigation events not broadcasting
+    'db_sync_failed': 'error',  // Database session sync failed
+    'all_participants_disconnected': 'warning',  // Everyone left but DB session active
+    'leader_mismatch': 'error'  // In-memory leader doesn't match DB facilitator
   }
 };
 

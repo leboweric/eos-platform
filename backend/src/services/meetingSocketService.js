@@ -209,6 +209,25 @@ class MeetingSocketService {
               syncedOriginalLeader = dbSession.facilitatorId;
               syncedLeaderDisconnected = true;
               console.log(`⚠️ [SYNC] User ${userName} joining - original facilitator (${dbSession.facilitatorName}) is disconnected`);
+              
+              // ALERT: Notify that a participant is joining a meeting with a disconnected leader
+              if (meetingIds?.orgId) {
+                logMeetingError({
+                  organizationId: meetingIds.orgId,
+                  sessionId: dbSession.sessionId,
+                  userId: userId,
+                  errorType: 'leader_mismatch',
+                  errorMessage: `User "${userName}" joined meeting but original facilitator "${dbSession.facilitatorName}" is not present. Meeting may have sync issues.`,
+                  meetingType: meetingIds.meetingType,
+                  severity: 'warning',
+                  context: {
+                    meetingCode,
+                    joiningUser: userName,
+                    originalFacilitator: dbSession.facilitatorName,
+                    dbSessionId: dbSession.sessionId
+                  }
+                }).catch(err => console.error('Failed to log leader mismatch alert:', err));
+              }
             }
           }
           
@@ -1143,6 +1162,26 @@ class MeetingSocketService {
         message: 'The meeting leader has disconnected. Waiting for them to reconnect...'
       });
       console.log(`⚠️ Leader ${userName} disconnected from meeting ${meetingCode} - NOT transferring leadership`);
+      
+      // ALERT: Send email notification when leader disconnects and doesn't return
+      const meetingIds = this.extractIdsFromMeetingCode(meetingCode);
+      if (meetingIds) {
+        const participantNames = Array.from(meeting.participants.values()).map(p => p.name).join(', ');
+        logMeetingError({
+          organizationId: meetingIds.orgId,
+          errorType: 'leader_disconnected_no_return',
+          errorMessage: `Leader "${userName}" disconnected from meeting and did not return within the ${DISCONNECT_GRACE_PERIOD_MS/1000}s grace period. ${meeting.participants.size} participants are still in the meeting without a leader.`,
+          meetingType: meetingIds.meetingType,
+          participantsCount: meeting.participants.size,
+          context: {
+            meetingCode,
+            leaderName: userName,
+            leaderId: userId,
+            remainingParticipants: participantNames,
+            gracePeriodSeconds: DISCONNECT_GRACE_PERIOD_MS / 1000
+          }
+        }).catch(err => console.error('Failed to log leader disconnect alert:', err));
+      }
     }
   }
 
