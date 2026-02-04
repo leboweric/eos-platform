@@ -860,7 +860,7 @@ const IssueDialog = ({
                       currentUpdates: updates
                     };
                     onCreateTodo(issueWithCurrentUpdates);
-                    onClose();
+                    // Keep dialog open so user can continue working on the issue
                   }}
                   className="text-sm whitespace-nowrap"
                 >
