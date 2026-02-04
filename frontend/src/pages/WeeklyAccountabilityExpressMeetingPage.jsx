@@ -2484,8 +2484,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Fetch issue updates (discussion notes) to include in the To-Do description
       let fullDescription = issue.description || '';
       
-      const updatesResponse = await issuesService.getIssueUpdates(issue.id);
-      const updates = updatesResponse?.data || [];
+      // Use currentUpdates if passed from IssueDialog (contains unsaved updates)
+      // Otherwise fetch from database
+      let updates = [];
+      if (issue.currentUpdates && issue.currentUpdates.length > 0) {
+        // Use the updates passed directly from the dialog (includes unsaved ones)
+        updates = issue.currentUpdates;
+        console.log('📝 Using currentUpdates from dialog:', updates.length, 'updates');
+      } else {
+        // Fetch from database as fallback
+        const updatesResponse = await issuesService.getIssueUpdates(issue.id);
+        updates = updatesResponse?.data || [];
+        console.log('📝 Fetched updates from database:', updates.length, 'updates');
+      }
       
       if (updates.length > 0) {
         // Format updates with timestamps and authors

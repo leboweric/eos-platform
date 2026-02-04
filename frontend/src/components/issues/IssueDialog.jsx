@@ -853,7 +853,13 @@ const IssueDialog = ({
                   variant="outline"
                   size="default"
                   onClick={() => {
-                    onCreateTodo(issue);
+                    // Pass current issue state with updates to ensure linked to-do gets all notes
+                    const issueWithCurrentUpdates = {
+                      ...issue,
+                      description: formData.description,
+                      currentUpdates: updates
+                    };
+                    onCreateTodo(issueWithCurrentUpdates);
                     onClose();
                   }}
                   className="text-sm whitespace-nowrap"

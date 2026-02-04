@@ -22,9 +22,13 @@ const disconnectedUsers = new Map();
 // Increased from 45s to 5 minutes to handle longer network interruptions during meetings
 const DISCONNECT_GRACE_PERIOD_MS = 300000; // 5 minutes
 
+// Heartbeat interval for periodic database sync (30 seconds)
+const HEARTBEAT_SYNC_INTERVAL_MS = 30000;
+
 class MeetingSocketService {
   constructor() {
     this.io = null;
+    this.heartbeatInterval = null;
   }
 
   initialize(server) {
@@ -63,7 +67,81 @@ class MeetingSocketService {
     });
 
     this.setupEventHandlers();
+    this.startHeartbeatSync();
   }
+
+  // ============ PERIODIC HEARTBEAT SYNC ============
+  // Syncs all active meetings to database every 30 seconds to prevent state loss
+  startHeartbeatSync() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    this.heartbeatInterval = setInterval(async () => {
+      try {
+        const activeMeetings = Array.from(meetings.entries());
+        if (activeMeetings.length === 0) return;
+
+        console.log(`💓 [HEARTBEAT] Syncing ${activeMeetings.length} active meetings to database...`);
+
+        for (const [meetingCode, meeting] of activeMeetings) {
+          if (meeting.participants.size === 0) continue;
+
+          try {
+            const ids = this.extractIdsFromMeetingCode(meetingCode);
+            if (!ids) continue;
+
+            const client = await pool.connect();
+            try {
+              // Update the session with current state
+              const result = await client.query(`
+                UPDATE meeting_sessions
+                SET 
+                  current_section = $1,
+                  participant_count = $2,
+                  updated_at = NOW()
+                WHERE team_id = $3 AND is_active = true
+                RETURNING id
+              `, [meeting.currentSection, meeting.participants.size, ids.teamId]);
+
+              if (result.rows.length > 0) {
+                console.log(`💓 [HEARTBEAT] Synced meeting ${meetingCode}: section=${meeting.currentSection}, participants=${meeting.participants.size}`);
+              }
+            } finally {
+              client.release();
+            }
+          } catch (meetingError) {
+            console.error(`💓 [HEARTBEAT] Failed to sync meeting ${meetingCode}:`, meetingError.message);
+            // Alert on repeated heartbeat failures
+            logMeetingError({
+              organizationId: ids.orgId,
+              errorType: 'heartbeat_sync_failure',
+              severity: 'warning',
+              errorMessage: `Heartbeat sync failed for meeting: ${meetingError.message}`,
+              context: {
+                meetingCode,
+                currentSection: meeting.currentSection,
+                participantCount: meeting.participants.size
+              }
+            }).catch(err => console.error('Failed to log heartbeat alert:', err));
+          }
+        }
+      } catch (error) {
+        console.error('💓 [HEARTBEAT] Error during heartbeat sync:', error.message);
+      }
+    }, HEARTBEAT_SYNC_INTERVAL_MS);
+
+    console.log(`💓 [HEARTBEAT] Started periodic database sync every ${HEARTBEAT_SYNC_INTERVAL_MS / 1000}s`);
+  }
+
+  stopHeartbeatSync() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+      console.log('💓 [HEARTBEAT] Stopped periodic database sync');
+    }
+  }
+  // ============ END HEARTBEAT SYNC ============
 
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
@@ -287,6 +365,53 @@ class MeetingSocketService {
         // MONITORING: Log successful join
         console.log(`✅ [MEETING HEALTH] User ${userName} joined meeting ${meetingCode} (participants: ${meeting.participants.size}, leader: ${meeting.leader === userId ? 'YES' : 'NO'})`);
 
+        // ============ SYNC VALIDATION ON RECONNECT ============
+        // Fetch latest state from database to ensure reconnecting user gets accurate data
+        let dbSyncedSection = meeting.currentSection;
+        let dbSyncedTimerPaused = meeting.timerPaused;
+        
+        if (isReconnecting) {
+          try {
+            const syncIds = this.extractIdsFromMeetingCode(meetingCode);
+            if (syncIds) {
+              const client = await pool.connect();
+              try {
+                const syncResult = await client.query(`
+                  SELECT current_section, is_paused, section_timings
+                  FROM meeting_sessions
+                  WHERE team_id = $1 AND is_active = true
+                  ORDER BY created_at DESC
+                  LIMIT 1
+                `, [syncIds.teamId]);
+                
+                if (syncResult.rows.length > 0) {
+                  const dbState = syncResult.rows[0];
+                  dbSyncedSection = dbState.current_section || meeting.currentSection;
+                  dbSyncedTimerPaused = dbState.is_paused ?? meeting.timerPaused;
+                  
+                  // Update in-memory state if database has newer data
+                  if (dbSyncedSection && dbSyncedSection !== meeting.currentSection) {
+                    console.log(`🔄 [RECONNECT-SYNC] Updating in-memory section from DB: ${meeting.currentSection} → ${dbSyncedSection}`);
+                    meeting.currentSection = dbSyncedSection;
+                  }
+                  if (dbSyncedTimerPaused !== meeting.timerPaused) {
+                    console.log(`🔄 [RECONNECT-SYNC] Updating in-memory pause state from DB: ${meeting.timerPaused} → ${dbSyncedTimerPaused}`);
+                    meeting.timerPaused = dbSyncedTimerPaused;
+                  }
+                  
+                  console.log(`✅ [RECONNECT-SYNC] User ${userName} reconnected with DB-synced state: section=${dbSyncedSection}, paused=${dbSyncedTimerPaused}`);
+                }
+              } finally {
+                client.release();
+              }
+            }
+          } catch (syncError) {
+            console.error(`⚠️ [RECONNECT-SYNC] Failed to sync from database:`, syncError.message);
+            // Continue with in-memory state if DB sync fails
+          }
+        }
+        // ============ END SYNC VALIDATION ============
+
         // Send current state to joining user
         socket.emit('meeting-joined', {
           meeting: {
@@ -295,13 +420,14 @@ class MeetingSocketService {
             originalLeader: meeting.originalLeader,
             leaderDisconnected: meeting.leaderDisconnected,
             currentRoute: meeting.currentRoute,
-            currentSection: meeting.currentSection,
+            currentSection: dbSyncedSection,
             scrollPosition: meeting.scrollPosition,
             timerStartTime: meeting.timerStartTime,
-            timerPaused: meeting.timerPaused
+            timerPaused: dbSyncedTimerPaused
           },
           participants: Array.from(meeting.participants.values()),
-          reconnected: isReconnecting
+          reconnected: isReconnecting,
+          dbSynced: isReconnecting  // Flag to indicate this state was synced from DB
         });
 
         // Notify others of new participant (or reconnection)
@@ -318,7 +444,7 @@ class MeetingSocketService {
       });
 
       // Handle navigation events (leader only)
-      socket.on('navigate', (data) => {
+      socket.on('navigate', async (data) => {
         const userInfo = userSocketMap.get(socket.id);
         if (!userInfo) {
           console.log(`⚠️ [NAV] Navigate event received but no userInfo for socket ${socket.id}`);
@@ -352,6 +478,129 @@ class MeetingSocketService {
         console.log(`📍 [NAV] Leader ${userInfo.userName} navigated: ${previousSection || 'start'} → ${data.section || 'none'}`);
         console.log(`📍 [NAV] Meeting: ${userInfo.meetingCode}, Participants (${participantCount}): ${participantNames}`);
         console.log(`📍 [NAV] Broadcasting navigation-update to ${participantCount - 1} followers`);
+
+        // ============ AGGRESSIVE DATABASE SYNC ============
+        // Sync section change to database immediately to prevent state loss
+        try {
+          const ids = this.extractIdsFromMeetingCode(userInfo.meetingCode);
+          if (ids && data.section) {
+            const client = await pool.connect();
+            try {
+              // Map frontend section IDs to backend IDs
+              const sectionIdMap = {
+                'good-news': 'segue',
+                'good_news': 'segue',
+                'priorities': 'rock_review',
+                'priority': 'rock_review',
+                'rocks': 'rock_review',
+                'rock': 'rock_review',
+                'todo-list': 'todos',
+                'todo_list': 'todos',
+                'todo': 'todos',
+                'issues': 'ids',
+                'issue': 'ids',
+                'problems': 'ids',
+                'problem': 'ids'
+              };
+              const mappedSection = sectionIdMap[data.section] || data.section;
+              const mappedPreviousSection = previousSection ? (sectionIdMap[previousSection] || previousSection) : null;
+
+              // Get the active session for this team
+              const sessionResult = await client.query(`
+                SELECT id, section_timings, current_section
+                FROM meeting_sessions
+                WHERE team_id = $1 AND is_active = true
+                ORDER BY created_at DESC
+                LIMIT 1
+              `, [ids.teamId]);
+
+              if (sessionResult.rows.length > 0) {
+                const session = sessionResult.rows[0];
+                let sectionTimings = session.section_timings || {};
+                if (typeof sectionTimings === 'string') {
+                  try { sectionTimings = JSON.parse(sectionTimings); } catch (e) { sectionTimings = {}; }
+                }
+
+                const now = new Date().toISOString();
+
+                // End the previous section if it exists and is different
+                if (mappedPreviousSection && mappedPreviousSection !== mappedSection && sectionTimings[mappedPreviousSection]) {
+                  const prevData = sectionTimings[mappedPreviousSection];
+                  if (prevData.started_at && !prevData.ended_at) {
+                    prevData.ended_at = now;
+                    prevData.actual = Math.floor(
+                      (new Date(prevData.ended_at) - new Date(prevData.started_at)) / 1000
+                    ) - (prevData.paused_duration || 0);
+                    console.log(`📊 [DB-SYNC] Ended section ${mappedPreviousSection}: ${prevData.actual}s`);
+                  }
+                }
+
+                // Start the new section if not already started
+                if (!sectionTimings[mappedSection] || !sectionTimings[mappedSection].started_at) {
+                  // Get section config for allocated time
+                  const configResult = await client.query(`
+                    SELECT sections FROM meeting_section_configs
+                    WHERE organization_id = $1 AND meeting_type = 'weekly' AND is_default = true
+                    LIMIT 1
+                  `, [ids.orgId]);
+                  
+                  const sections = configResult.rows[0]?.sections || [
+                    { id: 'segue', duration: 5 },
+                    { id: 'scorecard', duration: 5 },
+                    { id: 'rock_review', duration: 5 },
+                    { id: 'headlines', duration: 5 },
+                    { id: 'todos', duration: 5 },
+                    { id: 'ids', duration: 60 },
+                    { id: 'conclude', duration: 5 }
+                  ];
+                  const sectionConfig = sections.find(s => s.id === mappedSection);
+                  const allocatedTime = (sectionConfig?.duration || 5) * 60;
+
+                  sectionTimings[mappedSection] = {
+                    allocated: allocatedTime,
+                    started_at: now,
+                    ended_at: null,
+                    actual: 0,
+                    paused_duration: 0
+                  };
+                  console.log(`📊 [DB-SYNC] Started section ${mappedSection}`);
+                }
+
+                // Update the database
+                await client.query(`
+                  UPDATE meeting_sessions
+                  SET current_section = $1,
+                      current_section_start = NOW(),
+                      section_timings = $2,
+                      updated_at = NOW()
+                  WHERE id = $3
+                `, [mappedSection, JSON.stringify(sectionTimings), session.id]);
+
+                console.log(`📊 [DB-SYNC] Successfully synced navigation to database: ${mappedPreviousSection || 'start'} → ${mappedSection}`);
+              } else {
+                console.warn(`⚠️ [DB-SYNC] No active session found for team ${ids.teamId}`);
+              }
+            } finally {
+              client.release();
+            }
+          }
+        } catch (dbError) {
+          console.error(`❌ [DB-SYNC] Failed to sync navigation to database:`, dbError.message);
+          // Log the error but don't block the WebSocket broadcast
+          logMeetingError({
+            organizationId: this.extractIdsFromMeetingCode(userInfo.meetingCode)?.orgId,
+            errorType: 'navigation_sync_failure',
+            severity: 'warning',
+            errorMessage: `Failed to sync navigation to database: ${dbError.message}`,
+            context: {
+              meetingCode: userInfo.meetingCode,
+              previousSection,
+              newSection: data.section,
+              leader: userInfo.userName
+            }
+          });
+        }
+        // ============ END DATABASE SYNC ============
 
         // Broadcast to all participants
         socket.to(userInfo.meetingCode).emit('navigation-update', {
