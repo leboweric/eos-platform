@@ -814,9 +814,9 @@ const SmartRockAssistant = () => {
                           <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
                           <DatePicker placeholder="Select date" 
                             value={milestone.dueDate}
-                            onChange={(e) => {
+                            onChange={(value) => {
                               const updatedMilestones = [...milestones];
-                              updatedMilestones[index] = { ...milestone, dueDate: e.target.value };
+                              updatedMilestones[index] = { ...milestone, dueDate: value };
                               setMilestones(updatedMilestones);
                             }}
                             className="w-40 text-sm"
