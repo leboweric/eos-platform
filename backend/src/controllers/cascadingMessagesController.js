@@ -326,7 +326,7 @@ export const updateCascadingMessage = async (req, res) => {
   }
 };
 
-// Delete a cascading message
+// Delete a cascading message (soft-delete for the recipient team)
 export const deleteCascadingMessage = async (req, res) => {
   try {
     // Check if cascading_messages table exists
@@ -338,42 +338,44 @@ export const deleteCascadingMessage = async (req, res) => {
       });
     }
 
-    const { messageId } = req.params;
+    const { teamId, messageId } = req.params;
 
-    // Start a transaction
-    await query('BEGIN');
+    // Soft-delete the recipient record for this team
+    // This preserves the message for other recipient teams
+    const result = await query(
+      `UPDATE cascading_message_recipients
+       SET deleted_at = CURRENT_TIMESTAMP
+       WHERE message_id = $1 AND to_team_id = $2 AND deleted_at IS NULL
+       RETURNING *`,
+      [messageId, teamId]
+    );
 
-    try {
-      // Delete recipient records first
-      await query(
-        `DELETE FROM cascading_message_recipients WHERE message_id = $1`,
-        [messageId]
+    if (result.rows.length === 0) {
+      // Fallback: try hard delete from cascading_messages if no recipient record found
+      // This handles messages where the user is the sender
+      const deleteResult = await query(
+        `DELETE FROM cascading_messages WHERE id = $1 AND from_team_id = $2 RETURNING *`,
+        [messageId, teamId]
       );
 
-      // Delete the message
-      const result = await query(
-        `DELETE FROM cascading_messages WHERE id = $1 RETURNING *`,
-        [messageId]
-      );
-
-      if (result.rows.length === 0) {
-        await query('ROLLBACK');
+      if (deleteResult.rows.length === 0) {
         return res.status(404).json({
           success: false,
           error: 'Message not found'
         });
       }
 
-      await query('COMMIT');
-
-      res.json({
-        success: true,
-        message: 'Cascading message deleted successfully'
-      });
-    } catch (error) {
-      await query('ROLLBACK');
-      throw error;
+      // Also clean up any recipient records for this deleted message
+      await query(
+        `DELETE FROM cascading_message_recipients WHERE message_id = $1`,
+        [messageId]
+      );
     }
+
+    res.json({
+      success: true,
+      message: 'Cascading message deleted successfully'
+    });
   } catch (error) {
     console.error('Error deleting cascading message:', error);
     res.status(500).json({
