@@ -4447,6 +4447,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('📍 Meeting ended by presenter');
         setSuccess('Meeting has been concluded by the presenter');
         
+        // Stop auto-save to prevent 404 spam after meeting ends
+        meetingSessionsService.stopAutoSave();
+        
         // Set flag to prevent auto-rejoin
         meetingConcludedRef.current = true;
         hasJoinedRef.current = true; // Keep this true to prevent auto-join

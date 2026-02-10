@@ -23,6 +23,8 @@ const useMeeting = () => {
   const isFollowingRef = useRef(true);
   const isLeaderRef = useRef(false);
   const activeMeetingsRef = useRef({}); // Ref to access current activeMeetings in closures
+  const meetingCodeRef = useRef(null); // Ref for reconnection logic
+  const userRef = useRef(null); // Ref for reconnection logic
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -36,6 +38,14 @@ const useMeeting = () => {
   useEffect(() => {
     activeMeetingsRef.current = activeMeetings;
   }, [activeMeetings]);
+
+  useEffect(() => {
+    meetingCodeRef.current = meetingCode;
+  }, [meetingCode]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -68,6 +78,24 @@ const useMeeting = () => {
       console.log('📡 Socket ID:', newSocket.id);
       setIsConnected(true);
       setIsReconnecting(false);  // Clear reconnecting state on successful connect
+
+      // AUTO-REJOIN: If we were in a meeting before disconnect, rejoin automatically
+      const currentMeetingCode = meetingCodeRef.current;
+      const currentUser = userRef.current;
+      if (currentMeetingCode && currentUser) {
+        console.log('🔄 [RECONNECT] Auto-rejoining meeting after reconnect:', currentMeetingCode);
+        console.log('🔄 [RECONNECT] User:', currentUser.firstName, currentUser.lastName, '| Was leader:', isLeaderRef.current);
+        newSocket.emit('join-meeting', {
+          meetingCode: currentMeetingCode,
+          userId: currentUser.id,
+          userName: `${currentUser.firstName} ${currentUser.lastName}`,
+          isLeader: isLeaderRef.current
+        });
+      }
+
+      // Always request active meetings on connect/reconnect
+      console.log('🔄 Requesting active meetings on connect');
+      newSocket.emit('get-active-meetings');
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -313,11 +341,8 @@ const useMeeting = () => {
       setActiveMeetings(data.meetings || {});
     });
 
-    // Request active meetings on connect
-    newSocket.on('connect', () => {
-      console.log('🔄 Requesting active meetings on connect');
-      newSocket.emit('get-active-meetings');
-    });
+    // Request active meetings on connect (handled in main connect handler above)
+    // NOTE: Auto-rejoin meeting logic is also in the main connect handler above
 
     // Handle issue vote updates from other participants
     newSocket.on('issue-vote-update', (data) => {

@@ -186,6 +186,13 @@ class MeetingSessionsService {
         { elapsed_seconds: elapsedSeconds }
       );
     } catch (error) {
+      // If session no longer exists (404), stop the auto-save to prevent log spam
+      if (error.response && error.response.status === 404) {
+        console.warn('⚠️ Meeting session no longer active - stopping auto-save');
+        this.stopAutoSave();
+        this.sessionCache = null;
+        return;
+      }
       console.warn('Error saving timer state:', error);
       // Don't throw - this is a background operation
     }
