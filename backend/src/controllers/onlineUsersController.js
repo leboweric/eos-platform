@@ -30,7 +30,10 @@ export const getOnlineUsers = async (req, res) => {
 
     const onlineUsers = result.rows;
 
-    logger.info(`Online users query returned ${onlineUsers.length} active users`);
+    // Only log when there are active users to reduce noise
+    if (onlineUsers.length > 0) {
+      logger.info(`Online users: ${onlineUsers.length} active`);
+    }
 
     res.json({
       success: true,

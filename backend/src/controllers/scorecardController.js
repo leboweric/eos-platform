@@ -140,16 +140,6 @@ export const getScorecard = async (req, res) => {
       // ALWAYS send just the number value
       const numericValue = score.value !== null ? Number(score.value) : null;
       
-      // LOG ZEROS EXPLICITLY
-      if (numericValue === 0) {
-        console.log('🎯 ZERO FOUND IN DATABASE:', {
-          metric_id: score.metric_id,
-          date: scoreDate,
-          value: score.value,
-          numericValue: numericValue,
-          type: score.type
-        });
-      }
       
       // Store custom goals if they exist
       if (score.custom_goal !== null || score.custom_goal_min !== null || score.custom_goal_max !== null) {

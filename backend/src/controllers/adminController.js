@@ -24,7 +24,7 @@ export const getActiveMeetings = async (req, res) => {
       LIMIT 10
     `);
     
-    logger.info('🔍 Recent meeting sessions (last hour):', debugResult.rows);
+    // Debug logging removed to reduce log noise
     
     // CORRECTED: Query meeting_sessions table (not meetings table!)
     const result = await db.query(`
@@ -60,7 +60,10 @@ export const getActiveMeetings = async (req, res) => {
     
     const activeRecordings = parseInt(transcriptionResult.rows[0]?.active_count || 0);
     
-    logger.info(`Admin dashboard: ${activeMeetings.length} active meeting sessions found`);
+    // Reduced logging - only log when meetings are active
+    if (activeMeetings.length > 0) {
+      logger.info(`Admin dashboard: ${activeMeetings.length} active meeting sessions`);
+    }
 
     res.json({
       success: true,

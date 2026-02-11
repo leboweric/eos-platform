@@ -102,11 +102,6 @@ export const startSection = async (req, res) => {
 
     const sections = configResult.rows[0]?.sections || DEFAULT_LEVEL_10_SECTIONS;
     
-    console.log('📋 [Available Sections]', {
-      allAvailableIds: sections.map(s => s.id),
-      lookingFor: mappedSectionId,
-      configSource: configResult.rows[0] ? 'database' : 'default'
-    });
     
     const sectionConfig = sections.find(s => s.id === mappedSectionId);
     

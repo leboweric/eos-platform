@@ -2,10 +2,28 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import fs from 'fs'
+
+// Plugin to generate version.json at build time
+function versionPlugin() {
+  return {
+    name: 'version-plugin',
+    writeBundle() {
+      const version = {
+        version: Date.now().toString(36),
+        buildTime: new Date().toISOString()
+      };
+      fs.writeFileSync(
+        path.resolve(__dirname, 'dist/version.json'),
+        JSON.stringify(version)
+      );
+    }
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
+  plugins: [react(), tailwindcss(), versionPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

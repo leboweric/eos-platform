@@ -9,6 +9,7 @@ import { TerminologyProvider } from './contexts/TerminologyContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 import { useApolloTracking } from './hooks/useApolloTracking';
+import { VersionCheck } from './hooks/useVersionCheck';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 
@@ -296,6 +297,7 @@ function App() {
           </TerminologyProvider>
         </DarkModeProvider>
       </ErrorBoundary>
+      <VersionCheck />
       <Toaster />
     </Router>
   );
