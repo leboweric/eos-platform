@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
+import toast from 'react-hot-toast';
 import MeetingBar from '../components/meeting/MeetingBar';
 import FloatingTimer from '../components/meetings/FloatingTimer';
+import { MeetingAIRecordingControls } from '../components/MeetingAIRecordingControls';
+import { MeetingAISummaryPanel } from '../components/MeetingAISummaryPanel';
 import useMeeting from '../hooks/useMeeting';
 import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +62,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { meetingsService } from '../services/meetingsService';
-import { FileText, GitBranch, Smile, BarChart, Newspaper, ArrowLeftRight } from 'lucide-react';
+import { FileText, GitBranch, Smile, BarChart, Newspaper, ArrowLeftRight, Share2 } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { issuesService } from '../services/issuesService';
@@ -132,10 +135,15 @@ function QuarterlyPlanningMeetingPage() {
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
+    broadcastRating,
     syncTimer,
     updateNotes,
     activeMeetings,
-    activeMeetingsRef
+    activeMeetingsRef,
+    isReconnecting,
+    isFollowing,
+    toggleFollow,
+    concludeMeeting: socketConcludeMeeting
   } = useMeeting();
   const { labels } = useTerminology();
   
@@ -176,8 +184,25 @@ function QuarterlyPlanningMeetingPage() {
   const [meetingPace, setMeetingPace] = useState('on-track');
   const [isPaused, setIsPaused] = useState(false);
   const [totalPausedTime, setTotalPausedTime] = useState(0);
-  const [showFloatingTimer, setShowFloatingTimer] = useState(true);
+  const [showFloatingTimer, setShowFloatingTimer] = useState(false); // Hidden by default - MeetingBar has timer
   const [sectionConfig, setSectionConfig] = useState(null);
+  
+  // AI Meeting Assistant state
+  const [showAISummary, setShowAISummary] = useState(false);
+  const [transcriptionCompleted, setTranscriptionCompleted] = useState(false);
+  const [aiRecordingState, setAiRecordingState] = useState(null);
+  
+  // Section notes state (for MeetingBar)
+  const [sectionNotes, setSectionNotes] = useState({});
+  
+  // Conclude section state
+  const [todoSortBy, setTodoSortBy] = useState('assignee');
+  const [sendSummaryEmail, setSendSummaryEmail] = useState(true);
+  const [archiveCompleted, setArchiveCompleted] = useState(true);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingAverage, setRatingAverage] = useState(0);
+  const [showConcludeDialog, setShowConcludeDialog] = useState(false);
+  
   const [reviewConfirmDialog, setReviewConfirmDialog] = useState(false);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   const [quarterGrade, setQuarterGrade] = useState('');
@@ -829,25 +854,28 @@ function QuarterlyPlanningMeetingPage() {
     }
   };
 
-  const concludeMeeting = async () => {
+  const concludeMeeting = async (e) => {
+    // Prevent form submission or page reload
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Check if sessionId exists
     if (!sessionId) {
       setError('Meeting session not found. Please refresh the page.');
       return;
     }
     
-    // Calculate average rating from all participant ratings
-    const ratings = Object.values(participantRatings);
-    if (ratings.length === 0 || !ratings.every(r => r.rating > 0)) {
-      setError('All participants must rate the meeting before concluding');
-      return;
-    }
-    
-    const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-    
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+      
+      // Calculate average rating from all participant ratings
+      const ratings = Object.values(participantRatings);
+      const averageRating = ratings.length > 0 
+        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+        : (meetingRating || 5);
       
       // Calculate meeting duration in minutes
       let durationMinutes;
@@ -861,35 +889,170 @@ function QuarterlyPlanningMeetingPage() {
         durationMinutes = 90; // Default quarterly planning meeting duration
       }
       
+      // Send cascading message if there is one
+      if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
+        try {
+          const teamIds = cascadeToAll ? availableTeams.map(t => t.id) : selectedTeams;
+          await cascadingMessagesService.createCascadingMessage(orgId, effectiveTeamId, {
+            message: cascadeMessage,
+            recipientTeamIds: teamIds,
+            allTeams: cascadeToAll
+          });
+        } catch (cascadeError) {
+          console.error('Failed to send cascading message:', cascadeError);
+        }
+      }
+      
       // Prepare meeting data for conclude call
       const meetingData = {
         meetingType: 'Quarterly Planning',
         duration: durationMinutes,
         rating: averageRating,
         individualRatings: participantRatings,
+        participantRatings: ratings.map(r => ({
+          userId: r.userId,
+          userName: r.userName,
+          rating: r.rating
+        })),
         summary: 'Quarterly planning session completed with priorities and strategic planning.',
         attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
         priorities: priorities.map(priority => ({
-          name: priority.name,
+          name: priority.name || priority.title,
           owner: priority.owner_name,
           status: priority.status,
           milestones: priority.milestones?.length || 0
         })),
         vto: vtoData,
-        notes: cascadingMessage || '',
-        cascadingMessage: cascadingMessage
+        todos: {
+          completed: todos.filter(todo => 
+            todo.status === 'complete' || todo.status === 'completed' || todo.completed
+          ).map(todo => ({
+            title: todo.title || todo.todo,
+            id: todo.id,
+            assigned_to_name: todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null,
+            created_at: todo.created_at,
+            completed_at: todo.completed_at || todo.updated_at
+          })),
+          added: todos.filter(todo => 
+            todo.status !== 'complete' && todo.status !== 'completed' && !todo.completed
+          ).map(todo => ({
+            title: todo.title || todo.todo,
+            id: todo.id,
+            assigned_to_name: todo.assigned_to ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : null,
+            created_at: todo.created_at,
+            due_date: todo.due_date
+          }))
+        },
+        notes: cascadeMessage || '',
+        cascadingMessage: cascadeMessage
       };
       
-      // Use the correct conclude meeting endpoint
-      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, true, meetingData);
+      // Conclude meeting in database
+      let emailResult = null;
+      try {
+        emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail, meetingData);
+      } catch (emailError) {
+        console.error('Failed to conclude meeting:', emailError);
+        const errorMessage = emailError?.message || emailError?.toString() || '';
+        const isAlreadyConcluded = errorMessage.includes('No active meeting found') || 
+                                   errorMessage.includes('already concluded') ||
+                                   errorMessage.includes('404');
+        if (isAlreadyConcluded) {
+          emailResult = { success: true, alreadyConcluded: true };
+        } else {
+          throw emailError;
+        }
+      }
       
-      setSuccess('Meeting concluded and summary sent to team!');
+      // Archive completed items if requested
+      if (archiveCompleted) {
+        try {
+          await todosService.archiveDoneTodos();
+        } catch (error) {
+          console.error('Failed to archive todos:', error);
+        }
+        
+        // Archive solved issues
+        const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
+        const solvedIssues = allIssues.filter(i => 
+          i.status === 'closed' || i.status === 'resolved' || i.status === 'solved' || i.status === 'completed'
+        );
+        for (const issue of solvedIssues) {
+          try {
+            await issuesService.archiveIssue(issue.id);
+          } catch (error) {
+            console.error('Failed to archive issue:', error);
+          }
+        }
+      }
+      
+      // Build success message
+      let emailMessage = '';
+      if (sendSummaryEmail) {
+        if (emailResult?.emailsSent > 0) {
+          emailMessage = `Summary email sent to ${emailResult.emailsSent} participant${emailResult.emailsSent !== 1 ? 's' : ''}.`;
+        } else {
+          emailMessage = 'Summary email sent.';
+        }
+      }
+      const archiveMessage = archiveCompleted ? 'Completed items archived.' : '';
+      const baseMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
+      
+      toast.success(baseMessage, {
+        description: 'Great job! All data has been saved.',
+        duration: 5000
+      });
+      
+      // Clear form after success
+      setCascadeMessage('');
+      setSelectedTeams([]);
+      setCascadeToAll(false);
+      setMeetingRating(null);
+      setRatingSubmitted(false);
+      
+      // End the database session
+      if (sessionId) {
+        await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
+          .catch(err => console.error('Failed to end meeting session:', err));
+      }
+      
+      // Broadcast meeting end to all participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'meeting-ended',
+          message: 'Meeting has been concluded by the facilitator'
+        });
+      }
+      
+      // Mark meeting as concluded
+      if (meetingCode && socketConcludeMeeting) {
+        socketConcludeMeeting();
+      }
+      
+      // Leave the collaborative meeting if active
+      if (meetingCode && leaveMeeting) {
+        leaveMeeting();
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Clear meeting state
+      setSessionId(null);
+      setMeetingStartTime(null);
+      setMeetingStarted(false);
+      setElapsedTime(0);
+      setIsPaused(false);
+      setTotalPausedTime(0);
+      setCompletedSections(new Set());
+      sessionStorage.removeItem('meetingActive');
+      sessionStorage.removeItem('meetingStartTime');
+      
+      // Navigate to Dashboard after concluding meeting
       setTimeout(() => {
-        navigate('/quarterly-priorities');
-      }, 2000);
+        navigate('/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Failed to conclude meeting:', error);
-      setError('Failed to conclude meeting');
+      setError('Failed to conclude meeting. Please try again.');
     }
   };
 
@@ -1640,22 +1803,6 @@ function QuarterlyPlanningMeetingPage() {
     }
   };
 
-  const getNextSection = () => {
-    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
-    if (currentIndex < agendaItems.length - 1) {
-      return agendaItems[currentIndex + 1].id;
-    }
-    return null;
-  };
-
-  const getPreviousSection = () => {
-    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
-    if (currentIndex > 0) {
-      return agendaItems[currentIndex - 1].id;
-    }
-    return null;
-  };
-
   // Helper function for status dot color
   const getStatusDotColor = (status) => {
     switch (status) {
@@ -1680,6 +1827,22 @@ function QuarterlyPlanningMeetingPage() {
     return diffDays;
   };
 
+  const getNextSection = () => {
+    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
+    if (currentIndex < agendaItems.length - 1) {
+      return agendaItems[currentIndex + 1];
+    }
+    return null;
+  };
+
+  const getPreviousSection = () => {
+    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
+    if (currentIndex > 0) {
+      return agendaItems[currentIndex - 1];
+    }
+    return null;
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -1692,17 +1855,17 @@ function QuarterlyPlanningMeetingPage() {
     switch (activeSection) {
       case 'eos-tools':
         return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
                     <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
                     EOS Tools
                   </CardTitle>
-                  <CardDescription className="mt-1">Review Accountability Chart & Scorecard (1 hour)</CardDescription>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Review Accountability Chart & Scorecard (1 hour)</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                   1 hour
                 </div>
               </div>
@@ -1758,19 +1921,17 @@ function QuarterlyPlanningMeetingPage() {
       case 'ids':
         return (
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ 
-                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-              }}>
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
                       <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
                       Identify Discuss Solve
                     </CardTitle>
-                    <CardDescription className="mt-1">Solve the most important Issue(s) (3 hours)</CardDescription>
+                    <CardDescription className="mt-2 text-slate-600 font-medium">Solve the most important Issue(s) (3 hours)</CardDescription>
                   </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                     3 hours
                   </div>
                 </div>
@@ -1931,17 +2092,17 @@ function QuarterlyPlanningMeetingPage() {
 
       case 'next-steps':
         return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
                     <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Next Steps
                   </CardTitle>
-                  <CardDescription className="mt-1">Who, what, when (7 minutes)</CardDescription>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Who, what, when (7 minutes)</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                   7 minutes
                 </div>
               </div>
@@ -2005,17 +2166,17 @@ function QuarterlyPlanningMeetingPage() {
 
       case 'objectives':
         return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
                     <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Meeting Objectives
                   </CardTitle>
-                  <CardDescription className="mt-1">Review meeting goals and expected outcomes</CardDescription>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Review meeting goals and expected outcomes</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                   5 minutes
                 </div>
               </div>
@@ -2053,31 +2214,40 @@ function QuarterlyPlanningMeetingPage() {
 
       case 'check-in':
         return (
-          <Card>
-            <CardHeader style={{ backgroundColor: hexToRgba(themeColors.accent, 0.03) }}>
-              <CardTitle className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
-                Team Check-In
-              </CardTitle>
-              <CardDescription>Connect as a team before diving into business (15 minutes)</CardDescription>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    Team Check-In
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Connect as a team before diving into business</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  15 minutes
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6 px-6 pb-6">
               <div className="space-y-4">
-                <p className="text-gray-600">
+                <p className="text-slate-600">
                   Go around the room and have each team member share:
                 </p>
                 <div className="space-y-4">
-                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
-                    <h4 className="font-medium">1. Bests</h4>
-                    <p className="text-sm text-gray-600">Personal and professional Best from the last 90 days</p>
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm border-l-4" style={{ borderLeftColor: themeColors.accent }}>
+                    <h4 className="font-semibold text-slate-900">1. Bests</h4>
+                    <p className="text-sm text-slate-600 mt-1">Personal and professional Best from the last 90 days</p>
                   </div>
-                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
-                    <h4 className="font-medium">2. Update</h4>
-                    <p className="text-sm text-gray-600">What's working/not working?</p>
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm border-l-4" style={{ borderLeftColor: themeColors.accent }}>
+                    <h4 className="font-semibold text-slate-900">2. Update</h4>
+                    <p className="text-sm text-slate-600 mt-1">What's working/not working?</p>
                   </div>
-                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
-                    <h4 className="font-medium">3. Expectations for this session</h4>
-                    <p className="text-sm text-gray-600">What do you hope to accomplish in this meeting?</p>
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm border-l-4" style={{ borderLeftColor: themeColors.accent }}>
+                    <h4 className="font-semibold text-slate-900">3. Expectations for this session</h4>
+                    <p className="text-sm text-slate-600 mt-1">What do you hope to accomplish in this meeting?</p>
                   </div>
                 </div>
               </div>
@@ -2816,348 +2986,6 @@ function QuarterlyPlanningMeetingPage() {
                   );
                 })()}
                 
-                {/* Hidden Original Sections - Comment out after testing */}
-                <div style={{ display: 'none' }}>
-                {/* Company {labels?.priorities_label || 'Priorities'} Section */}
-                {(() => {
-                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
-                  return companyPriorities.length > 0 && (
-                    <div>
-                      <div 
-                        className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl cursor-pointer hover:bg-white/90 hover:shadow-lg transition-all duration-200 shadow-md"
-                        onClick={() => setExpandedSections(prev => ({ 
-                          ...prev, 
-                          companyPriorities: !prev.companyPriorities 
-                        }))}
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedSections.companyPriorities ? (
-                            <ChevronDown className="h-5 w-5 text-slate-600" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-slate-600" />
-                          )}
-                          <div className="p-2 rounded-xl" style={{
-                            background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
-                          }}>
-                            <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
-                          </div>
-                          <h3 className="text-lg font-bold text-slate-900">
-                            Company {labels?.priorities_label || 'Priorities'}
-                          </h3>
-                          <Badge className="border" style={{
-                            backgroundColor: `${themeColors.primary}15`,
-                            color: themeColors.primary,
-                            borderColor: `${themeColors.primary}30`
-                          }}>
-                            {companyPriorities.length}
-                          </Badge>
-                        </div>
-                      </div>
-                      {expandedSections.companyPriorities && (
-                        <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
-                          {companyPriorities.map(priority => {
-                            const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                            const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                            const displayProgress = isComplete ? 100 : (priority.progress || 0);
-                            
-                            // Calculate overdue milestones for this priority
-                            const overdueMilestones = (priority.milestones || []).filter(
-                              m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                            );
-                            
-                            return (
-                              <Card 
-                                key={priority.id}
-                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                  isComplete 
-                                    ? '' 
-                                    : priority.status === 'off-track'
-                                    ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                    : 'bg-white border-slate-200'
-                                }`}
-                                style={isComplete ? {
-                                  background: `linear-gradient(to right, ${themeColors.primary}10, ${themeColors.secondary}10)`,
-                                  borderColor: themeColors.primary + '33'
-                                } : {}}
-                                onClick={() => {
-                                  setSelectedPriority(priority);
-                                  setShowPriorityDialog(true);
-                                }}
-                              >
-                                <CardHeader className="pb-4">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-3">
-                                        {isComplete ? (
-                                          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
-                                        ) : (
-                                          <div 
-                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
-                                            style={priority.status === 'complete' ? {
-                                              background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
-                                              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                                            } : getStatusDotColor(priority.status)} 
-                                          />
-                                        )}
-                                        <h3 
-                                          className="text-lg font-semibold break-words flex-1" 
-                                          style={isComplete ? {
-                                            color: themeColors.primary,
-                                            textDecoration: `line-through ${themeColors.primary}`,
-                                            textDecorationColor: themeColors.primary,
-                                            textDecorationThickness: '2px'
-                                          } : { color: '#1f2937' }}
-                                        >
-                                          {priority.title}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                        <span className="flex items-center gap-1">
-                                          <User className="h-3 w-3" />
-                                          {priority.owner?.name || 'Unassigned'}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                          <Calendar className="h-3 w-3" />
-                                          Due {priority.dueDate ? format(parseDateLocal(priority.dueDate), 'MMM d') : 'No date'}
-                                        </span>
-                                        {daysUntil !== null && (
-                                          <span 
-                                            className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                              daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                              daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                              'text-white'
-                                            }`}
-                                            style={{
-                                              backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
-                                              opacity: daysUntil > 7 ? 0.9 : undefined
-                                            }}
-                                          >
-                                            {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
-                                             daysUntil === 0 ? 'Due today' :
-                                             `${daysUntil} days left`}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                      <div className="text-right">
-                                        <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                          {displayProgress}%
-                                        </div>
-                                        <Progress value={displayProgress} className="w-24 h-2" />
-                                      </div>
-                                      {/* Overdue milestone badge */}
-                                      {overdueMilestones.length > 0 && (
-                                        <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
-                                          {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
-                                        </Badge>
-                                      )}
-                                      {/* Status badge underneath progress bar */}
-                                      <Badge 
-                                        className={`${
-                                          isComplete ? 'text-white' :
-                                          priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                          'text-white'
-                                        }`}
-                                        style={{
-                                          backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                          borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                          opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
-                                        }}
-                                      >
-                                        {isComplete ? 'Complete' :
-                                         priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                
-                {/* Individual {labels?.priorities_label || 'Priorities'} Section */}
-                {(() => {
-                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
-                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
-                    const ownerId = priority.owner?.id || 'unassigned';
-                    if (!acc[ownerId]) {
-                      acc[ownerId] = [];
-                    }
-                    acc[ownerId].push(priority);
-                    return acc;
-                  }, {});
-                  
-                  return Object.keys(groupedByOwner).length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
-                        <div className="p-2 rounded-xl" style={{
-                          background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
-                        }}>
-                          <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Individual {labels?.priorities_label || 'Priorities'}
-                        </h3>
-                        <Badge className="border" style={{
-                          backgroundColor: `${themeColors.primary}15`,
-                          color: themeColors.primary,
-                          borderColor: `${themeColors.primary}30`
-                        }}>
-                          {individualPriorities.length}
-                        </Badge>
-                      </div>
-                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
-                        const owner = ownerPriorities[0]?.owner;
-                        const isExpanded = expandedSections.individualPriorities[ownerId];
-                        return (
-                          <div key={ownerId} className="ml-7">
-                            <div 
-                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => toggleIndividualPriorities(ownerId)}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-gray-600" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
-                              )}
-                              <h4 className="text-md font-medium">
-                                {owner?.name || 'Unassigned'}
-                              </h4>
-                              <Badge 
-                                className="ml-2 text-xs"
-                                style={{ 
-                                  backgroundColor: `${themeColors.primary}20`,
-                                  color: themeColors.primary,
-                                  borderColor: `${themeColors.primary}30`
-                                }}
-                              >
-                                {ownerPriorities.length}
-                              </Badge>
-                            </div>
-                            {isExpanded && (
-                              <div className="space-y-4 ml-7 mt-4">
-                                {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                                  const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                                  const displayProgress = isComplete ? 100 : (priority.progress || 0);
-                                  
-                                  // Calculate overdue milestones for this priority
-                                  const overdueMilestones = (priority.milestones || []).filter(
-                                    m => !m.completed && !m.is_complete && getDaysUntilDue(m.dueDate || m.due_date) < 0
-                                  );
-                                  
-                                  return (
-                                    <Card 
-                                      key={priority.id}
-                                      className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                        isComplete 
-                                          ? 'border-slate-200' 
-                                          : priority.status === 'off-track'
-                                          ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                          : 'bg-white border-slate-200'
-                                      }`}
-                                      style={{
-                                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                                      }}
-                                      onClick={() => {
-                                  setSelectedPriority(priority);
-                                  setShowPriorityDialog(true);
-                                }}
-                                    >
-                                      <CardHeader className="pb-4">
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3">
-                                              {isComplete ? (
-                                                <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
-                                              ) : (
-                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
-                                              )}
-                                              <h3 className={`text-lg font-semibold break-words ${
-                                                isComplete 
-                                                  ? 'line-through' 
-                                                  : 'text-gray-900'
-                                              }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
-                                                {priority.title}
-                                              </h3>
-                                            </div>
-                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                              <span className="flex items-center gap-1">
-                                                <User className="h-3 w-3" />
-                                                {priority.owner?.name || 'Unassigned'}
-                                              </span>
-                                              <span className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" />
-                                                Due {priority.dueDate || priority.due_date ? format(new Date(priority.dueDate || priority.due_date), 'MMM d') : 'No date'}
-                                              </span>
-                                              {daysUntil !== null && (
-                                                <span 
-                                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                                    'text-white'
-                                                  }`}
-                                                  style={{
-                                                    backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
-                                                    opacity: daysUntil > 7 ? 0.9 : undefined
-                                                  }}
-                                                >
-                                                  {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
-                                                   daysUntil === 0 ? 'Due today' :
-                                                   `${daysUntil} days left`}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-col items-end gap-2">
-                                            <div className="text-right">
-                                              <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                                {displayProgress}%
-                                              </div>
-                                              <Progress value={displayProgress} className="w-24 h-2" />
-                                            </div>
-                                            {/* Overdue milestone badge */}
-                                            {overdueMilestones.length > 0 && (
-                                              <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
-                                                {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
-                                              </Badge>
-                                            )}
-                                            {/* Status badge underneath progress bar */}
-                                            <Badge 
-                                              className={`${
-                                                isComplete ? 'text-white' :
-                                                priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                'text-white'
-                                              }`}
-                                              style={{
-                                                backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                                borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                                opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
-                                              }}
-                                            >
-                                              {isComplete ? 'Complete' :
-                                               priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                                            </Badge>
-                                          </div>
-                                        </div>
-                                      </CardHeader>
-                                    </Card>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-                </div> {/* End of hidden original sections */}
               </div>
             )}
             
@@ -3308,17 +3136,17 @@ function QuarterlyPlanningMeetingPage() {
         }
         return (
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
                       <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
                       V/TO
                     </CardTitle>
-                    <CardDescription className="mt-1">Review and update Vision/Traction Organizer (1 hour)</CardDescription>
+                    <CardDescription className="mt-2 text-slate-600 font-medium">Review and update Vision/Traction Organizer (1 hour)</CardDescription>
                   </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                     60 minutes
                   </div>
                 </div>
@@ -3351,15 +3179,17 @@ function QuarterlyPlanningMeetingPage() {
         
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader>
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <ListChecks className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                      <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                        <ListChecks className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      </div>
                       Set {labels?.priorities_label || 'Quarterly Priorities'}
                     </CardTitle>
-                    <CardDescription>Define 3-7 priorities for the upcoming quarter (2 hours)</CardDescription>
+                    <CardDescription className="mt-2 text-slate-600 font-medium">Define 3-7 priorities for the upcoming quarter (2 hours)</CardDescription>
                   </div>
                   <Button
                     onClick={() => {
@@ -3793,207 +3623,638 @@ function QuarterlyPlanningMeetingPage() {
 
       case 'conclude':
         return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ 
-              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-            }}>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
                     Conclude Meeting
                   </CardTitle>
-                  <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Wrap up and cascade messages</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                   5 minutes
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 px-6 pb-6">
               <div className="space-y-6">
                 {/* Open To-Dos Summary */}
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
-                    <ListTodo className="h-4 w-4" />
-                    Open To-Dos Summary
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                      <ListTodo className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      Open To-Dos Summary
+                    </h4>
+                    {/* Sort Options */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-slate-600">Sort by:</label>
+                      <select
+                        className="text-xs border border-slate-200 rounded px-2 py-1 bg-white"
+                        value={todoSortBy}
+                        onChange={(e) => setTodoSortBy(e.target.value)}
+                      >
+                        <option value="assignee">Owner</option>
+                        <option value="due_date">Due Date</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-3">
                     Review all open action items before concluding the meeting:
                   </p>
-                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
-                    <p className="text-gray-500 text-sm">No open to-dos</p>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {todos
-                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
-                        .map(todo => (
-                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                            <div className="w-1 h-full rounded" style={{ 
-                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
-                                             todo.priority === 'medium' ? themeColors.primary : 
-                                             '#10B981',
-                              minHeight: '40px'
-                            }} />
+                  {(() => {
+                    const openTodos = todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled');
+                    
+                    const sortedTodos = [...openTodos].sort((a, b) => {
+                      if (todoSortBy === 'due_date') {
+                        if (!a.due_date && !b.due_date) return 0;
+                        if (!a.due_date) return 1;
+                        if (!b.due_date) return -1;
+                        return new Date(a.due_date) - new Date(b.due_date);
+                      } else if (todoSortBy === 'assignee') {
+                        const aName = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}` : 'Unassigned';
+                        const bName = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}` : 'Unassigned';
+                        return (aName || '').localeCompare(bName || '');
+                      }
+                      return 0;
+                    });
+                    
+                    if (todoSortBy === 'assignee') {
+                      const todosByAssignee = sortedTodos.reduce((acc, todo) => {
+                        if (todo.assignees && todo.assignees.length > 0) {
+                          todo.assignees.forEach(assignee => {
+                            const assigneeName = `${assignee.first_name} ${assignee.last_name}`;
+                            if (!acc[assigneeName]) acc[assigneeName] = [];
+                            acc[assigneeName].push({
+                              ...todo,
+                              isMultiAssignee: todo.assignees.length > 1,
+                              allAssignees: todo.assignees,
+                              _currentAssignee: assignee
+                            });
+                          });
+                        } else {
+                          const assigneeName = todo.assigned_to ? 
+                            `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+                            'Unassigned';
+                          if (!acc[assigneeName]) acc[assigneeName] = [];
+                          acc[assigneeName].push(todo);
+                        }
+                        return acc;
+                      }, {});
+                      
+                      return openTodos.length === 0 ? (
+                        <p className="text-slate-500 text-sm">No open to-dos</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {Object.entries(todosByAssignee).map(([assignee, assigneeTodos]) => (
+                            <div key={assignee} className="space-y-2">
+                              <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                {assignee} ({assigneeTodos.length})
+                              </h5>
+                              {assigneeTodos.map(todo => (
+                                <div 
+                                  key={`${todo.id}-${assignee}`}
+                                  className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2 cursor-pointer hover:bg-slate-100 transition-colors"
+                                  onClick={() => {
+                                    setEditingTodo(todo);
+                                    setShowTodoDialog(true);
+                                  }}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-900">
+                                      {todo.title}
+                                      {todo.isMultiAssignee && (
+                                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                          Also: {todo.allAssignees
+                                            .filter(a => `${a.first_name} ${a.last_name}` !== assignee)
+                                            .map(a => `${a.first_name} ${a.last_name[0]}.`)
+                                            .join(', ')}
+                                        </span>
+                                      )}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      {todo.due_date && (
+                                        <span className={`text-xs font-medium ${
+                                          new Date(todo.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'
+                                        }`}>
+                                          Due: {format(parseDateLocal(todo.due_date), 'MMM d, yyyy')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    return openTodos.length === 0 ? (
+                      <p className="text-slate-500 text-sm">No open to-dos</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {sortedTodos.map(todo => (
+                          <div 
+                            key={todo.id} 
+                            className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                            onClick={() => {
+                              setEditingTodo(todo);
+                              setShowTodoDialog(true);
+                            }}
+                          >
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{todo.title}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {todo.assigned_to && (
-                                  <span className="text-xs text-gray-600">
+                              <p className="text-sm font-medium text-slate-900">{todo.title}</p>
+                              <div className="flex items-center gap-3 mt-1">
+                                {todo.assignees && todo.assignees.length > 0 ? (
+                                  <span className="text-xs text-slate-600 font-medium">
+                                    {todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ')}
+                                  </span>
+                                ) : todo.assigned_to && (
+                                  <span className="text-xs text-slate-600 font-medium">
                                     {todo.assigned_to.first_name} {todo.assigned_to.last_name}
                                   </span>
                                 )}
                                 {todo.due_date && (
-                                  <>
-                                    {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
-                                    <span className="text-xs text-gray-600">
-                                      Due: {parseDateLocal(todo.due_date).toLocaleDateString()}
-                                    </span>
-                                  </>
+                                  <span className={`text-xs font-medium ${
+                                    new Date(todo.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'
+                                  }`}>
+                                    Due: {format(parseDateLocal(todo.due_date), 'MMM d, yyyy')}
+                                  </span>
                                 )}
                               </div>
                             </div>
                           </div>
                         ))}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* Feedback */}
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
+                {/* Feedback - Quarterly-specific */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-3 text-slate-900 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
                     Feedback
                   </h4>
-                  
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-700">
-                      • Where's your head? How are you feeling?
+                    <p className="text-sm text-slate-700">
+                      &bull; Where's your head? How are you feeling?
                     </p>
-                    <p className="text-sm text-gray-700">
-                      • Were your expectations met?
+                    <p className="text-sm text-slate-700">
+                      &bull; Were your expectations met?
                     </p>
                   </div>
                 </div>
 
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    Meeting Rating
+                {/* Cascading Messages - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
+                    <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Cascading Messages
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Rate this meeting's effectiveness (1-10)
+                  <p className="text-sm text-slate-600 mb-3">
+                    What key information needs to be communicated to other teams?
                   </p>
+                  <textarea
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none focus:ring-2 focus:border-transparent mb-4"
+                    rows={3}
+                    placeholder="Enter any messages to cascade to other teams..."
+                    value={cascadeMessage}
+                    onChange={(e) => {
+                      setCascadeMessage(e.target.value);
+                      if (e.target.value && availableTeams.length === 0) {
+                        teamsService.getTeams().then(response => {
+                          const teams = response.data || response;
+                          setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
+                        }).catch(error => {
+                          console.error('Failed to load teams:', error);
+                        });
+                      }
+                    }}
+                  />
                   
-                  {/* Individual Participant Ratings */}
-                  {participants.length > 0 ? (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-3">
-                        Each participant rates the meeting:
-                      </label>
-                      <div className="space-y-3">
-                        {participants.map(participant => {
-                          const isCurrentUser = participant.id === user?.id;
-                          const rating = participantRatings[participant.id];
-                          
-                          return (
-                            <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
-                                {participant.name}{isCurrentUser ? ' (You)' : ''}:
-                              </span>
-                              {isCurrentUser ? (
-                                <Select value={rating?.rating?.toString() || ''} onValueChange={(value) => {
-                                  const ratingValue = parseInt(value);
-                                  setParticipantRatings(prev => ({
-                                    ...prev,
-                                    [user.id]: {
-                                      userId: user.id,
-                                      userName: participant.name,
-                                      rating: ratingValue
+                  {cascadeMessage.trim() && (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="cascade-all"
+                          checked={cascadeToAll}
+                          onCheckedChange={(checked) => {
+                            setCascadeToAll(checked);
+                            if (checked) setSelectedTeams([]);
+                          }}
+                        />
+                        <label htmlFor="cascade-all" className="text-sm font-medium text-slate-700 cursor-pointer">
+                          Send to all teams
+                        </label>
+                      </div>
+                      
+                      {!cascadeToAll && availableTeams.length > 0 && (
+                        <div className="animate-in fade-in duration-200">
+                          <p className="text-sm text-slate-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white/50">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
                                     }
-                                  }));
-                                  // Also set the old meetingRating for backwards compatibility
-                                  setMeetingRating(ratingValue);
-                                }}>
-                                  <SelectTrigger className="w-24 bg-white">
-                                    <SelectValue placeholder="Rate" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {[...Array(10)].map((_, i) => (
-                                      <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                        {i + 1}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
-                                  {rating ? rating.rating : 'Waiting...'}
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-slate-700 cursor-pointer">
+                                  {team.name}
+                                  {team.is_leadership_team && (
+                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                ) : null}
+
+                {/* Meeting Rating - Slider style matching Weekly */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
+                    <Star className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Rate this meeting
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">How productive was this meeting?</p>
+                  {/* Large Value Display */}
+                  <div className="text-center mb-4">
+                    <div className="text-3xl font-bold text-slate-800 mb-1">
+                      {meetingRating ? meetingRating.toFixed(1) : '5.0'}
+                    </div>
+                    <div className="text-sm text-slate-600">out of 10</div>
+                  </div>
+
+                  {/* Decimal Slider */}
+                  <div className="mb-4 px-4">
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="0.1"
+                        value={meetingRating || 5.0}
+                        onChange={(e) => {
+                          const rating = parseFloat(e.target.value);
+                          setMeetingRating(rating);
+                        }}
+                        className="w-full h-3 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, 
+                            #ef4444 0%, 
+                            #f59e0b 35%, 
+                            #84cc16 65%, 
+                            #22c55e 100%)`,
+                          WebkitAppearance: 'none',
+                          outline: 'none'
+                        }}
+                        disabled={ratingSubmitted && meetingCode}
+                      />
+                      <style>{`
+                        input[type="range"]::-webkit-slider-thumb {
+                          appearance: none;
+                          height: 24px;
+                          width: 24px;
+                          border-radius: 50%;
+                          background: white;
+                          border: 3px solid ${themeColors.primary};
+                          cursor: pointer;
+                          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                        }
+                        input[type="range"]::-moz-range-thumb {
+                          height: 24px;
+                          width: 24px;
+                          border-radius: 50%;
+                          background: white;
+                          border: 3px solid ${themeColors.primary};
+                          cursor: pointer;
+                          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                        }
+                      `}</style>
+                    </div>
+
+                    {/* Scale Labels */}
+                    <div className="flex justify-between text-xs text-slate-500 mt-2 px-1">
+                      <span>Poor</span>
+                      <span>Average</span>
+                      <span>Good</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  {meetingRating !== null && !ratingSubmitted && (
+                    <div className="text-center mb-4">
+                      <button
+                        onClick={() => {
+                          setRatingSubmitted(true);
+                          // Store as participant rating
+                          setParticipantRatings(prev => ({
+                            ...prev,
+                            [user?.id]: {
+                              userId: user?.id,
+                              userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                              rating: meetingRating
+                            }
+                          }));
+                          // Broadcast rating if in collaborative meeting
+                          if (meetingCode && broadcastRating) {
+                            broadcastRating({
+                              userId: user?.id,
+                              userName: `${user?.firstName} ${user?.lastName}`,
+                              rating: meetingRating
+                            });
+                          }
+                        }}
+                        className="px-6 py-2 rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                      >
+                        Submit Rating
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Submission Status */}
+                  {ratingSubmitted && (
+                    <div className="text-center text-sm text-green-600 flex items-center justify-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Rating submitted</span>
+                    </div>
+                  )}
+                  
+                  {/* Participant Rating Status - Show to everyone in collaborative meeting */}
+                  {meetingCode && participants.length > 0 && (
+                    <div className="border-t border-slate-200 pt-3 mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-medium text-slate-700">
+                          Rating Status ({Object.keys(participantRatings).length} completed)
+                        </h5>
+                        {Object.keys(participantRatings).length > 0 && (
+                          <span className="text-sm font-medium text-blue-600">
+                            Average: {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {participants.map((participant) => {
+                          const hasRated = !!participantRatings[participant.id];
+                          const rating = participantRatings[participant.id]?.rating;
+
+                          return (
+                            <div key={participant.id} className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-50">
+                              <div className="flex items-center gap-2">
+                                {hasRated ? (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <div className="h-4 w-4 rounded-full border-2 border-slate-300" />
+                                )}
+                                <span className="text-sm text-slate-600">
+                                  {participant.name}
+                                  {participant.id === currentLeader && (
+                                    <span className="ml-1 text-xs text-blue-600">(Facilitator)</span>
+                                  )}
                                 </span>
+                              </div>
+                              {hasRated && (
+                                <span className="text-sm font-medium text-slate-700">{rating.toFixed(1)}/10</span>
                               )}
                             </div>
                           );
                         })}
                       </div>
-                      
-                      {/* Calculate and show average if there are ratings */}
-                      {Object.keys(participantRatings).length > 0 && (
-                        <div className="border-t pt-2 mt-2">
-                          <div className="flex items-center justify-between text-sm font-medium">
-                            <span className="text-gray-700">Average Rating:</span>
-                            <span className="text-lg" style={{ color: themeColors.primary }}>
-                              {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Fallback for single user (not in a meeting) */
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Your Rating:
-                      </label>
-                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
-                        const rating = parseInt(value);
-                        setMeetingRating(rating);
-                        // Store as single participant rating
-                        setParticipantRatings({
-                          [user?.id]: {
-                            userId: user?.id,
-                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                            rating: rating
-                          }
+
+                      {/* Facilitator: Enter ratings for team members not in meeting */}
+                      {isLeader && teamMembers.length > 0 && (() => {
+                        const nonParticipantMembers = teamMembers.filter(member => {
+                          const isParticipant = participants.some(p =>
+                            String(p.id) === String(member.id) ||
+                            String(p.userId) === String(member.id)
+                          );
+                          return !isParticipant;
                         });
-                      }}>
-                        <SelectTrigger className="w-32 bg-white">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(10)].map((_, i) => (
-                            <SelectItem key={i + 1} value={(i + 1).toString()}>
-                              {i + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                        if (nonParticipantMembers.length === 0) return null;
+
+                        return (
+                          <div className="border-t border-slate-200 pt-3 mt-3">
+                            <h5 className="text-sm font-medium text-slate-700 mb-2">
+                              Enter ratings for team members
+                            </h5>
+                            <div className="space-y-2">
+                              {nonParticipantMembers.map((member) => {
+                                const memberName = member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Unknown';
+                                const hasRated = !!participantRatings[member.id];
+                                const existingRating = participantRatings[member.id]?.rating;
+
+                                return (
+                                  <div key={member.id} className="flex items-center gap-2 py-1 px-2 rounded-md bg-slate-50">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      {hasRated ? (
+                                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                      ) : (
+                                        <div className="h-4 w-4 rounded-full border-2 border-orange-300 flex-shrink-0" />
+                                      )}
+                                      <span className="text-sm text-slate-600 truncate">
+                                        {memberName}
+                                      </span>
+                                    </div>
+                                    {hasRated ? (
+                                      <span className="text-sm font-medium text-slate-700 flex-shrink-0">
+                                        {existingRating.toFixed(1)}/10
+                                      </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max="10"
+                                          step="0.1"
+                                          placeholder="1-10"
+                                          id={`rating-input-${member.id}`}
+                                          className="w-16 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const ratingVal = parseFloat(e.target.value);
+                                              if (ratingVal >= 1 && ratingVal <= 10) {
+                                                setParticipantRatings(prev => ({
+                                                  ...prev,
+                                                  [member.id]: {
+                                                    userId: member.id,
+                                                    userName: memberName,
+                                                    rating: ratingVal
+                                                  }
+                                                }));
+                                                if (broadcastRating) {
+                                                  broadcastRating({ userId: member.id, userName: memberName, rating: ratingVal });
+                                                }
+                                                e.target.value = '';
+                                              }
+                                            }
+                                          }}
+                                        />
+                                        <button
+                                          onClick={() => {
+                                            const input = document.getElementById(`rating-input-${member.id}`);
+                                            if (!input) return;
+                                            const ratingVal = parseFloat(input.value);
+                                            if (ratingVal >= 1 && ratingVal <= 10) {
+                                              setParticipantRatings(prev => ({
+                                                ...prev,
+                                                [member.id]: {
+                                                  userId: member.id,
+                                                  userName: memberName,
+                                                  rating: ratingVal
+                                                }
+                                              }));
+                                              if (broadcastRating) {
+                                                broadcastRating({ userId: member.id, userName: memberName, rating: ratingVal });
+                                              }
+                                              input.value = '';
+                                            }
+                                          }}
+                                          className="px-2 py-1 text-xs font-medium text-white rounded"
+                                          style={{ backgroundColor: themeColors.primary }}
+                                        >
+                                          Submit
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
 
-                <div className="text-center pt-4">
-                  <Button
-                    onClick={concludeMeeting}
-                    size="lg"
-                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Send className="mr-2 h-5 w-5" />
-                    Conclude Meeting & Send Summary
-                  </Button>
+                {/* AI Summary Panel - Show if transcription was completed */}
+                {transcriptionCompleted && (
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                    <MeetingAISummaryPanel
+                      meetingId={`quarterly-${teamId}-${Date.now()}`}
+                      organizationId={user?.organizationId || user?.organization_id}
+                    />
+                  </div>
+                )}
+
+                {/* Conclude Meeting Button - Only for Facilitator */}
+                <div className="flex justify-center">
+                  {!meetingCode || (meetingCode && isLeader) ? (
+                    <div className="text-center space-y-3">
+                      {/* Warning message when recording is active */}
+                      {aiRecordingState?.isRecording && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-2 text-yellow-800 font-medium mb-1">
+                            <AlertCircle className="h-5 w-5" />
+                            Recording is still active
+                          </div>
+                          <p className="text-yellow-700 text-sm">
+                            Please click "Stop Note Taking" first to generate the AI summary and include it in your meeting recap.
+                          </p>
+                        </div>
+                      )}
+                      
+                      <Button
+                        className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
+                          aiRecordingState?.isRecording 
+                            ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                            : 'animate-pulse'
+                        }`}
+                        style={{
+                          background: aiRecordingState?.isRecording 
+                            ? undefined 
+                            : `linear-gradient(135deg, ${themeColors.primary} 0%, #22c55e 50%, ${themeColors.secondary} 100%)`
+                        }}
+                        onClick={() => {
+                          if (!aiRecordingState?.isRecording) {
+                            setShowConcludeDialog(true);
+                          }
+                        }}
+                        disabled={aiRecordingState?.isRecording}
+                      >
+                        {aiRecordingState?.isRecording ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Stop Note Taking First
+                          </>
+                        ) : (
+                          <>
+                            <CheckSquare className="mr-2 h-5 w-5" />
+                            End Meeting
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2">
+                      <div className="text-slate-600">
+                        {participants.find(p => p.id === currentLeader) && (
+                          <p>
+                            Waiting for <span className="font-medium">
+                              {participants.find(p => p.id === currentLeader).name}
+                            </span> to conclude the meeting...
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex justify-center">
+                        <div className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Meeting Conclusion Options - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm space-y-3">
+                  <h4 className="font-medium text-slate-900 mb-3">Meeting Conclusion Options</h4>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="send-email"
+                      checked={sendSummaryEmail}
+                      onCheckedChange={(checked) => setSendSummaryEmail(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="send-email" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Send summary email to all team members
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="archive-completed"
+                      checked={archiveCompleted}
+                      onCheckedChange={(checked) => setArchiveCompleted(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Archive all completed To-Dos and solved Issues
+                    </label>
+                  </div>
+                </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -4009,7 +4270,17 @@ function QuarterlyPlanningMeetingPage() {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      <div className="max-w-7xl mx-auto p-8">
+      {/* Connection Warning Banner */}
+      {isReconnecting && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white py-2 px-4 text-center shadow-lg animate-pulse">
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="font-medium">Connection lost. Attempting to reconnect...</span>
+          </div>
+        </div>
+      )}
+      
+      <div className="relative max-w-7xl mx-auto p-8 pb-32">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -4100,6 +4371,51 @@ function QuarterlyPlanningMeetingPage() {
           )}
         </div>
 
+        {/* Meeting Bar - for collaborative meetings */}
+        {meetingCode && (
+          <MeetingBar
+            meetingCode={meetingCode}
+            participants={participants}
+            onLeave={leaveMeeting}
+            isLeader={isLeader}
+            currentLeader={currentLeader}
+            onNavigate={navigateToSection}
+            currentSection={activeSection}
+            agendaItems={agendaItems}
+            onSyncTimer={syncTimer}
+            onUpdateNotes={updateNotes}
+            sectionNotes={sectionNotes}
+            onBroadcastRating={broadcastRating}
+            meetingStartTime={meetingStartTime}
+            meetingStarted={meetingStarted}
+            isFollowing={isFollowing}
+            toggleFollow={toggleFollow}
+            isPaused={isPaused}
+            onPauseResume={handlePauseResume}
+            totalPausedTime={totalPausedTime}
+          />
+        )}
+
+        {/* AI Meeting Assistant Controls */}
+        {(() => {
+          const orgId = user?.organizationId || user?.organization_id;
+          return orgId && teamId;
+        })() && (
+          <div className="mb-6">
+            <MeetingAIRecordingControls
+              meetingId={`quarterly-${teamId}-${Date.now()}`}
+              organizationId={user?.organizationId || user?.organization_id}
+              onTranscriptionStarted={() => {
+                console.log('AI transcription started');
+              }}
+              onTranscriptionStopped={() => {
+                setTranscriptionCompleted(true);
+              }}
+              onRecordingStateChange={setAiRecordingState}
+            />
+          </div>
+        )}
+
         {/* Navigation Tabs - Level 10 Style */}
         <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm p-2">
           <div className="flex space-x-1 overflow-x-auto">
@@ -4142,13 +4458,35 @@ function QuarterlyPlanningMeetingPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
           {renderContent()}
           
-          {/* Section Completion Button */}
-          <div className="p-6 border-t border-gray-200">
-            <div className="flex justify-end">
+          {/* Section Navigation Footer */}
+          <div className="p-6 border-t border-white/20 bg-gradient-to-r from-white/60 to-white/40 backdrop-blur-sm rounded-b-2xl">
+            <div className="flex items-center justify-between">
+              {/* Previous Button */}
+              <div>
+                {getPreviousSection() && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSectionChange(getPreviousSection().id)}
+                    className="flex items-center gap-2 border-white/30 bg-white/60 hover:bg-white/80 transition-all"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    {getPreviousSection().label}
+                  </Button>
+                )}
+              </div>
+              
+              {/* Center: Mark Complete */}
               <Button
                 onClick={() => handleSectionComplete(activeSection)}
                 variant={completedSections.has(activeSection) ? "outline" : "default"}
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 ${
+                  completedSections.has(activeSection) 
+                    ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100' 
+                    : ''
+                }`}
+                style={!completedSections.has(activeSection) ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
               >
                 {completedSections.has(activeSection) ? (
                   <>
@@ -4159,6 +4497,22 @@ function QuarterlyPlanningMeetingPage() {
                   'Mark Section Complete'
                 )}
               </Button>
+              
+              {/* Next Button */}
+              <div>
+                {getNextSection() && (
+                  <Button
+                    onClick={() => handleSectionChange(getNextSection().id)}
+                    className="flex items-center gap-2 text-white transition-all"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                  >
+                    {getNextSection().label}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -4555,8 +4909,7 @@ function QuarterlyPlanningMeetingPage() {
           </div>
         </div>
         
-        {/* Meeting Collaboration Bar */}
-        <MeetingBar />
+        {/* Meeting Collaboration Bar - rendered above nav tabs now */}
       </div>
 
       {/* Review Confirmation Dialog */}
@@ -4660,6 +5013,45 @@ function QuarterlyPlanningMeetingPage() {
         </DialogContent>
       </Dialog>
       
+      {/* Conclude Meeting Confirmation Dialog */}
+      <Dialog open={showConcludeDialog} onOpenChange={setShowConcludeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>End Quarterly Planning Meeting?</DialogTitle>
+            <DialogDescription>
+              This will conclude the meeting session and save all data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 rounded-lg border bg-slate-50">
+              <div className="space-y-2 text-sm text-slate-700">
+                {sendSummaryEmail && <p>• Summary email will be sent to all team members</p>}
+                {archiveCompleted && <p>• Completed To-Dos and solved Issues will be archived</p>}
+                {cascadeMessage.trim() && <p>• Cascading message will be sent to selected teams</p>}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConcludeDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={(e) => {
+                setShowConcludeDialog(false);
+                concludeMeeting(e);
+              }}
+              className="text-white shadow-md hover:shadow-lg transition-all duration-200"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, #22c55e 50%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <CheckSquare className="mr-2 h-4 w-4" />
+              End Meeting
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Context Menu - TEMPORARILY DISABLED */}
       {/* {contextMenu && (
         <div
