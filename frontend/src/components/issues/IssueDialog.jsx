@@ -383,7 +383,7 @@ const IssueDialog = ({
         }
       }
       
-      onClose();
+      handleClose();
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to save issue');
     } finally {
@@ -839,7 +839,7 @@ const IssueDialog = ({
                     }
                     console.log('🚪 IssueDialog: Closing dialog...');
                     // Close the dialog after successful update
-                    onClose();
+                    handleClose();
                   } catch (error) {
                     console.error('❌ IssueDialog: Failed to update issue timeline:', error);
                   }
@@ -856,7 +856,7 @@ const IssueDialog = ({
                   size="default"
                   onClick={() => {
                     onMoveToTeam(issue);
-                    onClose();
+                    handleClose();
                   }}
                   className="text-sm whitespace-nowrap"
                 >
@@ -892,7 +892,7 @@ const IssueDialog = ({
                   size="default"
                   onClick={() => {
                     onConvertToRock(issue);
-                    onClose();
+                    handleClose();
                   }}
                   className="text-sm whitespace-nowrap"
                 >
@@ -968,7 +968,7 @@ const IssueDialog = ({
                   } else {
                     console.log('✅ No unsaved changes, just closing');
                   }
-                  onClose();
+                  handleClose();
                 } else {
                   // This is a new issue - trigger form submission via handleSubmit
                   console.log('📝 Creating new issue via handleSubmit...');
