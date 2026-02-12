@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { Link, Navigate } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { organizationService } from '../services/organizationService';
+import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import annualPlanningGoalsService from '../services/annualPlanningGoalsService';
+import { departmentService } from '../services/departmentService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { getRevenueLabel, getRevenueLabelWithSuffix, formatCurrency } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
@@ -14,14 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import CoreValueDialog from '../components/vto/CoreValueDialog';
 import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
-import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 import DraftGoalsEditModal from '../components/vto/DraftGoalsEditModal';
 import { 
   Target, 
@@ -48,55 +49,55 @@ import {
   MessageSquare,
   FileText,
   PenTool,
-  Download
+  Download,
+  ChevronDown,
+  Shield,
+  Rocket,
+  X
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
-  const { selectedDepartment } = useDepartment();
+  const { selectedDepartment, availableDepartments } = useDepartment();
   const { labels } = useTerminology();
   
   // Determine framework mode
   const isEOS = labels.priorities_label === 'Rocks';
   const isOKR = labels.priorities_label === 'Objectives';
-  const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
-  const is4DX = labels.priorities_label?.includes('WIG');
+  const isScalingUp = labels.priorities_label === 'Priorities';
+  const is4DX = labels.priorities_label === 'WIGs';
   
-  // Get framework-specific tab labels
-  const getTabLabels = () => {
-    if (isEOS) {
-      return { vision: 'Vision', execution: 'Traction' };
-    }
-    return { vision: 'Vision', execution: 'Execution' };
+  // Tab labels based on framework
+  const tabLabels = {
+    vision: isEOS ? 'Vision' : isOKR ? 'Strategy' : isScalingUp ? 'Core Strategy' : is4DX ? 'Strategy' : 'Vision',
+    execution: isEOS ? 'Traction' : isOKR ? 'Execution' : isScalingUp ? 'Execution Plan' : is4DX ? 'Execution' : 'Execution'
   };
   
-  const tabLabels = getTabLabels();
-  
-  // Get framework-specific section labels and descriptions
-  const getFrameworkSections = () => {    
+  // Framework-specific section labels
+  const getFrameworkSections = () => {
     if (isEOS) {
       return {
-        coreValues: { label: 'Core Values', description: '3-7 rules that define your culture and Right People' },
+        coreValues: { label: 'Core Values', description: 'The fundamental beliefs of your organization' },
         coreFocus: { 
           label: 'Core Focus', 
-          description: 'Your Purpose/Cause/Passion and your Niche',
+          description: 'Your organization\'s purpose/cause/passion and niche',
           purposeLabel: 'Purpose/Cause/Passion',
           nicheLabel: 'Niche'
         },
-        tenYearTarget: { label: '10-Year Target', description: 'Where do you want your organization to be in 10 years?' },
+        tenYearTarget: { label: '10-Year Target', description: 'Your Big Hairy Audacious Goal' },
         marketingStrategy: { 
           label: 'Marketing Strategy', 
-          description: 'Target Market, 3 Uniques, and Proven Process',
+          description: 'How you attract and retain customers',
           targetMarketLabel: 'Target Market',
-          differentiatorsLabel: '3 Uniques',
+          differentiatorsLabel: 'Three Uniques',
           provenProcessLabel: 'Proven Process'
         },
-        threeYearPicture: { label: '3-Year Picture', description: 'What does the organization look like in 3 years?' },
-        oneYearPlan: { label: '1-Year Plan', description: 'What must be accomplished this year?' }
+        threeYearPicture: { label: '3-Year Picture', description: 'What your organization looks like in 3 years' },
+        oneYearPlan: { label: '1-Year Plan', description: 'This year\'s goals and priorities' }
       };
     } else if (isOKR) {
       return {
-        coreValues: { label: 'Mission & Values', description: 'Why we exist and how we behave' },
+        coreValues: { label: 'Core Values', description: 'Guiding principles for your team' },
         coreFocus: { 
           label: 'Vision Statement', 
           description: 'Where we are going and what success looks like',
@@ -155,7 +156,6 @@ const BusinessBlueprintPage = () => {
         oneYearPlan: { label: 'Annual WIGs', description: 'This year\'s Wildly Important Goals' }
       };
     } else {
-      // Default/generic labels
       return {
         coreValues: { label: 'Core Values', description: 'The fundamental beliefs of your organization' },
         coreFocus: { 
@@ -180,15 +180,21 @@ const BusinessBlueprintPage = () => {
   
   const frameworkSections = getFrameworkSections();
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [activeTab, setActiveTab] = useState('vision');
-  const [viewMode, setViewMode] = useState(true); // Default to view mode for cleaner presentation
   const [organization, setOrganization] = useState(null);
+  
+  // Leadership Team viewing
+  const [viewingLeadershipTeam, setViewingLeadershipTeam] = useState(false);
+  const [leadershipTeamId, setLeadershipTeamId] = useState(null);
+  const [leadershipBlueprintData, setLeadershipBlueprintData] = useState(null);
+  const [loadingLeadership, setLoadingLeadership] = useState(false);
   
   // Check if viewing department-level plan
   const isDepartmentView = selectedDepartment && !selectedDepartment.is_leadership_team;
+  const isReadOnly = viewingLeadershipTeam && isDepartmentView;
   
   // Business Blueprint data
   const [blueprintData, setBlueprintData] = useState({
@@ -221,8 +227,11 @@ const BusinessBlueprintPage = () => {
     longTermIssues: []
   });
 
+  // Quarterly Rocks data
+  const [quarterlyRocks, setQuarterlyRocks] = useState([]);
+  const [loadingRocks, setLoadingRocks] = useState(false);
+
   // New core value form
-  const [newCoreValue, setNewCoreValue] = useState({ value: '', description: '' });
   const [editingCoreValue, setEditingCoreValue] = useState(null);
   const [showCoreValueDialog, setShowCoreValueDialog] = useState(false);
   
@@ -234,9 +243,10 @@ const BusinessBlueprintPage = () => {
   const [draftGoals, setDraftGoals] = useState(null);
   const [showDraftGoalsModal, setShowDraftGoalsModal] = useState(false);
   
-  // State for editing Core Focus
+  // State for inline editing sections
   const [editingCoreFocus, setEditingCoreFocus] = useState(false);
   const [editingBHAG, setEditingBHAG] = useState(false);
+  const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
   
   // State for organization theme colors
   const [themeColors, setThemeColors] = useState({
@@ -248,7 +258,22 @@ const BusinessBlueprintPage = () => {
   // State for tracking checked items in Long-term Vision and Annual Goals
   const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
   const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
-  const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
+
+  // Auto-dismiss success messages
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Auto-dismiss error messages
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Fetch data on mount and when department changes
   useEffect(() => {
@@ -256,6 +281,7 @@ const BusinessBlueprintPage = () => {
     fetchOrganization();
     fetchOrganizationTheme();
     fetchDraftGoals();
+    fetchQuarterlyRocks();
     
     // Listen for theme changes
     const handleThemeChange = (event) => {
@@ -264,7 +290,17 @@ const BusinessBlueprintPage = () => {
     
     window.addEventListener('themeChanged', handleThemeChange);
     return () => window.removeEventListener('themeChanged', handleThemeChange);
-  }, [selectedDepartment?.id]); // Re-fetch when department ID changes
+  }, [selectedDepartment?.id]);
+
+  // Find leadership team ID from available departments
+  useEffect(() => {
+    if (availableDepartments && availableDepartments.length > 0) {
+      const leadershipTeam = availableDepartments.find(d => d.is_leadership_team);
+      if (leadershipTeam) {
+        setLeadershipTeamId(leadershipTeam.id);
+      }
+    }
+  }, [availableDepartments]);
   
   // Hide sidebar if coming from meeting
   useEffect(() => {
@@ -272,11 +308,9 @@ const BusinessBlueprintPage = () => {
     const fromMeeting = urlParams.get('fromMeeting') === 'true';
     
     if (fromMeeting) {
-      // Set a flag in sessionStorage to hide sidebar
       sessionStorage.setItem('hideSidebarTemp', 'true');
     }
     
-    // Clean up when leaving the page
     return () => {
       if (fromMeeting) {
         sessionStorage.removeItem('hideSidebarTemp');
@@ -284,9 +318,11 @@ const BusinessBlueprintPage = () => {
     };
   }, []);
 
+  // ========== DATA FETCHING ==========
+
   const fetchBusinessBlueprint = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad) setLoading(true);
       setError(null);
       const data = await businessBlueprintService.getBusinessBlueprint();
       
@@ -331,7 +367,7 @@ const BusinessBlueprintPage = () => {
             data.marketingStrategy?.differentiator_3 || '',
             data.marketingStrategy?.differentiator_4 || '',
             data.marketingStrategy?.differentiator_5 || ''
-          ].filter((d, index) => index < 3 || d), // Keep first 3 always, then only non-empty ones
+          ].filter((d, index) => index < 3 || d),
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
           guaranteeExists: data.marketingStrategy?.guarantee_exists || false,
           guaranteeDescription: data.marketingStrategy?.guarantee_description || ''
@@ -355,6 +391,7 @@ const BusinessBlueprintPage = () => {
       setError('Failed to load business blueprint data');
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -369,7 +406,6 @@ const BusinessBlueprintPage = () => {
 
   const fetchOrganizationTheme = async () => {
     try {
-      // First check localStorage
       const orgId = user?.organizationId || user?.organization_id;
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
@@ -377,9 +413,7 @@ const BusinessBlueprintPage = () => {
         return;
       }
       
-      // Fetch from API
       const orgData = await organizationService.getOrganization();
-      
       if (orgData) {
         const theme = {
           primary: orgData.theme_primary_color || '#3B82F6',
@@ -391,9 +425,107 @@ const BusinessBlueprintPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
-      // Use default colors on error
     }
   };
+
+  const fetchQuarterlyRocks = async () => {
+    try {
+      setLoadingRocks(true);
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id;
+      if (!orgId || !teamId) return;
+      
+      const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
+      setQuarterlyRocks(data.companyPriorities || []);
+    } catch (error) {
+      console.error('Failed to fetch quarterly rocks:', error);
+      setQuarterlyRocks([]);
+    } finally {
+      setLoadingRocks(false);
+    }
+  };
+
+  const fetchLeadershipBlueprint = async () => {
+    if (!leadershipTeamId) return;
+    
+    try {
+      setLoadingLeadership(true);
+      // Temporarily override the selected department in localStorage to fetch leadership data
+      const currentDept = localStorage.getItem('selectedDepartment');
+      const leadershipDept = availableDepartments.find(d => d.is_leadership_team);
+      
+      if (leadershipDept) {
+        localStorage.setItem('selectedDepartment', JSON.stringify(leadershipDept));
+        const data = await businessBlueprintService.getBusinessBlueprint();
+        
+        // Also fetch leadership rocks
+        const orgId = user?.organizationId || user?.organization_id;
+        let leadershipRocks = [];
+        try {
+          const rocksData = await quarterlyPrioritiesService.getCurrentPriorities(orgId, leadershipTeamId);
+          leadershipRocks = rocksData.companyPriorities || [];
+        } catch (e) {
+          console.error('Failed to fetch leadership rocks:', e);
+        }
+        
+        // Restore original department
+        if (currentDept) {
+          localStorage.setItem('selectedDepartment', currentDept);
+        }
+        
+        // Transform the leadership data
+        setLeadershipBlueprintData({
+          coreValues: data.coreValues || [],
+          coreFocus: {
+            purpose: data.coreFocus?.hedgehog_type === 'purpose' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            cause: data.coreFocus?.hedgehog_type === 'cause' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            passion: data.coreFocus?.hedgehog_type === 'passion' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            niche: data.coreFocus?.niche || '',
+            hedgehogType: data.coreFocus?.hedgehog_type || 'purpose'
+          },
+          bhag: {
+            description: data.tenYearTarget?.target_description || '',
+            year: data.tenYearTarget?.target_year || new Date().getFullYear() + 10,
+            runningTotal: data.tenYearTarget?.running_total_description || ''
+          },
+          marketingStrategy: {
+            targetMarket: data.marketingStrategy?.target_market || '',
+            demographicProfile: data.marketingStrategy?.demographic_profile || '',
+            geographicProfile: data.marketingStrategy?.geographic_profile || '',
+            psychographicProfile: data.marketingStrategy?.psychographic_profile || '',
+            differentiators: [
+              data.marketingStrategy?.differentiator_1 || '',
+              data.marketingStrategy?.differentiator_2 || '',
+              data.marketingStrategy?.differentiator_3 || '',
+            ].filter(d => d),
+            provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
+            guaranteeExists: data.marketingStrategy?.guarantee_exists || false,
+            guaranteeDescription: data.marketingStrategy?.guarantee_description || ''
+          },
+          threeYearPicture: data.threeYearPicture ? {
+            ...data.threeYearPicture,
+            lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
+              JSON.parse(data.threeYearPicture.what_does_it_look_like) : [],
+            completions: data.threeYearPicture.what_does_it_look_like_completions || {}
+          } : null,
+          oneYearPlan: data.oneYearPlan ? {
+            ...data.oneYearPlan,
+            goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
+              data.oneYearPlan.goals : []
+          } : null,
+          quarterlyRocks: leadershipRocks,
+          longTermIssues: data.longTermIssues || []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch leadership blueprint:', error);
+      setError('Failed to load Leadership Team data');
+    } finally {
+      setLoadingLeadership(false);
+    }
+  };
+
+  // ========== SAVE HANDLERS ==========
 
   // Core Values handlers
   const handleAddCoreValue = () => {
@@ -458,12 +590,11 @@ const BusinessBlueprintPage = () => {
     }
   };
 
-  // Core Focus (Hedgehog) handler
+  // Core Focus handler
   const handleSaveCoreFocus = async () => {
     try {
       setSaving(true);
       setError(null);
-      // Backend expects 'purpose' field regardless of hedgehog type
       const { hedgehogType, niche, purpose, cause, passion } = blueprintData.coreFocus;
       const purposeValue = hedgehogType === 'purpose' ? purpose : 
                           hedgehogType === 'cause' ? cause : passion;
@@ -500,7 +631,6 @@ const BusinessBlueprintPage = () => {
     try {
       setSaving(true);
       setError(null);
-      // Convert array to individual fields for backend
       const { targetMarket, demographicProfile, geographicProfile, psychographicProfile, 
               differentiators, provenProcessExists, guaranteeExists, guaranteeDescription } = blueprintData.marketingStrategy;
       const strategyData = {
@@ -511,7 +641,6 @@ const BusinessBlueprintPage = () => {
         differentiator1: differentiators[0] || '',
         differentiator2: differentiators[1] || '',
         differentiator3: differentiators[2] || '',
-        // Backend doesn't support 4th and 5th differentiators yet, but we'll send them anyway
         differentiator4: differentiators[3] || '',
         differentiator5: differentiators[4] || '',
         provenProcessExists,
@@ -534,7 +663,6 @@ const BusinessBlueprintPage = () => {
       setError(null);
       const savedData = await businessBlueprintService.updateThreeYearPicture(data);
       
-      // Transform the saved data to match frontend structure
       const transformedData = savedData ? {
         ...savedData,
         lookLikeItems: savedData.what_does_it_look_like ? 
@@ -542,18 +670,14 @@ const BusinessBlueprintPage = () => {
         completions: savedData.what_does_it_look_like_completions || {}
       } : data;
       
-      // Update with the saved data from the backend to ensure we have the latest values
       setBlueprintData(prev => ({
         ...prev,
         threeYearPicture: transformedData
       }));
-      setSuccess('Long-term Vision updated successfully');
-      // Refresh the business blueprint data to ensure everything is in sync
-      setTimeout(() => {
-        fetchBusinessBlueprint();
-      }, 500);
+      setSuccess('3-Year Picture updated successfully');
+      setTimeout(() => fetchBusinessBlueprint(), 500);
     } catch (error) {
-      setError('Failed to update Long-term Vision');
+      setError('Failed to update 3-Year Picture');
       throw error;
     } finally {
       setSaving(false);
@@ -562,8 +686,9 @@ const BusinessBlueprintPage = () => {
   
   // Handler for toggling lookLike item checkboxes
   const handleToggleLookLikeItem = async (index) => {
+    if (isReadOnly) return;
     try {
-      const result = await businessBlueprintService.toggleThreeYearItem(index);
+      await businessBlueprintService.toggleThreeYearItem(index);
       setLookLikeCheckedItems(prev => ({
         ...prev,
         [index]: !prev[index]
@@ -576,12 +701,9 @@ const BusinessBlueprintPage = () => {
   
   // Handler for toggling Annual Goals checkboxes
   const handleToggleOneYearGoal = async (goalId, index) => {
+    if (isReadOnly) return;
     try {
-      if (!goalId) {
-        console.error('Goal ID not provided');
-        return;
-      }
-      
+      if (!goalId) return;
       const result = await businessBlueprintService.toggleOneYearGoal(goalId);
       setOneYearGoalsCheckedItems(prev => ({
         ...prev,
@@ -599,10 +721,6 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       const savedData = await businessBlueprintService.updateOneYearPlan(data);
-      console.log('Saved data from backend:', savedData);
-      console.log('Goals from backend:', savedData.goals);
-      // Update with the saved data from the backend, properly formatting it
-      // The backend returns goals as objects with goal_text property
       setBlueprintData(prev => ({
         ...prev,
         oneYearPlan: {
@@ -611,22 +729,17 @@ const BusinessBlueprintPage = () => {
           profit: savedData.profit_percentage || '',
           goals: savedData.goals && Array.isArray(savedData.goals) ? 
             savedData.goals.map(goal => {
-              // Handle both object format (from backend) and string format (from dialog)
-              if (typeof goal === 'object' && goal !== null) {
-                return goal; // Already in correct format with goal_text
-              } else if (typeof goal === 'string') {
-                return { goal_text: goal }; // Convert string to object format
-              }
+              if (typeof goal === 'object' && goal !== null) return goal;
+              if (typeof goal === 'string') return { goal_text: goal };
               return goal;
             }) : [],
           measurables: savedData.measurables || [],
           revenueStreams: savedData.revenueStreams || []
         }
       }));
-      setSuccess('Annual Goals updated successfully');
-      // No need to refresh since we're getting complete data from backend
+      setSuccess('1-Year Plan updated successfully');
     } catch (error) {
-      setError('Failed to update Annual Goals');
+      setError('Failed to update 1-Year Plan');
       throw error;
     } finally {
       setSaving(false);
@@ -636,20 +749,13 @@ const BusinessBlueprintPage = () => {
   // Draft Goals Functions
   const fetchDraftGoals = async () => {
     if (!selectedDepartment?.id) return;
-    
     try {
       const user = useAuthStore.getState().user;
       const organizationId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment.id;
       const nextYear = new Date().getFullYear() + 1;
       
-      const data = await annualPlanningGoalsService.getPlanningGoals(
-        organizationId,
-        teamId,
-        nextYear
-      );
-      
-      // Only set if goals exist and are not empty
+      const data = await annualPlanningGoalsService.getPlanningGoals(organizationId, teamId, nextYear);
       if (data && data.goals && data.goals.length > 0) {
         setDraftGoals(data);
       } else {
@@ -663,25 +769,14 @@ const BusinessBlueprintPage = () => {
 
   const handleSaveDraftGoals = async (updatedGoals) => {
     if (!selectedDepartment?.id) return;
-    
     try {
       const user = useAuthStore.getState().user;
       const organizationId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment.id;
       const nextYear = new Date().getFullYear() + 1;
       
-      await annualPlanningGoalsService.savePlanningGoals(
-        organizationId,
-        teamId,
-        nextYear,
-        updatedGoals
-      );
-      
-      setDraftGoals({
-        ...draftGoals,
-        goals: updatedGoals
-      });
-      
+      await annualPlanningGoalsService.savePlanningGoals(organizationId, teamId, nextYear, updatedGoals);
+      setDraftGoals({ ...draftGoals, goals: updatedGoals });
       setShowDraftGoalsModal(false);
       setSuccess('Draft goals saved successfully');
     } catch (error) {
@@ -690,298 +785,292 @@ const BusinessBlueprintPage = () => {
     }
   };
 
+  // Leadership Team toggle handler
+  const handleToggleLeadershipView = () => {
+    if (!viewingLeadershipTeam) {
+      // Switching to leadership view
+      setViewingLeadershipTeam(true);
+      if (!leadershipBlueprintData) {
+        fetchLeadershipBlueprint();
+      }
+    } else {
+      setViewingLeadershipTeam(false);
+    }
+  };
 
-  if (loading) {
+  // ========== HELPER: Get display data (either own or leadership) ==========
+  const displayData = viewingLeadershipTeam && leadershipBlueprintData ? leadershipBlueprintData : blueprintData;
+  const displayRocks = viewingLeadershipTeam && leadershipBlueprintData ? (leadershipBlueprintData.quarterlyRocks || []) : quarterlyRocks;
+
+  // ========== RENDER HELPERS ==========
+
+  // Editable section wrapper - shows edit icon on hover
+  const EditableSection = ({ children, onEdit, title, icon: Icon, description, className = '' }) => {
+    const canEdit = !isReadOnly;
+    return (
+      <Card className={`group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
+        <CardHeader className="pb-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-lg font-semibold text-gray-900">
+              <div className="p-1.5 rounded-lg mr-2.5" style={{ background: `${themeColors.primary}15` }}>
+                <Icon className="h-4 w-4" style={{ color: themeColors.primary }} />
+              </div>
+              {title}
+            </CardTitle>
+            {canEdit && onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 p-0"
+              >
+                <Edit className="h-3.5 w-3.5 text-gray-400" />
+              </Button>
+            )}
+          </div>
+          {description && (
+            <p className="text-xs text-gray-500 mt-1 ml-9">{description}</p>
+          )}
+        </CardHeader>
+        <CardContent className="p-4">
+          {children}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Empty state placeholder
+  const EmptyState = ({ message, onAction, actionLabel }) => (
+    <div className="text-center py-6">
+      <p className="text-sm text-gray-400 mb-3">{message}</p>
+      {onAction && !isReadOnly && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onAction}
+          className="text-xs"
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          {actionLabel || 'Add'}
+        </Button>
+      )}
+    </div>
+  );
+
+  // ========== LOADING STATE ==========
+  if (loading && isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: themeColors.primary }} />
       </div>
     );
   }
 
+  // ========== MAIN RENDER ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
-      
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-gray-50/50 relative">
+      <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+        
+        {/* ===== HEADER ===== */}
+        <div className="flex items-center justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-3"
                  style={{
-                   background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                   background: `${themeColors.primary}10`,
                    color: themeColors.primary
                  }}>
-              <Building2 className="h-4 w-4" />
-              STRATEGIC PLANNING
+              <Building2 className="h-3.5 w-3.5" />
+              {viewingLeadershipTeam ? 'LEADERSHIP TEAM VIEW' : 'STRATEGIC PLANNING'}
             </div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-gray-900">
               {labels.business_blueprint_label || '2-Page Plan'}
             </h1>
-            <p className="text-lg text-slate-600">Define your organization's vision and strategy for success</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {viewingLeadershipTeam 
+                ? 'Viewing Leadership Team\'s vision and strategy (read-only)'
+                : 'Define your organization\'s vision and strategy for success'
+              }
+            </p>
           </div>
-          {/* View/Edit Mode Toggle and Actions */}
+          
           <div className="flex items-center gap-3 no-print">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg p-1 flex items-center">
-            <Button
-              variant={viewMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode(true)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                viewMode ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
-              }`}
-              style={{
-                backgroundColor: viewMode ? themeColors.primary : 'transparent'
-              }}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              View
-            </Button>
-            <Button
-              variant={!viewMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode(false)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                !viewMode ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
-              }`}
-              style={{
-                backgroundColor: !viewMode ? themeColors.primary : 'transparent'
-              }}
-            >
-              <PenTool className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            </div>
-            {viewMode && (
+            {/* Leadership Team Toggle - only show for non-leadership departments */}
+            {isDepartmentView && leadershipTeamId && (
               <Button
-                onClick={() => window.print()}
-                className="bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 text-slate-700 hover:text-slate-900"
-                variant="outline"
+                variant={viewingLeadershipTeam ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleLeadershipView}
+                className={`transition-all duration-200 ${
+                  viewingLeadershipTeam 
+                    ? 'text-white shadow-md' 
+                    : 'text-gray-600 hover:text-gray-900 border-gray-200'
+                }`}
+                style={{
+                  backgroundColor: viewingLeadershipTeam ? themeColors.primary : undefined
+                }}
               >
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
+                <Shield className="h-4 w-4 mr-2" />
+                {viewingLeadershipTeam ? 'Viewing Leadership' : 'View Leadership VTO'}
               </Button>
             )}
+            
+            <Button
+              onClick={() => window.print()}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 hover:text-gray-900 border-gray-200"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Print / PDF
+            </Button>
           </div>
         </div>
 
+        {/* Read-only banner when viewing leadership */}
+        {viewingLeadershipTeam && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border"
+               style={{ 
+                 backgroundColor: `${themeColors.primary}08`,
+                 borderColor: `${themeColors.primary}30`
+               }}>
+            <Eye className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
+            <p className="text-sm" style={{ color: themeColors.primary }}>
+              You are viewing the <strong>Leadership Team's</strong> {labels.business_blueprint_label || '2-Page Plan'}. 
+              This is read-only. Switch back to edit your department's plan.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewingLeadershipTeam(false)}
+              className="ml-auto text-xs"
+              style={{ color: themeColors.primary }}
+            >
+              Back to my plan
+            </Button>
+          </div>
+        )}
+
+        {/* Loading leadership data */}
+        {loadingLeadership && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" style={{ color: themeColors.primary }} />
+            <span className="text-sm text-gray-500">Loading Leadership Team data...</span>
+          </div>
+        )}
+
+        {/* Status messages */}
         {error && (
-          <Alert className="border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
+          <Alert className="border-red-200 bg-red-50 rounded-xl">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
+            <AlertDescription className="text-red-700">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
+          <Alert className="border-green-200 bg-green-50 rounded-xl">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700">{success}</AlertDescription>
           </Alert>
         )}
 
-        {/* Conditionally render View Mode or Edit Mode */}
-        {viewMode ? (
-          /* View Mode - Clean presentation using TwoPagePlanView */
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <TwoPagePlanView hideIssuesAndPriorities={true} />
-          </div>
-        ) : (
-          /* Edit Mode - Existing tabbed interface with glass-morphism */
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2 h-16 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
-            <TabsTrigger 
-              value="vision" 
-              className="text-lg font-medium transition-all duration-200 flex items-center gap-3 rounded-xl"
-              style={{ 
-                background: activeTab === 'vision' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
-                color: activeTab === 'vision' ? 'white' : 'inherit',
-                boxShadow: activeTab === 'vision' ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
-              }}
+        {/* ===== TWO-COLUMN LAYOUT ===== */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* ===== LEFT COLUMN: VISION ===== */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-1 w-8 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
+                {tabLabels.vision}
+              </h2>
+            </div>
+
+            {/* --- Core Values --- */}
+            <EditableSection 
+              title={frameworkSections.coreValues.label}
+              icon={Users}
+              description={frameworkSections.coreValues.description}
+              onEdit={handleAddCoreValue}
             >
-              <Target className="h-5 w-5" style={{ color: activeTab === 'vision' ? 'white' : themeColors.primary }} />
-              {tabLabels.vision}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="execution" 
-              className="text-lg font-medium transition-all duration-200 flex items-center gap-3 rounded-xl"
-              style={{ 
-                background: activeTab === 'execution' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
-                color: activeTab === 'execution' ? 'white' : 'inherit',
-                boxShadow: activeTab === 'execution' ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
-              }}
-            >
-              <TrendingUp className="h-5 w-5" style={{ color: activeTab === 'execution' ? 'white' : themeColors.primary }} />
-              {tabLabels.execution}
-            </TabsTrigger>
-          </TabsList>
-
-        <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Core Values, Focus, Long Range Plan, Marketing Strategy */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Core Values */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
-                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                  <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
-                </div>
-                {frameworkSections.coreValues.label}
-              </CardTitle>
-              <CardDescription className="text-slate-600 font-medium">
-                {frameworkSections.coreValues.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {blueprintData.coreValues.map((value) => (
-                <div key={value.id} className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900">{value.value}</h4>
-                    {value.description && (
-                      <p className="text-sm text-slate-600 mt-1 font-medium">{value.description}</p>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditCoreValue(value)}
-                      className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteCoreValue(value.id)}
-                      className="hover:bg-red-50/80 hover:text-red-600 backdrop-blur-sm transition-all duration-200"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              <div className="pt-4 border-t border-white/20">
-                <Button 
-                  onClick={handleAddCoreValue} 
-                  disabled={saving} 
-                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                  style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Core Value
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Core Focus */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
-                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
-                </div>
-                {frameworkSections.coreFocus.label}
-              </CardTitle>
-              <CardDescription className="text-slate-600 font-medium">
-                {frameworkSections.coreFocus.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {/* Display saved values or edit form */}
-              {(!editingCoreFocus && (blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche)) ? (
-                <>
-                  {/* Purpose/Mission Display */}
-                  {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && (
-                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900">
-                          {blueprintData.coreFocus.hedgehogType.charAt(0).toUpperCase() + blueprintData.coreFocus.hedgehogType.slice(1)}
-                        </h4>
-                        <p className="text-sm text-slate-600 mt-1 font-medium">
-                          {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
-                        </p>
+              {displayData.coreValues && displayData.coreValues.length > 0 ? (
+                <div className="space-y-2">
+                  {displayData.coreValues.map((value) => (
+                    <div key={value.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg group/item hover:bg-gray-100 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-gray-900">{value.value}</h4>
+                        {value.description && (
+                          <p className="text-xs text-gray-500 mt-0.5">{value.description}</p>
+                        )}
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingCoreFocus(true)}
-                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {!isReadOnly && (
+                        <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity ml-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditCoreValue(value)} className="h-7 w-7 p-0">
+                            <Edit className="h-3 w-3 text-gray-400" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteCoreValue(value.id)} className="h-7 w-7 p-0 hover:text-red-500">
+                            <Trash2 className="h-3 w-3 text-gray-400" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Niche Display */}
-                  {blueprintData.coreFocus.niche && (
-                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</h4>
-                        <p className="text-sm text-slate-600 mt-1 font-medium">
-                          {blueprintData.coreFocus.niche}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingCoreFocus(true)}
-                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Add button if not all fields are filled */}
-                  {(!blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || !blueprintData.coreFocus.niche) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditingCoreFocus(true)}
-                      className="w-full"
+                  ))}
+                  {!isReadOnly && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleAddCoreValue}
+                      className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2"
                     >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {!blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && !blueprintData.coreFocus.niche 
-                        ? 'Add Core Focus' 
-                        : 'Complete Core Focus'}
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Core Value
                     </Button>
                   )}
-                </>
+                </div>
               ) : (
-                /* Edit Form */
-                <>
+                <EmptyState 
+                  message="No core values defined yet" 
+                  onAction={handleAddCoreValue}
+                  actionLabel="Add Core Value"
+                />
+              )}
+            </EditableSection>
+
+            {/* --- Core Focus --- */}
+            <EditableSection 
+              title={frameworkSections.coreFocus.label}
+              icon={Target}
+              description={frameworkSections.coreFocus.description}
+              onEdit={!editingCoreFocus ? () => setEditingCoreFocus(true) : undefined}
+            >
+              {editingCoreFocus && !isReadOnly ? (
+                /* Inline Edit Form */
+                <div className="space-y-4">
                   <div>
-                    <Label>Select your Focus type</Label>
+                    <Label className="text-xs text-gray-500">Focus type</Label>
                     <RadioGroup
                       value={blueprintData.coreFocus.hedgehogType}
                       onValueChange={(value) => setBlueprintData(prev => ({
                         ...prev,
                         coreFocus: { ...prev.coreFocus, hedgehogType: value }
                       }))}
-                      className="mt-2"
+                      className="flex gap-4 mt-1"
                     >
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         <RadioGroupItem value="purpose" id="purpose" />
-                        <Label htmlFor="purpose">Purpose</Label>
+                        <Label htmlFor="purpose" className="text-sm">Purpose</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         <RadioGroupItem value="cause" id="cause" />
-                        <Label htmlFor="cause">Cause</Label>
+                        <Label htmlFor="cause" className="text-sm">Cause</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         <RadioGroupItem value="passion" id="passion" />
-                        <Label htmlFor="passion">Passion</Label>
+                        <Label htmlFor="passion" className="text-sm">Passion</Label>
                       </div>
                     </RadioGroup>
                   </div>
-
                   <div>
-                    <Label htmlFor="hedgehog-description">
+                    <Label htmlFor="hedgehog-description" className="text-xs text-gray-500">
                       {blueprintData.coreFocus.hedgehogType === 'purpose' ? 'Purpose' : 
                        blueprintData.coreFocus.hedgehogType === 'cause' ? 'Cause' : 'Passion'}
                     </Label>
@@ -990,17 +1079,15 @@ const BusinessBlueprintPage = () => {
                       value={blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
                       onChange={(e) => setBlueprintData(prev => ({
                         ...prev,
-                        coreFocus: { 
-                          ...prev.coreFocus, 
-                          [prev.coreFocus.hedgehogType]: e.target.value 
-                        }
+                        coreFocus: { ...prev.coreFocus, [prev.coreFocus.hedgehogType]: e.target.value }
                       }))}
                       placeholder={`Enter your ${blueprintData.coreFocus.hedgehogType}...`}
+                      rows={2}
+                      className="mt-1"
                     />
                   </div>
-
                   <div>
-                    <Label htmlFor="niche">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</Label>
+                    <Label htmlFor="niche" className="text-xs text-gray-500">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</Label>
                     <Textarea
                       id="niche"
                       value={blueprintData.coreFocus.niche}
@@ -1009,397 +1096,224 @@ const BusinessBlueprintPage = () => {
                         coreFocus: { ...prev.coreFocus, niche: e.target.value }
                       }))}
                       placeholder="What is your niche?"
+                      rows={2}
+                      className="mt-1"
                     />
                   </div>
-
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Button 
+                      size="sm"
                       onClick={async () => {
                         await handleSaveCoreFocus();
                         setEditingCoreFocus(false);
                       }} 
-                      disabled={saving} 
-                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
+                      disabled={saving}
+                      style={{ backgroundColor: themeColors.primary }} 
+                      className="text-white text-xs"
                     >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Save Focus
+                      {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                      Save
                     </Button>
-                    {(blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche) && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditingCoreFocus(false)}
-                      >
-                        Cancel
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setEditingCoreFocus(false)} className="text-xs">
+                      Cancel
+                    </Button>
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Long Range Plan */}
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
-                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                  <TrendingUp className="h-5 w-5" style={{ color: themeColors.primary }} />
                 </div>
-                {frameworkSections.tenYearTarget.label}
-              </CardTitle>
-              <CardDescription className="text-slate-600 font-medium">
-                {frameworkSections.tenYearTarget.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {/* Display saved values or edit form */}
-              {(!editingBHAG && (blueprintData.bhag.year || blueprintData.bhag.description)) ? (
-                <>
-                  {/* Year Display */}
-                  {blueprintData.bhag.year && (
-                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900">Target Year</h4>
-                        <p className="text-sm text-slate-600 mt-1 font-medium">
-                          {blueprintData.bhag.year}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingBHAG(true)}
-                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Description Display */}
-                  {blueprintData.bhag.description && (
-                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-900">Vision Description</h4>
-                        <p className="text-sm text-slate-600 mt-1 font-medium">
-                          {blueprintData.bhag.description}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingBHAG(true)}
-                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Add button if not all fields are filled */}
-                  {(!blueprintData.bhag.year || !blueprintData.bhag.description) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditingBHAG(true)}
-                      className="w-full bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {!blueprintData.bhag.year && !blueprintData.bhag.description 
-                        ? 'Add Long Range Plan' 
-                        : 'Complete Long Range Plan'}
-                    </Button>
-                  )}
-                </>
               ) : (
-                /* Edit Form */
-                <>
+                /* Display Mode */
+                <div className="space-y-3">
+                  {displayData.coreFocus[displayData.coreFocus.hedgehogType] ? (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                        {displayData.coreFocus.hedgehogType}
+                      </p>
+                      <p className="text-sm text-gray-700 mt-0.5">{displayData.coreFocus[displayData.coreFocus.hedgehogType]}</p>
+                    </div>
+                  ) : null}
+                  {displayData.coreFocus.niche ? (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                        {frameworkSections.coreFocus.nicheLabel || 'Niche'}
+                      </p>
+                      <p className="text-sm text-gray-700 mt-0.5">{displayData.coreFocus.niche}</p>
+                    </div>
+                  ) : null}
+                  {!displayData.coreFocus[displayData.coreFocus.hedgehogType] && !displayData.coreFocus.niche && (
+                    <EmptyState 
+                      message="Core focus not defined yet" 
+                      onAction={() => setEditingCoreFocus(true)}
+                      actionLabel="Define Core Focus"
+                    />
+                  )}
+                </div>
+              )}
+            </EditableSection>
+
+            {/* --- 10-Year Target / BHAG --- */}
+            <EditableSection 
+              title={frameworkSections.tenYearTarget.label}
+              icon={TrendingUp}
+              description={frameworkSections.tenYearTarget.description}
+              onEdit={!editingBHAG ? () => setEditingBHAG(true) : undefined}
+            >
+              {editingBHAG && !isReadOnly ? (
+                /* Inline Edit Form */
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="bhagYear">Target Year</Label>
+                    <Label htmlFor="bhag-year" className="text-xs text-gray-500">Target Year</Label>
                     <Input
-                      id="bhagYear"
+                      id="bhag-year"
                       type="number"
                       value={blueprintData.bhag.year}
                       onChange={(e) => setBlueprintData(prev => ({
                         ...prev,
-                        bhag: { ...prev.bhag, year: parseInt(e.target.value) }
+                        bhag: { ...prev.bhag, year: parseInt(e.target.value) || '' }
                       }))}
-                      min={new Date().getFullYear() + 1}
+                      className="mt-1"
                     />
                   </div>
-
                   <div>
-                    <Label htmlFor="bhagDescription">Vision Description</Label>
+                    <Label htmlFor="bhag-description" className="text-xs text-gray-500">Vision Description</Label>
                     <Textarea
-                      id="bhagDescription"
+                      id="bhag-description"
                       value={blueprintData.bhag.description}
                       onChange={(e) => setBlueprintData(prev => ({
                         ...prev,
                         bhag: { ...prev.bhag, description: e.target.value }
                       }))}
-                      placeholder="Describe your long range vision..."
+                      placeholder="Describe your long-term vision..."
+                      rows={3}
+                      className="mt-1"
                     />
                   </div>
-
-                  <div className="flex space-x-2">
+                  <div>
+                    <Label htmlFor="bhag-running" className="text-xs text-gray-500">Running Total</Label>
+                    <Input
+                      id="bhag-running"
+                      value={blueprintData.bhag.runningTotal}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        bhag: { ...prev.bhag, runningTotal: e.target.value }
+                      }))}
+                      placeholder="e.g., $50M revenue"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
                     <Button 
+                      size="sm"
                       onClick={async () => {
                         await handleSaveBHAG();
                         setEditingBHAG(false);
                       }} 
-                      disabled={saving} 
-                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
+                      disabled={saving}
+                      style={{ backgroundColor: themeColors.primary }} 
+                      className="text-white text-xs"
                     >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Save Long Range Plan
+                      {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                      Save
                     </Button>
-                    {(blueprintData.bhag.year || blueprintData.bhag.description) && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditingBHAG(false)}
-                      >
-                        Cancel
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setEditingBHAG(false)} className="text-xs">
+                      Cancel
+                    </Button>
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Marketing Strategy */}
-          <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="flex items-center text-xl text-gray-900">
-                <Lightbulb className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                {frameworkSections.marketingStrategy.label}
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-                {frameworkSections.marketingStrategy.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Display saved values or edit form */}
-              {(!editingMarketingStrategy && (
-                blueprintData.marketingStrategy.targetMarket || 
-                blueprintData.marketingStrategy.demographicProfile ||
-                blueprintData.marketingStrategy.geographicProfile ||
-                blueprintData.marketingStrategy.psychographicProfile ||
-                blueprintData.marketingStrategy.differentiators.some(d => d) ||
-                blueprintData.marketingStrategy.provenProcessExists !== undefined ||
-                blueprintData.marketingStrategy.guaranteeExists !== undefined
-              )) ? (
-                <>
-                  {/* Target Market Display */}
-                  {(blueprintData.marketingStrategy.demographicProfile || 
-                    blueprintData.marketingStrategy.geographicProfile || 
-                    blueprintData.marketingStrategy.psychographicProfile ||
-                    blueprintData.marketingStrategy.targetMarket) && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingMarketingStrategy(true)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {blueprintData.marketingStrategy.demographicProfile && (
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-bold text-gray-700">Demographic</h5>
-                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
-                            {blueprintData.marketingStrategy.demographicProfile}
-                          </p>
-                        </div>
-                      )}
-                      {blueprintData.marketingStrategy.geographicProfile && (
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-bold text-gray-700">Geographic</h5>
-                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
-                            {blueprintData.marketingStrategy.geographicProfile}
-                          </p>
-                        </div>
-                      )}
-                      {blueprintData.marketingStrategy.psychographicProfile && (
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-bold text-gray-700">Psychographic</h5>
-                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
-                            {blueprintData.marketingStrategy.psychographicProfile}
-                          </p>
-                        </div>
-                      )}
-                      {/* Legacy target market display if only old field has data */}
-                      {blueprintData.marketingStrategy.targetMarket && 
-                       !blueprintData.marketingStrategy.demographicProfile && 
-                       !blueprintData.marketingStrategy.geographicProfile && 
-                       !blueprintData.marketingStrategy.psychographicProfile && (
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                            {blueprintData.marketingStrategy.targetMarket}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Differentiators Display */}
-                  {blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'}</h4>
-                        <ul className="text-sm text-gray-600 mt-1 space-y-1">
-                          {blueprintData.marketingStrategy.differentiators
-                            .filter(d => d)
-                            .map((diff, index) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-gray-400 mr-2">•</span>
-                                {diff}
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingMarketingStrategy(true)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Proven Process Display */}
-                  {(blueprintData.marketingStrategy.provenProcessExists !== undefined && blueprintData.marketingStrategy.provenProcessExists !== null) && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.provenProcessLabel || 'Proven Process'}</h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {blueprintData.marketingStrategy.provenProcessExists ? 
-                            '✓ Yes, we have a proven process' : 
-                            '✗ No, we don\'t have a proven process'}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingMarketingStrategy(true)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Guarantee Display */}
-                  {(blueprintData.marketingStrategy.guaranteeExists !== undefined && blueprintData.marketingStrategy.guaranteeExists !== null) && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Guarantee</h4>
-                        <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
-                          {blueprintData.marketingStrategy.guaranteeExists ? 
-                            (blueprintData.marketingStrategy.guaranteeDescription || '✓ Yes, we have a guarantee') : 
-                            '✗ No, we don\'t have a guarantee'}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingMarketingStrategy(true)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Add button if nothing is filled */}
-                  {!blueprintData.marketingStrategy.targetMarket && 
-                   !blueprintData.marketingStrategy.demographicProfile &&
-                   !blueprintData.marketingStrategy.geographicProfile &&
-                   !blueprintData.marketingStrategy.psychographicProfile &&
-                   !blueprintData.marketingStrategy.differentiators.some(d => d) &&
-                   blueprintData.marketingStrategy.provenProcessExists === undefined &&
-                   blueprintData.marketingStrategy.guaranteeExists === undefined && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditingMarketingStrategy(true)}
-                      className="w-full"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Marketing Strategy
-                    </Button>
-                  )}
-                </>
+                </div>
               ) : (
-                /* Edit Form */
-                <>
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}</h4>
+                /* Display Mode */
+                <div className="space-y-3">
+                  {displayData.bhag.year && (
                     <div>
-                      <Label htmlFor="demographicProfile">Demographic</Label>
-                      <Textarea
-                        id="demographicProfile"
-                        value={blueprintData.marketingStrategy.demographicProfile}
-                        onChange={(e) => setBlueprintData(prev => ({
-                          ...prev,
-                          marketingStrategy: { ...prev.marketingStrategy, demographicProfile: e.target.value }
-                        }))}
-                        placeholder="Age, income, education level, occupation, etc..."
-                        rows={2}
-                      />
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Target Year</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-0.5">{displayData.bhag.year}</p>
                     </div>
+                  )}
+                  {displayData.bhag.description && (
                     <div>
-                      <Label htmlFor="geographicProfile">Geographic</Label>
-                      <Textarea
-                        id="geographicProfile"
-                        value={blueprintData.marketingStrategy.geographicProfile}
-                        onChange={(e) => setBlueprintData(prev => ({
-                          ...prev,
-                          marketingStrategy: { ...prev.marketingStrategy, geographicProfile: e.target.value }
-                        }))}
-                        placeholder="Location, region, urban/suburban/rural, climate, etc..."
-                        rows={2}
-                      />
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Vision</p>
+                      <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap">{displayData.bhag.description}</p>
                     </div>
+                  )}
+                  {displayData.bhag.runningTotal && (
                     <div>
-                      <Label htmlFor="psychographicProfile">Psychographic</Label>
-                      <Textarea
-                        id="psychographicProfile"
-                        value={blueprintData.marketingStrategy.psychographicProfile}
-                        onChange={(e) => setBlueprintData(prev => ({
-                          ...prev,
-                          marketingStrategy: { ...prev.marketingStrategy, psychographicProfile: e.target.value }
-                        }))}
-                        placeholder="Lifestyle, values, interests, attitudes, behaviors, etc..."
-                        rows={2}
-                      />
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Running Total</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{displayData.bhag.runningTotal}</p>
+                    </div>
+                  )}
+                  {!displayData.bhag.description && !displayData.bhag.year && (
+                    <EmptyState 
+                      message="Long-range target not defined yet" 
+                      onAction={() => setEditingBHAG(true)}
+                      actionLabel="Set Target"
+                    />
+                  )}
+                </div>
+              )}
+            </EditableSection>
+
+            {/* --- Marketing Strategy --- */}
+            <EditableSection 
+              title={frameworkSections.marketingStrategy.label}
+              icon={Lightbulb}
+              description={frameworkSections.marketingStrategy.description}
+              onEdit={!editingMarketingStrategy ? () => setEditingMarketingStrategy(true) : undefined}
+            >
+              {editingMarketingStrategy && !isReadOnly ? (
+                /* Inline Edit Form */
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-gray-500 font-semibold">{frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}</Label>
+                    <div className="space-y-3 mt-2">
+                      <div>
+                        <Label htmlFor="demographicProfile" className="text-xs text-gray-400">Demographic</Label>
+                        <Textarea
+                          id="demographicProfile"
+                          value={blueprintData.marketingStrategy.demographicProfile}
+                          onChange={(e) => setBlueprintData(prev => ({
+                            ...prev,
+                            marketingStrategy: { ...prev.marketingStrategy, demographicProfile: e.target.value }
+                          }))}
+                          placeholder="Age, income, education level, occupation..."
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="geographicProfile" className="text-xs text-gray-400">Geographic</Label>
+                        <Textarea
+                          id="geographicProfile"
+                          value={blueprintData.marketingStrategy.geographicProfile}
+                          onChange={(e) => setBlueprintData(prev => ({
+                            ...prev,
+                            marketingStrategy: { ...prev.marketingStrategy, geographicProfile: e.target.value }
+                          }))}
+                          placeholder="Location, region, urban/suburban/rural..."
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="psychographicProfile" className="text-xs text-gray-400">Psychographic</Label>
+                        <Textarea
+                          id="psychographicProfile"
+                          value={blueprintData.marketingStrategy.psychographicProfile}
+                          onChange={(e) => setBlueprintData(prev => ({
+                            ...prev,
+                            marketingStrategy: { ...prev.marketingStrategy, psychographicProfile: e.target.value }
+                          }))}
+                          placeholder="Lifestyle, values, interests, behaviors..."
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label>{frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'} (3-5)</Label>
+                      <Label className="text-xs text-gray-500 font-semibold">{frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'} (3-5)</Label>
                       {blueprintData.marketingStrategy.differentiators.length < 5 && (
                         <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
+                          type="button" size="sm" variant="ghost"
                           onClick={() => setBlueprintData(prev => ({
                             ...prev,
                             marketingStrategy: {
@@ -1407,8 +1321,9 @@ const BusinessBlueprintPage = () => {
                               differentiators: [...prev.marketingStrategy.differentiators, '']
                             }
                           }))}
+                          className="h-6 w-6 p-0"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
@@ -1423,18 +1338,13 @@ const BusinessBlueprintPage = () => {
                               newDifferentiators[index] = e.target.value;
                               return {
                                 ...prev,
-                                marketingStrategy: {
-                                  ...prev.marketingStrategy,
-                                  differentiators: newDifferentiators
-                                }
+                                marketingStrategy: { ...prev.marketingStrategy, differentiators: newDifferentiators }
                               };
                             })}
+                            className="text-sm"
                           />
                           {blueprintData.marketingStrategy.differentiators.length > 3 && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
+                            <Button type="button" size="sm" variant="ghost"
                               onClick={() => setBlueprintData(prev => ({
                                 ...prev,
                                 marketingStrategy: {
@@ -1442,8 +1352,9 @@ const BusinessBlueprintPage = () => {
                                   differentiators: prev.marketingStrategy.differentiators.filter((_, i) => i !== index)
                                 }
                               }))}
+                              className="h-9 w-9 p-0"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           )}
                         </div>
@@ -1452,9 +1363,8 @@ const BusinessBlueprintPage = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="provenProcess">{frameworkSections.marketingStrategy.provenProcessLabel || 'Proven Process'}</Label>
+                    <Label className="text-xs text-gray-500">{frameworkSections.marketingStrategy.provenProcessLabel || 'Proven Process'}</Label>
                     <Switch
-                      id="provenProcess"
                       checked={blueprintData.marketingStrategy.provenProcessExists}
                       onCheckedChange={(checked) => setBlueprintData(prev => ({
                         ...prev,
@@ -1465,9 +1375,8 @@ const BusinessBlueprintPage = () => {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="guarantee">Guarantee</Label>
+                      <Label className="text-xs text-gray-500">Guarantee</Label>
                       <Switch
-                        id="guarantee"
                         checked={blueprintData.marketingStrategy.guaranteeExists}
                         onCheckedChange={(checked) => setBlueprintData(prev => ({
                           ...prev,
@@ -1483,493 +1392,483 @@ const BusinessBlueprintPage = () => {
                           ...prev,
                           marketingStrategy: { ...prev.marketingStrategy, guaranteeDescription: e.target.value }
                         }))}
+                        className="text-sm"
                       />
                     )}
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Button 
+                      size="sm"
                       onClick={async () => {
                         await handleSaveMarketingStrategy();
                         setEditingMarketingStrategy(false);
                       }} 
-                      disabled={saving} 
-                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
+                      disabled={saving}
+                      style={{ backgroundColor: themeColors.primary }} 
+                      className="text-white text-xs"
                     >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
+                      {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                      Save
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingMarketingStrategy(false)} className="text-xs">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* Display Mode */
+                <div className="space-y-3">
+                  {/* Target Market */}
+                  {(displayData.marketingStrategy.demographicProfile || 
+                    displayData.marketingStrategy.geographicProfile || 
+                    displayData.marketingStrategy.psychographicProfile ||
+                    displayData.marketingStrategy.targetMarket) ? (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+                        {frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}
+                      </p>
+                      {displayData.marketingStrategy.demographicProfile && (
+                        <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase">Demographic</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{displayData.marketingStrategy.demographicProfile}</p>
+                        </div>
                       )}
-                      Save Marketing Strategy
-                    </Button>
-                    {(blueprintData.marketingStrategy.targetMarket || 
-                      blueprintData.marketingStrategy.demographicProfile ||
-                      blueprintData.marketingStrategy.geographicProfile ||
-                      blueprintData.marketingStrategy.psychographicProfile ||
-                      blueprintData.marketingStrategy.differentiators.some(d => d) ||
-                      blueprintData.marketingStrategy.provenProcessExists !== undefined ||
-                      blueprintData.marketingStrategy.guaranteeExists !== undefined) && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditingMarketingStrategy(false)}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
-                </>
+                      {displayData.marketingStrategy.geographicProfile && (
+                        <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase">Geographic</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{displayData.marketingStrategy.geographicProfile}</p>
+                        </div>
+                      )}
+                      {displayData.marketingStrategy.psychographicProfile && (
+                        <div className="mb-2 p-2 bg-gray-50 rounded-lg">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase">Psychographic</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{displayData.marketingStrategy.psychographicProfile}</p>
+                        </div>
+                      )}
+                      {displayData.marketingStrategy.targetMarket && 
+                       !displayData.marketingStrategy.demographicProfile && 
+                       !displayData.marketingStrategy.geographicProfile && 
+                       !displayData.marketingStrategy.psychographicProfile && (
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{displayData.marketingStrategy.targetMarket}</p>
+                      )}
+                    </div>
+                  ) : null}
+                  
+                  {/* Differentiators */}
+                  {displayData.marketingStrategy.differentiators && displayData.marketingStrategy.differentiators.filter(d => d).length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+                        {frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'}
+                      </p>
+                      <ul className="space-y-1">
+                        {displayData.marketingStrategy.differentiators.filter(d => d).map((diff, index) => (
+                          <li key={index} className="flex items-start text-sm">
+                            <span className="mr-2" style={{ color: themeColors.primary }}>•</span>
+                            <span className="text-gray-700">{diff}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Proven Process */}
+                  {displayData.marketingStrategy.provenProcessExists && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                      <span className="text-sm text-gray-600">Proven Process</span>
+                    </div>
+                  )}
+                  
+                  {/* Guarantee */}
+                  {displayData.marketingStrategy.guaranteeExists && (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                        <span className="text-sm text-gray-600">Guarantee</span>
+                      </div>
+                      {displayData.marketingStrategy.guaranteeDescription && (
+                        <p className="text-xs text-gray-500 ml-5 mt-0.5">{displayData.marketingStrategy.guaranteeDescription}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Empty state */}
+                  {!displayData.marketingStrategy.targetMarket && 
+                   !displayData.marketingStrategy.demographicProfile &&
+                   !displayData.marketingStrategy.geographicProfile &&
+                   !displayData.marketingStrategy.psychographicProfile &&
+                   !displayData.marketingStrategy.differentiators?.some(d => d) &&
+                   !displayData.marketingStrategy.provenProcessExists &&
+                   !displayData.marketingStrategy.guaranteeExists && (
+                    <EmptyState 
+                      message="Marketing strategy not defined yet" 
+                      onAction={() => setEditingMarketingStrategy(true)}
+                      actionLabel="Define Strategy"
+                    />
+                  )}
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </EditableSection>
           </div>
 
-          {/* Right Column - Long-term Vision */}
-          <div className="lg:col-span-1">
-            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden h-full">
-              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center text-xl font-bold text-slate-900">
-                      <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                        <Calendar className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      </div>
-                      {frameworkSections.threeYearPicture.label}
-                    </CardTitle>
-                    <CardDescription className="text-slate-600 font-medium">
-                      {frameworkSections.threeYearPicture.description}
-                    </CardDescription>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowThreeYearDialog(true)}
-                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                {blueprintData.threeYearPicture ? (
-                  <div className="space-y-4">
-                    {/* Target Date */}
-                    {blueprintData.threeYearPicture.future_date && (
-                      <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                        <div className="flex items-start">
-                          <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
-                          <div className="flex-1">
-                            <h4 className="font-bold text-slate-900">Target Date</h4>
-                            <p className="text-sm text-slate-600 mt-1 font-medium">
-                              {(() => {
-                                // Parse date string manually to avoid timezone issues
-                                const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
-                                const date = new Date(year, month - 1, day, 12, 0, 0);
-                                return date.toLocaleDateString('en-US', { 
-                                  year: 'numeric', 
-                                  month: 'long', 
-                                  day: 'numeric' 
-                                });
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Financial Goals */}
-                    {(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.profit_target || 
-                      (blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0)) && (
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <DollarSign className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
-                          <div className="flex-1 space-y-3">
-                            <h4 className="font-semibold text-gray-900">Financial Goals</h4>
-                            
-                            {/* Display revenue streams if available */}
-                            {blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0 ? (
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 mb-2">Revenue Streams</p>
-                                {blueprintData.threeYearPicture.revenueStreams.map((stream, index) => (
-                                  <div key={index} className="ml-2 mb-1">
-                                    <span className="text-sm text-gray-600">{stream.name}:</span>
-                                    <span className="text-sm font-semibold text-gray-900 ml-2">
-                                      {formatCurrency(stream.revenue_target) || 'Not set'}
-                                    </span>
-                                  </div>
-                                ))}
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <span className="text-sm font-medium text-gray-700">Total Revenue:</span>
-                                  {/* Total calculation removed - can't sum freeform text values */}
-                                </div>
-                              </div>
-                            ) : blueprintData.threeYearPicture.revenue_target ? (
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {getRevenueLabelWithSuffix(organization, 'Target')}
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {formatCurrency(blueprintData.threeYearPicture.revenue_target)}
-                                </p>
-                              </div>
-                            ) : null}
-                            
-                            {blueprintData.threeYearPicture.profit_target && (
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Profit Target</p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {blueprintData.threeYearPicture.profit_target}
-                                </p>
-                              </div>
-                            )}
-                            
-                            {/* Key Measurables */}
-                            {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
-                              <div className="mt-3">
-                                <p className="text-sm font-medium text-gray-700 mb-2">Key Measurables</p>
-                                {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
-                                  <div key={index} className="ml-2 mb-1">
-                                    <span className="text-sm text-gray-600">• {measurable.name}:</span>
-                                    <span className="text-sm font-semibold text-gray-900 ml-2">
-                                      {measurable.target_value || 'Not set'}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* What Does It Look Like */}
-                    {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center mb-2">
-                          <Eye className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
-                          <h4 className="font-semibold text-gray-900">What does it look like?</h4>
-                        </div>
-                        {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, originalIndex) => {
-                          // Get the actual index from the original array
-                          const actualIndex = blueprintData.threeYearPicture.lookLikeItems.indexOf(item);
-                          return (
-                            <div 
-                              key={actualIndex} 
-                              className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow flex items-start gap-3"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={lookLikeCheckedItems[actualIndex] || false}
-                                onChange={() => handleToggleLookLikeItem(actualIndex)}
-                                className="mt-0.5 h-4 w-4 border-gray-300 rounded" style={{ color: themeColors.primary }}
-                              />
-                              <p className={`text-sm text-gray-700 ${lookLikeCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
-                                {item}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <Eye className="h-12 w-12 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Define Your 3-Year Vision</h3>
-                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                      Set clear targets and paint a picture of what success looks like in 3 years
-                    </p>
-                    <Button 
-                      onClick={() => setShowThreeYearDialog(true)}
-                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Long-term Vision
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+          {/* ===== RIGHT COLUMN: TRACTION / EXECUTION ===== */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-1 w-8 rounded-full" style={{ backgroundColor: themeColors.secondary || themeColors.primary }}></div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: themeColors.secondary || themeColors.primary }}>
+                {tabLabels.execution}
+              </h2>
+            </div>
 
-        <TabsContent value="execution" className="space-y-8">
-          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center text-xl font-bold text-slate-900">
-                    <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                      <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    </div>
-                    {frameworkSections.oneYearPlan.label}
-                  </CardTitle>
-                  <CardDescription className="text-slate-600 font-medium">
-                    {frameworkSections.oneYearPlan.description}
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowOneYearDialog(true)}
-                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {blueprintData.oneYearPlan ? (
-                <div className="space-y-4">
+            {/* --- 3-Year Picture --- */}
+            <EditableSection 
+              title={frameworkSections.threeYearPicture.label}
+              icon={Calendar}
+              description={frameworkSections.threeYearPicture.description}
+              onEdit={() => setShowThreeYearDialog(true)}
+            >
+              {displayData.threeYearPicture ? (
+                <div className="space-y-3">
                   {/* Target Date */}
-                  {blueprintData.oneYearPlan.future_date && (
-                    <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex items-start">
-                        <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
-                        <div className="flex-1">
-                          <h4 className="font-bold text-slate-900">Target Date</h4>
-                          <p className="text-sm text-slate-600 mt-1 font-medium">
-                            {new Date(blueprintData.oneYearPlan.future_date).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })}
-                          </p>
-                        </div>
-                      </div>
+                  {displayData.threeYearPicture.future_date && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Target Date</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                        {(() => {
+                          const [year, month, day] = displayData.threeYearPicture.future_date.split('T')[0].split('-');
+                          const date = new Date(year, month - 1, day, 12, 0, 0);
+                          return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                        })()}
+                      </p>
                     </div>
                   )}
                   
                   {/* Financial Goals */}
-                  {(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.profit_percentage || 
-                    (blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0)) && (
-                    <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
-                      <div className="flex items-start">
-                        <DollarSign className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
-                        <div className="flex-1 space-y-3">
-                          <h4 className="font-semibold text-gray-900">Financial Goals</h4>
-                          
-                          {/* Display revenue streams if available */}
-                          {blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0 ? (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">Revenue Streams</p>
-                              {blueprintData.oneYearPlan.revenueStreams.map((stream, index) => (
-                                <div key={index} className="ml-2 mb-1">
-                                  <span className="text-sm text-gray-600">{stream.name}:</span>
-                                  <span className="text-sm font-semibold text-gray-900 ml-2">
-                                    ${Number(stream.revenue_target) < 1 
-                                      ? `${(Number(stream.revenue_target) * 1000).toFixed(0)}K`
-                                      : `${Number(stream.revenue_target).toFixed(1)}M`}
-                                  </span>
-                                </div>
-                              ))}
-                              {/* Total section removed - can't sum freeform text values */}
-                              <div className="mt-2 pt-2 border-t border-gray-200 hidden">
-                                {/* Total calculation removed - can't sum freeform text values */}
-                              </div>
+                  {(displayData.threeYearPicture.revenue_target || displayData.threeYearPicture.profit_target || 
+                    (displayData.threeYearPicture.revenueStreams && displayData.threeYearPicture.revenueStreams.length > 0)) && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Financial Goals</p>
+                      {displayData.threeYearPicture.revenueStreams && displayData.threeYearPicture.revenueStreams.length > 0 ? (
+                        <div className="space-y-1">
+                          {displayData.threeYearPicture.revenueStreams.map((stream, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="text-gray-600">{stream.name}</span>
+                              <span className="font-medium text-gray-900">{formatCurrency(stream.revenue_target) || 'Not set'}</span>
                             </div>
-                          ) : blueprintData.oneYearPlan.revenue_target ? (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">
-                                {getRevenueLabelWithSuffix(organization, 'Target')}
-                              </p>
-                              <p className="text-lg font-semibold text-gray-900">
-                                {formatCurrency(blueprintData.oneYearPlan.revenue_target)}
-                              </p>
-                            </div>
-                          ) : null}
-                          
-                          {blueprintData.oneYearPlan.profit_percentage && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">Profit Target</p>
-                              <p className="text-lg font-semibold text-gray-900">
-                                {blueprintData.oneYearPlan.profit_percentage}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Key Measurables */}
-                          {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
-                            <div className="mt-3">
-                              <p className="text-sm font-medium text-gray-700 mb-2">Key Measurables</p>
-                              {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
-                                <div key={index} className="ml-2 mb-1">
-                                  <span className="text-sm text-gray-600">• {measurable.name}:</span>
-                                  <span className="text-sm font-semibold text-gray-900 ml-2">
-                                    {measurable.target_value || 'Not set'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          ))}
                         </div>
+                      ) : displayData.threeYearPicture.revenue_target ? (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">{getRevenueLabelWithSuffix(organization, 'Target')}</span>
+                          <span className="font-medium text-gray-900">{formatCurrency(displayData.threeYearPicture.revenue_target)}</span>
+                        </div>
+                      ) : null}
+                      {displayData.threeYearPicture.profit_target && (
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-gray-600">Profit Target</span>
+                          <span className="font-medium text-gray-900">{displayData.threeYearPicture.profit_target}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Key Measurables */}
+                  {displayData.threeYearPicture.measurables?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Key Measurables</p>
+                      <div className="space-y-1">
+                        {displayData.threeYearPicture.measurables.map((m, index) => (
+                          <div key={m.id || index} className="flex justify-between text-sm">
+                            <span className="text-gray-600">{typeof m === 'string' ? m : (m.name || m.metric_name || '')}</span>
+                            <span className="font-medium text-gray-900">{typeof m === 'string' ? '' : (m.value || m.target_value || '')}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                   
-                  {/* Goals - Debug */}
-                  {console.log('Goals data:', blueprintData.oneYearPlan.goals)}
-                  {console.log('Goals is array:', Array.isArray(blueprintData.oneYearPlan.goals))}
-                  {console.log('Goals length:', blueprintData.oneYearPlan.goals?.length)}
-                  {console.log('First goal:', blueprintData.oneYearPlan.goals?.[0])}
+                  {/* What does it look like? */}
+                  {(() => {
+                    const lookLikeData = displayData.threeYearPicture?.lookLikeItems || 
+                      (displayData.threeYearPicture?.what_does_it_look_like && 
+                       typeof displayData.threeYearPicture.what_does_it_look_like === 'string' 
+                         ? JSON.parse(displayData.threeYearPicture.what_does_it_look_like)
+                         : displayData.threeYearPicture?.what_does_it_look_like) || [];
+                    const filteredItems = Array.isArray(lookLikeData) ? lookLikeData.filter(item => item) : [];
+                    
+                    return filteredItems.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">What does it look like?</p>
+                        <ul className="space-y-1.5">
+                          {filteredItems.map((item, index) => {
+                            const isChecked = lookLikeCheckedItems[index] || false;
+                            return (
+                              <li key={index} className="flex items-start gap-2">
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={() => handleToggleLookLikeItem(index)}
+                                  disabled={isReadOnly}
+                                  className="mt-0.5"
+                                />
+                                <span className={`text-sm text-gray-700 ${isChecked ? 'line-through opacity-50' : ''}`}>
+                                  {item}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <EmptyState 
+                  message="3-Year Picture not defined yet" 
+                  onAction={() => setShowThreeYearDialog(true)}
+                  actionLabel="Create 3-Year Picture"
+                />
+              )}
+            </EditableSection>
+
+            {/* --- 1-Year Plan --- */}
+            <EditableSection 
+              title={frameworkSections.oneYearPlan.label}
+              icon={Target}
+              description={frameworkSections.oneYearPlan.description}
+              onEdit={() => setShowOneYearDialog(true)}
+            >
+              {displayData.oneYearPlan ? (
+                <div className="space-y-3">
+                  {/* Financial targets */}
+                  {(displayData.oneYearPlan.revenue_target || displayData.oneYearPlan.profit_percentage || 
+                    (displayData.oneYearPlan.revenueStreams && displayData.oneYearPlan.revenueStreams.length > 0)) && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Financial Targets</p>
+                      {displayData.oneYearPlan.revenueStreams && displayData.oneYearPlan.revenueStreams.length > 0 ? (
+                        <div className="space-y-1">
+                          {displayData.oneYearPlan.revenueStreams.map((stream, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="text-gray-600">{stream.name}</span>
+                              <span className="font-medium text-gray-900">{formatCurrency(stream.revenue_target) || 'Not set'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          {displayData.oneYearPlan.revenue_target && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Revenue Target</span>
+                              <span className="font-medium text-gray-900">{formatCurrency(displayData.oneYearPlan.revenue_target)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {displayData.oneYearPlan.profit_percentage && (
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-gray-600">Profit Target</span>
+                          <span className="font-medium text-gray-900">{displayData.oneYearPlan.profit_percentage}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Key Measurables */}
+                  {displayData.oneYearPlan.measurables?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Key Measurables</p>
+                      <div className="space-y-1">
+                        {displayData.oneYearPlan.measurables.map((m, index) => (
+                          <div key={m.id || index} className="flex justify-between text-sm">
+                            <span className="text-gray-600">{typeof m === 'string' ? m : (m.name || m.metric_name || '')}</span>
+                            <span className="font-medium text-gray-900">{typeof m === 'string' ? '' : (m.value || m.target_value || '')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Goals */}
-                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center mb-2">
-                        <Flag className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
-                        <h4 className="font-semibold text-gray-900">Goals</h4>
-                      </div>
-                      {blueprintData.oneYearPlan.goals.filter(goal => {
-                        // Filter for valid goals - either objects with goal_text or non-empty strings
-                        if (typeof goal === 'object' && goal !== null && goal.goal_text) {
-                          return true;
-                        }
-                        if (typeof goal === 'string' && goal.trim()) {
-                          return true;
-                        }
-                        return false;
-                      }).map((goal, index) => {
-                        return (
-                          <div 
-                            key={goal.id || index} 
-                            className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow flex items-start gap-3"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={oneYearGoalsCheckedItems[index] || false}
-                              onChange={() => handleToggleOneYearGoal(goal.id || null, index)}
-                              className="mt-0.5 h-4 w-4 border-gray-300 rounded" style={{ color: themeColors.primary }}
-                            />
-                            <div className="flex items-start flex-1">
-                              <span className={`font-semibold mr-2 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`} style={{ color: themeColors.primary }}>
-                                {index + 1}.
+                  {displayData.oneYearPlan.goals && displayData.oneYearPlan.goals.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Goals</p>
+                      <ul className="space-y-1.5">
+                        {displayData.oneYearPlan.goals.filter(goal => {
+                          if (typeof goal === 'object' && goal !== null && goal.goal_text) return true;
+                          if (typeof goal === 'string' && goal.trim()) return true;
+                          return false;
+                        }).map((goal, index) => {
+                          const isChecked = oneYearGoalsCheckedItems[index] || false;
+                          const goalText = typeof goal === 'string' ? goal : goal.goal_text;
+                          const goalId = typeof goal === 'object' ? goal.id : null;
+                          return (
+                            <li key={goal.id || index} className="flex items-start gap-2">
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => handleToggleOneYearGoal(goalId, index)}
+                                disabled={isReadOnly}
+                                className="mt-0.5"
+                              />
+                              <span className={`text-sm text-gray-700 ${isChecked ? 'line-through opacity-50' : ''}`}>
+                                {goalText}
                               </span>
-                              <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
-                                {typeof goal === 'string' ? goal : goal.goal_text}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Target className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Define Your 1-Year Goals</h3>
-                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                    Set specific, measurable targets for the year ahead
-                  </p>
-                  <Button 
-                    onClick={() => setShowOneYearDialog(true)}
-                    style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Annual Goals
-                  </Button>
+                <EmptyState 
+                  message="1-Year Plan not defined yet" 
+                  onAction={() => setShowOneYearDialog(true)}
+                  actionLabel="Create 1-Year Plan"
+                />
+              )}
+            </EditableSection>
+
+            {/* --- Quarterly Rocks --- */}
+            <EditableSection 
+              title={isEOS ? 'Quarterly Rocks' : `Quarterly ${labels.priorities_label || 'Priorities'}`}
+              icon={Rocket}
+              description={isEOS ? 'Current quarter\'s most important priorities' : 'Current quarter\'s key priorities'}
+              onEdit={null} // No edit - rocks are managed on the Rocks page
+            >
+              {displayRocks && displayRocks.length > 0 ? (
+                <div className="space-y-2">
+                  {displayRocks.map((rock, index) => {
+                    const status = rock.status || rock.prediction || 'on_track';
+                    const statusColors = {
+                      'on_track': 'bg-green-100 text-green-700',
+                      'off_track': 'bg-red-100 text-red-700',
+                      'at_risk': 'bg-yellow-100 text-yellow-700',
+                      'done': 'bg-blue-100 text-blue-700',
+                      'complete': 'bg-blue-100 text-blue-700'
+                    };
+                    const statusLabels = {
+                      'on_track': 'On Track',
+                      'off_track': 'Off Track',
+                      'at_risk': 'At Risk',
+                      'done': 'Done',
+                      'complete': 'Complete'
+                    };
+                    return (
+                      <div key={rock.id || index} className="flex items-start gap-3 p-2.5 bg-gray-50 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 font-medium">{rock.title || rock.name}</p>
+                          {rock.owner_name && (
+                            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {rock.owner_name}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusColors[status] || 'bg-gray-100 text-gray-600'}`}>
+                          {statusLabels[status] || status}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {!isReadOnly && (
+                    <Link 
+                      to="/quarterly-priorities" 
+                      className="flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 mt-2 py-1"
+                    >
+                      Manage {isEOS ? 'Rocks' : labels.priorities_label || 'Priorities'}
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  )}
+                </div>
+              ) : loadingRocks ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-400 mb-3">No quarterly {isEOS ? 'rocks' : 'priorities'} set</p>
+                  {!isReadOnly && (
+                    <Link to="/quarterly-priorities">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add {isEOS ? 'Rocks' : labels.priorities_label || 'Priorities'}
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </EditableSection>
 
-          {/* Draft Next Year Goals Section */}
-          {draftGoals && draftGoals.goals && draftGoals.goals.length > 0 && (
-            <Card className="mb-6 bg-blue-50/80 border-2 border-blue-200 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl text-blue-900">
+            {/* --- Draft Next Year Goals --- */}
+            {!isReadOnly && draftGoals && draftGoals.goals && draftGoals.goals.length > 0 && (
+              <Card className="bg-blue-50/80 border border-blue-200 rounded-xl shadow-sm overflow-hidden">
+                <CardHeader className="pb-3 border-b border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center text-lg font-semibold text-blue-900">
+                      <div className="p-1.5 rounded-lg mr-2.5 bg-blue-100">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                      </div>
                       {new Date().getFullYear() + 1} Goals (Draft)
                     </CardTitle>
-                    <CardDescription className="text-blue-700">
-                      Set during Annual Planning • {draftGoals.created_at && new Date(draftGoals.created_at).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </CardDescription>
+                    <span className="px-2 py-0.5 bg-blue-200 text-blue-800 rounded-full text-[10px] font-medium">
+                      Draft
+                    </span>
                   </div>
-                  <span className="px-3 py-1 bg-blue-200 text-blue-900 rounded-full text-sm font-medium">
-                    Draft
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Draft Goals List */}
-                <div className="space-y-2 mb-4">
-                  {draftGoals.goals.map((goal, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-blue-200">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-1.5 mb-3">
+                    {draftGoals.goals.map((goal, index) => (
+                      <div key={index} className="flex items-start gap-2 p-2 bg-white rounded border border-blue-100">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                        <p className="text-sm text-gray-700">{goal}</p>
                       </div>
-                      <p className="flex-1 text-gray-800">{goal}</p>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Info Banner */}
-                <Alert className="mb-4 border-blue-300 bg-blue-100">
-                  <AlertDescription className="text-blue-900 flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
+                    ))}
+                  </div>
+                  <p className="text-xs text-blue-600 mb-3">
                     These goals will automatically replace {new Date().getFullYear()} goals on January 1, {new Date().getFullYear() + 1}
-                  </AlertDescription>
-                </Alert>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-3">
+                  </p>
                   <Button
+                    size="sm"
                     onClick={() => setShowDraftGoalsModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
                   >
                     Edit Draft Goals
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-        )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
 
-      {/* Core Value Edit Dialog - Only show in edit mode */}
-      {!viewMode && (
+      {/* ===== DIALOGS ===== */}
+      {!isReadOnly && (
         <>
-      <CoreValueDialog
-        open={showCoreValueDialog}
-        onOpenChange={setShowCoreValueDialog}
-        value={editingCoreValue}
-        onSave={editingCoreValue ? handleSaveCoreValue : handleSaveNewCoreValue}
-      />
+          <CoreValueDialog
+            open={showCoreValueDialog}
+            onOpenChange={setShowCoreValueDialog}
+            value={editingCoreValue}
+            onSave={editingCoreValue ? handleSaveCoreValue : handleSaveNewCoreValue}
+          />
 
-      {/* Three Year Picture Dialog */}
-      <ThreeYearPictureDialog
-        open={showThreeYearDialog}
-        onOpenChange={setShowThreeYearDialog}
-        data={blueprintData.threeYearPicture}
-        onSave={handleSaveThreeYearPicture}
-        organization={organization}
-      />
+          <ThreeYearPictureDialog
+            open={showThreeYearDialog}
+            onOpenChange={setShowThreeYearDialog}
+            data={blueprintData.threeYearPicture}
+            onSave={handleSaveThreeYearPicture}
+            organization={organization}
+          />
 
-      {/* One Year Plan Dialog */}
-      <OneYearPlanDialog
-        open={showOneYearDialog}
-        onOpenChange={setShowOneYearDialog}
-        data={blueprintData.oneYearPlan}
-        onSave={handleSaveOneYearPlan}
-        organization={organization}
-      />
+          <OneYearPlanDialog
+            open={showOneYearDialog}
+            onOpenChange={setShowOneYearDialog}
+            data={blueprintData.oneYearPlan}
+            onSave={handleSaveOneYearPlan}
+            organization={organization}
+          />
         </>
       )}
 
-      {/* Draft Goals Edit Modal */}
       <DraftGoalsEditModal
         isOpen={showDraftGoalsModal}
         onClose={() => setShowDraftGoalsModal(false)}
@@ -1977,8 +1876,6 @@ const BusinessBlueprintPage = () => {
         year={new Date().getFullYear() + 1}
         onSave={handleSaveDraftGoals}
       />
-
-      </div>
     </div>
   );
 };
