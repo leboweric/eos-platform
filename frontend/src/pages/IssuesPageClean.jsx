@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from 'react';
+import { useState, useEffect, useRef, Component } from 'react';
 import { format, addDays } from 'date-fns';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
@@ -89,6 +89,7 @@ const IssuesPageClean = () => {
   const { selectedDepartment } = useDepartment();
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(true);
+  const isInitialLoadRef = useRef(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('short_term');
@@ -166,7 +167,10 @@ const IssuesPageClean = () => {
   const fetchIssues = async () => {
     console.log('🔍 fetchIssues called - refreshing all issues...');
     try {
-      setLoading(true);
+      // Only show full-screen spinner on initial load, not on refreshes
+      if (isInitialLoadRef.current) {
+        setLoading(true);
+      }
       setError(null);
       
       // Get effective team ID (like Level 10 Meeting does)
@@ -212,6 +216,7 @@ const IssuesPageClean = () => {
       setError('Failed to load issues');
     } finally {
       setLoading(false);
+      isInitialLoadRef.current = false;
     }
   };
 
