@@ -177,212 +177,34 @@
   color: #2563eb;
 }
 
-/* Print styles for 2-Page Plan */
+/* Print styles - Global (minimal, non-conflicting)
+   Page-specific print styles are in src/styles/print.css */
 @media print {
-  /* Reset page margins and size */
-  @page {
-    margin: 0.5in;
-    size: letter;
-  }
-  
-  /* Hide navigation, buttons, and other UI elements */
+  /* Hide elements marked with print:hidden utility */
   .print\\:hidden {
     display: none !important;
   }
   
-  /* General print styling */
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 11pt !important;
-    line-height: 1.3 !important;
-  }
-  
-  /* Remove backgrounds and shadows from cards */
-  .shadow-lg,
-  .shadow-md,
-  .shadow-sm {
-    box-shadow: none !important;
-  }
-  
-  .bg-gradient-to-r,
-  .bg-gradient-to-br,
-  .bg-gray-50,
-  .bg-indigo-50,
-  .bg-blue-50 {
-    background: white !important;
-  }
-  
-  /* Ensure content fits on page */
-  .max-w-7xl {
-    max-width: 100% !important;
-  }
-  
-  /* Hide tabs navigation but show content */
-  [role="tablist"] {
-    display: none !important;
-  }
-  
-  /* Show both Vision and Traction/Execution content regardless of active state */
-  [data-slot="tabs-content"],
-  [role="tabpanel"],
-  [data-state="inactive"],
-  [data-state="active"] {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    height: auto !important;
-    overflow: visible !important;
-    position: static !important;
-  }
-  
-  /* Override Radix UI's hidden state */
-  [data-state="inactive"][role="tabpanel"] {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-  
-  /* Force page break between Vision and Traction/Execution */
-  [data-slot="tabs-content"]:first-of-type,
-  [role="tabpanel"]:first-of-type {
-    page-break-after: always;
-  }
-  
-  /* Ensure grid layouts work in print */
-  .grid,
-  .lg\\:grid-cols-3 {
-    display: block !important;
-  }
-  
-  .lg\\:col-span-2 {
-    width: 100% !important;
-  }
-  
-  /* Hide edit buttons and dialogs */
-  button {
-    display: none !important;
-  }
-  
-  /* Format headers for print */
-  h1, h2, h3, h4, h5, h6 {
-    color: black !important;
-    page-break-after: avoid;
-  }
-  
-  /* Keep content together when possible */
-  .space-y-6 > * {
-    page-break-inside: avoid;
-  }
-  
-  /* Allow breaking inside cards if necessary to prevent cutoff */
-  .overflow-hidden {
-    overflow: visible !important;
-  }
-  
-  /* Ensure cards can break if needed */
-  [class*="Card"] {
-    page-break-inside: auto;
-  }
-  
-  /* But try to keep card headers with content */
-  [class*="CardHeader"] {
-    page-break-after: avoid;
-  }
-  
-  /* Format cards for print */
-  .border-0 {
-    border: 1px solid #e5e7eb !important;
-  }
-  
-  /* Make text black for better printing */
-  .text-gray-600,
-  .text-gray-700,
-  .text-gray-800,
-  .text-gray-900,
-  .text-indigo-600,
-  .text-indigo-700,
-  .text-blue-600 {
-    color: black !important;
-  }
-  
-  /* Ensure descriptions are visible */
-  .text-gray-500 {
-    color: #6b7280 !important;
-  }
-  
-  /* Format specific sections */
-  .whitespace-pre-wrap {
-    white-space: pre-wrap !important;
-  }
-  
-  /* Hide success/error alerts */
+  /* Hide success/error alerts globally */
   [role="alert"] {
     display: none !important;
   }
   
-  /* Force specific tab contents to show */
-  [role="tabpanel"][data-value="vision"],
-  [role="tabpanel"][data-value="execution"] {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+  /* Hide dialog overlays globally */
+  [role="dialog"],
+  [data-radix-portal] {
+    display: none !important;
   }
   
-  /* Page titles for each section */
-  [role="tabpanel"][data-value="vision"]::before {
-    content: "VISION";
-    display: block;
-    font-size: 24pt;
-    font-weight: bold;
-    margin-bottom: 20pt;
-    text-align: center;
+  /* Ensure overflow is visible for print */
+  .overflow-hidden {
+    overflow: visible !important;
   }
   
-  [role="tabpanel"][data-value="execution"]::before {
-    content: "EXECUTION";
-    display: block;
-    font-size: 24pt;
-    font-weight: bold;
-    margin-bottom: 20pt;
-    text-align: center;
+  /* Keep whitespace formatting */
+  .whitespace-pre-wrap {
+    white-space: pre-wrap !important;
   }
-  
-  /* Ensure vision content breaks to next page */
-  [role="tabpanel"][data-value="vision"] {
-    page-break-after: always;
-  }
-  
-  /* Fix for Vision tab grid layout */
-  .grid.grid-cols-1.lg\\:grid-cols-3 {
-    display: block !important;
-    columns: 1 !important;
-  }
-  
-  /* Ensure all content is visible */
-  body * {
-    max-height: none !important;
-    min-height: 0 !important;
-  }
-  
-  /* Specific overrides for flex containers */
-  .flex-1 {
-    flex: none !important;
-  }
-  
-  /* Remove any transforms or fixed positioning */
-  [role="tabpanel"],
-  [data-slot="tabs-content"] {
-    transform: none !important;
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-  }
-  
-  /* Debug: Add borders to see what's happening */
-  /* [role="tabpanel"] {
-    border: 2px solid red !important;
-  } */
 }
 
 /* Enhanced Date Picker Styles */

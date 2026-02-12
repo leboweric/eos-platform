@@ -951,7 +951,7 @@ const BusinessBlueprintPage = () => {
   const EditableSection = ({ children, onEdit, title, icon: Icon, description, className = '' }) => {
     const canEdit = !isReadOnly;
     return (
-      <Card className={`group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
+      <Card className={`group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden vto-print-section ${className}`}>
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center text-lg font-semibold text-gray-900">
@@ -1011,11 +1011,11 @@ const BusinessBlueprintPage = () => {
 
   // ========== MAIN RENDER ==========
   return (
-    <div className="min-h-screen bg-gray-50/50 relative">
+    <div className="min-h-screen bg-gray-50/50 relative vto-print-page">
       <div className="max-w-[1600px] mx-auto p-6 space-y-6">
         
         {/* ===== HEADER ===== */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between vto-print-header">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-3"
                  style={{
@@ -1031,7 +1031,7 @@ const BusinessBlueprintPage = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               {labels.business_blueprint_label || '2-Page Plan'}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1 vto-print-subtitle">
               {isViewingOtherPlan
                 ? (viewingLeadershipTeam 
                     ? 'Viewing Leadership Team\'s vision and strategy (read-only)'
@@ -1102,7 +1102,7 @@ const BusinessBlueprintPage = () => {
 
         {/* Read-only banner when viewing another plan */}
         {isViewingOtherPlan && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border"
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border vto-readonly-banner"
                style={{ 
                  backgroundColor: `${themeColors.primary}08`,
                  borderColor: `${themeColors.primary}30`
@@ -1156,11 +1156,11 @@ const BusinessBlueprintPage = () => {
         )}
 
         {/* ===== TWO-COLUMN LAYOUT ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 vto-print-grid">
           
           {/* ===== LEFT COLUMN: VISION ===== */}
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="space-y-5 vto-print-col-vision">
+            <div className="flex items-center gap-2 mb-1 vto-print-col-header">
               <div className="h-1 w-8 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
               <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
                 {tabLabels.vision}
@@ -1695,8 +1695,8 @@ const BusinessBlueprintPage = () => {
           </div>
 
           {/* ===== RIGHT COLUMN: TRACTION / EXECUTION ===== */}
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="space-y-5 vto-print-col-traction">
+            <div className="flex items-center gap-2 mb-1 vto-print-col-header">
               <div className="h-1 w-8 rounded-full" style={{ backgroundColor: themeColors.secondary || themeColors.primary }}></div>
               <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: themeColors.secondary || themeColors.primary }}>
                 {tabLabels.execution}
