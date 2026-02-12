@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CoreValueDialog from '../components/vto/CoreValueDialog';
 import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
@@ -186,15 +187,20 @@ const BusinessBlueprintPage = () => {
   const [success, setSuccess] = useState(null);
   const [organization, setOrganization] = useState(null);
   
-  // Leadership Team viewing
+  // Cross-department viewing (Leadership Team toggle / Department browser)
   const [viewingLeadershipTeam, setViewingLeadershipTeam] = useState(false);
   const [leadershipTeamId, setLeadershipTeamId] = useState(null);
   const [leadershipBlueprintData, setLeadershipBlueprintData] = useState(null);
   const [loadingLeadership, setLoadingLeadership] = useState(false);
+  const [viewingDepartmentId, setViewingDepartmentId] = useState(null); // For browsing dept VTOs from Leadership
+  const [viewingDepartmentData, setViewingDepartmentData] = useState(null);
+  const [loadingDepartment, setLoadingDepartment] = useState(false);
   
   // Check if viewing department-level plan
   const isDepartmentView = selectedDepartment && !selectedDepartment.is_leadership_team;
-  const isReadOnly = viewingLeadershipTeam && isDepartmentView;
+  const isOnLeadershipView = selectedDepartment && selectedDepartment.is_leadership_team;
+  const isViewingOtherPlan = viewingLeadershipTeam || !!viewingDepartmentId;
+  const isReadOnly = isViewingOtherPlan;
   
   // Business Blueprint data
   const [blueprintData, setBlueprintData] = useState({
@@ -436,7 +442,21 @@ const BusinessBlueprintPage = () => {
       if (!orgId || !teamId) return;
       
       const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
-      setQuarterlyRocks(data.companyPriorities || []);
+      // Combine company priorities AND individual team member priorities
+      const companyRocks = data.companyPriorities || [];
+      const individualRocks = Object.values(data.teamMemberPriorities || {}).flatMap(
+        member => member?.priorities || []
+      );
+      // Merge and deduplicate by ID
+      const allRocks = [...companyRocks];
+      const existingIds = new Set(companyRocks.map(r => r.id));
+      individualRocks.forEach(rock => {
+        if (!existingIds.has(rock.id)) {
+          allRocks.push(rock);
+          existingIds.add(rock.id);
+        }
+      });
+      setQuarterlyRocks(allRocks);
     } catch (error) {
       console.error('Failed to fetch quarterly rocks:', error);
       setQuarterlyRocks([]);
@@ -458,12 +478,23 @@ const BusinessBlueprintPage = () => {
         localStorage.setItem('selectedDepartment', JSON.stringify(leadershipDept));
         const data = await businessBlueprintService.getBusinessBlueprint();
         
-        // Also fetch leadership rocks
+        // Also fetch leadership rocks (company + individual)
         const orgId = user?.organizationId || user?.organization_id;
         let leadershipRocks = [];
         try {
           const rocksData = await quarterlyPrioritiesService.getCurrentPriorities(orgId, leadershipTeamId);
-          leadershipRocks = rocksData.companyPriorities || [];
+          const companyRocks = rocksData.companyPriorities || [];
+          const individualRocks = Object.values(rocksData.teamMemberPriorities || {}).flatMap(
+            member => member?.priorities || []
+          );
+          const existingIds = new Set(companyRocks.map(r => r.id));
+          leadershipRocks = [...companyRocks];
+          individualRocks.forEach(rock => {
+            if (!existingIds.has(rock.id)) {
+              leadershipRocks.push(rock);
+              existingIds.add(rock.id);
+            }
+          });
         } catch (e) {
           console.error('Failed to fetch leadership rocks:', e);
         }
@@ -785,11 +816,12 @@ const BusinessBlueprintPage = () => {
     }
   };
 
-  // Leadership Team toggle handler
+  // Leadership Team toggle handler (when on a department, view Leadership VTO)
   const handleToggleLeadershipView = () => {
     if (!viewingLeadershipTeam) {
-      // Switching to leadership view
       setViewingLeadershipTeam(true);
+      setViewingDepartmentId(null); // Clear any department browsing
+      setViewingDepartmentData(null);
       if (!leadershipBlueprintData) {
         fetchLeadershipBlueprint();
       }
@@ -798,9 +830,120 @@ const BusinessBlueprintPage = () => {
     }
   };
 
-  // ========== HELPER: Get display data (either own or leadership) ==========
-  const displayData = viewingLeadershipTeam && leadershipBlueprintData ? leadershipBlueprintData : blueprintData;
-  const displayRocks = viewingLeadershipTeam && leadershipBlueprintData ? (leadershipBlueprintData.quarterlyRocks || []) : quarterlyRocks;
+  // Department browsing handler (when on Leadership, view a department's VTO)
+  const handleViewDepartment = async (departmentId) => {
+    if (!departmentId || departmentId === 'none') {
+      setViewingDepartmentId(null);
+      setViewingDepartmentData(null);
+      return;
+    }
+    
+    setViewingDepartmentId(departmentId);
+    setLoadingDepartment(true);
+    
+    try {
+      // Temporarily override localStorage to fetch department data
+      const currentDept = localStorage.getItem('selectedDepartment');
+      const targetDept = availableDepartments.find(d => d.id === departmentId);
+      
+      if (targetDept) {
+        localStorage.setItem('selectedDepartment', JSON.stringify(targetDept));
+        const data = await businessBlueprintService.getBusinessBlueprint();
+        
+        // Fetch department rocks (company + individual)
+        const orgId = user?.organizationId || user?.organization_id;
+        let deptRocks = [];
+        try {
+          const rocksData = await quarterlyPrioritiesService.getCurrentPriorities(orgId, departmentId);
+          const companyRocks = rocksData.companyPriorities || [];
+          const individualRocks = Object.values(rocksData.teamMemberPriorities || {}).flatMap(
+            member => member?.priorities || []
+          );
+          const existingIds = new Set(companyRocks.map(r => r.id));
+          deptRocks = [...companyRocks];
+          individualRocks.forEach(rock => {
+            if (!existingIds.has(rock.id)) {
+              deptRocks.push(rock);
+              existingIds.add(rock.id);
+            }
+          });
+        } catch (e) {
+          console.error('Failed to fetch department rocks:', e);
+        }
+        
+        // Restore original department
+        if (currentDept) {
+          localStorage.setItem('selectedDepartment', currentDept);
+        }
+        
+        setViewingDepartmentData({
+          coreValues: data.coreValues || [],
+          coreFocus: {
+            purpose: data.coreFocus?.hedgehog_type === 'purpose' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            cause: data.coreFocus?.hedgehog_type === 'cause' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            passion: data.coreFocus?.hedgehog_type === 'passion' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+            niche: data.coreFocus?.niche || '',
+            hedgehogType: data.coreFocus?.hedgehog_type || 'purpose'
+          },
+          bhag: {
+            description: data.tenYearTarget?.target_description || '',
+            year: data.tenYearTarget?.target_year || new Date().getFullYear() + 10,
+            runningTotal: data.tenYearTarget?.running_total_description || ''
+          },
+          marketingStrategy: {
+            targetMarket: data.marketingStrategy?.target_market || '',
+            demographicProfile: data.marketingStrategy?.demographic_profile || '',
+            geographicProfile: data.marketingStrategy?.geographic_profile || '',
+            psychographicProfile: data.marketingStrategy?.psychographic_profile || '',
+            differentiators: [
+              data.marketingStrategy?.differentiator_1 || '',
+              data.marketingStrategy?.differentiator_2 || '',
+              data.marketingStrategy?.differentiator_3 || '',
+            ].filter(d => d),
+            provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
+            guaranteeExists: data.marketingStrategy?.guarantee_exists || false,
+            guaranteeDescription: data.marketingStrategy?.guarantee_description || ''
+          },
+          threeYearPicture: data.threeYearPicture ? {
+            ...data.threeYearPicture,
+            lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
+              JSON.parse(data.threeYearPicture.what_does_it_look_like) : [],
+            completions: data.threeYearPicture.what_does_it_look_like_completions || {}
+          } : null,
+          oneYearPlan: data.oneYearPlan ? {
+            ...data.oneYearPlan,
+            goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
+              data.oneYearPlan.goals : []
+          } : null,
+          quarterlyRocks: deptRocks,
+          longTermIssues: data.longTermIssues || []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch department blueprint:', error);
+      setError('Failed to load department data');
+    } finally {
+      setLoadingDepartment(false);
+    }
+  };
+
+  // ========== HELPER: Get display data (own, leadership, or browsed department) ==========
+  const getDisplayData = () => {
+    if (viewingDepartmentId && viewingDepartmentData) return viewingDepartmentData;
+    if (viewingLeadershipTeam && leadershipBlueprintData) return leadershipBlueprintData;
+    return blueprintData;
+  };
+  const displayData = getDisplayData();
+  const displayRocks = (() => {
+    if (viewingDepartmentId && viewingDepartmentData) return viewingDepartmentData.quarterlyRocks || [];
+    if (viewingLeadershipTeam && leadershipBlueprintData) return leadershipBlueprintData.quarterlyRocks || [];
+    return quarterlyRocks;
+  })();
+  
+  // Get the name of the department being viewed
+  const viewingDepartmentName = viewingDepartmentId 
+    ? availableDepartments.find(d => d.id === viewingDepartmentId)?.name || 'Department'
+    : null;
 
   // ========== RENDER HELPERS ==========
 
@@ -880,21 +1023,27 @@ const BusinessBlueprintPage = () => {
                    color: themeColors.primary
                  }}>
               <Building2 className="h-3.5 w-3.5" />
-              {viewingLeadershipTeam ? 'LEADERSHIP TEAM VIEW' : 'STRATEGIC PLANNING'}
+              {isViewingOtherPlan 
+                ? (viewingLeadershipTeam ? 'LEADERSHIP TEAM VIEW' : `VIEWING: ${viewingDepartmentName?.toUpperCase()}`)
+                : 'STRATEGIC PLANNING'
+              }
             </div>
             <h1 className="text-3xl font-bold text-gray-900">
               {labels.business_blueprint_label || '2-Page Plan'}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              {viewingLeadershipTeam 
-                ? 'Viewing Leadership Team\'s vision and strategy (read-only)'
+              {isViewingOtherPlan
+                ? (viewingLeadershipTeam 
+                    ? 'Viewing Leadership Team\'s vision and strategy (read-only)'
+                    : `Viewing ${viewingDepartmentName}'s vision and strategy (read-only)`
+                  )
                 : 'Define your organization\'s vision and strategy for success'
               }
             </p>
           </div>
           
           <div className="flex items-center gap-3 no-print">
-            {/* Leadership Team Toggle - only show for non-leadership departments */}
+            {/* When on a Department: Show "View Leadership VTO" button */}
             {isDepartmentView && leadershipTeamId && (
               <Button
                 variant={viewingLeadershipTeam ? "default" : "outline"}
@@ -914,6 +1063,31 @@ const BusinessBlueprintPage = () => {
               </Button>
             )}
             
+            {/* When on Leadership Team: Show department browser dropdown */}
+            {isOnLeadershipView && availableDepartments.filter(d => !d.is_leadership_team).length > 0 && (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={viewingDepartmentId || 'none'}
+                  onValueChange={(value) => handleViewDepartment(value)}
+                >
+                  <SelectTrigger className="w-[200px] h-9 text-sm border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-3.5 w-3.5 text-gray-400" />
+                      <SelectValue placeholder="Browse Department VTOs" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">My VTO (Leadership)</SelectItem>
+                    {availableDepartments.filter(d => !d.is_leadership_team).map(dept => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <Button
               onClick={() => window.print()}
               variant="outline"
@@ -926,8 +1100,8 @@ const BusinessBlueprintPage = () => {
           </div>
         </div>
 
-        {/* Read-only banner when viewing leadership */}
-        {viewingLeadershipTeam && (
+        {/* Read-only banner when viewing another plan */}
+        {isViewingOtherPlan && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg border"
                style={{ 
                  backgroundColor: `${themeColors.primary}08`,
@@ -935,13 +1109,19 @@ const BusinessBlueprintPage = () => {
                }}>
             <Eye className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
             <p className="text-sm" style={{ color: themeColors.primary }}>
-              You are viewing the <strong>Leadership Team's</strong> {labels.business_blueprint_label || '2-Page Plan'}. 
-              This is read-only. Switch back to edit your department's plan.
+              {viewingLeadershipTeam 
+                ? <>You are viewing the <strong>Leadership Team's</strong> {labels.business_blueprint_label || '2-Page Plan'}. This is read-only.</>
+                : <>You are viewing <strong>{viewingDepartmentName}'s</strong> {labels.business_blueprint_label || '2-Page Plan'}. This is read-only.</>
+              }
             </p>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewingLeadershipTeam(false)}
+              onClick={() => {
+                setViewingLeadershipTeam(false);
+                setViewingDepartmentId(null);
+                setViewingDepartmentData(null);
+              }}
               className="ml-auto text-xs"
               style={{ color: themeColors.primary }}
             >
@@ -950,11 +1130,13 @@ const BusinessBlueprintPage = () => {
           </div>
         )}
 
-        {/* Loading leadership data */}
-        {loadingLeadership && (
+        {/* Loading cross-department data */}
+        {(loadingLeadership || loadingDepartment) && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin mr-2" style={{ color: themeColors.primary }} />
-            <span className="text-sm text-gray-500">Loading Leadership Team data...</span>
+            <span className="text-sm text-gray-500">
+              {loadingLeadership ? 'Loading Leadership Team data...' : `Loading ${viewingDepartmentName} data...`}
+            </span>
           </div>
         )}
 
