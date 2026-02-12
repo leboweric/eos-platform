@@ -63,6 +63,7 @@ const IssueDialog = ({
   });
   const [newAttachments, setNewAttachments] = useState([]); // Files to upload
   const [existingAttachments, setExistingAttachments] = useState([]); // Already uploaded
+  const [attachmentsChanged, setAttachmentsChanged] = useState(false); // Track if attachments were deleted
   const [loading, setLoading] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [error, setError] = useState(null);
@@ -156,6 +157,7 @@ const IssueDialog = ({
     setUpdateText('');
     setShowAddUpdate(false);
     setCreatedIssueId(null); // Reset auto-created issue ID
+    setAttachmentsChanged(false); // Reset attachment change tracking
   }, [open, issue]);
 
   // Clear form when dialog opens without an issue
@@ -413,6 +415,7 @@ const IssueDialog = ({
     try {
       await issuesService.deleteAttachment(issue.id, attachmentId);
       setExistingAttachments(prev => prev.filter(a => a.id !== attachmentId));
+      setAttachmentsChanged(true);
     } catch (error) {
       console.error('Failed to delete attachment:', error);
       setError('Failed to delete attachment');
@@ -462,11 +465,19 @@ const IssueDialog = ({
     setNewAttachments(prev => [...prev, ...validFiles]);
   };
 
+  // Wrap onClose to refresh parent list if attachments were modified
+  const handleClose = () => {
+    if (attachmentsChanged && onRefresh) {
+      onRefresh();
+    }
+    onClose();
+  };
+
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
       if (!newOpen) {
         // Only call onClose when dialog is being closed (false), not opened (true)
-        onClose();
+        handleClose();
       }
     }}>
       <DialogContent className="fixed right-0 top-0 left-auto translate-x-0 translate-y-0 h-screen w-[600px] max-w-[90vw] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-white/20 dark:border-gray-700/50 shadow-2xl rounded-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300">
