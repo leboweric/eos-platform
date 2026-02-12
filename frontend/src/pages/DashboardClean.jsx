@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { getTeamId, getEffectiveTeamId } from '../utils/teamUtils';
@@ -105,6 +105,7 @@ const DashboardClean = () => {
   const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const isInitialLoadRef = useRef(true);
   const [organization, setOrganization] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
@@ -327,7 +328,9 @@ const DashboardClean = () => {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoadRef.current) {
+        setLoading(true);
+      }
       
       const orgId = user?.organizationId || user?.organization_id;
       
@@ -536,6 +539,7 @@ const DashboardClean = () => {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
+      isInitialLoadRef.current = false;
     }
   };
 

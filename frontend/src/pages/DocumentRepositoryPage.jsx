@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { documentsService } from '../services/documentsService';
 import { foldersService } from '../services/foldersService';
@@ -44,6 +44,7 @@ const DocumentRepositoryPage = () => {
   const [documents, setDocuments] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isInitialLoadRef = useRef(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState(null);
@@ -77,7 +78,9 @@ const DocumentRepositoryPage = () => {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoadRef.current) {
+        setLoading(true);
+      }
       const orgId = user?.organizationId;
       
       if (!orgId) {
@@ -106,6 +109,7 @@ const DocumentRepositoryPage = () => {
       setError('Failed to load documents. Please try again.');
     } finally {
       setLoading(false);
+      isInitialLoadRef.current = false;
     }
   };
 

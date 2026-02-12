@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from 'react';
+import { useState, useEffect, useRef, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfQuarter, endOfQuarter, addDays, parseISO } from 'date-fns';
 import { formatDateSafe } from '../utils/dateUtils';
@@ -131,6 +131,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [milestoneError, setMilestoneError] = useState('');
   const [editMilestoneError, setEditMilestoneError] = useState('');
   const [loading, setLoading] = useState(false);
+  const isInitialLoadRef = useRef(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [organization, setOrganization] = useState(null);
@@ -255,7 +256,9 @@ const QuarterlyPrioritiesPageClean = () => {
   }, [selectedDepartment, showArchived]);
 
   const fetchQuarterlyData = async () => {
-    setLoading(true);
+    if (isInitialLoadRef.current) {
+      setLoading(true);
+    }
     setError(null);
     try {
       // Get organization and team IDs from user context
@@ -341,6 +344,7 @@ const QuarterlyPrioritiesPageClean = () => {
       setMyMilestones([]);
     } finally {
       setLoading(false);
+      isInitialLoadRef.current = false;
     }
   };
 
