@@ -937,6 +937,12 @@ const IssueDialog = ({
                 
                 // If this is an existing issue (editing), just close
                 if (currentIssueId) {
+                  // If there are new attachments, go through full save flow to upload them
+                  if (newAttachments.length > 0) {
+                    console.log('📎 New attachments pending, triggering full save to upload files...');
+                    await handleSubmit(e);
+                    return;
+                  }
                   // If there are unsaved changes, save before closing
                   if (hasUnsavedChanges && formData.title.trim()) {
                     console.log('💾 Triggering save before close...');
