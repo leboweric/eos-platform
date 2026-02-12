@@ -600,6 +600,7 @@ const IssuesPageClean = () => {
           teamMembers={teamMembers}
           timeline={activeTab}
           onTimelineChange={handleTimelineChange}
+          onRefresh={fetchIssues}
         />
 
         {/* Todo Dialog for creating todos from issues */}

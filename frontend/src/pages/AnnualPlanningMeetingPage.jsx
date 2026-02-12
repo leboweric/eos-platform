@@ -4776,6 +4776,7 @@ function AnnualPlanningMeetingPage() {
           issue={editingIssue}
           teamMembers={teamMembers || []}
           onTimelineChange={handleTimelineChange}
+          onRefresh={fetchIssuesData}
         />
 
         {/* Todo Dialog */}

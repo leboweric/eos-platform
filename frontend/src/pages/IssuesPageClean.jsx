@@ -1028,6 +1028,7 @@ const IssuesPageClean = () => {
           timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
+          onRefresh={fetchIssues}
         />
         
         {/* Archive confirmation dialog */}

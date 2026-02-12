@@ -4436,6 +4436,7 @@ function QuarterlyPlanningMeetingPage() {
           issue={editingIssue}
           teamMembers={teamMembers || []}
           onTimelineChange={handleTimelineChange}
+          onRefresh={fetchIssuesData}
         />
 
         {/* Todo Dialog */}

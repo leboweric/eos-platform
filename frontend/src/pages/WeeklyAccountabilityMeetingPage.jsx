@@ -9161,6 +9161,7 @@ setAddingMilestoneFor(priority.id);
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
           onSave={handleSaveIssue}
+          onRefresh={fetchIssues}
         />
         
         <TodoDialog

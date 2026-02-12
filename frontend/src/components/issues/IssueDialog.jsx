@@ -50,6 +50,7 @@ const IssueDialog = ({
   onSendCascadingMessage,
   onTimelineChange,
   onConvertToRock,
+  onRefresh,
   isQuarterlyMeeting = false
 }) => {
   const { user } = useAuthStore();
@@ -372,6 +373,11 @@ const IssueDialog = ({
         if (failedFiles.length > 0) {
           setError(`Failed to upload: ${failedFiles.join(', ')}`);
           setTimeout(() => setError(null), 10000);
+        }
+        
+        // Refresh the parent list so attachments show immediately
+        if (onRefresh) {
+          await onRefresh();
         }
       }
       
