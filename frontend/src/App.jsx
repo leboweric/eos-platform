@@ -9,7 +9,7 @@ import { TerminologyProvider } from './contexts/TerminologyContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 import { useApolloTracking } from './hooks/useApolloTracking';
-import { VersionCheck } from './hooks/useVersionCheck';
+import { VersionCheck } from './hooks/useVersionCheck.jsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 
