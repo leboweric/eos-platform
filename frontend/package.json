@@ -39,7 +39,7 @@
     "@radix-ui/react-tooltip": "^1.2.6",
     "@sentry/react": "^10.17.0",
     "@stripe/react-stripe-js": "^3.7.0",
-    "@stripe/stripe-js": "^7.4.0",
+    "@stripe/stripe-js": "^8.7.0",
     "@tailwindcss/vite": "^4.1.7",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
