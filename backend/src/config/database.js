@@ -20,14 +20,14 @@ const dbConfig = useProductionDB
   ? {
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // SSL only for production, not tests
-      max: process.env.NODE_ENV === 'test' ? 5 : 10, // reduced pool size for tests and Railway
-      idleTimeoutMillis: 10000, // close idle connections after 10 seconds
+      max: process.env.NODE_ENV === 'test' ? 5 : 15, // slightly larger pool for burst handling
+      idleTimeoutMillis: 30000, // close idle connections after 30 seconds (prevents premature pool drain)
       connectionTimeoutMillis: 5000, // increased timeout for Railway
       // Railway-specific optimizations (not needed for tests)
       keepAlive: process.env.NODE_ENV !== 'test',
       keepAliveInitialDelayMillis: process.env.NODE_ENV !== 'test' ? 10000 : undefined,
-      // Handle connection drops gracefully
-      allowExitOnIdle: true,
+      // Keep pool alive on long-running servers (prevents pool drain during quiet periods)
+      allowExitOnIdle: false,
       // Retry logic
       query_timeout: 10000,
       statement_timeout: 10000,
