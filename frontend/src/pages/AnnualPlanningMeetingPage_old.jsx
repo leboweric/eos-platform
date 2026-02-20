@@ -1456,12 +1456,9 @@ function AnnualPlanningMeetingPage() {
               <Button
                 onClick={async () => {
                   try {
+                    const orgId = user?.organizationId || user?.organization_id;
                     const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-                    await quarterlyPrioritiesService.createPriority({
-                      ...priorityForm,
-                      teamId: effectiveTeamId,
-                      organizationId: user?.organizationId || user?.organization_id
-                    });
+                    await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityForm);
                     setShowAddPriority(false);
                     setPriorityForm({
                       title: '',

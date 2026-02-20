@@ -9061,10 +9061,7 @@ setAddingMilestoneFor(priority.id);
                 if (selectedPriority) {
                   await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, selectedPriority.id, priorityData);
                 } else {
-                  await quarterlyPrioritiesService.createPriority({
-                    ...priorityData,
-                    teamId: effectiveTeamId
-                  });
+                  await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
                 }
                 await fetchPrioritiesData();
                 setShowPriorityDialog(false);
