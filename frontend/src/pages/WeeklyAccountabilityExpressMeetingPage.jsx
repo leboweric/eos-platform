@@ -9061,7 +9061,14 @@ setAddingMilestoneFor(priority.id);
                 if (selectedPriority) {
                   await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, selectedPriority.id, priorityData);
                 } else {
-                  await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
+                  // Ensure quarter and year are included for new priorities
+                  const now = new Date();
+                  const dataWithQuarter = {
+                    ...priorityData,
+                    quarter: priorityData.quarter || `Q${Math.floor(now.getMonth() / 3) + 1}`,
+                    year: priorityData.year || now.getFullYear()
+                  };
+                  await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, dataWithQuarter);
                 }
                 await fetchPrioritiesData();
                 setShowPriorityDialog(false);
@@ -9069,7 +9076,8 @@ setAddingMilestoneFor(priority.id);
                 setSuccess('Priority saved successfully');
               } catch (error) {
                 console.error('Failed to save priority:', error);
-                setError('Failed to save priority');
+                const apiError = error?.response?.data?.error || error?.response?.data?.details;
+                setError(apiError || 'Failed to save priority. Please check all fields and try again.');
               }
             }}
           />

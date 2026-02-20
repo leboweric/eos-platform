@@ -343,7 +343,26 @@ export const createPriority = async (req, res) => {
       milestones = []
     } = req.body;
     
-    // Validate required fields
+    // Validate required fields and collect all missing fields for a single error message
+    const missingFields = [];
+    if (!title) missingFields.push('Title');
+    if (!quarter || !year) missingFields.push('Quarter/Year');
+    if (!dueDate || dueDate === '') missingFields.push('Due Date');
+    
+    // Use the current user's ID if no owner is specified
+    actualOwnerId = ownerId || req.user.id;
+    if (!actualOwnerId || actualOwnerId === '') missingFields.push('Owner');
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        error: `Please fill in the following required fields: ${missingFields.join(', ')}`,
+        details: `Missing fields: ${missingFields.join(', ')}`,
+        missingFields,
+        received: { title: !!title, quarter, year, dueDate: !!dueDate, ownerId: !!ownerId }
+      });
+    }
+    
+    // Legacy individual checks kept as safety net (should not be reached)
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
     }
@@ -355,18 +374,15 @@ export const createPriority = async (req, res) => {
       });
     }
     
-    // Use the current user's ID if no owner is specified
-    actualOwnerId = ownerId || req.user.id;
-    
     // Validate owner ID is a valid UUID
     if (!actualOwnerId || actualOwnerId === '') {
-      return res.status(400).json({ error: 'Owner ID is required' });
+      return res.status(400).json({ error: 'Owner is required. Please select an owner.' });
     }
     
     // Validate that due date is provided
     if (!dueDate || dueDate === '') {
       return res.status(400).json({ 
-        error: 'Due date is required for creating a priority',
+        error: 'Due Date is required for creating a priority',
         details: 'Please select a due date for this priority'
       });
     }

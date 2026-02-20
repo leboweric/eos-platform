@@ -240,6 +240,18 @@ const PriorityDialog = ({
     setError(null);
     
     try {
+      // Client-side validation for required fields
+      const missingFields = [];
+      if (!formData.title || formData.title.trim() === '') missingFields.push('Title');
+      if (!formData.ownerId || formData.ownerId === '') missingFields.push('Owner');
+      if (!formData.dueDate || formData.dueDate === '') missingFields.push('Due Date');
+      
+      if (missingFields.length > 0) {
+        setError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+        setSaving(false);
+        return;
+      }
+      
       // Calculate current progress from milestones (but NOT status - keep them decoupled)
       let currentProgress = formData.progress;
       
@@ -256,6 +268,11 @@ const PriorityDialog = ({
         });
       }
       
+      // Auto-calculate quarter and year if not already present (needed for new priorities)
+      const now = new Date();
+      const currentQuarter = `Q${Math.floor(now.getMonth() / 3) + 1}`;
+      const currentYear = now.getFullYear();
+      
       const priorityData = {
         ...formData,
         progress: currentProgress, // Use calculated progress
@@ -263,7 +280,10 @@ const PriorityDialog = ({
         owner_id: formData.ownerId,
         due_date: formData.dueDate,
         is_company_priority: formData.isCompanyPriority || false,
-        priority_type: formData.isCompanyPriority ? 'company' : 'individual'
+        priority_type: formData.isCompanyPriority ? 'company' : 'individual',
+        // Include quarter and year - needed for creating new priorities
+        quarter: currentQuarter,
+        year: currentYear
       };
 
       if (onSave) {
@@ -275,7 +295,9 @@ const PriorityDialog = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to save priority:', error);
-      setError(error.message || 'Failed to save priority');
+      // Extract meaningful error message from API response if available
+      const apiError = error?.response?.data?.error || error?.response?.data?.details;
+      setError(apiError || error.message || 'Failed to save priority. Please check all fields and try again.');
     } finally {
       setSaving(false);
     }
@@ -1159,7 +1181,7 @@ const PriorityDialog = ({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={saving || !formData.title}
+            disabled={saving || !formData.title || !formData.ownerId || !formData.dueDate}
             style={{
               background: saving ? '#9CA3AF' : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
             }}

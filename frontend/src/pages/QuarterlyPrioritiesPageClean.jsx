@@ -1215,6 +1215,17 @@ const QuarterlyPrioritiesPageClean = () => {
     // Prevent multiple submissions
     if (loading) return;
     
+    // Client-side validation for required fields
+    const missingFields = [];
+    if (!priorityForm.title || priorityForm.title.trim() === '') missingFields.push('Title');
+    if (!priorityForm.ownerId || priorityForm.ownerId === '') missingFields.push('Owner');
+    if (!priorityForm.dueDate || priorityForm.dueDate === '') missingFields.push('Due Date');
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+    
     setLoading(true);
     try {
       // Get current quarter and year
@@ -1227,7 +1238,7 @@ const QuarterlyPrioritiesPageClean = () => {
       const teamId = selectedDepartment?.id;
       
       if (!orgId || !teamId) {
-        throw new Error('Organization or department not found');
+        throw new Error('Organization or department not found. Please make sure you have a team selected.');
       }
       
       const priorityData = {
@@ -1262,7 +1273,9 @@ const QuarterlyPrioritiesPageClean = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to create priority:', err);
-      setError('Failed to create item');
+      // Extract meaningful error message from API response if available
+      const apiError = err?.response?.data?.error || err?.response?.data?.details;
+      setError(apiError || err.message || 'Failed to create item. Please check all fields and try again.');
     } finally {
       setLoading(false);
     }
