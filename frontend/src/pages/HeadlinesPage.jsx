@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, Edit2, Trash2, Check, X, Loader2, Archive, Building2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { headlinesService } from '../services/headlinesService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 
 const HeadlinesPage = () => {
   const { user } = useAuthStore();
+  const { labels } = useTerminology();
   const { selectedDepartment } = useDepartment();
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [showCascadingDialog, setShowCascadingDialog] = useState(false);
@@ -418,7 +420,7 @@ const HeadlinesPage = () => {
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Users className="h-5 w-5 text-slate-600" />
-              Customer Headlines ({headlines.customer.length})
+              {labels.customerHeadline} Headlines ({headlines.customer.length})
             </h3>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -460,7 +462,7 @@ const HeadlinesPage = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500 italic">No customer headlines yet</p>
+              <p className="text-sm text-slate-500 italic">No {labels.customerHeadline?.toLowerCase()} headlines yet</p>
             )}
           </div>
 
@@ -468,7 +470,7 @@ const HeadlinesPage = () => {
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Users2 className="h-5 w-5 text-slate-600" />
-              Employee Headlines ({headlines.employee.length})
+              {labels.employeeHeadline} Headlines ({headlines.employee.length})
             </h3>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -509,7 +511,7 @@ const HeadlinesPage = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500 italic">No employee headlines yet</p>
+              <p className="text-sm text-slate-500 italic">No {labels.employeeHeadline?.toLowerCase()} headlines yet</p>
             )}
           </div>
 
@@ -623,7 +625,7 @@ const HeadlinesPage = () => {
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                     <Users className="h-5 w-5 text-slate-600" />
-                    Archived Customer Headlines ({archivedHeadlines.customer.length})
+                    Archived {labels.customerHeadline} Headlines ({archivedHeadlines.customer.length})
                   </h3>
                   {archivedHeadlines.customer.length > 0 ? (
                     <div className="space-y-3">
@@ -642,7 +644,7 @@ const HeadlinesPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 italic">No archived customer headlines</p>
+                    <p className="text-sm text-slate-500 italic">No archived {labels.customerHeadline?.toLowerCase()} headlines</p>
                   )}
                 </div>
 
@@ -650,7 +652,7 @@ const HeadlinesPage = () => {
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                     <Users2 className="h-5 w-5 text-slate-600" />
-                    Archived Employee Headlines ({archivedHeadlines.employee.length})
+                    Archived {labels.employeeHeadline} Headlines ({archivedHeadlines.employee.length})
                   </h3>
                   {archivedHeadlines.employee.length > 0 ? (
                     <div className="space-y-3">
@@ -669,7 +671,7 @@ const HeadlinesPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 italic">No archived employee headlines</p>
+                    <p className="text-sm text-slate-500 italic">No archived {labels.employeeHeadline?.toLowerCase()} headlines</p>
                   )}
                 </div>
 

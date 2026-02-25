@@ -8,9 +8,11 @@ import { AlertCircle, Megaphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { useTerminology } from '../../contexts/TerminologyContext';
 
 const HeadlineDialog = ({ open, onOpenChange, onSave, headline, currentTeamId }) => {
   const { user } = useAuthStore();
+  const { labels } = useTerminology();
   const orgId = user?.organizationId || user?.organization_id;
   const savedTheme = getOrgTheme(orgId);
   const themeColors = savedTheme || {
@@ -91,8 +93,8 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline, currentTeamId })
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                <SelectItem value="customer">Customer Headline</SelectItem>
-                <SelectItem value="employee">Employee Headline</SelectItem>
+                <SelectItem value="customer">{labels.customerHeadline} Headline</SelectItem>
+                <SelectItem value="employee">{labels.employeeHeadline} Headline</SelectItem>
               </SelectContent>
             </Select>
           </div>

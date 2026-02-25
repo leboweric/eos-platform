@@ -6872,7 +6872,7 @@ setAddingMilestoneFor(priority.id);
                     <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
                       <Newspaper className="h-5 w-5" style={{ color: themeColors.primary }} />
                     </div>
-                    Customer & Employee Headlines
+                    {labels.customerHeadline} & {labels.employeeHeadline} Headlines
                   </CardTitle>
                   <CardDescription className="mt-2 text-slate-600 font-medium">Share important updates</CardDescription>
                 </div>
@@ -6985,7 +6985,7 @@ setAddingMilestoneFor(priority.id);
                       <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
                         <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
                       </div>
-                      Customer Headlines ({headlines.customer.length})
+                      {labels.customerHeadline} Headlines ({headlines.customer.length})
                     </h4>
                     {headlines.customer.length > 0 ? (
                       <div className="space-y-2">
@@ -7004,7 +7004,7 @@ setAddingMilestoneFor(priority.id);
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500 italic">No customer headlines</p>
+                      <p className="text-sm text-slate-500 italic">No {labels.customerHeadline?.toLowerCase()} headlines</p>
                     )}
                   </div>
 
@@ -7014,7 +7014,7 @@ setAddingMilestoneFor(priority.id);
                       <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
                         <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
                       </div>
-                      Employee Headlines ({headlines.employee.length})
+                      {labels.employeeHeadline} Headlines ({headlines.employee.length})
                     </h4>
                     {headlines.employee.length > 0 ? (
                       <div className="space-y-2">
@@ -7033,7 +7033,7 @@ setAddingMilestoneFor(priority.id);
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500 italic">No employee headlines</p>
+                      <p className="text-sm text-slate-500 italic">No {labels.employeeHeadline?.toLowerCase()} headlines</p>
                     )}
                   </div>
                 </div>
@@ -7122,7 +7122,7 @@ setAddingMilestoneFor(priority.id);
                           <div>
                             <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                               <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                              Customer Headlines ({archivedHeadlines.customer.length})
+                              {labels.customerHeadline} Headlines ({archivedHeadlines.customer.length})
                             </h5>
                             {archivedHeadlines.customer.length > 0 ? (
                               <div className="space-y-2">
@@ -7136,7 +7136,7 @@ setAddingMilestoneFor(priority.id);
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-slate-500 italic">No archived customer headlines</p>
+                              <p className="text-sm text-slate-500 italic">No archived {labels.customerHeadline?.toLowerCase()} headlines</p>
                             )}
                           </div>
                           
@@ -7144,7 +7144,7 @@ setAddingMilestoneFor(priority.id);
                           <div>
                             <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                               <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                              Employee Headlines ({archivedHeadlines.employee.length})
+                              {labels.employeeHeadline} Headlines ({archivedHeadlines.employee.length})
                             </h5>
                             {archivedHeadlines.employee.length > 0 ? (
                               <div className="space-y-2">
@@ -7158,7 +7158,7 @@ setAddingMilestoneFor(priority.id);
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-slate-500 italic">No archived employee headlines</p>
+                              <p className="text-sm text-slate-500 italic">No archived {labels.employeeHeadline?.toLowerCase()} headlines</p>
                             )}
                           </div>
                         </div>

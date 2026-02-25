@@ -55,7 +55,9 @@ const updateTerminology = async (req, res) => {
       'year_label',
       'organization_label',
       'team_label',
-      'department_label'
+      'department_label',
+      'customer_headline_label',
+      'employee_headline_label'
     ];
     
     const updateFields = [];

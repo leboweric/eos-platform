@@ -2136,7 +2136,7 @@ const DashboardClean = () => {
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                   <Users className="h-4 w-4 text-slate-600" />
-                  Customer Headlines ({headlines.customer.length})
+                  {labels.customerHeadline} Headlines ({headlines.customer.length})
                 </h3>
                 {headlines.customer.length > 0 ? (
                   <div className="space-y-0">
@@ -2163,7 +2163,7 @@ const DashboardClean = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 italic">No customer headlines</p>
+                  <p className="text-sm text-slate-500 italic">No {labels.customerHeadline?.toLowerCase()} headlines</p>
                 )}
               </div>
 
@@ -2171,7 +2171,7 @@ const DashboardClean = () => {
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                   <Users2 className="h-4 w-4 text-slate-600" />
-                  Employee Headlines ({headlines.employee.length})
+                  {labels.employeeHeadline} Headlines ({headlines.employee.length})
                 </h3>
                 {headlines.employee.length > 0 ? (
                   <div className="space-y-0">
@@ -2198,7 +2198,7 @@ const DashboardClean = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 italic">No employee headlines</p>
+                  <p className="text-sm text-slate-500 italic">No {labels.employeeHeadline?.toLowerCase()} headlines</p>
                 )}
               </div>
             </div>

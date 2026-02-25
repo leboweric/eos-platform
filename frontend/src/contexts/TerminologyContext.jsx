@@ -28,6 +28,9 @@ const defaultTerminology = {
   organization_label: 'Organization',
   team_label: 'Team',
   department_label: 'Department',
+  // Headline type labels
+  customer_headline_label: 'Customer',
+  employee_headline_label: 'Employee',
   // Scorecard time period labels (Adaptive Framework Technology)
   scorecard_13_week_label: '13-Week Average',
   scorecard_quarter_label: 'Quarter Average',
@@ -205,7 +208,12 @@ export const TerminologyProvider = ({ children }) => {
       year: getTerm('year_label'),
       organization: getTerm('organization_label'),
       team: getTerm('team_label'),
-      department: getTerm('department_label')
+      department: getTerm('department_label'),
+      // Headline type labels
+      customerHeadline: getTerm('customer_headline_label'),
+      employeeHeadline: getTerm('employee_headline_label'),
+      customer_headline_label: getTerm('customer_headline_label'),
+      employee_headline_label: getTerm('employee_headline_label')
     }
   };
 
