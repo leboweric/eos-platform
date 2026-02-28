@@ -320,9 +320,9 @@ const PriorityDialog = ({
       }
     }
     
-    // Show success message
-    if (successCount > 0) {
-      setSuccess(`Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}`);
+    // Clear error on success
+    if (successCount > 0 && failCount === 0) {
+      setError(null);
     }
   };
 
