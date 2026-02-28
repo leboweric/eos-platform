@@ -57,7 +57,7 @@
     "react-hook-form": "^7.56.3",
     "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
-    "react-resizable-panels": "^3.0.2",
+    "react-resizable-panels": "^4.6.5",
     "react-router-dom": "^7.6.1",
     "recharts": "^2.15.3",
     "socket.io-client": "^4.8.1",
