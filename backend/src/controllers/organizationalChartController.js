@@ -405,7 +405,7 @@ export const addPosition = async (req, res) => {
   
   try {
     const { chartId } = req.params;
-    const { parentPositionId, title, positionType, skills, responsibilities } = req.body;
+    const { parentPositionId, title, positionType, skills, responsibilities, holderId } = req.body;
     const userId = req.user.id;
 
     // Calculate level based on parent
@@ -451,6 +451,17 @@ export const addPosition = async (req, res) => {
           [positionId, responsibilities[i].responsibility, responsibilities[i].priority, i]
         );
       }
+    }
+
+    // Assign holder if provided
+    if (holderId) {
+      const newHolderId = uuidv4();
+      await client.query(
+        `INSERT INTO position_holders 
+         (id, position_id, user_id, external_name, external_email, start_date, is_primary)
+         VALUES ($1, $2, $3, NULL, NULL, CURRENT_DATE, true)`,
+        [newHolderId, positionId, holderId]
+      );
     }
 
     // Update chart version and history

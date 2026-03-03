@@ -52,14 +52,15 @@ router.post('/:chartId/positions', [
   param('chartId').isUUID().withMessage('Invalid chart ID'),
   body('title').notEmpty().withMessage('Position title is required'),
   body('description').optional(),
-  body('parentPositionId').optional().isUUID().withMessage('Invalid parent position ID'),
+  body('parentPositionId').optional({ nullable: true }).isUUID().withMessage('Invalid parent position ID'),
   body('positionType').optional().isIn(['leadership', 'management', 'individual_contributor']).withMessage('Invalid position type'),
   body('skills').optional().isArray().withMessage('Skills must be an array'),
   body('skills.*.skillId').isUUID().withMessage('Invalid skill ID'),
   body('skills.*.importanceLevel').isIn(['required', 'preferred', 'nice_to_have']).withMessage('Invalid importance level'),
   body('responsibilities').optional().isArray().withMessage('Responsibilities must be an array'),
   body('responsibilities.*.responsibility').notEmpty().withMessage('Responsibility text is required'),
-  body('responsibilities.*.priority').isIn(['critical', 'high', 'medium', 'low']).withMessage('Invalid priority')
+  body('responsibilities.*.priority').optional().isIn(['critical', 'high', 'medium', 'low']).withMessage('Invalid priority'),
+  body('holderId').optional({ nullable: true }).isUUID().withMessage('Invalid holder ID')
 ], validateRequest, addPosition);
 
 router.put('/:chartId/positions/:positionId', [
