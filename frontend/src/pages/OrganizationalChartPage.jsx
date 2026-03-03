@@ -512,6 +512,19 @@ const OrganizationalChartPage = () => {
                 {positions.length} seat{positions.length !== 1 ? 's' : ''}
               </Badge>
             )}
+            {currentChart && canEdit && (
+              <Button
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  setAddPositionParent(null);
+                  setShowAddPositionDialog(true);
+                }}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add Seat
+              </Button>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">
