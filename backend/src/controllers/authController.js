@@ -12,7 +12,7 @@ const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { userId },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '2h' } // Increased from 15m to 2h
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' } // Increased to 8h to prevent mid-meeting expiry
   );
 
   const refreshToken = jwt.sign(

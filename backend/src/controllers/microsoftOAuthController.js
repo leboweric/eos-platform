@@ -38,17 +38,23 @@ const getMsalClient = () => {
   return new ConfidentialClientApplication(getMsalConfig());
 };
 
-// Generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
+// Generate JWT tokens (access + refresh) matching the standard login flow
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
     { 
       id: user.id, 
       email: user.email,
       organizationId: user.organization_id
     },
     process.env.JWT_SECRET,
-    { expiresIn: '30d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
   );
+  const refreshToken = jwt.sign(
+    { userId: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+  );
+  return { accessToken, refreshToken };
 };
 
 // Get Microsoft OAuth URL
@@ -259,12 +265,12 @@ export const handleMicrosoftCallback = async (req, res) => {
       user_keys: user ? Object.keys(user) : []
     });
     
-    const token = generateToken(user);
-    console.log('✅ JWT token generated');
+    const { accessToken, refreshToken } = generateTokens(user);
+    console.log('✅ JWT tokens generated (access + refresh)');
     
     // Decode and log the token payload for debugging
     try {
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64').toString());
       console.log('🎫 Token payload:', payload);
     } catch (e) {
       console.error('Failed to decode token for logging');
@@ -277,7 +283,8 @@ export const handleMicrosoftCallback = async (req, res) => {
     }
     
     // ALWAYS redirect to the correct path: /login/auth/callback
-    const redirectWithToken = `${baseUrl}/login/auth/callback?token=${token}&provider=microsoft`;
+    // Pass both access and refresh tokens so background refresh works during meetings
+    const redirectWithToken = `${baseUrl}/login/auth/callback?token=${accessToken}&refreshToken=${refreshToken}&provider=microsoft`;
     console.log('🔄 Redirecting to:', redirectWithToken);
     
     res.redirect(redirectWithToken);

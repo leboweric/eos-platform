@@ -63,7 +63,12 @@ class MeetingSocketService {
         methods: ['GET', 'POST']
       },
       // Namespace to isolate meeting sockets from any future socket usage
-      path: '/meeting-socket'
+      path: '/meeting-socket',
+      // Keep connections alive through corporate firewalls (e.g. WatchGuard, Cisco Umbrella)
+      // that silently drop TCP connections they classify as idle. Sending a ping every 25s
+      // ensures the connection is never idle long enough to be terminated.
+      pingInterval: 25000,  // Send ping every 25 seconds
+      pingTimeout: 20000    // Wait up to 20 seconds for pong before treating as disconnected
     });
 
     this.setupEventHandlers();

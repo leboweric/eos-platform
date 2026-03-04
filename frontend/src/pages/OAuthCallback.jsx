@@ -8,12 +8,14 @@ const OAuthCallback = () => {
 
   useEffect(() => {
     const token = searchParams.get('token');
+    const refreshToken = searchParams.get('refreshToken');
     const provider = searchParams.get('provider');
     const error = searchParams.get('error');
     
     console.log('🔵 OAuth callback received');
     console.log('📦 Provider:', provider || 'unknown');
     console.log('🔑 Token present:', !!token);
+    console.log('🔑 Refresh token present:', !!refreshToken);
     
     if (error) {
       console.error('❌ OAuth error:', error);
@@ -55,6 +57,12 @@ const OAuthCallback = () => {
         // Store the access token from OAuth
         localStorage.setItem('accessToken', token);
         console.log('✅ Access token stored in localStorage');
+        
+        // Store refresh token if provided (enables background token refresh during meetings)
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+          console.log('✅ Refresh token stored in localStorage');
+        }
         
         // Store organization ID if present
         try {
