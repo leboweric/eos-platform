@@ -100,6 +100,20 @@ function App() {
   const [needsLegalAcceptance, setNeedsLegalAcceptance] = useState(false);
   const [checkingAgreements, setCheckingAgreements] = useState(false);
 
+  // Force all links inside rich-text-display to open in a new tab
+  // This covers existing stored content that was saved without target="_blank"
+  useEffect(() => {
+    const handleRichTextLinkClick = (e) => {
+      const anchor = e.target.closest('.rich-text-display a');
+      if (anchor && anchor.href) {
+        e.preventDefault();
+        window.open(anchor.href, '_blank', 'noopener,noreferrer');
+      }
+    };
+    document.addEventListener('click', handleRichTextLinkClick);
+    return () => document.removeEventListener('click', handleRichTextLinkClick);
+  }, []);
+
   // Add global error handler
   useEffect(() => {
     const handleError = (event) => {

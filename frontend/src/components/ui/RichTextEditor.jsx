@@ -137,6 +137,13 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
             const url = prompt('Enter URL:');
             if (url) {
               handleFormat('createLink', url);
+              // Set target="_blank" on the newly created link so it opens in a new tab
+              const links = editorRef.current.querySelectorAll('a[href]');
+              links.forEach(link => {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+              });
+              handleChange();
             }
           }}
           title="Insert Link"
