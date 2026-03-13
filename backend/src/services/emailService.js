@@ -673,9 +673,11 @@ const templates = {
                       <p style="margin: 0 0 8px 0; font-size: 15px; color: #334155;">
                         <strong>Email:</strong> <a href="mailto:${data.email}" style="color: #3b82f6; text-decoration: none;">${data.email}</a>
                       </p>
-                      <p style="margin: 0; font-size: 15px; color: #334155;">
-                        <strong>Temporary Password:</strong> <code style="background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-family: monospace;">${data.temporaryPassword}</code>
+                      <p style="margin: 0 0 8px 0; font-size: 15px; color: #334155;">
+                        <strong>Temporary Password:</strong>
                       </p>
+                      <div style="background-color: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 12px 16px; font-family: 'Courier New', Courier, monospace; font-size: 18px; letter-spacing: 2px; color: #1e293b; text-align: center;">${data.temporaryPassword}</div>
+                      <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8; text-align: center;">Triple-click the password above to select it, then copy with Ctrl+C (or Cmd+C on Mac)</p>
                     </div>
                     
                     <!-- Security Notice -->
