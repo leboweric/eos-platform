@@ -56,6 +56,7 @@ import {
 import {
   UserPlus,
   Mail,
+  Send,
   AlertCircle,
   Copy,
   X,
@@ -110,6 +111,7 @@ const UsersPage = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(null);
 
   const isAdmin = user?.role === 'admin' || user?.isConsultant;
   const isConsultant = user?.isConsultant;
@@ -459,6 +461,38 @@ const UsersPage = () => {
       toast.error('Failed to delete user. Please try again.');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleResendWelcome = async (targetUser) => {
+    if (!window.confirm(`Resend welcome email to ${targetUser.email}? This will generate a new temporary password.`)) {
+      return;
+    }
+
+    setResendLoading(targetUser.id);
+
+    try {
+      const orgId = selectedOrgId || user?.organizationId;
+      const response = await fetch(`${API_URL}/organizations/${orgId}/users/${targetUser.id}/resend-welcome`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`Welcome email resent to ${targetUser.email}`);
+      } else {
+        toast.error(data.error || 'Failed to resend welcome email');
+      }
+    } catch (error) {
+      console.error('Error resending welcome email:', error);
+      toast.error('Failed to resend welcome email. Please try again.');
+    } finally {
+      setResendLoading(null);
     }
   };
 
@@ -951,6 +985,17 @@ const UsersPage = () => {
                               <DropdownMenuItem onClick={() => handleEditUser(user)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleResendWelcome(user)}
+                                disabled={resendLoading === user.id}
+                              >
+                                {resendLoading === user.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4 mr-2" />
+                                )}
+                                Resend Invite
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 

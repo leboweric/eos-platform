@@ -12,7 +12,8 @@ import {
   cancelInvitation,
   getUserDepartments,
   changePassword,
-  updateUser
+  updateUser,
+  resendWelcomeEmail
 } from '../controllers/userController.js';
 import {
   getUserSkills,
@@ -53,6 +54,11 @@ router.put('/:userId', [
   body('teamId').optional({ nullable: true }).isUUID().withMessage('Invalid team ID'),
   body('is_active').optional().isBoolean().withMessage('is_active must be a boolean')
 ], validateRequest, updateUser);
+
+// Resend welcome email with new temporary password (admin only)
+router.post('/:userId/resend-welcome', [
+  param('userId').isUUID().withMessage('Invalid user ID')
+], validateRequest, resendWelcomeEmail);
 
 // Remove user from organization (admin only)
 router.delete('/:userId', removeUser);

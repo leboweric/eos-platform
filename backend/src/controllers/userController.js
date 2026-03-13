@@ -725,6 +725,80 @@ export const getUserDepartments = async (req, res) => {
   }
 };
 
+// Resend welcome email with new temporary password
+export const resendWelcomeEmail = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
+    const requestedBy = req.user.id;
+
+    // Check if user can resend (must be admin or consultant)
+    if (req.user.role !== 'admin' && !req.user.is_consultant) {
+      return res.status(403).json({ error: 'Only administrators and consultants can resend welcome emails' });
+    }
+
+    // Get the target user
+    const userResult = await query(
+      'SELECT id, email, first_name, last_name, organization_id, last_login_at FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, organizationId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found in organization' });
+    }
+
+    const targetUser = userResult.rows[0];
+
+    // Generate a new temporary password
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+
+    // Update the user's password and mark it as temporary
+    await query(
+      'UPDATE users SET password_hash = $1, is_temporary_password = true, updated_at = NOW() WHERE id = $2',
+      [passwordHash, userId]
+    );
+
+    // Get organization details for the email
+    const orgResult = await query(
+      `SELECT o.name as organization_name, 
+              o.logo_url,
+              u.first_name || ' ' || u.last_name as sent_by_name
+       FROM organizations o
+       JOIN users u ON u.id = $1
+       WHERE o.id = $2`,
+      [requestedBy, organizationId]
+    );
+
+    const { organization_name, sent_by_name, logo_url } = orgResult.rows[0];
+    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+
+    // Send the welcome email to the user's current email
+    try {
+      await sendEmail(targetUser.email, 'user-created', {
+        firstName: targetUser.first_name,
+        organizationName: organization_name,
+        createdByName: sent_by_name,
+        email: targetUser.email,
+        temporaryPassword,
+        loginUrl,
+        logoUrl: logo_url
+      });
+    } catch (emailError) {
+      console.error('Failed to resend welcome email:', emailError);
+      return res.status(500).json({ error: 'Failed to send welcome email. Please try again.' });
+    }
+
+    res.json({
+      success: true,
+      message: `Welcome email resent to ${targetUser.email}`
+    });
+  } catch (error) {
+    console.error('Resend welcome email error:', error);
+    res.status(500).json({ error: 'Failed to resend welcome email' });
+  }
+};
+
 // Change user password
 export const changePassword = async (req, res) => {
   try {
