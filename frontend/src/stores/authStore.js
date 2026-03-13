@@ -4,6 +4,22 @@ import * as Sentry from '@sentry/react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
+// Safe localStorage wrapper to prevent crashes in private browsing or restricted contexts
+const safeStorage = {
+  getItem: (key) => {
+    try { return window.localStorage?.getItem(key) ?? null; } catch { return null; }
+  },
+  setItem: (key, value) => {
+    try { window.localStorage?.setItem(key, value); } catch { /* silently fail */ }
+  },
+  removeItem: (key) => {
+    try { window.localStorage?.removeItem(key); } catch { /* silently fail */ }
+  },
+  keys: () => {
+    try { return Object.keys(window.localStorage ?? {}); } catch { return []; }
+  }
+};
+
 // Create a dedicated axios instance for auth to avoid conflicts
 const authAxios = axios.create({
   baseURL: API_BASE_URL
@@ -12,7 +28,7 @@ const authAxios = axios.create({
 // Add request interceptor to include auth token and impersonation header
 authAxios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = safeStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -43,23 +59,23 @@ authAxios.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = safeStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await authAxios.post('/auth/refresh', {
             refreshToken
           });
 
           const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
+          safeStorage.setItem('accessToken', accessToken);
+          safeStorage.setItem('refreshToken', newRefreshToken);
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return authAxios(originalRequest);
         }
       } catch (refreshError) {
         // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        safeStorage.removeItem('accessToken');
+        safeStorage.removeItem('refreshToken');
         // Only redirect if we're not already on a public page
         if (!window.location.pathname.match(/^\/(login|register|consultant-register|$)/)) {
           window.location.href = '/login';
@@ -90,7 +106,7 @@ export const useAuthStore = create((set, get) => ({
   // Check if user is authenticated
   checkAuth: async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = safeStorage.getItem('accessToken');
       if (!token) {
         set({ isLoading: false });
         return;
@@ -107,7 +123,7 @@ export const useAuthStore = create((set, get) => ({
       // Store organizationId for theme management
       const orgId = userData?.organizationId || userData?.organization_id;
       if (orgId) {
-        localStorage.setItem('organizationId', orgId);
+        safeStorage.setItem('organizationId', orgId);
       }
       
       // Set Sentry user context for session restoration
@@ -126,8 +142,8 @@ export const useAuthStore = create((set, get) => ({
       set({ user: userData, isLoading: false, error: null });
     } catch (error) {
       console.error('Auth check failed:', error);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      safeStorage.removeItem('accessToken');
+      safeStorage.removeItem('refreshToken');
       set({ user: null, isLoading: false, error: null });
     }
   },
@@ -149,13 +165,13 @@ export const useAuthStore = create((set, get) => ({
         user.organization_id = user.organizationId;
       }
       
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      safeStorage.setItem('accessToken', accessToken);
+      safeStorage.setItem('refreshToken', refreshToken);
       
       // Store organizationId for theme management
       const orgId = user?.organizationId || user?.organization_id;
       if (orgId) {
-        localStorage.setItem('organizationId', orgId);
+        safeStorage.setItem('organizationId', orgId);
         console.log('Stored organizationId:', orgId);
       } else {
         console.error('No organizationId found in user object:', user);
@@ -195,13 +211,13 @@ export const useAuthStore = create((set, get) => ({
         user.organization_id = user.organizationId;
       }
       
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      safeStorage.setItem('accessToken', accessToken);
+      safeStorage.setItem('refreshToken', refreshToken);
       
       // Store organizationId for theme management
       const orgId = user?.organizationId || user?.organization_id;
       if (orgId) {
-        localStorage.setItem('organizationId', orgId);
+        safeStorage.setItem('organizationId', orgId);
         console.log('Stored organizationId:', orgId);
       } else {
         console.error('No organizationId found in user object:', user);
@@ -234,14 +250,14 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('organizationId');
+      safeStorage.removeItem('accessToken');
+      safeStorage.removeItem('refreshToken');
+      safeStorage.removeItem('organizationId');
       // Clear all org-specific themes
-      const keys = Object.keys(localStorage);
+      const keys = Object.keys(safeStorage);
       keys.forEach(key => {
         if (key.startsWith('orgTheme_')) {
-          localStorage.removeItem(key);
+          safeStorage.removeItem(key);
         }
       });
       
@@ -280,14 +296,14 @@ export const useAuthStore = create((set, get) => ({
   switchToClientOrganization: (organizationId, organizationName) => {
     const currentUser = get().user;
     if (currentUser) {
-      // Update organizationId in localStorage for theme management
-      localStorage.setItem('organizationId', organizationId);
+      // Update organizationId in safeStorage for theme management
+      safeStorage.setItem('organizationId', organizationId);
       
       // Clear any cached theme for the previous organization
       const previousOrgId = currentUser.organizationId || currentUser.organization_id;
       if (previousOrgId) {
         // Optional: You might want to keep the previous org's theme
-        // localStorage.removeItem(`orgTheme_${previousOrgId}`);
+        // safeStorage.removeItem(`orgTheme_${previousOrgId}`);
       }
       
       set({
