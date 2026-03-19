@@ -288,9 +288,9 @@ export const MeetingSummaryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[85vw] max-w-[1400px] max-h-[90vh] p-0 gap-0 flex flex-col">
+      <DialogContent className="w-[85vw] max-w-[1400px] max-h-[90vh] p-0 gap-0 flex flex-col meeting-summary-print">
         {/* Document Header Bar */}
-        <div className="shrink-0 bg-white border-b px-6 py-3 pr-16 flex items-center justify-between">
+        <div className="shrink-0 bg-white border-b px-6 py-3 pr-16 flex items-center justify-between meeting-summary-print-hide">
           <div className="text-sm text-gray-600">
             Meeting Summary
           </div>
@@ -308,7 +308,7 @@ export const MeetingSummaryModal = ({
         </div>
 
         {/* Document Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-0 meeting-summary-print-content">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

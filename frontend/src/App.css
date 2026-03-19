@@ -190,9 +190,43 @@
     display: none !important;
   }
   
-  /* Hide dialog overlays globally */
-  [role="dialog"],
-  [data-radix-portal] {
+  /* Hide dialog overlays globally, but NOT the meeting summary modal */
+  [role="dialog"]:not(:has(.meeting-summary-print)),
+  [data-radix-portal]:not(:has(.meeting-summary-print)) {
+    display: none !important;
+  }
+
+  /* Show only the meeting summary modal content when printing */
+  .meeting-summary-print {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    z-index: 9999 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide the header bar (buttons) when printing */
+  .meeting-summary-print-hide {
+    display: none !important;
+  }
+
+  /* Make the content area fully visible */
+  .meeting-summary-print-content {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Hide the main app body content when printing the summary */
+  body:has(.meeting-summary-print) > *:not([data-radix-portal]) {
     display: none !important;
   }
   
