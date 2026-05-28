@@ -414,3 +414,64 @@ export const getAvailableTeams = async (req, res) => {
     });
   }
 };
+
+// Get messages sent by this team (for history / audit)
+export const getSentCascadingMessages = async (req, res) => {
+  try {
+    const tableReady = await tableExists('cascading_messages');
+    if (!tableReady) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
+
+    const { orgId, teamId } = req.params;
+    const { limit = 50 } = req.query;
+
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid team ID is required'
+      });
+    }
+
+    const result = await query(
+      `SELECT 
+         cm.id,
+         cm.message,
+         cm.created_at,
+         cm.meeting_date,
+         t.name as from_team_name,
+         u.first_name || ' ' || u.last_name as created_by_name,
+         (
+           SELECT json_agg(json_build_object(
+             'id', rec_team.id,
+             'name', rec_team.name
+           ))
+           FROM cascading_message_recipients cmr
+           JOIN teams rec_team ON rec_team.id = cmr.to_team_id
+           WHERE cmr.message_id = cm.id
+         ) as recipients
+       FROM cascading_messages cm
+       JOIN teams t ON cm.from_team_id = t.id
+       JOIN users u ON cm.created_by = u.id
+       WHERE cm.from_team_id = $1
+         AND cm.organization_id = $2
+       ORDER BY cm.created_at DESC
+       LIMIT $3`,
+      [teamId, orgId, parseInt(limit)]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching sent cascading messages:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch sent cascading messages'
+    });
+  }
+};

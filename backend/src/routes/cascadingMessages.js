@@ -7,7 +7,8 @@ import {
   getAvailableTeams,
   archiveCascadingMessages,
   updateCascadingMessage,
-  deleteCascadingMessage
+  deleteCascadingMessage,
+  getSentCascadingMessages
 } from '../controllers/cascadingMessagesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -23,6 +24,9 @@ router.get('/', getCascadingMessages);
 
 // Get available teams to cascade to
 router.get('/available-teams', getAvailableTeams);
+
+// Get messages sent by this team (history)
+router.get('/sent', getSentCascadingMessages);
 
 // Archive all cascading messages for a team
 router.post('/archive', archiveCascadingMessages);
