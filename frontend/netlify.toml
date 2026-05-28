@@ -2,7 +2,11 @@
 
 [build]
   publish = "dist"
-  command = "pnpm run build"
+  # Explicitly install optional dependencies before building.
+  # This is required for @tailwindcss/oxide native bindings (e.g. @tailwindcss/oxide-linux-x64-gnu)
+  # which Tailwind CSS v4 needs on Linux build images like Netlify's.
+  # Without --include=optional, pnpm can skip the platform-specific binaries on fresh installs.
+  command = "pnpm install --include=optional && pnpm run build"
 
 [build.environment]
   NODE_VERSION = "18"
