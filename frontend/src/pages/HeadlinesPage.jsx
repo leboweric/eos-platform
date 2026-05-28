@@ -36,6 +36,7 @@ const HeadlinesPage = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [archivedHeadlines, setArchivedHeadlines] = useState({ customer: [], employee: [] });
   const [archivedMessages, setArchivedMessages] = useState([]);
+  const [sentLoading, setSentLoading] = useState(false);
   
   // Add ref to track archive execution
   const archiveInProgressRef = useRef(false);
@@ -66,6 +67,13 @@ const HeadlinesPage = () => {
   useEffect(() => {
     if (activeTab === 'archived' && (selectedDepartment || user?.teams?.[0])) {
       fetchArchivedItems();
+    }
+  }, [activeTab, selectedDepartment, user]);
+
+  // Fetch sent messages when switching to sent tab (lazy load)
+  useEffect(() => {
+    if (activeTab === 'sent' && (selectedDepartment || user?.teams?.[0])) {
+      fetchSentMessages();
     }
   }, [activeTab, selectedDepartment, user]);
 
@@ -116,17 +124,24 @@ const HeadlinesPage = () => {
     }
   };
 
-  const fetchSentMessages = async () => {
+  const fetchSentMessages = async (force = false) => {
     try {
-      setSentMessages([]);
+      if (!force) {
+        setSentLoading(true);
+      }
       
       const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
-      if (!teamId) return;
+      if (!teamId) {
+        setSentLoading(false);
+        return;
+      }
       
       const response = await cascadingMessagesService.getSentMessages(orgId, teamId);
       setSentMessages(response.data || []);
     } catch (error) {
       console.error('Failed to fetch sent cascading messages:', error);
+    } finally {
+      setSentLoading(false);
     }
   };
   
@@ -737,27 +752,50 @@ const HeadlinesPage = () => {
                       <Send className="h-5 w-5 text-slate-600" />
                       Sent Cascading Messages ({sentMessages.length})
                     </h3>
-                    {sentMessages.length > 0 ? (
+
+                    {sentLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-500">Loading sent messages...</span>
+                      </div>
+                    ) : sentMessages.length > 0 ? (
                       <div className="space-y-3">
-                        {sentMessages.map(message => (
-                          <div key={message.id} className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 shadow-sm">
-                            <div 
-                              className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" 
-                              dangerouslySetInnerHTML={{ __html: message.message }} 
-                            />
-                            <div className="mt-2">
-                              <p className="text-xs text-slate-600">
-                                Sent to: {message.recipients?.map(r => r.name).join(', ') || 'No recipients'}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                {format(new Date(message.created_at), 'MMM d, yyyy h:mm a')}
-                              </p>
+                        {sentMessages.map(message => {
+                          const recipients = message.recipients || [];
+                          const displayRecipients = recipients.slice(0, 4);
+                          const remaining = recipients.length - 4;
+
+                          return (
+                            <div key={message.id} className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 shadow-sm hover:shadow-md transition-shadow">
+                              <div 
+                                className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" 
+                                dangerouslySetInnerHTML={{ __html: message.message }} 
+                              />
+                              <div className="mt-2 space-y-0.5">
+                                <p className="text-xs text-slate-600">
+                                  <span className="font-medium">Sent by:</span> {message.created_by_name || 'Unknown'}
+                                </p>
+                                <p className="text-xs text-slate-600">
+                                  <span className="font-medium">Sent to:</span>{' '}
+                                  {displayRecipients.map(r => r.name).join(', ')}
+                                  {remaining > 0 && ` and ${remaining} more`}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {format(new Date(message.created_at), 'MMM d, yyyy h:mm a')}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500 italic">No sent cascading messages yet</p>
+                      <div className="py-8 text-center">
+                        <Send className="h-10 w-10 mx-auto text-slate-300 mb-3" />
+                        <p className="text-sm font-medium text-slate-600">No sent cascading messages yet</p>
+                        <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                          Messages you send from this team will appear here permanently, so you can always see what was communicated.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </TabsContent>
