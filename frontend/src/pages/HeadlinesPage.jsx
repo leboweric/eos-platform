@@ -721,6 +721,7 @@ const HeadlinesPage = () => {
           open={showCascadingDialog}
           onOpenChange={setShowCascadingDialog}
           onSave={handleCreateCascadingMessage}
+          currentTeamId={selectedDepartment?.id || user?.teams?.[0]?.id}
         />
       )}
       

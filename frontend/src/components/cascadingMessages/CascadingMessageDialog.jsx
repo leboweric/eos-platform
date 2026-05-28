@@ -12,10 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Send, Users } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
-import { teamsService } from '../../services/teamsService';
+import { cascadingMessagesService } from '../../services/cascadingMessagesService';
 import { getOrgTheme } from '../../utils/themeUtils';
 
-const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
+const CascadingMessageDialog = ({ open, onOpenChange, onSave, currentTeamId }) => {
   const { user } = useAuthStore();
   const orgId = user?.organizationId || user?.organization_id;
   const savedTheme = getOrgTheme(orgId);
@@ -40,19 +40,30 @@ const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
       setAllTeams(false);
       setLoading(false);
     }
-  }, [open]);
+  }, [open, currentTeamId]);
 
   const fetchTeams = async () => {
     try {
-      const response = await teamsService.getTeams();
-      // The backend returns { success: true, data: [...] } where data is the array directly
-      const allTeams = response?.data || [];
-      // Filter out the current user's team to show only other teams
-      const currentTeamId = user?.teams?.[0]?.id;
-      const otherTeams = allTeams.filter(t => t.id !== currentTeamId);
-      setTeams(otherTeams);
+      const orgId = user?.organizationId || user?.organization_id;
+      
+      // Prefer the explicitly passed currentTeamId (from the operating context / selectedDepartment)
+      // Fall back to the first team in the user's list only if nothing was provided (legacy callers)
+      const effectiveCurrentTeamId = currentTeamId || user?.teams?.[0]?.id;
+      
+      if (orgId && effectiveCurrentTeamId) {
+        // Use the dedicated backend endpoint that correctly returns all other org teams
+        // (excludes only the from/sending team). This respects the actual operating context.
+        const response = await cascadingMessagesService.getAvailableTeams(orgId, effectiveCurrentTeamId);
+        setTeams(response?.data || []);
+      } else {
+        // Ultimate fallback (should rarely happen): fetch all teams and exclude nothing extra
+        const response = await cascadingMessagesService.getAvailableTeams(orgId, null);
+        setTeams(response?.data || []);
+      }
     } catch (error) {
-      console.error('Failed to fetch teams:', error);
+      console.error('Failed to fetch available teams for cascading:', error);
+      // Last-resort graceful degradation
+      setTeams([]);
     }
   };
 

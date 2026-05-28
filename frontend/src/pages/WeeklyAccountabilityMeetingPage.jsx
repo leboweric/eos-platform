@@ -9235,6 +9235,7 @@ setAddingMilestoneFor(priority.id);
               setTimeout(() => setError(null), 3000);
             }
           }}
+          currentTeamId={getEffectiveTeamId(teamId, user)}
         />
 
         {showPriorityDialog && (
