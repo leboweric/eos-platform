@@ -58,6 +58,7 @@ const HeadlinesPage = () => {
     if (selectedDepartment || user?.teams?.[0]) {
       fetchHeadlines();
       fetchCascadedMessages();
+      fetchSentMessages();
     }
   }, [selectedDepartment, user]);
   
@@ -103,17 +104,29 @@ const HeadlinesPage = () => {
 
   const fetchCascadedMessages = async () => {
     try {
-      // Clear existing messages to provide visual feedback
       setCascadedMessages([]);
-      setSentMessages([]);
       
-      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id; // Use selected team or default to first team
+      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
       if (!teamId) return;
       
       const response = await cascadingMessagesService.getCascadingMessages(orgId, teamId);
       setCascadedMessages(response.data || []);
     } catch (error) {
       console.error('Failed to fetch cascaded messages:', error);
+    }
+  };
+
+  const fetchSentMessages = async () => {
+    try {
+      setSentMessages([]);
+      
+      const teamId = selectedDepartment?.id || user?.teams?.[0]?.id;
+      if (!teamId) return;
+      
+      const response = await cascadingMessagesService.getSentMessages(orgId, teamId);
+      setSentMessages(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch sent cascading messages:', error);
     }
   };
   
@@ -412,6 +425,19 @@ const HeadlinesPage = () => {
                     Archived
                     <span className="ml-2 text-sm opacity-80">({archivedHeadlines.customer.length + archivedHeadlines.employee.length})</span>
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="sent" 
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'sent' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Sent
+                    <span className="ml-2 text-sm opacity-80">({sentMessages.length})</span>
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="active" className="mt-0">
@@ -703,6 +729,39 @@ const HeadlinesPage = () => {
                 </div>
               </div>
             </TabsContent>
+
+                {/* Sent Messages Tab */}
+                <TabsContent value="sent" className="mt-0">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Send className="h-5 w-5 text-slate-600" />
+                      Sent Cascading Messages ({sentMessages.length})
+                    </h3>
+                    {sentMessages.length > 0 ? (
+                      <div className="space-y-3">
+                        {sentMessages.map(message => (
+                          <div key={message.id} className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 shadow-sm">
+                            <div 
+                              className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" 
+                              dangerouslySetInnerHTML={{ __html: message.message }} 
+                            />
+                            <div className="mt-2">
+                              <p className="text-xs text-slate-600">
+                                Sent to: {message.recipients?.map(r => r.name).join(', ') || 'No recipients'}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {format(new Date(message.created_at), 'MMM d, yyyy h:mm a')}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">No sent cascading messages yet</p>
+                    )}
+                  </div>
+                </TabsContent>
+
               </Tabs>
             </div>
           </div>
