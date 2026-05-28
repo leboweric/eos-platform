@@ -8160,15 +8160,8 @@ setAddingMilestoneFor(priority.id);
                     value={cascadeMessage}
                     onChange={(e) => {
                       setCascadeMessage(e.target.value);
-                      // Load teams if not already loaded
-                      if (e.target.value && availableTeams.length === 0) {
-                        teamsService.getTeams().then(response => {
-                          const teams = response.data || response;
-                          setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
-                        }).catch(error => {
-                          console.error('Failed to load teams:', error);
-                        });
-                      }
+                      // availableTeams should already be populated by fetchAvailableTeams()
+                      // when entering the 'conclude' section (see useEffect above)
                     }}
                   />
                   
