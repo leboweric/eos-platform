@@ -60,7 +60,7 @@ BEGIN
     INSERT INTO users (
         id, organization_id, email, password_hash,
         first_name, last_name, role,
-        created_at, updated_at, is_active, requires_password_change
+        created_at, updated_at, is_active, is_temporary_password
     )
     VALUES (
         gen_random_uuid(), v_org_id,
@@ -80,7 +80,7 @@ BEGIN
     INSERT INTO users (
         id, organization_id, email, password_hash,
         first_name, last_name, role,
-        created_at, updated_at, is_active, requires_password_change
+        created_at, updated_at, is_active, is_temporary_password
     )
     VALUES (
         gen_random_uuid(), v_org_id,
@@ -100,7 +100,7 @@ BEGIN
     INSERT INTO users (
         id, organization_id, email, password_hash,
         first_name, last_name, role,
-        created_at, updated_at, is_active, requires_password_change
+        created_at, updated_at, is_active, is_temporary_password
     )
     VALUES (
         gen_random_uuid(), v_org_id,
@@ -262,7 +262,7 @@ ORDER BY is_leadership_team DESC, name;
 -- =====================================================
 -- UPDATE users 
 -- SET password_hash = '$2b$12$O7KlPI1nrqTwjFRNniHzQu/kt0fvci/GWVbU/51SA08tKNm270EgC',
---     requires_password_change = true
+--     is_temporary_password = true
 -- WHERE email IN ('eric@aiop.one', 'rick@aiop.one', 'charlie@aiop.one')
 --   AND organization_id = (SELECT id FROM organizations WHERE slug = 'software-factory');
 
