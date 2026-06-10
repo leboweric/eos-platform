@@ -6,6 +6,7 @@
 
 import { getRecentErrors, getErrorStats, acknowledgeError } from '../services/meetingAlertService.js';
 import db from '../config/database.js';
+import meetingSocketService from '../services/meetingSocketService.js';
 
 /**
  * Get meeting health overview
@@ -231,9 +232,23 @@ export const forceEndSession = async (req, res) => {
       ]
     );
     
+    // CRITICAL: Also force-kill the in-memory WebSocket meeting so live participants are notified/removed
+    try {
+      const killedInMemory = meetingSocketService.forceEndMeetingForTeam(
+        session.organization_id,
+        session.team_id,
+        session.meeting_type
+      );
+      if (killedInMemory) {
+        console.log(`🔪 [ADMIN] Also force-killed in-memory meeting for session ${id} (org=${session.organization_id}, team=${session.team_id})`);
+      }
+    } catch (memErr) {
+      console.error('Failed to force-kill in-memory meeting (non-fatal):', memErr.message);
+    }
+    
     res.json({
       success: true,
-      message: 'Session force-ended successfully'
+      message: 'Session force-ended successfully (DB + live memory)'
     });
   } catch (error) {
     console.error('Error force-ending session:', error);

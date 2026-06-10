@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '../../stores/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -24,12 +23,13 @@ import { toast } from 'sonner';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 const MeetingHealthPage = () => {
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore(); // used for auth headers only (token)
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [healthData, setHealthData] = useState(null);
   const [errors, setErrors] = useState([]);
   const [stuckSessions, setStuckSessions] = useState([]);
+  const [activeMeetings, setActiveMeetings] = useState([]);
   const [selectedError, setSelectedError] = useState(null);
   const [acknowledgeNotes, setAcknowledgeNotes] = useState('');
   const [acknowledging, setAcknowledging] = useState(false);
@@ -43,10 +43,11 @@ const MeetingHealthPage = () => {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       };
 
-      const [healthRes, errorsRes, stuckRes] = await Promise.all([
+      const [healthRes, errorsRes, stuckRes, activeRes] = await Promise.all([
         fetch(`${API_URL}/admin/meeting-health`, { headers }),
         fetch(`${API_URL}/admin/meeting-health/errors?hours=24&limit=50`, { headers }),
-        fetch(`${API_URL}/admin/meeting-health/stuck-sessions`, { headers })
+        fetch(`${API_URL}/admin/meeting-health/stuck-sessions`, { headers }),
+        fetch(`${API_URL}/admin/active-meetings`, { headers })
       ]);
 
       if (healthRes.ok) {
@@ -62,6 +63,11 @@ const MeetingHealthPage = () => {
       if (stuckRes.ok) {
         const stuckJson = await stuckRes.json();
         setStuckSessions(stuckJson.data || []);
+      }
+
+      if (activeRes.ok) {
+        const activeJson = await activeRes.json();
+        setActiveMeetings(activeJson.meetings || []);
       }
     } catch (error) {
       console.error('Failed to fetch meeting health data:', error);
@@ -106,7 +112,7 @@ const MeetingHealthPage = () => {
       } else {
         toast.error('Failed to acknowledge error');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to acknowledge error');
     } finally {
       setAcknowledging(false);
@@ -135,7 +141,7 @@ const MeetingHealthPage = () => {
       } else {
         toast.error('Failed to force-end session');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to force-end session');
     } finally {
       setForceEnding(false);
@@ -264,6 +270,74 @@ const MeetingHealthPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Currently Active Meetings - allows killing any ongoing meeting (including recent ones) */}
+        <Card className="border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Users className="h-5 w-5" />
+              Currently Active Meetings ({activeMeetings.length})
+            </CardTitle>
+            <CardDescription className="text-blue-700">
+              All active meeting sessions in the system. Use Force End to kill any (e.g. stuck Leadership meetings).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {activeMeetings.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-500" />
+                <p className="font-medium">No active meetings right now</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Team</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Facilitator</TableHead>
+                    <TableHead>Started</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeMeetings.map((session) => {
+                    const durationMin = Math.round((session.duration_seconds || 0) / 60);
+                    const isLongRunning = durationMin > 240; // >4h
+                    return (
+                      <TableRow key={session.id} className={isLongRunning ? 'bg-yellow-50' : ''}>
+                        <TableCell className="font-medium">{session.organization_name}</TableCell>
+                        <TableCell>{session.team_name}</TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{session.meeting_type}</code>
+                        </TableCell>
+                        <TableCell>{session.facilitator_name || 'Unknown'}</TableCell>
+                        <TableCell className="text-sm">{format(new Date(session.started_at), 'MMM d, h:mm a')}</TableCell>
+                        <TableCell>
+                          <span className={isLongRunning ? 'text-yellow-700 font-medium' : ''}>
+                            {durationMin} min
+                            {isLongRunning && ' (stuck?)'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setForceEndDialog(session)}
+                          >
+                            <StopCircle className="h-4 w-4 mr-1" />
+                            Force End
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Stuck Sessions Warning */}
         {stuckSessions.length > 0 && (

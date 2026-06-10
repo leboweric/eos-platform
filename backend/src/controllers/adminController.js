@@ -37,12 +37,14 @@ export const getActiveMeetings = async (req, res) => {
         ms.meeting_type,
         COALESCE(o.name, 'Unknown Organization') as organization_name,
         COALESCE(t.name, 'Unknown Team') as team_name,
+        COALESCE(CONCAT(u.first_name, ' ', u.last_name), 'Unknown') as facilitator_name,
         false as has_active_recording,
         false as possibly_incorrect_status,
         calculate_active_duration(ms.id) as duration_seconds
       FROM meeting_sessions ms
       LEFT JOIN organizations o ON ms.organization_id = o.id
       LEFT JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.is_active = true
         AND ms.expires_at > NOW()
       ORDER BY ms.start_time DESC
