@@ -682,7 +682,7 @@ export const archiveCompletedPriorities = async (req, res) => {
        SET deleted_at = NOW()
        WHERE organization_id = $1 
          AND team_id = $2 
-         AND status = 'complete' 
+         AND status IN ('complete', 'completed')
          AND deleted_at IS NULL
        RETURNING id, title`,
       [orgId, teamId]

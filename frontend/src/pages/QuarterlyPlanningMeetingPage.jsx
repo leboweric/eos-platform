@@ -601,6 +601,10 @@ function QuarterlyPlanningMeetingPage() {
           case 'eos-tools':
             fetchTeamMembers();
             break;
+          case 'conclude':
+            fetchTodosData();
+            fetchTeamMembers();
+            break;
           default:
             break;
         }
@@ -1080,6 +1084,7 @@ function QuarterlyPlanningMeetingPage() {
     } else if (activeSection === 'conclude') {
       fetchTodosData(); // Load open todos for review
       fetchTeams(); // Load teams for cascading messages
+      fetchTeamMembers(); // Department-scoped members for meeting ratings
       setLoading(false);
     } else {
       // For non-data sections, ensure loading is false
@@ -1508,9 +1513,10 @@ function QuarterlyPlanningMeetingPage() {
 
   async function fetchTeamMembers() {
     try {
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-      const response = await todosService.getTodos(null, null, true, effectiveTeamId);
-      setTeamMembers(response.data.teamMembers || []);
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      setTeamMembers(response.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch team members:', error);
     }
@@ -1791,6 +1797,10 @@ function QuarterlyPlanningMeetingPage() {
         fetchVtoData();
         break;
       case 'eos-tools':
+        fetchTeamMembers();
+        break;
+      case 'conclude':
+        fetchTodosData();
         fetchTeamMembers();
         break;
       default:

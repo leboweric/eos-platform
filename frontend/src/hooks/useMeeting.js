@@ -203,7 +203,17 @@ const useMeeting = () => {
     // Handle participant joined
     newSocket.on('participant-joined', (data) => {
       console.log('👤 Participant joined:', data.participant);
-      setParticipants(prev => [...prev, data.participant]);
+      setParticipants(prev => {
+        const existingIndex = prev.findIndex(p => p.id === data.participant.id);
+        if (existingIndex >= 0) {
+          return prev.map(p =>
+            p.id === data.participant.id
+              ? { ...data.participant, temporarilyDisconnected: false }
+              : p
+          );
+        }
+        return [...prev, { ...data.participant, temporarilyDisconnected: false }];
+      });
     });
 
     // Handle participant left (after grace period expired)
@@ -338,7 +348,14 @@ const useMeeting = () => {
       console.log('📊 Active meetings update received:', data);
       console.log('📊 Meetings data:', data.meetings);
       console.log('📊 Number of active meetings:', Object.keys(data.meetings || {}).length);
-      setActiveMeetings(data.meetings || {});
+      const meetings = data.meetings || {};
+      setActiveMeetings(meetings);
+
+      // Resync participant list from server when in an active meeting
+      const currentMeetingCode = meetingCodeRef.current;
+      if (currentMeetingCode && meetings[currentMeetingCode]?.participants?.length > 0) {
+        setParticipants(meetings[currentMeetingCode].participants);
+      }
     });
 
     // Request active meetings on connect (handled in main connect handler above)

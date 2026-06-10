@@ -399,12 +399,15 @@ const QuarterlyPrioritiesPageClean = () => {
     setShowArchiveDialog(true);
   };
 
+  const getOrgId = () =>
+    user?.organizationId || user?.organization_id || organization?.id || localStorage.getItem('organizationId');
+
   const performBulkArchive = async () => {
     
     try {
       setLoading(true);
-      const orgId = organization?.id || localStorage.getItem('organizationId');
-      const teamId = getEffectiveTeamId(selectedDepartment, user);
+      const orgId = getOrgId();
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.archiveCompletedPriorities(orgId, teamId);
       
@@ -1299,7 +1302,7 @@ const QuarterlyPrioritiesPageClean = () => {
     } else {
       // Handle single priority archive
       try {
-        const orgId = user?.organizationId;
+        const orgId = getOrgId();
         const teamId = selectedDepartment?.id;
         
         if (!orgId || !teamId) {
@@ -1310,9 +1313,11 @@ const QuarterlyPrioritiesPageClean = () => {
         
         // Refresh data
         await fetchQuarterlyData();
+        toast.success('Priority archived successfully');
       } catch (err) {
         console.error('Failed to archive priority:', err);
         setError('Failed to archive item');
+        toast.error('Failed to archive priority');
       }
     }
   };

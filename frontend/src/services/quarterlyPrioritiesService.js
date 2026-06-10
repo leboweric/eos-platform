@@ -76,6 +76,24 @@ export const quarterlyPrioritiesService = {
     );
   },
 
+  // Archive all completed priorities for a team (bulk operation)
+  async archiveCompletedPriorities(orgId, teamId) {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/archive-completed`
+    );
+
+    return response.data.data;
+  },
+
+  // Get archived priorities grouped by quarter
+  async getArchivedPriorities(orgId, teamId) {
+    const response = await axios.get(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/archived`
+    );
+
+    return response.data.data;
+  },
+
   // Update predictions
   async updatePredictions(orgId, teamId, predictions) {
     const response = await axios.put(
@@ -131,20 +149,28 @@ export const quarterlyPrioritiesService = {
   },
 
   // Add priority update
-  async addPriorityUpdate(orgId, teamId, priorityId, updateData) {
+  async addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange = null) {
+    const body = typeof updateText === 'object' && updateText !== null
+      ? updateText
+      : { updateText, statusChange };
+
     const response = await axios.post(
       `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/updates`,
-      updateData
+      body
     );
     
     return response.data.data;
   },
 
   // Edit priority update
-  async editPriorityUpdate(orgId, teamId, priorityId, updateId, updateData) {
+  async editPriorityUpdate(orgId, teamId, priorityId, updateId, updateText) {
+    const body = typeof updateText === 'object' && updateText !== null
+      ? updateText
+      : { updateText };
+
     const response = await axios.put(
       `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/updates/${updateId}`,
-      updateData
+      body
     );
     
     return response.data.data;
