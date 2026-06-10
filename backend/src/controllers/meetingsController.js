@@ -131,6 +131,10 @@ export const concludeMeeting = async (req, res) => {
       sendEmail = true // Default to true for backward compatibility
     } = req.body;
 
+    const joinedAttendees = Array.isArray(attendees) && attendees.length > 0 && attendees[0]?.userId
+      ? attendees
+      : null;
+
     console.log('📦 [Backend] Received cascadingMessages:', cascadingMessages);
     console.log('📦 [Backend] cascadingMessages type:', typeof cascadingMessages);
     console.log('📦 [Backend] cascadingMessages length:', cascadingMessages?.length);
@@ -820,9 +824,9 @@ export const concludeMeeting = async (req, res) => {
           // Record meeting conclusion for reminder scheduling
           await recordMeetingConclusion(organizationId, teamId, meetingType, {
             meetingId: specificMeetingId,
-            participantCount: individualRatings?.length || attendees?.length,
+            participantCount: joinedAttendees?.length || individualRatings?.length || attendees?.length,
             durationMinutes: duration,
-            attendees: attendees || []
+            attendees: joinedAttendees || attendees || []
           });
           // Don't return - continue with snapshot creation
         }
@@ -834,9 +838,9 @@ export const concludeMeeting = async (req, res) => {
     // Record meeting conclusion for reminder scheduling
     await recordMeetingConclusion(organizationId, teamId, meetingType, {
       meetingId: specificMeetingId,
-      participantCount: individualRatings?.length || attendees?.length,
+      participantCount: joinedAttendees?.length || individualRatings?.length || attendees?.length,
       durationMinutes: duration,
-      attendees: attendees || []
+      attendees: joinedAttendees || attendees || []
     });
 
     // Create meeting snapshot for history
@@ -940,7 +944,7 @@ export const concludeMeeting = async (req, res) => {
         const snapshotData = {
           issues: filteredIssues,
           todos: filteredTodos,
-          attendees: attendeeNames || individualRatings || attendees || [],
+          attendees: joinedAttendees || attendeeNames || individualRatings || attendees || [],
           notes: notes || meetingToSnapshot?.notes || '',
           rating: rating || meetingToSnapshot?.rating,
           metrics: metrics || [],

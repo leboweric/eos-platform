@@ -76,6 +76,7 @@ import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { formatCurrency } from '../utils/revenueUtils';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
@@ -148,13 +149,15 @@ function AnnualPlanningMeetingPage() {
     updateNotes,
     activeMeetings,
     activeMeetingsRef,
-    socket
+    socket,
+    refreshActiveMeetings
   } = useMeeting();
   const { labels } = useTerminology();
   
   // Refs - declare early to avoid initialization issues
   const hasJoinedRef = useRef(false);
   const hasCheckedMeetingsRef = useRef(false);
+  const joinRequestedRef = useRef(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -622,8 +625,8 @@ function AnnualPlanningMeetingPage() {
       return;
     }
     
-    // Only join if we haven't already joined and are connected
-    if (!isConnected || !joinMeeting || meetingCode || hasJoinedRef.current) {
+    // Only join if we haven't already requested join and are connected
+    if (!isConnected || !joinMeeting || meetingCode || joinRequestedRef.current) {
       return;
     }
     
@@ -638,7 +641,7 @@ function AnnualPlanningMeetingPage() {
       hasCheckedMeetingsRef.current = true;
       // Wait 500ms for active meetings to populate
       setTimeout(() => {
-        if (!hasJoinedRef.current && !meetingCode) {
+        if (!joinRequestedRef.current && !meetingCode) {
           // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
           const currentActiveMeetings = activeMeetingsRef.current;
           const existingMeeting = currentActiveMeetings?.[meetingRoom];
@@ -649,7 +652,7 @@ function AnnualPlanningMeetingPage() {
           console.log('📡 Existing meeting:', existingMeeting);
           console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
 
-          hasJoinedRef.current = true;
+          joinRequestedRef.current = true;
 
           // Create database session if we're joining as leader
           if (!hasParticipants) {
@@ -678,7 +681,7 @@ function AnnualPlanningMeetingPage() {
       console.log('📡 Existing meeting:', existingMeeting);
       console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
       
-      hasJoinedRef.current = true;
+      joinRequestedRef.current = true;
       
       // Create database session if we're joining as leader
       if (!hasParticipants) {
@@ -697,6 +700,28 @@ function AnnualPlanningMeetingPage() {
       joinMeeting(meetingRoom, !hasParticipants);
     }
   }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
+
+  // Allow join retry after socket reconnect if the first attempt never completed
+  useEffect(() => {
+    const handleSocketReconnect = (event) => {
+      if (!event.detail?.meetingCode) {
+        joinRequestedRef.current = false;
+        hasJoinedRef.current = false;
+        hasCheckedMeetingsRef.current = false;
+      }
+    };
+
+    const handleJoinSuccess = () => {
+      hasJoinedRef.current = true;
+    };
+
+    window.addEventListener('meeting-socket-reconnected', handleSocketReconnect);
+    window.addEventListener('meeting-join-success', handleJoinSuccess);
+    return () => {
+      window.removeEventListener('meeting-socket-reconnected', handleSocketReconnect);
+      window.removeEventListener('meeting-join-success', handleJoinSuccess);
+    };
+  }, []);
   
   // Listen for section changes from leader
   useEffect(() => {
@@ -724,6 +749,11 @@ function AnnualPlanningMeetingPage() {
             break;
           case 'eos-tools':
             fetchTeamMembers();
+            break;
+          case 'next-steps':
+            fetchTodosData();
+            fetchTeamMembers();
+            refreshActiveMeetings?.();
             break;
           default:
             break;
@@ -936,6 +966,7 @@ function AnnualPlanningMeetingPage() {
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
       fetchTeamMembers(); // Need team members for todos
+      refreshActiveMeetings?.();
       // Initialize current user's rating with default value if not already set
       // This ensures the Conclude button works even if user doesn't move the slider
       if (user?.id && !participantRatings[user.id]) {
@@ -2103,6 +2134,8 @@ function AnnualPlanningMeetingPage() {
         durationMinutes = 120; // Default annual planning meeting duration (2 hours)
       }
       
+      refreshActiveMeetings?.();
+
       // Prepare meeting data for conclude call
       const meetingData = {
         meetingType: 'Annual Planning',
@@ -2110,7 +2143,7 @@ function AnnualPlanningMeetingPage() {
         rating: averageRating,
         individualRatings: participantRatings,
         summary: 'Annual planning session completed with strategic planning and goal setting.',
-        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        attendees: buildMeetingAttendees(participants),
         vto: vtoData,
         goals: goals || [],
         notes: cascadingMessage || '',
@@ -2185,6 +2218,11 @@ function AnnualPlanningMeetingPage() {
         break;
       case 'eos-tools':
         fetchTeamMembers();
+        break;
+      case 'next-steps':
+        fetchTodosData();
+        fetchTeamMembers();
+        refreshActiveMeetings?.();
         break;
       default:
         break;
@@ -4189,7 +4227,10 @@ function AnnualPlanningMeetingPage() {
                           return (
                             <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
-                                {participant.name}{isCurrentUser ? ' (You)' : ''}:
+                                {participant.name}{isCurrentUser ? ' (You)' : ''}
+                                {participant.temporarilyDisconnected && (
+                                  <span className="ml-1 text-xs text-amber-600">(Reconnecting...)</span>
+                                )}:
                               </span>
                               {isCurrentUser ? (
                                 <div className="w-32">

@@ -70,6 +70,7 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
@@ -143,13 +144,15 @@ function QuarterlyPlanningMeetingPage() {
     isReconnecting,
     isFollowing,
     toggleFollow,
-    concludeMeeting: socketConcludeMeeting
+    concludeMeeting: socketConcludeMeeting,
+    refreshActiveMeetings
   } = useMeeting();
   const { labels } = useTerminology();
   
   // Refs - declare early to avoid initialization issues
   const hasJoinedRef = useRef(false);
   const hasCheckedMeetingsRef = useRef(false);
+  const joinRequestedRef = useRef(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -464,7 +467,7 @@ function QuarterlyPlanningMeetingPage() {
     }
     
     // Only join if we haven't already joined and are connected
-    if (!isConnected || !joinMeeting || meetingCode || hasJoinedRef.current) {
+    if (!isConnected || !joinMeeting || meetingCode || joinRequestedRef.current) {
       return;
     }
     
@@ -479,7 +482,7 @@ function QuarterlyPlanningMeetingPage() {
       hasCheckedMeetingsRef.current = true;
       // Wait 500ms for active meetings to populate
       setTimeout(() => {
-        if (!hasJoinedRef.current && !meetingCode) {
+        if (!joinRequestedRef.current && !meetingCode) {
           // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
           const currentActiveMeetings = activeMeetingsRef.current;
           const existingMeeting = currentActiveMeetings?.[meetingRoom];
@@ -490,7 +493,7 @@ function QuarterlyPlanningMeetingPage() {
           console.log('📡 Existing meeting:', existingMeeting);
           console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
           
-          hasJoinedRef.current = true;
+          joinRequestedRef.current = true;
           joinMeeting(meetingRoom, !hasParticipants);
           
           // Create database session if we're joining as leader, or get existing session if joining as follower
@@ -538,7 +541,7 @@ function QuarterlyPlanningMeetingPage() {
       console.log('📡 Existing meeting:', existingMeeting);
       console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
       
-      hasJoinedRef.current = true;
+      joinRequestedRef.current = true;
       joinMeeting(meetingRoom, !hasParticipants);
       
       // Create database session if we're joining as leader, or get existing session if joining as follower
@@ -576,6 +579,28 @@ function QuarterlyPlanningMeetingPage() {
       }
     }
   }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
+
+  // Allow join retry after socket reconnect if the first attempt never completed
+  useEffect(() => {
+    const handleSocketReconnect = (event) => {
+      if (!event.detail?.meetingCode) {
+        joinRequestedRef.current = false;
+        hasJoinedRef.current = false;
+        hasCheckedMeetingsRef.current = false;
+      }
+    };
+
+    const handleJoinSuccess = () => {
+      hasJoinedRef.current = true;
+    };
+
+    window.addEventListener('meeting-socket-reconnected', handleSocketReconnect);
+    window.addEventListener('meeting-join-success', handleJoinSuccess);
+    return () => {
+      window.removeEventListener('meeting-socket-reconnected', handleSocketReconnect);
+      window.removeEventListener('meeting-join-success', handleJoinSuccess);
+    };
+  }, []);
   
   // Listen for section changes from leader
   useEffect(() => {
@@ -604,6 +629,7 @@ function QuarterlyPlanningMeetingPage() {
           case 'conclude':
             fetchTodosData();
             fetchTeamMembers();
+            refreshActiveMeetings?.();
             break;
           default:
             break;
@@ -919,7 +945,7 @@ function QuarterlyPlanningMeetingPage() {
           rating: r.rating
         })),
         summary: 'Quarterly planning session completed with priorities and strategic planning.',
-        attendees: Object.keys(participantRatings).length > 0 ? Object.keys(participantRatings) : [],
+        attendees: buildMeetingAttendees(participants),
         priorities: priorities.map(priority => ({
           name: priority.name || priority.title,
           owner: priority.owner_name,
@@ -1085,6 +1111,7 @@ function QuarterlyPlanningMeetingPage() {
       fetchTodosData(); // Load open todos for review
       fetchTeams(); // Load teams for cascading messages
       fetchTeamMembers(); // Department-scoped members for meeting ratings
+      refreshActiveMeetings?.(); // Force participant list resync at conclude
       setLoading(false);
     } else {
       // For non-data sections, ensure loading is false
@@ -1802,6 +1829,7 @@ function QuarterlyPlanningMeetingPage() {
       case 'conclude':
         fetchTodosData();
         fetchTeamMembers();
+        refreshActiveMeetings?.();
         break;
       default:
         break;
@@ -4041,6 +4069,9 @@ function QuarterlyPlanningMeetingPage() {
                                   {participant.name}
                                   {participant.id === currentLeader && (
                                     <span className="ml-1 text-xs text-blue-600">(Facilitator)</span>
+                                  )}
+                                  {participant.temporarilyDisconnected && (
+                                    <span className="ml-1 text-xs text-amber-600">(Reconnecting...)</span>
                                   )}
                                 </span>
                               </div>

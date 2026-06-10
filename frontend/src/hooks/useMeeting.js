@@ -96,6 +96,11 @@ const useMeeting = () => {
       // Always request active meetings on connect/reconnect
       console.log('🔄 Requesting active meetings on connect');
       newSocket.emit('get-active-meetings');
+
+      // Notify meeting pages so they can retry join if the first attempt failed
+      window.dispatchEvent(new CustomEvent('meeting-socket-reconnected', {
+        detail: { meetingCode: currentMeetingCode || null }
+      }));
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -139,6 +144,10 @@ const useMeeting = () => {
       setMeetingCode(data.meeting.code);
       setCurrentLeader(data.meeting.leader);
       setParticipants(data.participants);
+
+      window.dispatchEvent(new CustomEvent('meeting-join-success', {
+        detail: { meetingCode: data.meeting.code }
+      }));
       // Set isLeader based on server-confirmed leader, not optimistic state
       // This ensures we're in sync with server's view of who the leader is
       const amILeader = data.meeting.leader === user?.id;
@@ -216,7 +225,7 @@ const useMeeting = () => {
       });
     });
 
-    // Handle participant left (after grace period expired)
+    // Handle participant left (after grace period expired or meeting ended)
     newSocket.on('participant-left', (data) => {
       console.log('👋 Participant left:', data.userId);
       setParticipants(prev => prev.filter(p => p.id !== data.userId));
@@ -712,6 +721,13 @@ const useMeeting = () => {
     });
   }, [socket, meetingCode]);
 
+  // Force a participant list resync from the server
+  const refreshActiveMeetings = useCallback(() => {
+    if (!socket?.connected) return;
+    console.log('🔄 Forcing active meetings refresh');
+    socket.emit('get-active-meetings');
+  }, [socket]);
+
   return {
     // Connection status
     isEnabled: ENABLE_MEETINGS,
@@ -741,7 +757,8 @@ const useMeeting = () => {
     syncTimer,
     updateNotes,
     claimPresenter,
-    concludeMeeting
+    concludeMeeting,
+    refreshActiveMeetings
   };
 };
 

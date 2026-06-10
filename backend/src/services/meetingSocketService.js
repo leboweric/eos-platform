@@ -659,11 +659,12 @@ class MeetingSocketService {
               teamId,
               meetingType,
               participantCount: meeting.participants.size,
-              participants: Array.from(meeting.participants.values()).map(p => ({
-                id: p.id,
-                userId: p.id,  // Include userId field for consistency
-                name: p.name
-              })),
+          participants: Array.from(meeting.participants.values()).map(p => ({
+            id: p.id,
+            userId: p.id,
+            name: p.name,
+            temporarilyDisconnected: !!p.temporarilyDisconnected
+          })),
               leader: meeting.leader,
               startedAt: meeting.createdAt
             };
@@ -1259,7 +1260,9 @@ class MeetingSocketService {
           participantCount: meeting.participants.size,
           participants: Array.from(meeting.participants.values()).map(p => ({
             id: p.id,
-            name: p.name
+            userId: p.id,
+            name: p.name,
+            temporarilyDisconnected: !!p.temporarilyDisconnected
           })),
           leader: meeting.leader,
           startedAt: meeting.createdAt
@@ -1269,6 +1272,85 @@ class MeetingSocketService {
     
     // Broadcast to all connected clients
     this.io.emit('active-meetings-update', { meetings: activeMeetings });
+  }
+
+  /**
+   * Force-end a meeting by its room code.
+   * Used by admin force-kill to terminate stuck or unwanted live meetings.
+   * Notifies any connected participants and removes from in-memory state.
+   */
+  forceEndMeeting(meetingCode) {
+    if (!meetings.has(meetingCode)) {
+      return false;
+    }
+
+    const meeting = meetings.get(meetingCode);
+    const participantCount = meeting.participants.size;
+
+    console.log(`🔪 [FORCE KILL] Force-ending meeting ${meetingCode} (${participantCount} participants)`);
+
+    // Notify all participants in the room that the meeting was force-ended
+    if (this.io) {
+      this.io.to(meetingCode).emit('meeting-ended', {
+        reason: 'force-ended-by-admin',
+        message: 'This meeting has been terminated by an administrator.'
+      });
+      // Also emit conclude for compatibility with some listeners
+      this.io.to(meetingCode).emit('conclude-meeting', { meetingCode });
+    }
+
+    // Remove all participants from the room
+    meeting.participants.forEach((participant) => {
+      console.log(`  👋 Force-removed participant: ${participant.name}`);
+    });
+
+    // Delete the meeting from in-memory
+    meetings.delete(meetingCode);
+
+    // Broadcast updated active meetings list to everyone
+    this.broadcastActiveMeetings();
+
+    console.log(`✅ [FORCE KILL] Meeting ${meetingCode} force-ended and removed from memory`);
+    return true;
+  }
+
+  /**
+   * Force-end meeting(s) for a specific team/org by constructing possible meeting codes.
+   * This is the preferred method for admin kill operations.
+   */
+  forceEndMeetingForTeam(orgId, teamId, meetingType = 'weekly') {
+    if (!orgId || !teamId) {
+      console.warn('forceEndMeetingForTeam called without orgId or teamId');
+      return false;
+    }
+
+    const possibleCodes = [
+      `${orgId}-${teamId}-weekly-accountability`,
+      `${orgId}-${teamId}-weekly-express`,
+      `${orgId}-${teamId}-quarterly-planning`,
+      `${orgId}-${teamId}-annual-planning`,
+      // Legacy formats (teamId only)
+      `${teamId}-weekly-accountability`,
+      `${teamId}-weekly-express`
+    ];
+
+    let killedAny = false;
+    for (const code of possibleCodes) {
+      if (meetings.has(code)) {
+        const killed = this.forceEndMeeting(code);
+        if (killed) killedAny = true;
+      }
+    }
+
+    // Also try to find any meeting whose code contains the teamId (for safety)
+    for (const [code, meeting] of meetings.entries()) {
+      if (code.includes(teamId) && meetings.has(code)) {
+        const killed = this.forceEndMeeting(code);
+        if (killed) killedAny = true;
+      }
+    }
+
+    return killedAny;
   }
 
   handleUserDisconnect(socket) {
@@ -1365,25 +1447,57 @@ class MeetingSocketService {
     const meeting = meetings.get(meetingCode);
     if (!meeting) return;
 
-    // Now fully remove the participant
+    const meetingIds = this.extractIdsFromMeetingCode(meetingCode);
+    let hasActiveDbSession = false;
+
+    if (meetingIds) {
+      try {
+        const dbSession = await this.checkActiveDatabaseSession(
+          meetingIds.orgId,
+          meetingIds.teamId,
+          meetingIds.meetingType
+        );
+        hasActiveDbSession = !!dbSession;
+      } catch (error) {
+        console.error(`⚠️ [SYNC] Error checking database session during finalizeUserRemoval:`, error);
+        hasActiveDbSession = true;
+      }
+    }
+
+    // Keep participant visible while the meeting session is still active
+    if (hasActiveDbSession) {
+      const participant = meeting.participants.get(userId);
+      if (participant) {
+        participant.temporarilyDisconnected = true;
+        participant.socketDisconnected = true;
+        participant.socketId = null;
+      }
+
+      this.io.to(meetingCode).emit('participant-temporarily-disconnected', {
+        userId,
+        userName,
+        gracePeriodSeconds: 0,
+        reason: 'socket-offline-during-active-meeting'
+      });
+
+      console.log(`⏸️ ${userName} marked offline in meeting ${meetingCode} (active session - kept in participant list)`);
+      this.broadcastActiveMeetings();
+      return;
+    }
+
+    // No active session - fully remove the participant
     meeting.participants.delete(userId);
 
-    // Notify others that user has left for real
     this.io.to(meetingCode).emit('participant-left', {
       userId: userId
     });
 
     console.log(`👋 ${userName} removed from meeting ${meetingCode} (grace period expired)`);
 
-    // Broadcast updated active meetings
     this.broadcastActiveMeetings();
 
     // Clean up empty meetings - but check database session first
     if (meeting.participants.size === 0) {
-      // CRITICAL FIX: Check if there's an active database session before deleting
-      // This prevents the "split-brain" issue where the in-memory meeting is deleted
-      // but the database session is still active, causing reconnection issues
-      const meetingIds = this.extractIdsFromMeetingCode(meetingCode);
       let shouldPreserveMeeting = false;
       
       if (meetingIds) {

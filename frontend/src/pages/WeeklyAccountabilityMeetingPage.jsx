@@ -104,6 +104,7 @@ import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { FormattedText } from '@/components/ui/FormattedText';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 import { parseDateLocal } from '../utils/dateUtils';
@@ -218,7 +219,8 @@ const WeeklyAccountabilityMeetingPage = () => {
     updateNotes,
     activeMeetings,
     activeMeetingsRef,
-    concludeMeeting
+    concludeMeeting,
+    refreshActiveMeetings
   } = useMeeting();
   
   // Debug logging for participants
@@ -1281,6 +1283,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
   const hasCheckedMeetingsRef = useRef(false);
+  const joinRequestedRef = useRef(false);
   const meetingConcludedRef = useRef(false); // Prevent auto-join after meeting ends
   
   useEffect(() => {
@@ -1293,7 +1296,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       user: !!user
     });
     
-    if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current && !meetingConcludedRef.current) {
+    if (teamId && isConnected && joinMeeting && !meetingCode && !joinRequestedRef.current && !meetingConcludedRef.current) {
       // Include organization ID in meeting code to prevent cross-org collisions
       // CRITICAL: Must match the orgId logic used throughout the rest of the file
       const orgId = user?.organizationId || user?.organization_id;
@@ -1308,7 +1311,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         hasCheckedMeetingsRef.current = true;
         // Wait 500ms for active meetings to populate
         setTimeout(() => {
-          if (!hasJoinedRef.current && !meetingCode) {
+          if (!joinRequestedRef.current && !meetingCode) {
             // CRITICAL: Use activeMeetingsRef.current to get the CURRENT value, not the stale closure value
             const currentActiveMeetings = activeMeetingsRef.current;
             const existingMeeting = currentActiveMeetings?.[meetingRoom];
@@ -1319,7 +1322,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             console.log('🎬 Existing meeting:', existingMeeting);
             console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
             
-            hasJoinedRef.current = true;
+            joinRequestedRef.current = true;
             joinMeeting(meetingRoom, !hasParticipants);
             
             // Start the timer if joining as leader
@@ -1448,7 +1451,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('🎬 Existing meeting:', existingMeeting);
         console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
         
-        hasJoinedRef.current = true;
+        joinRequestedRef.current = true;
         joinMeeting(meetingRoom, !hasParticipants);
         
         // Start the timer if joining as leader
@@ -1568,6 +1571,28 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
     }
   }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime, syncTimer, sessionId, sessionLoading]);
+
+  // Allow join retry after socket reconnect if the first attempt never completed
+  useEffect(() => {
+    const handleSocketReconnect = (event) => {
+      if (!event.detail?.meetingCode) {
+        joinRequestedRef.current = false;
+        hasJoinedRef.current = false;
+        hasCheckedMeetingsRef.current = false;
+      }
+    };
+
+    const handleJoinSuccess = () => {
+      hasJoinedRef.current = true;
+    };
+
+    window.addEventListener('meeting-socket-reconnected', handleSocketReconnect);
+    window.addEventListener('meeting-join-success', handleJoinSuccess);
+    return () => {
+      window.removeEventListener('meeting-socket-reconnected', handleSocketReconnect);
+      window.removeEventListener('meeting-join-success', handleJoinSuccess);
+    };
+  }, []);
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -2082,6 +2107,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     if (activeSection === 'conclude') {
       fetchAvailableTeams();
+      refreshActiveMeetings?.();
     } else if (activeSection === 'headlines') {
       fetchHeadlines();
       fetchCascadedMessages();
@@ -4218,7 +4244,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Good news is managed locally during the meeting
         break;
       case 'conclude':
-        // Conclude section doesn't need data fetch
+        refreshActiveMeetings?.();
         break;
       default:
         break;
@@ -4255,6 +4281,9 @@ const WeeklyAccountabilityMeetingPage = () => {
             break;
           case 'issues':
             fetchIssuesData();
+            break;
+          case 'conclude':
+            refreshActiveMeetings?.();
             break;
           default:
             break;
@@ -8386,6 +8415,9 @@ setAddingMilestoneFor(priority.id);
                                   {participant.id === currentLeader && (
                                     <span className="ml-1 text-xs text-blue-600">(Facilitator)</span>
                                   )}
+                                  {participant.temporarilyDisconnected && (
+                                    <span className="ml-1 text-xs text-amber-600">(Reconnecting...)</span>
+                                  )}
                                 </span>
                               </div>
                               {hasRated && (
@@ -8758,8 +8790,13 @@ setAddingMilestoneFor(priority.id);
                           duration: durationMinutes,
                           
                           // Participant ratings
-                          participantRatings: allParticipantRatings
+                          participantRatings: allParticipantRatings,
+
+                          // Live socket participants for meeting history
+                          attendees: buildMeetingAttendees(participants)
                         };
+
+                        refreshActiveMeetings?.();
 
                         // DEBUG: Log todos being sent to backend
                         console.log('🔍 [Debug] Todos being sent:', {
