@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { sendEmail } from '../services/emailService.js';
 import { notifyNewTrial } from '../services/notificationService.js';
+import { getUserAccessibleTeams } from '../utils/teamUtils.js';
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId) => {
@@ -290,32 +291,11 @@ export const login = async (req, res) => {
       clientOrganizations = clientOrgsResult.rows;
     }
 
-    // Fetch user's teams - handle missing is_leadership_team column gracefully
-    let teamsResult;
-    try {
-      teamsResult = await query(
-        `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
-         FROM teams t
-         JOIN team_members tm ON tm.team_id = t.id
-         WHERE tm.user_id = $1 AND t.organization_id = $2
-         ORDER BY t.is_leadership_team DESC, t.name`,
-        [user.id, user.organization_id]
-      );
-    } catch (error) {
-      // If column doesn't exist yet, query without it
-      if (error.code === '42703') {
-        teamsResult = await query(
-          `SELECT t.id, t.name, t.description, false as is_leadership_team, tm.role as member_role
-           FROM teams t
-           JOIN team_members tm ON tm.team_id = t.id
-           WHERE tm.user_id = $1 AND t.organization_id = $2
-           ORDER BY t.name`,
-          [user.id, user.organization_id]
-        );
-      } else {
-        throw error;
-      }
-    }
+    const { teams: accessibleTeams } = await getUserAccessibleTeams(
+      user.id,
+      user.organization_id,
+      user.role
+    );
 
     res.json({
       success: true,
@@ -331,7 +311,7 @@ export const login = async (req, res) => {
           organizationSlug: user.organization_slug,
           isConsultant: user.is_consultant,
           clientOrganizations,
-          teams: teamsResult.rows
+          teams: accessibleTeams
         },
         accessToken,
         refreshToken
@@ -448,32 +428,11 @@ export const getProfile = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Fetch user's teams - handle missing is_leadership_team column gracefully
-    let teamsResult;
-    try {
-      teamsResult = await query(
-        `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
-         FROM teams t
-         JOIN team_members tm ON tm.team_id = t.id
-         WHERE tm.user_id = $1 AND t.organization_id = $2
-         ORDER BY t.is_leadership_team DESC, t.name`,
-        [req.user.id, user.organization_id]
-      );
-    } catch (error) {
-      // If column doesn't exist yet, query without it
-      if (error.code === '42703') {
-        teamsResult = await query(
-          `SELECT t.id, t.name, t.description, false as is_leadership_team, tm.role as member_role
-           FROM teams t
-           JOIN team_members tm ON tm.team_id = t.id
-           WHERE tm.user_id = $1 AND t.organization_id = $2
-           ORDER BY t.name`,
-          [req.user.id, user.organization_id]
-        );
-      } else {
-        throw error;
-      }
-    }
+    const { teams: accessibleTeams } = await getUserAccessibleTeams(
+      req.user.id,
+      user.organization_id,
+      user.role
+    );
 
     res.json({
       success: true,
@@ -489,7 +448,7 @@ export const getProfile = async (req, res) => {
         organizationName: user.organization_name,
         organizationSlug: user.organization_slug,
         isConsultant: user.is_consultant,
-        teams: teamsResult.rows
+        teams: accessibleTeams
       }
     });
 

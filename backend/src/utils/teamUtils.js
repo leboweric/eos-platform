@@ -112,6 +112,44 @@ export const isUserOnLeadershipTeam = async (userId, organizationId) => {
   }
 };
 
+// Get teams a user can access in the department/team selector.
+// Leadership members and admins see all active org teams; others see only their memberships.
+export const getUserAccessibleTeams = async (userId, organizationId, userRole = 'user') => {
+  const membershipResult = await db.query(
+    `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+     FROM teams t
+     JOIN team_members tm ON tm.team_id = t.id
+     WHERE tm.user_id = $1 AND t.organization_id = $2
+     ORDER BY t.is_leadership_team DESC, t.name`,
+    [userId, organizationId]
+  );
+
+  const isLeadershipMember = membershipResult.rows.some(team => team.is_leadership_team);
+  const canViewAllTeams = isLeadershipMember || userRole === 'admin';
+
+  if (!canViewAllTeams) {
+    return {
+      teams: membershipResult.rows,
+      isLeadershipMember
+    };
+  }
+
+  const allTeamsResult = await db.query(
+    `SELECT t.id, t.name, t.description, t.is_leadership_team,
+            COALESCE(tm.role, 'viewer') as member_role
+     FROM teams t
+     LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $1
+     WHERE t.organization_id = $2 AND t.is_active = true
+     ORDER BY t.is_leadership_team DESC, t.name`,
+    [userId, organizationId]
+  );
+
+  return {
+    teams: allTeamsResult.rows,
+    isLeadershipMember: true
+  };
+};
+
 // Get all leadership teams for an organization
 export const getLeadershipTeams = async (organizationId) => {
   try {

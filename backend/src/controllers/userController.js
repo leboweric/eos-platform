@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { updateSubscriptionUserCount } from './subscriptionController.js';
 import { sendEmail } from '../services/emailService.js';
 import { v4 as uuidv4 } from 'uuid';
-import { getUserTeamContext } from '../utils/teamUtils.js';
+import { getUserTeamContext, getUserAccessibleTeams } from '../utils/teamUtils.js';
 import { checkUserLimit } from '../utils/planLimits.js';
 
 // Get all users in organization
@@ -679,20 +679,18 @@ export const getUserDepartments = async (req, res) => {
     const organizationId = req.user.organizationId || req.user.organization_id;
     
     console.log('Getting departments for user:', { userId, organizationId });
-    
-    // All users (including Leadership members) only see departments they're members of
-    const result = await query(
-      `SELECT DISTINCT t.id, t.name, t.is_leadership_team
-       FROM teams t
-       JOIN team_members tm ON t.id = tm.team_id
-       WHERE tm.user_id = $1 AND t.organization_id = $2
-       ORDER BY t.is_leadership_team DESC, t.name ASC`,
-      [userId, organizationId]
+
+    const userRoleResult = await query(
+      'SELECT role FROM users WHERE id = $1',
+      [userId]
     );
-    const availableDepartments = result.rows;
-    
-    // Check if user is on leadership team (for frontend display purposes)
-    const isLeadershipMember = availableDepartments.some(dept => dept.is_leadership_team);
+    const userRole = userRoleResult.rows[0]?.role || 'user';
+
+    const { teams: availableDepartments, isLeadershipMember } = await getUserAccessibleTeams(
+      userId,
+      organizationId,
+      userRole
+    );
     
     const departments = availableDepartments.map(team => ({
       id: team.id,
