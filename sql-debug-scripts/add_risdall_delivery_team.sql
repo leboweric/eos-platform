@@ -7,6 +7,7 @@
 --
 -- Leadership Team (existing): Alex, Jennifer, Joel, Kelly, Max, Ted, Admin
 -- Delivery Team (new): Brandt, Danny, Gabe, Kristen, Lindsay, Nick, Nikki
+-- Dual-team access (leadership + delivery): Jennifer, Joel (run delivery L10s)
 -- =====================================================
 
 BEGIN;
@@ -48,6 +49,14 @@ BEGIN
       AND NOT EXISTS (
           SELECT 1 FROM team_members tm WHERE tm.user_id = u.id
       )
+    ON CONFLICT (team_id, user_id) DO NOTHING;
+
+    -- Jennifer and Joel need membership on both teams to run delivery L10 meetings
+    INSERT INTO team_members (id, user_id, team_id, role, joined_at)
+    SELECT gen_random_uuid(), u.id, delivery_team_id, 'member', NOW()
+    FROM users u
+    WHERE u.organization_id = org_id
+      AND u.email IN ('jennifer@risdall.com', 'jkoenigs@risdall.com')
     ON CONFLICT (team_id, user_id) DO NOTHING;
 
     RAISE NOTICE 'Delivery team setup complete';
