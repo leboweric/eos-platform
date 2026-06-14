@@ -53,24 +53,25 @@ export const issuesService = {
     
     // Use department_id if provided, otherwise use teamId from issueData, otherwise use user's teamId
     const finalTeamId = issueData.department_id || issueData.teamId || issueData.team_id || teamId || null;
-    
-    const {
-      department_id,
-      team_id,
-      transferToTeam,
-      transferSourceTeamId,
-      transferReason,
-      pendingUpdateText: _pendingUpdateText,
-      sourceContextTeamId: _sourceContextTeamId,
-      ...cleanedData
-    } = issueData;
-    
+
     const response = await axios.post(
       `/organizations/${orgId}/issues`,
       {
-        ...cleanedData,
+        title: issueData.title,
+        description: issueData.description ?? '',
+        ownerId: issueData.ownerId ?? null,
+        timeline: issueData.timeline || 'short_term',
+        status: issueData.status || 'open',
         teamId: finalTeamId,
-        ...(transferSourceTeamId ? { transferSourceTeamId, transferReason: transferReason || '' } : {})
+        related_todo_id: issueData.related_todo_id || null,
+        related_headline_id: issueData.related_headline_id || null,
+        related_priority_id: issueData.related_priority_id || null,
+        priority_level: issueData.priority_level || null,
+        meeting_id: issueData.meeting_id || null,
+        ...(issueData.transferSourceTeamId || issueData.transferReason ? {
+          transferSourceTeamId: issueData.transferSourceTeamId || null,
+          transferReason: issueData.transferReason || ''
+        } : {})
       }
     );
     return response.data.data;
@@ -79,10 +80,21 @@ export const issuesService = {
   // Update an issue
   updateIssue: async (issueId, issueData) => {
     const orgId = getOrgId();
+
+    const {
+      transferToTeam: _transferToTeam,
+      pendingUpdateText: _pendingUpdateText,
+      sourceContextTeamId: _sourceContextTeamId,
+      department_id: _department_id,
+      team_id: _team_id,
+      teamId: _teamId,
+      id: _id,
+      ...updatePayload
+    } = issueData;
     
     const response = await axios.put(
       `/organizations/${orgId}/issues/${issueId}`,
-      issueData
+      updatePayload
     );
     return response.data.data;
   },

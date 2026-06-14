@@ -4,7 +4,7 @@ import {
   stripTransferPayload,
   getSavedEntityId,
   resolveTransferSourceTeamId,
-  appendTextToDescription
+  buildIssueDescription
 } from './transferUtils';
 
 export function parseCrossTeamTransfer(data, sourceTeamId) {
@@ -31,9 +31,11 @@ export async function saveIssueWithCrossTeamTransfer({
 }) {
   const { transfer, isTransferRequested, isCrossTeamTransfer, transferSourceTeamId } = parseCrossTeamTransfer(issueData, sourceTeamId);
   const { payload, pendingUpdateText } = stripTransferPayload(issueData);
-  const description = isCrossTeamTransfer || !transfer?.reason?.trim()
-    ? (payload.description || '')
-    : appendTextToDescription(payload.description, transfer.reason.trim());
+  const description = buildIssueDescription({
+    description: payload.description,
+    pendingUpdateText,
+    transferReason: isCrossTeamTransfer ? '' : (transfer?.reason || '')
+  });
 
   if (isTransferRequested && issueId) {
     if (pendingUpdateText) {
@@ -56,7 +58,13 @@ export async function saveIssueWithCrossTeamTransfer({
   }
 
   if (issueId) {
-    const saved = await issuesService.updateIssue(issueId, { ...payload, description });
+    const saved = await issuesService.updateIssue(issueId, {
+      title: payload.title,
+      description,
+      ownerId: payload.ownerId,
+      status: payload.status,
+      timeline: payload.timeline
+    });
     return {
       saved,
       message: 'Issue updated successfully',
@@ -66,16 +74,21 @@ export async function saveIssueWithCrossTeamTransfer({
 
   const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
   const saved = await issuesService.createIssue({
-    ...payload,
+    title: payload.title,
     description,
     ownerId: isTransferRequested
       ? (transfer.assigneeId || payload.ownerId || null)
       : payload.ownerId,
-    timeline,
+    status: payload.status || 'open',
+    timeline: timeline || payload.timeline || 'short_term',
     department_id: destinationTeamId,
-    ...(meetingId ? { meeting_id: meetingId } : {}),
-    ...(isCrossTeamTransfer ? {
-      transferSourceTeamId,
+    meeting_id: meetingId || payload.meeting_id || null,
+    related_headline_id: payload.related_headline_id,
+    related_todo_id: payload.related_todo_id,
+    related_priority_id: payload.related_priority_id,
+    priority_level: payload.priority_level,
+    ...(isTransferRequested ? {
+      transferSourceTeamId: transferSourceTeamId || sourceTeamId || undefined,
       transferReason: transfer.reason || ''
     } : {})
   });

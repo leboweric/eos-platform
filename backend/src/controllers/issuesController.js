@@ -293,6 +293,11 @@ export const createIssue = async (req, res) => {
         `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
         [transferNote, newIssue.id]
       );
+    } else if (transferReason?.trim()) {
+      await db.query(
+        `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
+        [`\n\n---\nNote: ${transferReason.trim()}`, newIssue.id]
+      );
     }
     
     // Fetch the full issue with owner details populated

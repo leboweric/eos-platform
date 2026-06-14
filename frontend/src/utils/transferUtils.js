@@ -20,12 +20,38 @@ export function resolveTransferSourceTeamId(sourceTeamId, issueData = {}) {
   return issueData.sourceContextTeamId || sourceTeamId || null;
 }
 
+export function stripHtmlToText(content) {
+  if (!content) return '';
+  return String(content)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function hasMeaningfulRichText(content) {
+  return stripHtmlToText(content).length > 0;
+}
+
 export function appendTextToDescription(description, text) {
   const note = (text || '').trim();
   if (!note) return description || '';
-  const base = (description || '').trim();
+  const base = stripHtmlToText(description);
   if (!base) return note;
   return `${base}\n\n---\n${note}`;
+}
+
+export function buildIssueDescription({ description, pendingUpdateText, transferReason }) {
+  let result = description || '';
+  if (pendingUpdateText?.trim()) {
+    result = appendTextToDescription(result, pendingUpdateText.trim());
+  }
+  if (transferReason?.trim()) {
+    result = appendTextToDescription(result, transferReason.trim());
+  }
+  return result;
 }
 
 export function validateTransfer(transfer, sourceTeamId, { requireAssignee = false } = {}) {
