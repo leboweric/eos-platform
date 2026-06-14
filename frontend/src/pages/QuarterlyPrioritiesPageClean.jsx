@@ -132,6 +132,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [editMilestoneError, setEditMilestoneError] = useState('');
   const [loading, setLoading] = useState(false);
   const isInitialLoadRef = useRef(true);
+  const fetchGenerationRef = useRef(0);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [organization, setOrganization] = useState(null);
@@ -256,6 +257,8 @@ const QuarterlyPrioritiesPageClean = () => {
   }, [selectedDepartment, showArchived]);
 
   const fetchQuarterlyData = async () => {
+    const fetchGeneration = ++fetchGenerationRef.current;
+
     if (isInitialLoadRef.current) {
       setLoading(true);
     }
@@ -276,6 +279,7 @@ const QuarterlyPrioritiesPageClean = () => {
       // Fetch either active or archived priorities
       if (showArchived) {
         const archivedData = await quarterlyPrioritiesService.getArchivedPriorities(orgId, teamId);
+        if (fetchGeneration !== fetchGenerationRef.current) return;
         setArchivedQuarters(archivedData || {});
         // Clear current priorities data when viewing archived
         setCompanyPriorities([]);
@@ -285,7 +289,8 @@ const QuarterlyPrioritiesPageClean = () => {
       } else {
         // Use the selected department's ID as the teamId for the API call
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
-        
+        if (fetchGeneration !== fetchGenerationRef.current) return;
+
         // Debug: Check if updates have IDs
         const allPriorities = [...(data.companyPriorities || [])];
         Object.values(data.teamMemberPriorities || {}).forEach(member => {
@@ -334,17 +339,19 @@ const QuarterlyPrioritiesPageClean = () => {
         setArchivedQuarters({});
       }
     } catch (err) {
+      if (fetchGeneration !== fetchGenerationRef.current) return;
       console.error('Failed to fetch quarterly data:', err);
       setError('Failed to load data. Please try again later.');
       
-      // Set empty data on error
       setCompanyPriorities([]);
       setTeamMembers([]);
       setTeamMemberPriorities({});
       setMyMilestones([]);
     } finally {
-      setLoading(false);
-      isInitialLoadRef.current = false;
+      if (fetchGeneration === fetchGenerationRef.current) {
+        setLoading(false);
+        isInitialLoadRef.current = false;
+      }
     }
   };
 
@@ -453,9 +460,6 @@ const QuarterlyPrioritiesPageClean = () => {
         };
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
-        
-        // Set rock display preference
-        setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
@@ -755,7 +759,7 @@ const QuarterlyPrioritiesPageClean = () => {
       }
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      if (err.status === 404) {
+      if (err.response?.status === 404) {
         // Milestone doesn't exist, refresh to remove from UI
         console.warn(`Milestone ${milestoneId} not found, refreshing data`);
         await fetchQuarterlyData();
@@ -920,7 +924,7 @@ const QuarterlyPrioritiesPageClean = () => {
       setSuccess('Milestone updated successfully');
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      if (err.status === 404) {
+      if (err.response?.status === 404) {
         // Milestone doesn't exist, refresh to remove from UI
         console.warn(`Milestone ${milestoneId} not found, refreshing data`);
         await fetchQuarterlyData();

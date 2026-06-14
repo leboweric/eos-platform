@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { hasOrganizationAccess } from '../utils/orgAccess.js';
 
 // @desc    Get all skills for an organization
 // @route   GET /api/v1/organizations/:orgId/skills
@@ -9,8 +10,7 @@ export const getOrganizationSkills = async (req, res) => {
     const { orgId } = req.params;
     const { category } = req.query;
 
-    // Verify access
-    if (req.user.organizationId !== orgId && !req.user.isImpersonating) {
+    if (!(await hasOrganizationAccess(req.user, orgId))) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'

@@ -1,9 +1,10 @@
 import { ConfidentialClientApplication } from '@azure/msal-node';
-import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
-import bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
 import failedOperationsService from '../services/failedOperationsService.js';
+import { buildOAuthState, resolveOAuthRedirectBase } from '../utils/oauthRedirect.js';
+import { generateOAuthTokens } from '../utils/oauthTokens.js';
+import { redirectAfterOAuthLogin } from '../utils/oauthCompletion.js';
 
 // Check if Microsoft OAuth is configured
 const isMicrosoftOAuthConfigured = () => {
@@ -38,25 +39,6 @@ const getMsalClient = () => {
   return new ConfidentialClientApplication(getMsalConfig());
 };
 
-// Generate JWT tokens (access + refresh) matching the standard login flow
-const generateTokens = (user) => {
-  const accessToken = jwt.sign(
-    { 
-      id: user.id, 
-      email: user.email,
-      organizationId: user.organization_id
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
-  );
-  const refreshToken = jwt.sign(
-    { userId: user.id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-  );
-  return { accessToken, refreshToken };
-};
-
 // Get Microsoft OAuth URL
 export const getMicrosoftAuthUrl = async (req, res) => {
   try {
@@ -67,7 +49,7 @@ export const getMicrosoftAuthUrl = async (req, res) => {
       });
     }
 
-    const state = req.query.redirect_url || req.headers.referer || 'https://axplatform.app';
+    const state = buildOAuthState(req);
     
     console.log('🔵 Generating Microsoft OAuth URL');
     console.log('📍 Redirect URL (state):', state);
@@ -112,7 +94,7 @@ export const getMicrosoftAuthUrl = async (req, res) => {
 export const handleMicrosoftCallback = async (req, res) => {
   try {
     if (!isMicrosoftOAuthConfigured()) {
-      const redirectUrl = req.query.state || 'https://axplatform.app';
+      const redirectUrl = resolveOAuthRedirectBase(req.query.state);
       return res.redirect(`${redirectUrl}/login?error=oauth_not_configured`);
     }
 
@@ -129,14 +111,14 @@ export const handleMicrosoftCallback = async (req, res) => {
     // Handle Microsoft errors
     if (error) {
       console.error('❌ Microsoft OAuth error:', error, error_description);
-      const redirectUrl = state || 'https://axplatform.app';
+      const redirectUrl = resolveOAuthRedirectBase(state);
       return res.redirect(`${redirectUrl}/login?error=${error}`);
     }
     
     // Validate code
     if (!code) {
       console.error('❌ No authorization code provided');
-      const redirectUrl = state || 'https://axplatform.app';
+      const redirectUrl = resolveOAuthRedirectBase(state);
       return res.redirect(`${redirectUrl}/login?error=no_code`);
     }
     
@@ -177,7 +159,7 @@ export const handleMicrosoftCallback = async (req, res) => {
     
     if (!email) {
       console.error('❌ No email found in Microsoft user profile');
-      const redirectUrl = state || 'https://axplatform.app';
+      const redirectUrl = resolveOAuthRedirectBase(state);
       return res.redirect(`${redirectUrl}/login?error=no_email`);
     }
     
@@ -218,13 +200,7 @@ export const handleMicrosoftCallback = async (req, res) => {
       console.log('🔒 User not found in database:', email);
       console.log('❌ OAuth login denied - user must be created by administrator first');
       
-      // Determine base URL for error redirect
-      let baseUrl = 'https://axplatform.app';
-      if (state && state.includes('myboyum')) {
-        baseUrl = 'https://myboyum.axplatform.app';
-      }
-      
-      // Redirect with clear error message
+      const baseUrl = resolveOAuthRedirectBase(state);
       return res.redirect(
         `${baseUrl}/login?error=user_not_found&message=${encodeURIComponent('Your account has not been created yet. Please contact your administrator to set up your account.')}`
       );
@@ -249,10 +225,7 @@ export const handleMicrosoftCallback = async (req, res) => {
     // Ensure we have a valid user object
     if (!user || !user.id) {
       console.error('❌ Invalid user object:', user);
-      let baseUrl = 'https://axplatform.app';
-      if (state && state.includes('myboyum')) {
-        baseUrl = 'https://myboyum.axplatform.app';
-      }
+      const baseUrl = resolveOAuthRedirectBase(state);
       return res.redirect(`${baseUrl}/login?error=invalid_user`);
     }
     
@@ -265,29 +238,16 @@ export const handleMicrosoftCallback = async (req, res) => {
       user_keys: user ? Object.keys(user) : []
     });
     
-    const { accessToken, refreshToken } = generateTokens(user);
+    const { accessToken, refreshToken } = generateOAuthTokens(user);
     console.log('✅ JWT tokens generated (access + refresh)');
-    
-    // Decode and log the token payload for debugging
-    try {
-      const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64').toString());
-      console.log('🎫 Token payload:', payload);
-    } catch (e) {
-      console.error('Failed to decode token for logging');
-    }
-    
-    // Determine base URL for redirect (handle subdomains)
-    let baseUrl = 'https://axplatform.app';
-    if (state && state.includes('myboyum')) {
-      baseUrl = 'https://myboyum.axplatform.app';
-    }
-    
-    // ALWAYS redirect to the correct path: /login/auth/callback
-    // Pass both access and refresh tokens so background refresh works during meetings
-    const redirectWithToken = `${baseUrl}/login/auth/callback?token=${accessToken}&refreshToken=${refreshToken}&provider=microsoft`;
-    console.log('🔄 Redirecting to:', redirectWithToken);
-    
-    res.redirect(redirectWithToken);
+
+    await redirectAfterOAuthLogin(res, {
+      accessToken,
+      refreshToken,
+      user,
+      provider: 'microsoft',
+      state
+    });
     
   } catch (error) {
     console.error('❌ Microsoft OAuth callback error:', error);
@@ -308,11 +268,7 @@ export const handleMicrosoftCallback = async (req, res) => {
     // Update global tracking
     global.lastOAuthError = Date.now();
     
-    // Redirect to login with error - use clean base URL
-    let baseUrl = 'https://axplatform.app';
-    if (req.query.state && req.query.state.includes('myboyum')) {
-      baseUrl = 'https://myboyum.axplatform.app';
-    }
+    const baseUrl = resolveOAuthRedirectBase(req.query.state);
     res.redirect(`${baseUrl}/login?error=oauth_failed`);
   }
 };

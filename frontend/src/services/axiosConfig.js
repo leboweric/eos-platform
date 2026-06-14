@@ -24,26 +24,45 @@ const isTokenExpired = (token) => {
   }
 };
 
-// Helper function to refresh token proactively
-const refreshTokenProactively = async () => {
+let refreshInFlight = null;
+
+const performTokenRefresh = async () => {
   const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) return false;
-  
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await axios.post(
+    `${apiClient.defaults.baseURL}/auth/refresh`,
+    { refreshToken }
+  );
+
+  const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+  localStorage.setItem('accessToken', accessToken);
+  localStorage.setItem('refreshToken', newRefreshToken);
+  return accessToken;
+};
+
+const refreshTokenProactively = async () => {
+  if (!refreshInFlight) {
+    refreshInFlight = performTokenRefresh()
+      .then((token) => {
+        console.log('✅ Token refresh successful');
+        return token;
+      })
+      .catch((error) => {
+        console.error('❌ Token refresh failed:', error);
+        throw error;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+
   try {
-    console.log('🔄 Proactively refreshing token...');
-    const response = await axios.post(
-      `${apiClient.defaults.baseURL}/auth/refresh`,
-      { refreshToken }
-    );
-    
-    const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', newRefreshToken);
-    
-    console.log('✅ Proactive token refresh successful');
+    await refreshInFlight;
     return true;
-  } catch (error) {
-    console.error('❌ Proactive token refresh failed:', error);
+  } catch {
     return false;
   }
 };
@@ -93,26 +112,13 @@ apiClient.interceptors.response.use(
       console.log('🔄 Token expired, attempting refresh...');
       
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          console.log('❌ No refresh token available');
-          throw new Error('No refresh token available');
-        }
-        
         console.log('🔄 Calling refresh endpoint...');
-        // Try to refresh the token
-        const response = await axios.post(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          { refreshToken }
-        );
-        
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-        
+        const accessToken = await (refreshInFlight || (refreshInFlight = performTokenRefresh().finally(() => {
+          refreshInFlight = null;
+        })));
+
         console.log('✅ Token refresh successful, retrying original request');
-        
-        // Retry the original request with new token
+
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {

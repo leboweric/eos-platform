@@ -7,6 +7,7 @@ import { query, beginTransaction, commitTransaction, rollbackTransaction } from 
 import { sendEmail } from '../services/emailService.js';
 import { notifyNewTrial } from '../services/notificationService.js';
 import { getUserAccessibleTeams } from '../utils/teamUtils.js';
+import { storeRefreshTokenHash, isRefreshTokenValid, clearRefreshTokenHash } from '../utils/refreshTokenStore.js';
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId) => {
@@ -184,6 +185,7 @@ export const register = async (req, res) => {
 
       // Generate tokens
       const { accessToken, refreshToken } = generateTokens(user.id);
+      await storeRefreshTokenHash(user.id, refreshToken);
 
       res.status(201).json({
         success: true,
@@ -276,6 +278,7 @@ export const login = async (req, res) => {
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user.id);
+    await storeRefreshTokenHash(user.id, refreshToken);
 
     // If Consultant user, get their client organizations
     let clientOrganizations = [];
@@ -357,6 +360,15 @@ export const refreshToken = async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    const tokenValid = await isRefreshTokenValid(user.id, refreshToken);
+    if (!tokenValid) {
+      await clearRefreshTokenHash(user.id);
+      return res.status(401).json({
+        success: false,
+        error: 'Refresh token has been revoked'
+      });
+    }
     
     // Set req.user for activity tracking middleware
     req.user = {
@@ -373,8 +385,9 @@ export const refreshToken = async (req, res) => {
       [user.id, user.organization_id, req.ip, req.get('user-agent'), 'refresh_token']
     ).catch(err => console.error('Failed to track token refresh:', err));
 
-    // Generate new tokens
+    // Generate new tokens and rotate refresh token hash
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
+    await storeRefreshTokenHash(user.id, newRefreshToken);
 
     res.json({
       success: true,
@@ -397,8 +410,9 @@ export const refreshToken = async (req, res) => {
 // @route   POST /api/v1/auth/logout
 // @access  Private
 export const logout = async (req, res) => {
-  // In a production app, you might want to blacklist the token
-  // For now, we'll just return success
+  if (req.user?.id) {
+    await clearRefreshTokenHash(req.user.id);
+  }
   res.json({
     success: true,
     message: 'Logged out successfully'

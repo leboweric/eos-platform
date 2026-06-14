@@ -1,5 +1,6 @@
 import NinetyImportService from '../services/ninetyImportService.js';
 import db from '../config/database.js';
+import { denyUnlessOrgAccess } from '../utils/orgAccess.js';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import csv from 'csv-parser';
@@ -20,6 +21,8 @@ export const preview = async (req, res) => {
 
     const { organizationId, teamId, cadence = 'weekly' } = req.body; // ADD cadence
     const userId = req.user.id;
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     // Parse CSV
     const parseResults = NinetyImportService.parseCSV(req.file.buffer);
@@ -238,6 +241,8 @@ export const execute = async (req, res) => {
       ownerMappings = {} 
     } = req.body;
     const userId = req.user.id;
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     // Parse ownerMappings if it's a string
     const mappings = typeof ownerMappings === 'string' 
@@ -487,6 +492,8 @@ export const execute = async (req, res) => {
 export const getHistory = async (req, res) => {
   try {
     const { organizationId } = req.params;
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
     
     const history = await db.query(
       `SELECT 

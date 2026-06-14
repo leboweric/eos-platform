@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { getTeamId, getEffectiveTeamId } from '../utils/teamUtils';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,7 +73,8 @@ const DashboardClean = () => {
     if (!dueDate) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
+    const due = parseDateLocal(dueDate);
+    if (!due) return null;
     due.setHours(0, 0, 0, 0);
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -106,6 +108,7 @@ const DashboardClean = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const isInitialLoadRef = useRef(true);
+  const fetchGenerationRef = useRef(0);
   const [organization, setOrganization] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
@@ -295,7 +298,7 @@ const DashboardClean = () => {
 
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.updateMilestone(
         orgId,
@@ -327,6 +330,8 @@ const DashboardClean = () => {
   };
 
   const fetchDashboardData = async () => {
+    const fetchGeneration = ++fetchGenerationRef.current;
+
     try {
       if (isInitialLoadRef.current) {
         setLoading(true);
@@ -371,6 +376,8 @@ const DashboardClean = () => {
           return null;
         })
       ]);
+
+      if (fetchGeneration !== fetchGenerationRef.current) return;
       
       if (orgResponse) {
         setOrganization(orgResponse.data || orgResponse);
@@ -536,10 +543,14 @@ const DashboardClean = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      if (fetchGeneration === fetchGenerationRef.current) {
+        console.error('Failed to fetch dashboard data:', error);
+      }
     } finally {
-      setLoading(false);
-      isInitialLoadRef.current = false;
+      if (fetchGeneration === fetchGenerationRef.current) {
+        setLoading(false);
+        isInitialLoadRef.current = false;
+      }
     }
   };
 
@@ -683,7 +694,7 @@ const DashboardClean = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Update local state immediately for smooth transitions (copied from QuarterlyPrioritiesPageClean)
       setDashboardData(prev => ({
@@ -710,7 +721,7 @@ const DashboardClean = () => {
   const handleAddMilestone = async (priorityId, milestone) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestone);
       await fetchDashboardData();
@@ -735,7 +746,7 @@ const DashboardClean = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       await fetchDashboardData();
@@ -747,7 +758,7 @@ const DashboardClean = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       await fetchDashboardData();
@@ -759,7 +770,7 @@ const DashboardClean = () => {
   const handleToggleMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
@@ -795,7 +806,7 @@ const DashboardClean = () => {
   const handleAddUpdate = async (priorityId, updateText) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Fix: Call the correct method name
       const response = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText);
@@ -832,7 +843,7 @@ const DashboardClean = () => {
   const handleEditUpdate = async (priorityId, updateId, newText) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Fix: Call the correct method name
       await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, newText);
@@ -873,7 +884,7 @@ const DashboardClean = () => {
         onConfirm: async () => {
           try {
             const orgId = user?.organizationId || user?.organization_id;
-            const teamId = getTeamId(user);
+            const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
             
             // Fix: Call the correct method name
             await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
@@ -912,7 +923,7 @@ const DashboardClean = () => {
   const handleStatusChange = async (priorityId, newStatus) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
       
@@ -938,7 +949,7 @@ const DashboardClean = () => {
   const handleArchivePriority = async (priorityId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       await fetchDashboardData();
@@ -951,7 +962,7 @@ const DashboardClean = () => {
   const handleUploadAttachment = async (priorityId, file) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
       await fetchDashboardData();
@@ -963,7 +974,7 @@ const DashboardClean = () => {
   const handleDownloadAttachment = async (priorityId, attachmentId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priorityId, attachmentId);
     } catch (error) {
@@ -974,7 +985,7 @@ const DashboardClean = () => {
   const handleDeleteAttachment = async (priorityId, attachmentId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user);
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
       await fetchDashboardData();
@@ -1999,7 +2010,7 @@ const DashboardClean = () => {
 
                               try {
                                 const orgId = user?.organizationId || user?.organization_id;
-                                const teamId = getTeamId(user);
+                                const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
                                 await quarterlyPrioritiesService.updateMilestone(
                                   orgId,
                                   teamId,
@@ -2221,7 +2232,7 @@ const DashboardClean = () => {
                     >
                       <div className="p-4 flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="text-base font-semibold text-slate-900 mb-2 leading-snug rich-text-display" dangerouslySetInnerHTML={{ __html: message.message }} />
+                          <div className="text-base font-semibold text-slate-900 mb-2 leading-snug rich-text-display" dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }} />
                           
                           {/* Enhanced Metadata */}
                           <div className="flex items-center gap-3 text-sm text-slate-500">

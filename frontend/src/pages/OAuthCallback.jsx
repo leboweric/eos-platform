@@ -1,99 +1,85 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
+import { initTokenRefresh } from '../utils/tokenRefresh';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
+  const [statusMessage, setStatusMessage] = useState('Completing sign in...');
   useEffect(() => {
-    const token = searchParams.get('token');
-    const refreshToken = searchParams.get('refreshToken');
-    const provider = searchParams.get('provider');
+    const exchangeCode = searchParams.get('code');
+    const provider = searchParams.get('provider') || 'oauth';
     const error = searchParams.get('error');
-    
-    console.log('🔵 OAuth callback received');
-    console.log('📦 Provider:', provider || 'unknown');
-    console.log('🔑 Token present:', !!token);
-    console.log('🔑 Refresh token present:', !!refreshToken);
-    
-    if (error) {
-      console.error('❌ OAuth error:', error);
-      navigate('/login?error=' + error);
-      return;
-    }
-    
-    if (token) {
-      try {
-        // Validate token format (must be a JWT with 3 parts)
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-          console.error('❌ Invalid token format - not a valid JWT');
-          navigate('/login?error=invalid_token');
-          return;
+    const legacyToken = searchParams.get('token');
+    const legacyRefreshToken = searchParams.get('refreshToken');
+
+    const completeLogin = async () => {
+      if (error) {
+        console.error('OAuth error:', error);
+        navigate('/login?error=' + error);
+        return;
+      }
+
+      // Legacy flow: direct tokens in URL (backward compat until fully deployed)
+      if (legacyToken && !exchangeCode) {
+        localStorage.setItem('accessToken', legacyToken);
+        if (legacyRefreshToken) {
+          localStorage.setItem('refreshToken', legacyRefreshToken);
         }
-        
-        // Try to decode token to validate it
-        try {
-          const payload = JSON.parse(atob(parts[1]));
-          console.log('👤 User info from token:', { 
-            id: payload.id,
-            email: payload.email,
-            organizationId: payload.organizationId 
-          });
-          
-          // Validate required fields
-          if (!payload.id || !payload.email) {
-            console.error('❌ Token missing required fields');
-            navigate('/login?error=invalid_token');
-            return;
-          }
-        } catch (e) {
-          console.error('❌ Failed to decode token:', e);
-          navigate('/login?error=invalid_token');
-          return;
-        }
-        
-        // Store the access token from OAuth
-        localStorage.setItem('accessToken', token);
-        console.log('✅ Access token stored in localStorage');
-        
-        // Store refresh token if provided (enables background token refresh during meetings)
-        if (refreshToken) {
-          localStorage.setItem('refreshToken', refreshToken);
-          console.log('✅ Refresh token stored in localStorage');
-        }
-        
-        // Store organization ID if present
-        try {
-          const payload = JSON.parse(atob(parts[1]));
-          if (payload.organizationId) {
-            localStorage.setItem('organizationId', payload.organizationId);
-            console.log('✅ Organization ID stored:', payload.organizationId);
-          }
-        } catch (e) {
-          console.log('Could not extract organization ID');
-        }
-        
-        // Force full page reload to reinitialize auth
-        console.log('🔄 Reloading to dashboard...');
         window.location.href = '/dashboard';
-        
-      } catch (error) {
-        console.error('❌ Error processing OAuth:', error);
+        return;
+      }
+
+      if (!exchangeCode) {
+        navigate('/login?error=no_code');
+        return;
+      }
+
+      try {
+        setStatusMessage(`Completing ${provider} sign in...`);
+        const response = await axios.post(`${API_BASE_URL}/auth/exchange`, { code: exchangeCode });
+
+        if (!response.data?.success) {
+          throw new Error(response.data?.error || 'Exchange failed');
+        }
+
+        const { user, accessToken, refreshToken } = response.data.data;
+
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+
+        const orgId = user?.organizationId || user?.organization_id;
+        if (orgId) {
+          localStorage.setItem('organizationId', orgId);
+        }
+
+        if (user?.organizationId && !user.organization_id) {
+          user.organization_id = user.organizationId;
+        }
+
+        useAuthStore.setState({ user, isLoading: false, error: null });
+        initTokenRefresh();
+
+        window.location.href = '/dashboard';
+      } catch (err) {
+        console.error('OAuth exchange failed:', err);
         navigate('/login?error=auth_failed');
       }
-    } else {
-      console.error('❌ No token in OAuth callback');
-      navigate('/login?error=no_token');
-    }
+    };
+
+    completeLogin();
   }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900">Completing Microsoft sign in...</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{statusMessage}</h2>
         <p className="text-gray-600 mt-2">Please wait while we redirect you to the dashboard.</p>
       </div>
     </div>

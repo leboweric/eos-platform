@@ -169,7 +169,7 @@ function extractCleanText(rawEmail) {
  * - attachment-info: JSON with attachment metadata
  * - attachment1, attachment2, etc: The actual attachment files
  */
-router.post('/inbound-email', upload.any(), async (req, res) => {
+router.post('/inbound-email', authenticateWebhook, upload.any(), async (req, res) => {
   try {
     console.log('[EmailInbound] Received webhook from SendGrid');
     console.log('[EmailInbound] Headers:', req.headers);

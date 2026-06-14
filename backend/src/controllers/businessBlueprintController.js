@@ -1,6 +1,7 @@
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
+import { hasOrganizationAccess } from '../utils/orgAccess.js';
 
 // Helper function to get or create VTO
 const getOrCreateVTO = async (orgId, teamId) => {
@@ -62,8 +63,7 @@ export const getVTO = async (req, res) => {
     const { departmentId } = req.query; // Support department filter
     const userId = req.user.id;
 
-    // Verify access - either user belongs to org or is consultant with access
-    if (req.user.organizationId !== orgId && !req.user.isImpersonating) {
+    if (!(await hasOrganizationAccess(req.user, orgId))) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'

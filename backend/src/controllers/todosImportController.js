@@ -1,6 +1,7 @@
 import XLSX from 'xlsx';
 import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { denyUnlessOrgAccess } from '../utils/orgAccess.js';
 
 /**
  * Helper: Safely trim values (handles Date objects and numbers)
@@ -173,6 +174,8 @@ export const previewTodosImport = async (req, res) => {
       });
     }
 
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
+
     // Parse Excel file
     const workbook = XLSX.read(req.file.buffer, {
       cellStyles: true,
@@ -274,6 +277,8 @@ export const executeTodosImport = async (req, res) => {
     
     const { organizationId, teamId, userMappings } = req.body;
     const userId = req.user.id; // Current user doing the import
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
     
     if (!req.file) {
       return res.status(400).json({

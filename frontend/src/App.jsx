@@ -171,8 +171,7 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to check legal agreement status:', error);
-      // Assume needs acceptance on error for safety
-      setNeedsLegalAcceptance(true);
+      // Fail open — don't block the app on transient network/API errors
     } finally {
       setCheckingAgreements(false);
     }

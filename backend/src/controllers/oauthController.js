@@ -1,8 +1,9 @@
 import { OAuth2Client } from 'google-auth-library';
-import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
-import bcrypt from 'bcryptjs';
 import failedOperationsService from '../services/failedOperationsService.js';
+import { buildOAuthState, resolveOAuthRedirectBase } from '../utils/oauthRedirect.js';
+import { generateOAuthTokens } from '../utils/oauthTokens.js';
+import { redirectAfterOAuthLogin } from '../utils/oauthCompletion.js';
 
 // Check if Google OAuth is configured
 const isGoogleOAuthConfigured = () => {
@@ -18,19 +19,6 @@ const getGoogleClient = () => {
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_CALLBACK_URL
-  );
-};
-
-// Generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      email: user.email,
-      organizationId: user.organization_id
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '30d' }
   );
 };
 
@@ -51,8 +39,7 @@ export const getGoogleAuthUrl = async (req, res) => {
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'
       ],
-      // Include the original domain in state if it's a subdomain
-      state: req.headers.referer || 'https://axplatform.app'
+      state: buildOAuthState(req)
     });
 
     res.json({ authUrl: authorizeUrl });
@@ -78,12 +65,18 @@ export const getGoogleAuthUrl = async (req, res) => {
 
 // Handle Google OAuth callback
 export const handleGoogleCallback = async (req, res) => {
-  const { code, state } = req.body;
+  const code = req.body?.code || req.query?.code;
+  const state = req.body?.state || req.query?.state;
 
   try {
     if (!isGoogleOAuthConfigured()) {
-      const redirectUrl = state || 'https://axplatform.app';
+      const redirectUrl = resolveOAuthRedirectBase(state);
       return res.redirect(`${redirectUrl}/login?error=oauth_not_configured`);
+    }
+
+    if (!code) {
+      const redirectUrl = resolveOAuthRedirectBase(state);
+      return res.redirect(`${redirectUrl}/login?error=no_code`);
     }
 
     // Exchange code for tokens
@@ -119,56 +112,14 @@ export const handleGoogleCallback = async (req, res) => {
         );
       }
     } else {
-      // New user - create account
-      // First, check if there's an organization with this email domain
-      const emailDomain = googleUser.email.split('@')[1];
-      
-      // Try to find an organization (simplified - you may want to enhance this)
-      let orgResult = await db.query(
-        'SELECT id FROM organizations LIMIT 1'
+      // OAuth only works for pre-provisioned users (same policy as Microsoft OAuth)
+      console.log('🔒 User not found in database:', googleUser.email);
+      console.log('❌ Google OAuth login denied - user must be created by administrator first');
+
+      const baseUrl = resolveOAuthRedirectBase(state);
+      return res.redirect(
+        `${baseUrl}/login?error=user_not_found&message=${encodeURIComponent('Your account has not been created yet. Please contact your administrator to set up your account.')}`
       );
-      
-      if (orgResult.rows.length === 0) {
-        // No organization exists - they need to register properly
-        return res.redirect(
-          `${state || 'https://axplatform.app'}/register?email=${encodeURIComponent(googleUser.email)}&name=${encodeURIComponent(googleUser.name)}`
-        );
-      }
-      
-      const organizationId = orgResult.rows[0].id;
-      
-      // Create new user
-      const newUserResult = await db.query(
-        `INSERT INTO users (
-          email, 
-          first_name, 
-          last_name, 
-          password_hash,
-          organization_id, 
-          role,
-          google_id,
-          email_verified,
-          created_at, 
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) 
-        RETURNING *`,
-        [
-          googleUser.email,
-          googleUser.given_name || googleUser.name?.split(' ')[0] || '',
-          googleUser.family_name || googleUser.name?.split(' ')[1] || '',
-          await bcrypt.hash(Math.random().toString(36), 10), // Random password for OAuth users
-          organizationId,
-          'member', // Default role
-          googleUser.id,
-          true // Google emails are pre-verified
-        ]
-      );
-      
-      user = newUserResult.rows[0];
-      
-      // NOTE: Team assignment should be handled by organization admin
-      // Not auto-assigning to any team for security reasons
-      // Previously this tried to assign to a hardcoded UUID that doesn't exist
     }
 
     // Update last login and track for daily active users
@@ -187,17 +138,14 @@ export const handleGoogleCallback = async (req, res) => {
     // Track successful OAuth
     global.lastOAuthSuccess = Date.now();
 
-    // Generate JWT token
-    const token = generateToken(user);
-    
-    // Determine redirect URL based on original domain
-    let redirectUrl = 'https://axplatform.app';
-    if (state && state.includes('myboyum')) {
-      redirectUrl = 'https://myboyum.axplatform.app';
-    }
-    
-    // Redirect to frontend with token
-    res.redirect(`${redirectUrl}/auth/success?token=${token}`);
+    const { accessToken, refreshToken } = generateOAuthTokens(user);
+    await redirectAfterOAuthLogin(res, {
+      accessToken,
+      refreshToken,
+      user,
+      provider: 'google',
+      state
+    });
     
   } catch (error) {
     console.error('Google OAuth callback error:', error);
@@ -217,8 +165,7 @@ export const handleGoogleCallback = async (req, res) => {
     // Update global tracking
     global.lastOAuthError = Date.now();
     
-    // Redirect to login with error
-    const redirectUrl = state || 'https://axplatform.app';
+    const redirectUrl = resolveOAuthRedirectBase(state);
     res.redirect(`${redirectUrl}/login?error=oauth_failed`);
   }
 };

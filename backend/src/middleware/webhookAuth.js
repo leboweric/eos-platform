@@ -14,8 +14,7 @@ export const authenticateWebhook = (req, res, next) => {
     
     if (providedSecret !== webhookSecret) {
       console.warn('[WebhookAuth] Invalid webhook secret provided');
-      // We still process it for now, but log the warning
-      // In production, you might want to reject: return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
   }
   

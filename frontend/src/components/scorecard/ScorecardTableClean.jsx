@@ -384,7 +384,7 @@ const ScorecardTableClean = ({
         const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
         const yearLabel = date.getFullYear().toString().slice(-2);
         labels.push(`${monthLabel} ${yearLabel}`);
-        monthDates.push(date.toISOString().split('T')[0]);
+        monthDates.push(toLocalDateString(date));
         
         // Move to next month
         currentMonth.setMonth(currentMonth.getMonth() + 1);
@@ -400,7 +400,7 @@ const ScorecardTableClean = ({
         const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
         const yearLabel = date.getFullYear().toString().slice(-2);
         labels.push(`${monthLabel} ${yearLabel}`);
-        monthDates.push(date.toISOString().split('T')[0]);
+        monthDates.push(toLocalDateString(date));
       }
     }
     

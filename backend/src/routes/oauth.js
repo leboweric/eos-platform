@@ -10,11 +10,16 @@ import {
   linkMicrosoftAccount
 } from '../controllers/microsoftOAuthController.js';
 import { authenticate } from '../middleware/auth.js';
+import { exchangeOAuthCode } from '../controllers/oauthExchangeController.js';
 
 const router = express.Router();
 
+// Exchange one-time OAuth code for tokens (frontend POST only)
+router.post('/exchange', exchangeOAuthCode);
+
 // Google OAuth routes
 router.get('/google', getGoogleAuthUrl);
+router.get('/google/callback', handleGoogleCallback);
 router.post('/google/callback', handleGoogleCallback);
 router.post('/google/link', authenticate, linkGoogleAccount);
 

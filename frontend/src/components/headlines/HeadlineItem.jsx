@@ -4,6 +4,7 @@ import { issuesService } from '../../services/issuesService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { sanitizeHtml } from '../../utils/sanitizeHtml';
 
 export const HeadlineItem = ({
   headline,
@@ -120,7 +121,7 @@ const newIssue = await issuesService.createIssue(issueData);
                 }
               }}
               title={showEditDelete && (headline.created_by === user?.id || user?.role === 'admin') ? "Click to edit" : ""}
-              dangerouslySetInnerHTML={{ __html: headline.text }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(headline.text) }}
             />
             
             {/* Enhanced Metadata */}

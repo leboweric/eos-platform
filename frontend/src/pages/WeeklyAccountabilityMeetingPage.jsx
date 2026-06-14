@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
 import { formatDateSafe } from '../utils/dateUtils';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { meetingsService } from '../services/meetingsService';
 import meetingHistoryService from '../services/meetingHistoryService';
 import { organizationService } from '../services/organizationService';
@@ -2010,7 +2011,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await todosService.getTodos('incomplete', null, false, effectiveTeamId);
-      setTodaysTodos(response.todos || []);
+      setTodaysTodos(response.data?.todos || []);
     } catch (error) {
       console.error('Failed to fetch today\'s todos:', error);
     }
@@ -7106,7 +7107,7 @@ setAddingMilestoneFor(priority.id);
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
                           <div
                             className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display"
-                            dangerouslySetInnerHTML={{ __html: message.message }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }}
                           />
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
@@ -7205,7 +7206,7 @@ setAddingMilestoneFor(priority.id);
                               <div key={message.id} className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200">
                                 <div
                                   className="text-sm font-medium text-slate-900 rich-text-display"
-                                  dangerouslySetInnerHTML={{ __html: message.message }}
+                                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }}
                                 />
                                 <div className="mt-2 flex items-center justify-between">
                                   <p className="text-xs text-slate-600">
@@ -7936,7 +7937,7 @@ setAddingMilestoneFor(priority.id);
                                     <div className="px-16 pb-3">
                                       <div 
                                         className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg rich-text-display"
-                                        dangerouslySetInnerHTML={{ __html: issue.description }}
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(issue.description) }}
                                       />
                                     </div>
                                   )}

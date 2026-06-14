@@ -33,6 +33,16 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
   }
 
   try {
+    // Idempotency: skip already-processed events (Stripe retries are safe)
+    const existing = await query(
+      'SELECT 1 FROM stripe_webhook_events WHERE event_id = $1',
+      [event.id]
+    );
+    if (existing.rows.length > 0) {
+      console.log(`Stripe webhook duplicate skipped: ${event.id} (${event.type})`);
+      return res.json({ received: true, duplicate: true });
+    }
+
     // Handle the event
     switch (event.type) {
       case 'invoice.payment_succeeded':
@@ -55,6 +65,11 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
+
+    await query(
+      'INSERT INTO stripe_webhook_events (event_id, event_type) VALUES ($1, $2) ON CONFLICT (event_id) DO NOTHING',
+      [event.id, event.type]
+    );
 
     res.json({ received: true });
   } catch (error) {
@@ -86,7 +101,9 @@ async function handlePaymentSucceeded(invoice) {
     [invoice.customer]
   );
   
-  if (result.rows.length === 0) return;
+  if (result.rows.length === 0) {
+    throw new Error(`No subscription found for Stripe customer ${invoice.customer} (invoice.payment_succeeded)`);
+  }
 
   const subscription = result.rows[0];
   
@@ -133,7 +150,9 @@ async function handlePaymentFailed(invoice) {
     [invoice.customer]
   );
   
-  if (result.rows.length === 0) return;
+  if (result.rows.length === 0) {
+    throw new Error(`No subscription found for Stripe customer ${invoice.customer} (invoice.payment_failed)`);
+  }
 
   const subscription = result.rows[0];
 
@@ -170,7 +189,9 @@ async function handleSubscriptionUpdated(stripeSubscription) {
     [stripeSubscription.id]
   );
   
-  if (result.rows.length === 0) return;
+  if (result.rows.length === 0) {
+    throw new Error(`No subscription found for Stripe subscription ${stripeSubscription.id} (subscription.updated)`);
+  }
 
   const subscription = result.rows[0];
 
@@ -250,7 +271,9 @@ async function handleSubscriptionDeleted(stripeSubscription) {
     [stripeSubscription.id]
   );
   
-  if (result.rows.length === 0) return;
+  if (result.rows.length === 0) {
+    throw new Error(`No subscription found for Stripe subscription ${stripeSubscription.id} (subscription.deleted)`);
+  }
 
   const subscription = result.rows[0];
 

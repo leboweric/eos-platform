@@ -702,18 +702,18 @@ export const uploadTodoAttachment = async (req, res) => {
       });
     }
 
-    // Insert attachment record
+    // Insert attachment record (store in PostgreSQL bytea)
     const attachmentId = uuidv4();
     const result = await query(
       `INSERT INTO todo_attachments (
-        id, todo_id, file_name, file_path, file_size, mime_type, uploaded_by
+        id, todo_id, file_name, file_data, file_size, mime_type, uploaded_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *`,
+      RETURNING id, todo_id, file_name, file_size, mime_type, uploaded_by, created_at`,
       [
         attachmentId,
         todoId,
         file.originalname,
-        file.path,
+        file.buffer,
         file.size,
         file.mimetype,
         userId
@@ -771,7 +771,7 @@ export const downloadTodoAttachment = async (req, res) => {
 
     // Get attachment details
     const result = await query(
-      `SELECT a.*, t.organization_id
+      `SELECT a.id, a.file_name, a.file_data, a.file_path, a.mime_type, a.file_size, t.organization_id
        FROM todo_attachments a
        JOIN todos t ON a.todo_id = t.id
        WHERE a.id = $1 AND a.todo_id = $2 AND t.organization_id = $3`,
@@ -786,26 +786,32 @@ export const downloadTodoAttachment = async (req, res) => {
     }
 
     const attachment = result.rows[0];
-    const filePath = path.resolve(attachment.file_path);
 
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.error('File not found at path:', filePath);
-      return res.status(404).json({
-        success: false,
-        error: 'File not found on server',
-        path: process.env.NODE_ENV === 'development' ? filePath : undefined
-      });
+    if (!attachment.file_data) {
+      // Legacy filesystem-backed attachment
+      if (!attachment.file_path) {
+        return res.status(404).json({
+          success: false,
+          error: 'File data not found'
+        });
+      }
+      const filePath = path.resolve(attachment.file_path);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'File not found on server'
+        });
+      }
+      res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
+      res.setHeader('Content-Length', attachment.file_size);
+      return fs.createReadStream(filePath).pipe(res);
     }
 
-    // Set appropriate headers
     res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
-    res.setHeader('Content-Length', attachment.file_size);
-
-    // Stream the file
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
+    res.setHeader('Content-Length', attachment.file_data.length);
+    res.send(attachment.file_data);
   } catch (error) {
     console.error('Error downloading attachment:', error);
     res.status(500).json({
@@ -838,10 +844,13 @@ export const deleteTodoAttachment = async (req, res) => {
       });
     }
 
-    // Delete the actual file from storage
-    const filePath = path.resolve(result.rows[0].file_path);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Clean up legacy filesystem files if present
+    const legacyPath = result.rows[0].file_path;
+    if (legacyPath) {
+      const filePath = path.resolve(legacyPath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     res.json({

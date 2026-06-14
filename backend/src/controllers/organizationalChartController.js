@@ -1,5 +1,6 @@
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { hasOrganizationAccess } from '../utils/orgAccess.js';
 
 // @desc    Get all organizational charts for an organization
 // @route   GET /api/v1/organizations/:orgId/organizational-charts
@@ -10,8 +11,7 @@ export const getOrganizationalCharts = async (req, res) => {
     const { includeShared } = req.query;
     const userId = req.user.id;
 
-    // Verify access
-    if (req.user.organizationId !== orgId && !req.user.isImpersonating) {
+    if (!(await hasOrganizationAccess(req.user, orgId))) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'

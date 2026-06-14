@@ -20,6 +20,8 @@ const useMeeting = () => {
   const location = useLocation();
   const { user } = useAuthStore();
   const navigationLock = useRef(false);
+  const skipNextBroadcastRef = useRef(false);
+  const sectionRestoreTimeoutsRef = useRef([]);
   const isFollowingRef = useRef(true);
   const isLeaderRef = useRef(false);
   const activeMeetingsRef = useRef({}); // Ref to access current activeMeetings in closures
@@ -65,6 +67,9 @@ const useMeeting = () => {
     
     const newSocket = io(socketUrl, {
       path: '/meeting-socket',
+      auth: {
+        token: localStorage.getItem('accessToken')
+      },
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,  // Cap delay at 5 seconds
@@ -150,7 +155,7 @@ const useMeeting = () => {
       }));
       // Set isLeader based on server-confirmed leader, not optimistic state
       // This ensures we're in sync with server's view of who the leader is
-      const amILeader = data.meeting.leader === user?.id;
+      const amILeader = data.meeting.leader === userRef.current?.id;
       setIsLeader(amILeader);
       setIsFollowing(!amILeader);
 
@@ -158,16 +163,18 @@ const useMeeting = () => {
       // For reconnecting users (including leader), restore them to where the meeting is
       // For followers joining, sync them to the leader's position
       const shouldNavigate = data.meeting.currentRoute && data.meeting.currentRoute !== location.pathname;
+      const currentPath = window.location.pathname;
       const isReconnecting = data.reconnected === true;
 
       if (shouldNavigate) {
         // Prevent automatic redirect away from annual planning meetings
-        if (location.pathname.includes('/annual-planning/')) {
+        if (currentPath.includes('/annual-planning/')) {
           console.log('🚫 Preventing auto-navigation away from annual planning meeting');
         } else if (isReconnecting || !amILeader) {
           // Reconnecting users (leader or follower) should go back to current meeting position
           // New followers should also sync to leader's position
           console.log(`🔄 Navigating to meeting position: ${data.meeting.currentRoute} (reconnecting: ${isReconnecting}, isLeader: ${amILeader})`);
+          skipNextBroadcastRef.current = true;
           navigationLock.current = true;
           navigate(data.meeting.currentRoute);
         }
@@ -190,11 +197,13 @@ const useMeeting = () => {
 
           // Retry a few times in case the event listener isn't registered yet after page refresh
           if (attempt < 3) {
-            setTimeout(() => dispatchSectionRestore(attempt + 1), 300);
+            const retryId = setTimeout(() => dispatchSectionRestore(attempt + 1), 300);
+            sectionRestoreTimeoutsRef.current.push(retryId);
           }
         };
         // Start with a delay to let the page hydrate after refresh
-        setTimeout(() => dispatchSectionRestore(1), 500);
+        const initialRestoreId = setTimeout(() => dispatchSectionRestore(1), 500);
+        sectionRestoreTimeoutsRef.current.push(initialRestoreId);
       }
 
       // Sync timer state if meeting already started
@@ -321,7 +330,7 @@ const useMeeting = () => {
     newSocket.on('leader-changed', (data) => {
       console.log('👑 Leader changed to:', data.newLeader);
       setCurrentLeader(data.newLeader);
-      setIsLeader(data.newLeader === user?.id);
+      setIsLeader(data.newLeader === userRef.current?.id);
     });
 
     // Handle leader disconnected (leader protection - no auto-transfer)
@@ -430,7 +439,7 @@ const useMeeting = () => {
     newSocket.on('presenter-changed', (data) => {
       console.log('👑 Presenter changed:', data);
       setCurrentLeader(data.newPresenter);
-      const amINewLeader = data.newPresenter === user?.id;
+      const amINewLeader = data.newPresenter === userRef.current?.id;
       setIsLeader(amINewLeader);
       // CRITICAL: When someone else takes control, the previous leader must become a follower
       // Otherwise they won't follow the new leader's navigation
@@ -489,20 +498,26 @@ const useMeeting = () => {
 
     return () => {
       clearInterval(refreshInterval);
+      sectionRestoreTimeoutsRef.current.forEach(clearTimeout);
+      sectionRestoreTimeoutsRef.current = [];
       newSocket.disconnect();
     };
   }, []);
 
-  // Reset navigation lock after navigation
+  // Broadcast navigation when leader navigates (skip when leader already emitted via navigateTo)
   useEffect(() => {
+    if (!socket || !isLeader || !meetingCode) return;
+
+    if (skipNextBroadcastRef.current) {
+      skipNextBroadcastRef.current = false;
+      navigationLock.current = false;
+      return;
+    }
+
     if (navigationLock.current) {
       navigationLock.current = false;
+      return;
     }
-  }, [location]);
-
-  // Broadcast navigation when leader navigates
-  useEffect(() => {
-    if (!socket || !isLeader || !meetingCode || navigationLock.current) return;
 
     const scrollPosition = window.scrollY;
     socket.emit('navigate', {
@@ -584,6 +599,8 @@ const useMeeting = () => {
   // Navigate to specific location (leader only)
   const navigateTo = useCallback((path, section = null) => {
     if (!isLeader || !socket || !meetingCode) return;
+
+    skipNextBroadcastRef.current = true;
 
     if (path !== location.pathname) {
       navigationLock.current = true;

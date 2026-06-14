@@ -48,36 +48,37 @@ const refreshAccessToken = async () => {
 
 // Set up automatic token refresh
 let refreshInterval;
+let visibilityHandler;
+
 export const setupTokenRefresh = () => {
-  // Clear any existing interval
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-  }
-  
-  // Check token every 2 minutes (increased from 30 seconds to reduce requests)
+  cleanupTokenRefresh();
+
   refreshInterval = setInterval(async () => {
     const token = localStorage.getItem('accessToken');
     if (token && shouldRefreshToken(token)) {
       await refreshAccessToken();
     }
   }, 120000); // 2 minutes
-  
-  // Also refresh on visibility change (when user returns to tab)
-  document.addEventListener('visibilitychange', async () => {
+
+  visibilityHandler = async () => {
     if (!document.hidden) {
       const token = localStorage.getItem('accessToken');
       if (token && shouldRefreshToken(token)) {
         await refreshAccessToken();
       }
     }
-  });
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
 };
 
-// Clean up function
 export const cleanupTokenRefresh = () => {
   if (refreshInterval) {
     clearInterval(refreshInterval);
     refreshInterval = null;
+  }
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    visibilityHandler = null;
   }
 };
 

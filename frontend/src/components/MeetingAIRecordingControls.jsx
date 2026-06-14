@@ -142,6 +142,9 @@ export const MeetingAIRecordingControls = ({
       console.log('🔌 [AI Recording] Connecting to meeting socket:', socketUrl);
       socketRef.current = io(socketUrl, {
         path: '/meeting-socket',  // CRITICAL: Backend uses custom path
+        auth: {
+          token: localStorage.getItem('accessToken')
+        },
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5

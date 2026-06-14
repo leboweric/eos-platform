@@ -2,6 +2,8 @@
 // This is ADDITIVE - does not modify any existing functionality
 
 import { Server as SocketIOServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import { query } from '../config/database.js';
 import transcriptionService from './transcriptionService.js';
 import aiSummaryService from './aiSummaryService.js';
 import { logMeetingError } from './meetingAlertService.js';
@@ -69,6 +71,34 @@ class MeetingSocketService {
       // ensures the connection is never idle long enough to be terminated.
       pingInterval: 25000,  // Send ping every 25 seconds
       pingTimeout: 20000    // Wait up to 20 seconds for pong before treating as disconnected
+    });
+
+    this.io.use(async (socket, next) => {
+      try {
+        const token = socket.handshake.auth?.token;
+        if (!token) {
+          return next(new Error('Authentication required'));
+        }
+        if (!process.env.JWT_SECRET) {
+          return next(new Error('Server configuration error'));
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id || decoded.userId;
+        const result = await query(
+          'SELECT id, email, first_name, last_name, role, organization_id, is_consultant FROM users WHERE id = $1',
+          [userId]
+        );
+
+        if (result.rows.length === 0) {
+          return next(new Error('Invalid token'));
+        }
+
+        socket.data.user = result.rows[0];
+        next();
+      } catch (error) {
+        next(new Error('Authentication failed'));
+      }
     });
 
     this.setupEventHandlers();
@@ -156,7 +186,16 @@ class MeetingSocketService {
 
       // Handle joining a meeting
       socket.on('join-meeting', async (data) => {
-        const { meetingCode, userId, userName, isLeader } = data;
+        const { meetingCode, isLeader } = data;
+        const authUser = socket.data.user;
+
+        if (!authUser) {
+          socket.emit('error', { message: 'Authentication required' });
+          return;
+        }
+
+        const userId = authUser.id;
+        const userName = `${authUser.first_name || ''} ${authUser.last_name || ''}`.trim() || authUser.email;
 
         if (!meetingCode) {
           socket.emit('error', { message: 'Meeting code required' });
@@ -491,6 +530,8 @@ class MeetingSocketService {
           if (ids && data.section) {
             const client = await pool.connect();
             try {
+              await client.query('BEGIN');
+
               // Map frontend section IDs to backend IDs
               const sectionIdMap = {
                 'good-news': 'segue',
@@ -517,6 +558,7 @@ class MeetingSocketService {
                 WHERE team_id = $1 AND is_active = true
                 ORDER BY created_at DESC
                 LIMIT 1
+                FOR UPDATE
               `, [ids.teamId]);
 
               if (sessionResult.rows.length > 0) {
@@ -585,6 +627,11 @@ class MeetingSocketService {
               } else {
                 console.warn(`⚠️ [DB-SYNC] No active session found for team ${ids.teamId}`);
               }
+
+              await client.query('COMMIT');
+            } catch (txError) {
+              await client.query('ROLLBACK').catch(() => {});
+              throw txError;
             } finally {
               client.release();
             }
@@ -894,6 +941,8 @@ class MeetingSocketService {
         }
         
         const { meetingCode, userId: socketUserId } = userData;
+        const meeting = meetings.get(meetingCode);
+
         if (process.env.LOG_LEVEL === 'debug') {
           console.log('💾 BEFORE SAVE - userData:', userData);
           console.log('💾 BEFORE SAVE - meeting.ratings:', meeting?.ratings ? Array.from(meeting.ratings.entries()) : 'No ratings Map yet');
@@ -904,8 +953,6 @@ class MeetingSocketService {
             leader: meeting ? meeting.leader : null
           });
         }
-        
-        const meeting = meetings.get(meetingCode);
         
         if (!meeting) {
           if (process.env.LOG_LEVEL === 'debug') {

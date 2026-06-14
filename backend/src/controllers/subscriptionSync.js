@@ -10,10 +10,8 @@ export const syncSubscriptionFromStripe = async (req, res) => {
   
   try {
     const organizationId = req.user.organization_id;
-    const userEmail = req.user.email;
     
     console.log('🔄 Starting subscription sync for org:', organizationId);
-    console.log('🔄 User email:', userEmail);
     
     // Start transaction
     await client.query('BEGIN');
@@ -30,42 +28,12 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     console.log('🔍 Existing subscription in DB:', subscription ? 'Found' : 'Not found');
     console.log('🔍 Customer ID from DB:', customerId || 'None');
     
-    // If no customer ID, search Stripe by email
-    if (!customerId) {
-      console.log('🔎 No customer ID in DB, searching Stripe for email:', userEmail);
-      
-      const customers = await stripe.customers.list({
-        email: userEmail,
-        limit: 10
-      });
-      
-      console.log(`🔎 Found ${customers.data.length} customer(s) in Stripe with email ${userEmail}`);
-      
-      if (customers.data.length > 0) {
-        // Find customer with active subscription
-        for (const customer of customers.data) {
-          console.log(`🔎 Checking customer ${customer.id}...`);
-          const subs = await stripe.subscriptions.list({
-            customer: customer.id,
-            status: 'active',
-            limit: 1
-          });
-          
-          if (subs.data.length > 0) {
-            customerId = customer.id;
-            console.log('✅ Found customer with active subscription in Stripe:', customerId);
-            console.log('✅ Subscription ID:', subs.data[0].id);
-            break;
-          }
-        }
-      }
-    }
-    
+    // Never match by email alone — shared billing emails could link the wrong org
     if (!customerId) {
       await rollbackTransaction(client);
-      return res.status(404).json({ 
-        error: 'No Stripe customer found',
-        message: 'No active subscription found in Stripe for this account'
+      return res.status(404).json({
+        error: 'No Stripe customer linked',
+        message: 'This organization has no Stripe customer on file. Contact support to link your billing account.'
       });
     }
     
@@ -177,7 +145,7 @@ export const syncSubscriptionFromStripe = async (req, res) => {
           userCount,
           planFeatures.price_monthly,
           stripeSub.items.data[0]?.price.recurring?.interval === 'year' ? 'annual' : 'monthly',
-          userEmail,
+          req.user.email,
           new Date(),
           new Date()
         ]

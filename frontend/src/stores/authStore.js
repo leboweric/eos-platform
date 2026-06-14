@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import * as Sentry from '@sentry/react';
+import { cleanupTokenRefresh } from '../utils/tokenRefresh';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
@@ -250,6 +251,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      cleanupTokenRefresh();
       safeStorage.removeItem('accessToken');
       safeStorage.removeItem('refreshToken');
       safeStorage.removeItem('organizationId');
@@ -328,7 +330,8 @@ export const useAuthStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       console.error('Failed to check legal agreements:', error);
-      return { success: false, needsAcceptance: true };
+      // Fail open on transient errors — don't block the app for network blips
+      return { success: false, needsAcceptance: false, error: true };
     }
   },
 

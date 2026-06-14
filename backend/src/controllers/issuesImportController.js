@@ -1,6 +1,7 @@
 import NinetyIssuesImportService from '../services/ninetyIssuesImportService.js';
 import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { denyUnlessOrgAccess } from '../utils/orgAccess.js';
 
 /**
  * Helper function to find user by name
@@ -115,6 +116,8 @@ export const preview = async (req, res) => {
 
     const { organizationId, teamId } = req.body;
     const userId = req.user.id;
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     // Parse Excel file
     const parseResults = NinetyIssuesImportService.parseExcel(req.file.buffer);
@@ -274,6 +277,8 @@ export const execute = async (req, res) => {
       assigneeMappings = {} 
     } = req.body;
     const userId = req.user.id;
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     // Parse assigneeMappings if it's a string
     const mappings = typeof assigneeMappings === 'string' 

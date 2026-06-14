@@ -13,6 +13,7 @@ import CascadingMessageDialog from '../components/cascadingMessages/CascadingMes
 import { issuesService } from '../services/issuesService';
 import { format } from 'date-fns';
 import ConfirmationDialog, { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { toast } from 'sonner';
 
 const HeadlinesPage = () => {
@@ -611,7 +612,7 @@ const HeadlinesPage = () => {
                             setEditingMessageText(message.message);
                           }}
                           title="Click to edit"
-                          dangerouslySetInnerHTML={{ __html: message.message }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }}
                         />
                         <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
                           <ArrowDownLeft className="h-3 w-3 text-blue-600" />
@@ -726,7 +727,7 @@ const HeadlinesPage = () => {
                     <div className="space-y-3">
                       {archivedMessages.map(message => (
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
-                          <div className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" dangerouslySetInnerHTML={{ __html: message.message }} />
+                          <div className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }} />
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
                               From: {message.from_team_name || 'Unknown Team'}
@@ -769,7 +770,7 @@ const HeadlinesPage = () => {
                             <div key={message.id} className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 shadow-sm hover:shadow-md transition-shadow">
                               <div 
                                 className="text-sm font-medium text-slate-900 leading-relaxed rich-text-display" 
-                                dangerouslySetInnerHTML={{ __html: message.message }} 
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.message) }} 
                               />
                               <div className="mt-2 space-y-0.5">
                                 <p className="text-xs text-slate-600">

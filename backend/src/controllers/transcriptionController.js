@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getClient } from '../config/database.js';
+import { denyUnlessOrgAccess } from '../utils/orgAccess.js';
 import transcriptionService from '../services/transcriptionService.js';
 import aiSummaryService from '../services/aiSummaryService.js';
 import aiTranscriptionService from '../services/aiTranscriptionService.js';
@@ -54,6 +55,8 @@ export const startTranscription = async (req, res) => {
         error: 'Meeting ID and Organization ID are required'
       });
     }
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     console.log('✅ [Transcription] Step 2: Parameter validation passed');
 
@@ -343,6 +346,8 @@ export const stopTranscription = async (req, res) => {
       });
     }
 
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
+
     const client = await getClient();
     try {
       // Parse meetingId to get actual meeting ID (same logic as startTranscription)
@@ -483,6 +488,8 @@ export const getTranscript = async (req, res) => {
       });
     }
 
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
+
     const client = await getClient();
     try {
       const result = await client.query(`
@@ -547,6 +554,8 @@ export const getTranscriptStatus = async (req, res) => {
         error: 'Organization ID is required'
       });
     }
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     const client = await getClient();
     try {
@@ -745,6 +754,8 @@ export const saveTranscriptionSession = async (req, res) => {
         error: 'transcript_id and organization_id are required'
       });
     }
+
+    if (!(await denyUnlessOrgAccess(req, res, organizationId))) return;
 
     const client = await getClient();
     try {

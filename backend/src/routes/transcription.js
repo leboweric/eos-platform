@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 import {
   healthCheck,
   startTranscription,
@@ -68,8 +68,8 @@ router.get('/sessions/:transcriptId', getTranscriptionSession);
 router.post('/sessions/:transcriptId/complete', completeTranscriptionSession);
 router.post('/sessions/cleanup', cleanupAbandonedSessions);
 
-// Emergency cleanup endpoint (protected - authenticated users only)
-router.post('/cleanup', async (req, res) => {
+// Emergency cleanup endpoint (admin only)
+router.post('/cleanup', authorize('admin'), async (req, res) => {
   try {
     const { forceAll, minutesThreshold = 10, action = 'stuck' } = req.body;
     
