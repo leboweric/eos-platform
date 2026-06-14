@@ -8,7 +8,8 @@ import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
   buildTransferNoteForTeams,
-  resolveTodoTeamId
+  resolveTodoTeamId,
+  repairLeadershipMisassignedTodos
 } from '../utils/teamTransfer.js';
 
 // @desc    Get all todos for an organization
@@ -55,6 +56,13 @@ export const getTodos = async (req, res) => {
     // =====================================================================
     // MANDATORY TEAM ISOLATION
     // =====================================================================
+    if (department_id) {
+      const repaired = await repairLeadershipMisassignedTodos(orgId, department_id);
+      if (repaired > 0) {
+        console.log(`🔧 Repaired ${repaired} misassigned leadership to-do(s) for org ${orgId}`);
+      }
+    }
+
     console.log('🔍 Team scope debug:', { userId, orgId, department_id, paramIndex });
     const teamScope = await getUserTeamScope(userId, orgId, 't', department_id, paramIndex); // Use 't' as the alias for the todos table
     console.log('🔍 Team scope result:', { query: teamScope.query, params: teamScope.params });

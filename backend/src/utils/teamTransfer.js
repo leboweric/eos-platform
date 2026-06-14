@@ -61,31 +61,97 @@ export async function getTransferActorName(userId) {
   return `${first_name || ''} ${last_name || ''}`.trim() || 'user';
 }
 
+async function getAssigneeTeams(orgId, assigneeId) {
+  const teamsResult = await query(
+    `SELECT tm.team_id, t.is_leadership_team, t.name
+     FROM team_members tm
+     INNER JOIN teams t ON t.id = tm.team_id
+     WHERE tm.user_id = $1 AND t.organization_id = $2
+     ORDER BY t.is_leadership_team ASC NULLS LAST, t.name ASC`,
+    [assigneeId, orgId]
+  );
+  return teamsResult.rows;
+}
+
+async function isLeadershipTeamId(teamId) {
+  const result = await query(
+    'SELECT is_leadership_team FROM teams WHERE id = $1',
+    [teamId]
+  );
+  return result.rows[0]?.is_leadership_team === true;
+}
+
 /**
- * When a todo is created/assigned on team A but the assignee belongs to team B,
- * place the todo on the assignee's team so it appears on the correct list.
+ * Route todos to the team where they should appear in the department list.
+ * Leadership can assign to anyone, but departmental assignees should own the
+ * to-do on their functional team — even if they are also on Leadership.
  */
 export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId) {
   if (!requestedTeamId || !assigneeId) {
     return requestedTeamId || null;
   }
 
-  const onRequestedTeam = await isUserOnTeam(assigneeId, requestedTeamId, orgId);
+  const assigneeTeams = await getAssigneeTeams(orgId, assigneeId);
+  if (assigneeTeams.length === 0) {
+    return requestedTeamId;
+  }
+
+  const departmentalTeam = assigneeTeams.find((team) => !team.is_leadership_team);
+  const requestedIsLeadership = await isLeadershipTeamId(requestedTeamId);
+
+  // Leadership assigning to someone with a departmental team → use that team
+  if (requestedIsLeadership && departmentalTeam) {
+    return departmentalTeam.team_id;
+  }
+
+  const onRequestedTeam = assigneeTeams.some((team) => team.team_id === requestedTeamId);
   if (onRequestedTeam) {
     return requestedTeamId;
   }
 
-  const teamsResult = await query(
-    `SELECT tm.team_id
-     FROM team_members tm
-     INNER JOIN teams t ON t.id = tm.team_id
-     WHERE tm.user_id = $1 AND t.organization_id = $2
-     ORDER BY t.is_leadership_team ASC NULLS LAST, t.name ASC
-     LIMIT 1`,
-    [assigneeId, orgId]
+  return assigneeTeams[0].team_id;
+}
+
+/**
+ * Move existing leadership-team to-dos to each assignee's departmental team.
+ * Idempotent — safe to run on every leadership to-do list fetch.
+ */
+export async function repairLeadershipMisassignedTodos(orgId, leadershipTeamId) {
+  if (!orgId || !leadershipTeamId) return 0;
+
+  const isLeadership = await isLeadershipTeamId(leadershipTeamId);
+  if (!isLeadership) return 0;
+
+  const result = await query(
+    `UPDATE todos t
+     SET team_id = resolved.new_team_id,
+         updated_at = CURRENT_TIMESTAMP
+     FROM (
+       SELECT
+         t2.id AS todo_id,
+         (
+           SELECT tm.team_id
+           FROM team_members tm
+           JOIN teams st ON st.id = tm.team_id
+           WHERE tm.user_id = t2.assigned_to_id
+             AND st.organization_id = t2.organization_id
+             AND st.is_leadership_team = false
+           ORDER BY st.name ASC
+           LIMIT 1
+         ) AS new_team_id
+       FROM todos t2
+       WHERE t2.organization_id = $1
+         AND t2.team_id = $2
+         AND t2.deleted_at IS NULL
+         AND t2.assigned_to_id IS NOT NULL
+     ) resolved
+     WHERE t.id = resolved.todo_id
+       AND resolved.new_team_id IS NOT NULL
+       AND resolved.new_team_id <> t.team_id`,
+    [orgId, leadershipTeamId]
   );
 
-  return teamsResult.rows[0]?.team_id || requestedTeamId;
+  return result.rowCount || 0;
 }
 
 export async function buildTransferNoteForTeams(orgId, sourceTeamId, destinationTeamId, userId, reason) {
