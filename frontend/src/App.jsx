@@ -12,6 +12,7 @@ import { useApolloTracking } from './hooks/useApolloTracking';
 import { VersionCheck } from './hooks/useVersionCheck.jsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
+import { Toaster as SonnerToaster } from 'sonner';
 
 // Critical components (loaded immediately)
 import Layout from './components/Layout';
@@ -311,7 +312,15 @@ function App() {
         </DarkModeProvider>
       </ErrorBoundary>
       <VersionCheck />
-      <Toaster />
+      <Toaster
+        position="top-center"
+        containerStyle={{ zIndex: 99999 }}
+        toastOptions={{
+          duration: 8000,
+          style: { zIndex: 99999, maxWidth: 480 },
+        }}
+      />
+      <SonnerToaster position="top-center" richColors closeButton style={{ zIndex: 99999 }} />
     </Router>
   );
 }

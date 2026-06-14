@@ -104,7 +104,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { FormattedText } from '@/components/ui/FormattedText';
 import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer } from '../utils/crossTeamSave';
-import { buildTransferToastMessage, logTransfer } from '../utils/transferDebug';
+import { logTransfer } from '../utils/transferDebug';
 import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
@@ -2104,9 +2104,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
 
       if (!isAutoSave) {
-        const toastMessage = buildTransferToastMessage({ action: 'issue-save', message, debug });
-        if (transferred || debug) {
-          toast.success(toastMessage, { duration: 8000 });
+        if (!transferred) {
+          toast.success(message, { duration: 6000, position: 'top-center' });
         }
         setSuccess(message);
         logTransfer('meeting:issue-save-complete', { transferred, debug, sourceTeamId });

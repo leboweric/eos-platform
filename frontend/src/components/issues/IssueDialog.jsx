@@ -38,7 +38,8 @@ import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
 import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
 import { validateTransfer, getSavedEntityId, hasMeaningfulRichText } from '../../utils/transferUtils';
-import { logTransfer, summarizeText, isTransferDebugEnabled } from '../../utils/transferDebug';
+import { logTransfer, summarizeText, isTransferDebugEnabled, buildTransferToastMessage } from '../../utils/transferDebug';
+import toast from 'react-hot-toast';
 
 const IssueDialog = ({ 
   open, 
@@ -389,6 +390,26 @@ const IssueDialog = ({
       console.log('Sending to onSave:', issueData);
       const savedIssue = await onSave(issueData);
       const savedId = existingId || getSavedEntityId(savedIssue);
+
+      if (isTransferSave) {
+        const savedSummary = summarizeText(savedIssue?.description);
+        const toastMessage = buildTransferToastMessage({
+          action: 'issue-transfer',
+          message: `Issue sent to destination team`,
+          debug: {
+            summaryChars: summarizeText(description).chars,
+            pendingUpdateChars: updateText.trim().length,
+            savedDescriptionChars: savedSummary.chars,
+            destinationTeamId: transferToTeam.destinationTeamId,
+            issueId: savedId
+          }
+        });
+        toast.success(toastMessage, { duration: 10000, position: 'top-center' });
+        logTransfer('issue-dialog:transfer-toast-shown', {
+          savedId,
+          savedDescriptionChars: savedSummary.chars
+        });
+      }
       
       // Upload new attachments if any
       if (newAttachments.length > 0 && savedId) {

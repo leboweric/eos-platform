@@ -9,7 +9,7 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer, saveTodoWithCrossTeamTransfer } from '../utils/crossTeamSave';
-import { buildTransferToastMessage, logTransfer } from '../utils/transferDebug';
+import { logTransfer } from '../utils/transferDebug';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -254,9 +254,8 @@ const IssuesPageClean = () => {
       });
 
       if (!isAutoSave) {
-        const toastMessage = buildTransferToastMessage({ action: 'issue-save', message, debug });
-        if (transferred || debug) {
-          toast.success(toastMessage, { duration: 8000 });
+        if (!transferred) {
+          toast.success(message, { duration: 6000 });
         }
         setSuccess(message);
         logTransfer('issues-page:issue-save-complete', { transferred, debug, sourceTeamId });
