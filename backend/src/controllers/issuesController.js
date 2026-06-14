@@ -289,22 +289,16 @@ export const createIssue = async (req, res) => {
       hasTransferReason: Boolean(transferReason?.trim())
     });
 
-    if (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) {
-      const transferNote = await buildTransferNoteForTeams(
-        orgId,
-        transferSourceTeamId,
-        teamId,
-        createdById,
-        transferReason
-      );
+    const needsTransferNote = Boolean(
+      (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) || transferReason?.trim()
+    );
+    if (needsTransferNote) {
+      const transferNote = transferSourceTeamId && teamId && transferSourceTeamId !== teamId
+        ? await buildTransferNoteForTeams(orgId, transferSourceTeamId, teamId, createdById, transferReason)
+        : `\n\n---\nNote: ${(transferReason || '').trim()}`;
       await db.query(
         `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
         [transferNote, newIssue.id]
-      );
-    } else if (transferReason?.trim()) {
-      await db.query(
-        `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
-        [`\n\n---\nNote: ${transferReason.trim()}`, newIssue.id]
       );
     }
     
@@ -470,7 +464,12 @@ export const moveIssueToTeam = async (req, res) => {
     );
 
     const finalTitle = title !== undefined ? title : issue.title;
-    const finalDescription = (description !== undefined ? description : issue.description || '') + transferNote;
+    const incomingDescription = description !== undefined && description !== null
+      ? description
+      : issue.description || '';
+    const hasIncomingText = String(incomingDescription).replace(/<[^>]+>/g, '').trim().length > 0;
+    const baseDescription = hasIncomingText ? incomingDescription : (issue.description || '');
+    const finalDescription = baseDescription + transferNote;
     const finalStatus = status !== undefined ? status : issue.status;
 
     console.log('[AXP Transfer] moveIssueToTeam', {

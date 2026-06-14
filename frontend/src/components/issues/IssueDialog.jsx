@@ -392,12 +392,27 @@ const IssueDialog = ({
       const savedId = existingId || getSavedEntityId(savedIssue);
 
       if (isTransferSave) {
+        const sentSummary = summarizeText(description);
         const savedSummary = summarizeText(savedIssue?.description);
+        const contextWasSent = sentSummary.chars > 0 || updateText.trim().length > 0;
+
+        if (contextWasSent && savedSummary.chars === 0) {
+          const failMsg = 'Issue was sent but your notes did not persist. Please add them again and save.';
+          toast.error(failMsg, { duration: 12000, position: 'top-center' });
+          logTransfer('issue-dialog:transfer-persist-failed', {
+            savedId,
+            sentSummaryChars: sentSummary.chars,
+            savedDescriptionChars: savedSummary.chars
+          });
+          setError(failMsg);
+          return;
+        }
+
         const toastMessage = buildTransferToastMessage({
           action: 'issue-transfer',
           message: `Issue sent to destination team`,
           debug: {
-            summaryChars: summarizeText(description).chars,
+            summaryChars: sentSummary.chars,
             pendingUpdateChars: updateText.trim().length,
             savedDescriptionChars: savedSummary.chars,
             destinationTeamId: transferToTeam.destinationTeamId,

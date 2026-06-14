@@ -51,7 +51,7 @@ export async function saveIssueWithCrossTeamTransfer({
   const description = buildIssueDescription({
     description: payload.description,
     pendingUpdateText,
-    transferReason: isCrossTeamTransfer ? '' : (transfer?.reason || '')
+    transferReason: transfer?.reason || ''
   });
 
   logTransfer('issue:prepare', {
@@ -67,6 +67,18 @@ export async function saveIssueWithCrossTeamTransfer({
   if (isTransferRequested && issueId) {
     if (pendingUpdateText) {
       await persistPendingIssueUpdate(issueId, pendingUpdateText);
+    }
+
+    // Auto-save may have created a title-only issue before transfer was enabled.
+    // Persist summary/notes explicitly before moving teams.
+    if (hasMeaningfulRichText(description) || payload.title) {
+      await issuesService.updateIssue(issueId, {
+        title: payload.title || issueData.title,
+        description,
+        ownerId: payload.ownerId,
+        status: payload.status || issueData.status,
+        timeline: payload.timeline || timeline
+      });
     }
 
     const moveResult = await issuesService.moveIssueToTeam(issueId, {
