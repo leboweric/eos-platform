@@ -61,6 +61,7 @@ export const issuesService = {
       transferSourceTeamId,
       transferReason,
       pendingUpdateText: _pendingUpdateText,
+      sourceContextTeamId: _sourceContextTeamId,
       ...cleanedData
     } = issueData;
     

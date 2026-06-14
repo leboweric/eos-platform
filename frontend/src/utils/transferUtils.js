@@ -7,8 +7,17 @@ export function getSavedEntityId(saved) {
 }
 
 export function stripTransferPayload(data = {}) {
-  const { transferToTeam: _transferToTeam, pendingUpdateText, ...payload } = data;
+  const {
+    transferToTeam: _transferToTeam,
+    pendingUpdateText,
+    sourceContextTeamId: _sourceContextTeamId,
+    ...payload
+  } = data;
   return { payload, pendingUpdateText: pendingUpdateText || '' };
+}
+
+export function resolveTransferSourceTeamId(sourceTeamId, issueData = {}) {
+  return issueData.sourceContextTeamId || sourceTeamId || null;
 }
 
 export function appendTextToDescription(description, text) {

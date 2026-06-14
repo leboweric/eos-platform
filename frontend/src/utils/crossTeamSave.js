@@ -1,13 +1,20 @@
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
-import { stripTransferPayload, getSavedEntityId } from './transferUtils';
+import {
+  stripTransferPayload,
+  getSavedEntityId,
+  resolveTransferSourceTeamId,
+  appendTextToDescription
+} from './transferUtils';
 
 export function parseCrossTeamTransfer(data, sourceTeamId) {
   const transfer = data?.transferToTeam;
+  const transferSourceTeamId = resolveTransferSourceTeamId(sourceTeamId, data);
+  const isTransferRequested = Boolean(transfer?.enabled && transfer?.destinationTeamId);
   const isCrossTeamTransfer = Boolean(
-    transfer?.enabled && transfer?.destinationTeamId && sourceTeamId && transfer.destinationTeamId !== sourceTeamId
+    isTransferRequested && transferSourceTeamId && transfer.destinationTeamId !== transferSourceTeamId
   );
-  return { transfer, isCrossTeamTransfer };
+  return { transfer, isTransferRequested, isCrossTeamTransfer, transferSourceTeamId };
 }
 
 async function persistPendingIssueUpdate(issueId, pendingUpdateText) {
@@ -22,10 +29,13 @@ export async function saveIssueWithCrossTeamTransfer({
   timeline = 'short_term',
   meetingId = null
 }) {
-  const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(issueData, sourceTeamId);
+  const { transfer, isTransferRequested, isCrossTeamTransfer, transferSourceTeamId } = parseCrossTeamTransfer(issueData, sourceTeamId);
   const { payload, pendingUpdateText } = stripTransferPayload(issueData);
+  const description = isCrossTeamTransfer || !transfer?.reason?.trim()
+    ? (payload.description || '')
+    : appendTextToDescription(payload.description, transfer.reason.trim());
 
-  if (isCrossTeamTransfer && issueId) {
+  if (isTransferRequested && issueId) {
     if (pendingUpdateText) {
       await persistPendingIssueUpdate(issueId, pendingUpdateText);
     }
@@ -35,7 +45,7 @@ export async function saveIssueWithCrossTeamTransfer({
       reason: transfer.reason || '',
       newOwnerId: transfer.assigneeId || payload.ownerId || null,
       title: issueData.title,
-      description: payload.description,
+      description,
       status: issueData.status
     });
     return {
@@ -46,7 +56,7 @@ export async function saveIssueWithCrossTeamTransfer({
   }
 
   if (issueId) {
-    const saved = await issuesService.updateIssue(issueId, payload);
+    const saved = await issuesService.updateIssue(issueId, { ...payload, description });
     return {
       saved,
       message: 'Issue updated successfully',
@@ -54,17 +64,18 @@ export async function saveIssueWithCrossTeamTransfer({
     };
   }
 
-  const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : sourceTeamId;
+  const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
   const saved = await issuesService.createIssue({
     ...payload,
-    ownerId: isCrossTeamTransfer
+    description,
+    ownerId: isTransferRequested
       ? (transfer.assigneeId || payload.ownerId || null)
       : payload.ownerId,
     timeline,
     department_id: destinationTeamId,
     ...(meetingId ? { meeting_id: meetingId } : {}),
     ...(isCrossTeamTransfer ? {
-      transferSourceTeamId: sourceTeamId,
+      transferSourceTeamId,
       transferReason: transfer.reason || ''
     } : {})
   });
@@ -76,8 +87,8 @@ export async function saveIssueWithCrossTeamTransfer({
 
   return {
     saved,
-    message: isCrossTeamTransfer ? 'Issue sent to another team' : 'Issue created successfully',
-    transferred: isCrossTeamTransfer
+    message: isTransferRequested ? 'Issue sent to another team' : 'Issue created successfully',
+    transferred: isTransferRequested
   };
 }
 
@@ -88,10 +99,10 @@ export async function saveTodoWithCrossTeamTransfer({
   orgId = null,
   meetingId = null
 }) {
-  const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(todoData, sourceTeamId);
+  const { transfer, isTransferRequested, isCrossTeamTransfer } = parseCrossTeamTransfer(todoData, sourceTeamId);
   const { payload, pendingUpdateText } = stripTransferPayload(todoData);
 
-  if (isCrossTeamTransfer && todoId) {
+  if (isTransferRequested && todoId) {
     if (pendingUpdateText) {
       await todosService.addTodoUpdate(todoId, pendingUpdateText);
     }
@@ -126,12 +137,13 @@ export async function saveTodoWithCrossTeamTransfer({
     };
   }
 
-  const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : sourceTeamId;
+  const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
   const response = await todosService.createTodo({
     ...payload,
+    description: payload.description || '',
     ...(orgId ? { organization_id: orgId } : {}),
     department_id: destinationTeamId,
-    assignedToId: isCrossTeamTransfer ? transfer.assigneeId : todoData.assignedToId,
+    assignedToId: isTransferRequested ? transfer.assigneeId : todoData.assignedToId,
     ...(meetingId ? { meeting_id: meetingId } : {}),
     ...(isCrossTeamTransfer ? {
       transferSourceTeamId: sourceTeamId,
@@ -147,12 +159,12 @@ export async function saveTodoWithCrossTeamTransfer({
 
   return {
     saved: response,
-    message: isCrossTeamTransfer
+    message: isTransferRequested
       ? 'To-do sent to another team'
       : isGroup
         ? `${response.data.length} To-Dos created successfully`
         : 'To-do created successfully',
-    transferred: isCrossTeamTransfer,
+    transferred: isTransferRequested,
     isGroup
   };
 }

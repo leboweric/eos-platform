@@ -102,7 +102,7 @@ import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { FormattedText } from '@/components/ui/FormattedText';
-import { getEffectiveTeamId } from '../utils/teamUtils';
+import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer } from '../utils/crossTeamSave';
 import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
@@ -2091,12 +2091,12 @@ const WeeklyAccountabilityMeetingPage = () => {
     const { isAutoSave = false } = options;
     
     try {
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      const sourceTeamId = getContextTeamId(teamId) || getEffectiveTeamId(teamId, user, false);
       const issueId = editingIssue?.id || issueData.id || null;
 
       const { saved, message, transferred } = await saveIssueWithCrossTeamTransfer({
         issueData,
-        sourceTeamId: effectiveTeamId,
+        sourceTeamId,
         issueId,
         timeline: issueTimeline,
         meetingId: sessionId

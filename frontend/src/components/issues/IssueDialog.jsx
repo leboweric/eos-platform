@@ -93,6 +93,7 @@ const IssueDialog = ({
   const [lastSaved, setLastSaved] = useState(null);
   const [createdIssueId, setCreatedIssueId] = useState(null); // Track ID of auto-created issue
   const autoSaveTimeoutRef = useRef(null);
+  const summaryEditorRef = useRef(null);
   const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
 
   useEffect(() => {
@@ -357,16 +358,20 @@ const IssueDialog = ({
       // Save the issue first - include the ID if editing an existing issue
       // Also check createdIssueId in case auto-save already created this issue
       const existingId = issue?.id || createdIssueId;
+      const description = summaryEditorRef.current?.flush?.() ?? formData.description;
       const issueData = {
         ...(existingId ? { id: existingId } : {}), // Include ID if editing or auto-saved
         title: formData.title,
-        description: formData.description,
+        description,
         ownerId: transferToTeam.enabled
           ? (transferToTeam.assigneeId || null)
           : (formData.ownerId === 'no-owner' ? null : (formData.ownerId || null)),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline,
-        ...(allowTransferToTeam && transferToTeam.enabled ? { transferToTeam } : {}),
+        ...(allowTransferToTeam && transferToTeam.enabled ? {
+          transferToTeam,
+          sourceContextTeamId: meetingTeamId
+        } : {}),
         ...(updateText.trim() && !existingId ? { pendingUpdateText: updateText } : {}),
         // Include headline ID if this issue is being created from a headline
         ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
@@ -635,6 +640,20 @@ const IssueDialog = ({
               )}
             </div>
 
+            {/* Summary before transfer so notes are captured before send-to-team fields */}
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
+              <div className="h-[200px] max-h-[400px] overflow-hidden border rounded-xl shadow-sm resize-y">
+                <RichTextEditor
+                  ref={summaryEditorRef}
+                  value={formData.description}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                  placeholder="Provide a brief summary of the issue..."
+                  className="border-0 shadow-none h-full"
+                />
+              </div>
+            </div>
+
             {allowTransferToTeam && (
               <TransferToTeamSection
                 sourceTeamId={meetingTeamId}
@@ -644,19 +663,6 @@ const IssueDialog = ({
                 assigneeLabel="Assign owner on destination team (optional)"
               />
             )}
-
-            {/* Second row: Summary full width */}
-            <div className="space-y-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
-              <div className="h-[200px] max-h-[400px] overflow-hidden border rounded-xl shadow-sm resize-y">
-                <RichTextEditor
-                  value={formData.description}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
-                  placeholder="Provide a brief summary of the issue..."
-                  className="border-0 shadow-none h-full"
-                />
-              </div>
-            </div>
 
             {/* Third row: Updates - always available; new-issue notes are saved on create/send */}
             <div className="space-y-3">

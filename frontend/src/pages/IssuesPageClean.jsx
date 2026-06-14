@@ -7,7 +7,7 @@ import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { exportIssuesToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
-import { getEffectiveTeamId } from '../utils/teamUtils';
+import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer, saveTodoWithCrossTeamTransfer } from '../utils/crossTeamSave';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -241,7 +241,7 @@ const IssuesPageClean = () => {
     const { isAutoSave = false } = options;
     
     try {
-      const sourceTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+      const sourceTeamId = getContextTeamId(selectedDepartment?.id) || getEffectiveTeamId(selectedDepartment?.id, user, false);
       const issueId = editingIssue?.id || issueData.id || null;
       const timeline = issueData.timeline || editingIssue?.timeline || activeTab;
 

@@ -82,6 +82,20 @@ export const getUserTeamId = (user) => {
  * @param {boolean} allowFallback - Whether to fall back to user's default team if not a member (default: true)
  * @returns {string|null} The effective team ID
  */
+/**
+ * Use the explicit team context (meeting URL, selected department) without
+ * falling back to the user's default team. Critical for cross-team transfers.
+ */
+export function getContextTeamId(preferredTeamId) {
+  if (!preferredTeamId || preferredTeamId === 'null' || preferredTeamId === 'undefined') {
+    return null;
+  }
+  if (preferredTeamId === LEADERSHIP_TEAM_ID) {
+    return null;
+  }
+  return preferredTeamId;
+}
+
 export const getEffectiveTeamId = (preferredTeamId, user, allowFallback = true) => {
   console.log('🔍 getEffectiveTeamId called with:', {
     preferredTeamId,

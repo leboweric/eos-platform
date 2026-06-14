@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button } from './button';
 import {
   Bold,
@@ -18,11 +18,36 @@ const valueToHtml = (val) => {
   return text.includes('<') ? text : text.replace(/\n/g, '<br>');
 };
 
-const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
+const normalizeEditorHtml = (content) => {
+  if (!content) return '';
+  return content
+    .replace(/<div>/gi, '<br>')
+    .replace(/<\/div>/gi, '')
+    .replace(/^<br>/, '');
+};
+
+const RichTextEditor = forwardRef(({ value, onChange, placeholder, className = '' }, ref) => {
   const editorRef = useRef(null);
   const isFocusedRef = useRef(false);
   const lastSyncedValueRef = useRef(value);
   const [selectedText, setSelectedText] = useState('');
+
+  const readContent = () => {
+    if (!editorRef.current) return value || '';
+    return normalizeEditorHtml(editorRef.current.innerHTML);
+  };
+
+  const flushContent = () => {
+    const content = readContent();
+    onChange(content);
+    lastSyncedValueRef.current = content;
+    return content;
+  };
+
+  useImperativeHandle(ref, () => ({
+    getContent: readContent,
+    flush: flushContent
+  }));
 
   useEffect(() => {
     if (!editorRef.current || value === undefined) return;
@@ -45,19 +70,11 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
   const handleFormat = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current.focus();
-    handleChange();
+    flushContent();
   };
 
   const handleChange = () => {
-    if (editorRef.current) {
-      const content = editorRef.current.innerHTML;
-      // Convert <div> tags to <br> for better compatibility
-      const cleanContent = content
-        .replace(/<div>/gi, '<br>')
-        .replace(/<\/div>/gi, '')
-        .replace(/^<br>/, ''); // Remove leading <br>
-      onChange(cleanContent);
-    }
+    flushContent();
   };
 
   const handleKeyDown = (e) => {
@@ -81,7 +98,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
         document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
       }
       
-      handleChange();
+      flushContent();
     }
   };
 
@@ -89,7 +106,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
-    handleChange();
+    flushContent();
   };
 
   const isFormatActive = (format) => {
@@ -158,7 +175,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
                 link.setAttribute('target', '_blank');
                 link.setAttribute('rel', 'noopener noreferrer');
               });
-              handleChange();
+              flushContent();
             }
           }}
           title="Insert Link"
@@ -186,11 +203,8 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
         onInput={handleChange}
         onFocus={() => { isFocusedRef.current = true; }}
         onBlur={() => {
-          handleChange();
+          flushContent();
           isFocusedRef.current = false;
-          if (editorRef.current) {
-            lastSyncedValueRef.current = editorRef.current.innerHTML;
-          }
         }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
@@ -261,6 +275,8 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
       `}</style>
     </div>
   );
-};
+});
+
+RichTextEditor.displayName = 'RichTextEditor';
 
 export default RichTextEditor;
