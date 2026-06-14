@@ -103,6 +103,7 @@ import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { FormattedText } from '@/components/ui/FormattedText';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { saveIssueWithCrossTeamTransfer } from '../utils/crossTeamSave';
 import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
@@ -2091,124 +2092,56 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      const transfer = issueData.transferToTeam;
-      const isCrossTeamTransfer = transfer?.enabled && transfer.destinationTeamId && transfer.destinationTeamId !== effectiveTeamId;
-      let savedIssue;
-      
-      // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
-      const isEditing = editingIssue || issueData.id;
-      const issueId = editingIssue?.id || issueData.id;
+      const issueId = editingIssue?.id || issueData.id || null;
 
-      if (isCrossTeamTransfer && issueId) {
-        const moveResult = await issuesService.moveIssueToTeam(issueId, {
-          newTeamId: transfer.destinationTeamId,
-          reason: transfer.reason || '',
-          newOwnerId: transfer.assigneeId || null,
-          title: issueData.title,
-          description: issueData.description,
-          status: issueData.status
-        });
-        setSuccess(moveResult.message || 'Issue sent to another team');
-        await fetchIssuesData();
-        if (meetingCode && broadcastIssueListUpdate) {
-          broadcastIssueListUpdate({ action: 'refresh' });
-        }
-        if (!isAutoSave) {
-          setShowIssueDialog(false);
-          setEditingIssue(null);
-        }
-        return moveResult.data || moveResult;
+      const { saved, message, transferred } = await saveIssueWithCrossTeamTransfer({
+        issueData,
+        sourceTeamId: effectiveTeamId,
+        issueId,
+        timeline: issueTimeline,
+        meetingId: sessionId
+      });
+
+      if (!isAutoSave) {
+        setSuccess(message);
+      } else if (!transferred && issueId) {
+        const updateIssueInList = (issues) =>
+          issues.map((issue) =>
+            issue.id === issueId ? { ...issue, ...(saved?.data || saved) } : issue
+          );
+        setShortTermIssues((prev) => updateIssueInList(prev));
+        setLongTermIssues((prev) => updateIssueInList(prev));
       }
-      
-      if (isEditing && issueId) {
-        savedIssue = await issuesService.updateIssue(issueId, {
-          ...issueData,
-          organization_id: user?.organizationId || user?.organization_id,
-          team_id: effectiveTeamId
-        });
-        
-        // For auto-save, optimistically update the local state without full refresh
-        if (isAutoSave) {
-          const updateIssueInList = (issues) => 
-            issues.map(issue => 
-              issue.id === issueId 
-                ? { ...issue, ...savedIssue.data || savedIssue }
-                : issue
-            );
-          
-          setShortTermIssues(prev => updateIssueInList(prev));
-          setLongTermIssues(prev => updateIssueInList(prev));
-          
-          // Don't update editingIssue - it causes dialog to re-render and flash
-          // The dialog maintains its own internal state (formData)
-        } else {
-          setSuccess('Issue updated successfully');
-        }
-        
-        // Broadcast issue update to other participants
-        console.log('📡 Attempting to broadcast issue update...', { meetingCode, hasBroadcast: !!broadcastIssueListUpdate, issueId });
-        if (meetingCode && broadcastIssueListUpdate) {
-          console.log('📡 Broadcasting issue update:', { action: 'update', issueId, issue: savedIssue.data || savedIssue });
+
+      if (meetingCode && broadcastIssueListUpdate) {
+        if (transferred) {
+          broadcastIssueListUpdate({ action: 'refresh' });
+        } else if (issueId) {
           broadcastIssueListUpdate({
             action: 'update',
-            issueId: issueId,
-            issue: savedIssue.data || savedIssue
+            issueId,
+            issue: saved?.data || saved
           });
-        } else {
-          console.warn('⚠️ Broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
-        }
-      } else {
-        const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : effectiveTeamId;
-        const { transferToTeam: _transfer, ...issuePayload } = issueData;
-        savedIssue = await issuesService.createIssue({
-          ...issuePayload,
-          timeline: issueTimeline,
-          department_id: destinationTeamId,
-          meeting_id: sessionId,
-          ...(isCrossTeamTransfer ? {
-            transferSourceTeamId: effectiveTeamId,
-            transferReason: transfer.reason || ''
-          } : {})
-        });
-        
-        // For auto-save, optimistically add to local state without full refresh
-        if (isAutoSave && !isCrossTeamTransfer) {
-          const newIssue = savedIssue.data || savedIssue;
-          const timeline = newIssue.timeline || issueTimeline;
-          
-          if (timeline === 'short_term') {
-            setShortTermIssues(prev => [newIssue, ...prev]);
-          } else if (timeline === 'long_term') {
-            setLongTermIssues(prev => [newIssue, ...prev]);
-          }
         } else if (!isAutoSave) {
-          setSuccess(isCrossTeamTransfer ? 'Issue sent to another team' : 'Issue created successfully');
-        }
-        
-        // Broadcast new issue to other participants
-        if (meetingCode && broadcastIssueListUpdate) {
-          broadcastIssueListUpdate(
-            isCrossTeamTransfer
-              ? { action: 'refresh' }
-              : { action: 'create', issue: savedIssue.data || savedIssue }
-          );
+          broadcastIssueListUpdate({ action: 'create', issue: saved?.data || saved });
         }
       }
-      
-      // Only refresh and close dialog for manual saves
+
       if (!isAutoSave) {
         await fetchIssuesData();
         setShowIssueDialog(false);
-        setEditingIssue(null);
+        if (transferred) {
+          setEditingIssue(null);
+        }
       }
-      
-      return savedIssue; // Return the actual created/updated issue
+
+      return saved;
     } catch (error) {
       console.error('Failed to save issue:', error);
       setError('Failed to save issue');
       throw error;
     }
-  }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue]);
+  }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue, sessionId]);
 
   const handleEditIssue = (issue) => {
     setEditingIssue(issue);
@@ -8948,6 +8881,7 @@ setAddingMilestoneFor(priority.id);
           teamId={teamId}
           sourceTeamId={teamId}
           allowTransferToTeam
+          timeline={issueTimeline}
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
           onSave={handleSaveIssue}

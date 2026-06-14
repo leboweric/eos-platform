@@ -7,8 +7,16 @@ export function getSavedEntityId(saved) {
 }
 
 export function stripTransferPayload(data = {}) {
-  const { transferToTeam: _transferToTeam, ...rest } = data;
+  const { transferToTeam: _transferToTeam, pendingUpdateText: _pendingUpdateText, ...rest } = data;
   return rest;
+}
+
+export function appendTextToDescription(description, text) {
+  const note = (text || '').trim();
+  if (!note) return description || '';
+  const base = (description || '').trim();
+  if (!base) return note;
+  return `${base}\n\n---\n${note}`;
 }
 
 export function validateTransfer(transfer, sourceTeamId, { requireAssignee = false } = {}) {

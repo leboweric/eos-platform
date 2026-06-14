@@ -1,13 +1,18 @@
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
-import { stripTransferPayload } from './transferUtils';
+import { stripTransferPayload, getSavedEntityId } from './transferUtils';
 
 export function parseCrossTeamTransfer(data, sourceTeamId) {
   const transfer = data?.transferToTeam;
   const isCrossTeamTransfer = Boolean(
-    transfer?.enabled && transfer.destinationTeamId && sourceTeamId && transfer.destinationTeamId !== sourceTeamId
+    transfer?.enabled && transfer?.destinationTeamId && sourceTeamId && transfer.destinationTeamId !== sourceTeamId
   );
   return { transfer, isCrossTeamTransfer };
+}
+
+async function persistPendingIssueUpdate(issueId, pendingUpdateText) {
+  if (!issueId || !pendingUpdateText?.trim()) return;
+  await issuesService.addIssueUpdate(issueId, pendingUpdateText.trim());
 }
 
 export async function saveIssueWithCrossTeamTransfer({
@@ -18,13 +23,17 @@ export async function saveIssueWithCrossTeamTransfer({
   meetingId = null
 }) {
   const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(issueData, sourceTeamId);
-  const payload = stripTransferPayload(issueData);
+  const { pendingUpdateText, ...payload } = stripTransferPayload(issueData);
 
   if (isCrossTeamTransfer && issueId) {
+    if (pendingUpdateText) {
+      await persistPendingIssueUpdate(issueId, pendingUpdateText);
+    }
+
     const moveResult = await issuesService.moveIssueToTeam(issueId, {
       newTeamId: transfer.destinationTeamId,
       reason: transfer.reason || '',
-      newOwnerId: transfer.assigneeId || null,
+      newOwnerId: transfer.assigneeId || payload.ownerId || null,
       title: issueData.title,
       description: issueData.description,
       status: issueData.status
@@ -48,6 +57,9 @@ export async function saveIssueWithCrossTeamTransfer({
   const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : sourceTeamId;
   const saved = await issuesService.createIssue({
     ...payload,
+    ownerId: isCrossTeamTransfer
+      ? (transfer.assigneeId || payload.ownerId || null)
+      : payload.ownerId,
     timeline,
     department_id: destinationTeamId,
     ...(meetingId ? { meeting_id: meetingId } : {}),
@@ -56,6 +68,11 @@ export async function saveIssueWithCrossTeamTransfer({
       transferReason: transfer.reason || ''
     } : {})
   });
+
+  const savedId = getSavedEntityId(saved);
+  if (pendingUpdateText) {
+    await persistPendingIssueUpdate(savedId, pendingUpdateText);
+  }
 
   return {
     saved,
@@ -72,9 +89,13 @@ export async function saveTodoWithCrossTeamTransfer({
   meetingId = null
 }) {
   const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(todoData, sourceTeamId);
-  const payload = stripTransferPayload(todoData);
+  const { pendingUpdateText, ...payload } = stripTransferPayload(todoData);
 
   if (isCrossTeamTransfer && todoId) {
+    if (pendingUpdateText) {
+      await todosService.addTodoUpdate(todoId, pendingUpdateText);
+    }
+
     const moveResult = await todosService.moveTodoToTeam(todoId, {
       newTeamId: transfer.destinationTeamId,
       newAssigneeId: transfer.assigneeId,
@@ -119,6 +140,10 @@ export async function saveTodoWithCrossTeamTransfer({
   });
 
   const isGroup = Boolean(response?.isGroup && Array.isArray(response?.data));
+  const savedId = isGroup ? null : getSavedEntityId(response);
+  if (pendingUpdateText && savedId) {
+    await todosService.addTodoUpdate(savedId, pendingUpdateText);
+  }
 
   return {
     saved: response,

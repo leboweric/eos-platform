@@ -37,7 +37,7 @@ import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
 import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
-import { validateTransfer } from '../../utils/transferUtils';
+import { validateTransfer, getSavedEntityId } from '../../utils/transferUtils';
 
 const IssueDialog = ({ 
   open, 
@@ -216,7 +216,8 @@ const IssueDialog = ({
     try {
       setSavingUpdate(true);
       const response = await issuesService.addIssueUpdate(issueId, updateText);
-      setUpdates([response.data, ...updates]);
+      const newUpdate = response.data?.data || response.data;
+      setUpdates([newUpdate, ...updates]);
       setUpdateText('');
       setShowAddUpdate(false);
     } catch (error) {
@@ -366,24 +367,27 @@ const IssueDialog = ({
         status: formData.status,
         timeline: issue ? issue.timeline : timeline,
         ...(allowTransferToTeam && transferToTeam.enabled ? { transferToTeam } : {}),
+        ...(updateText.trim() && !existingId ? { pendingUpdateText: updateText } : {}),
         // Include headline ID if this issue is being created from a headline
         ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
       };
       
       if (updateText.trim() && existingId) {
         const response = await issuesService.addIssueUpdate(existingId, updateText);
-        setUpdates((prev) => [response.data, ...prev]);
+        const newUpdate = response.data?.data || response.data;
+        setUpdates((prev) => [newUpdate, ...prev]);
         setUpdateText('');
         setShowAddUpdate(false);
       }
 
       console.log('Sending to onSave:', issueData);
       const savedIssue = await onSave(issueData);
+      const savedId = existingId || getSavedEntityId(savedIssue);
       
       // Upload new attachments if any
-      if (newAttachments.length > 0 && (issue || savedIssue)) {
+      if (newAttachments.length > 0 && savedId) {
         setUploadingFiles(true);
-        const issueId = existingId || savedIssue?.id || savedIssue?.data?.id;
+        const issueId = savedId;
         const failedFiles = [];
         
         for (const file of newAttachments) {
@@ -654,15 +658,14 @@ const IssueDialog = ({
               </div>
             </div>
 
-            {/* Third row: Updates - only show for existing issues */}
-            {issue && (
-              <div className="space-y-3">
+            {/* Third row: Updates - always available; new-issue notes are saved on create/send */}
+            <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     Updates ({updates.length})
                   </Label>
-                  {!showAddUpdate && (
+                  {!showAddUpdate && (issue?.id || createdIssueId) && (
                     <Button
                       type="button"
                       variant="outline"
@@ -676,48 +679,54 @@ const IssueDialog = ({
                   )}
                 </div>
 
-                {/* Add Update Form */}
-                {showAddUpdate && (
+                {/* Add Update Form - new issues show notes field by default (saved on create/send) */}
+                {(showAddUpdate || (!issue?.id && !createdIssueId)) && (
                   <div className="space-y-2">
                     <Textarea
                       value={updateText}
                       onChange={(e) => setUpdateText(e.target.value)}
-                      placeholder="Add an update..."
+                      placeholder={
+                        issue?.id || createdIssueId
+                          ? 'Add an update...'
+                          : 'Add notes (saved when you create or send this issue)...'
+                      }
                       rows={3}
                       className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 focus:border-blue-400 rounded-xl shadow-sm"
                     />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAddUpdate}
-                        disabled={!updateText.trim() || savingUpdate}
-                        className="text-white"
-                        style={{
-                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                        }}
-                      >
-                        {savingUpdate ? (
-                          <>
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          'Add Update'
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowAddUpdate(false);
-                          setUpdateText('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                    {(issue?.id || createdIssueId) && (
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddUpdate}
+                          disabled={!updateText.trim() || savingUpdate}
+                          className="text-white"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
+                        >
+                          {savingUpdate ? (
+                            <>
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            'Add Update'
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowAddUpdate(false);
+                            setUpdateText('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -751,11 +760,10 @@ const IssueDialog = ({
                       </div>
                     ))}
                   </div>
-                ) : !showAddUpdate && (
+                ) : !showAddUpdate && (issue?.id || createdIssueId) && (
                   <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No updates yet</p>
                 )}
               </div>
-            )}
 
             {/* Fourth row: Attachments */}
             <div className="space-y-3">
