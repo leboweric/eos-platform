@@ -9259,7 +9259,6 @@ setAddingMilestoneFor(priority.id);
           allowTransferToTeam
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
-          onMoveToTeam={handleMoveIssueToAnotherTeam}
           onSave={handleSaveIssue}
           onRefresh={fetchIssuesData}
         />

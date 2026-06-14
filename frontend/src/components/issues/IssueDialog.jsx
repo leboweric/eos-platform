@@ -886,7 +886,7 @@ const IssueDialog = ({
                 <ArrowLeftRight className="mr-1 h-3 w-3" />
                 Move to {(issue.timeline || 'short_term') === 'short_term' ? 'Long Term' : 'Short Term'}
               </Button>
-              {onMoveToTeam && (
+              {onMoveToTeam && !allowTransferToTeam && (
                 <Button
                   type="button"
                   variant="outline"
