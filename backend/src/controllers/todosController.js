@@ -5,6 +5,12 @@ import fs from 'fs';
 import { getUserTeamContext, getUserTeamScope } from '../utils/teamUtils.js';
 import { getDateDaysFromNow } from '../utils/dateUtils.js';
 import meetingSocketService from '../services/meetingSocketService.js';
+import {
+  validateTeamTransfer,
+  buildTransferNote,
+  getTransferActorName,
+  getTeamInOrg
+} from '../utils/teamTransfer.js';
 
 // @desc    Get all todos for an organization
 // @route   GET /api/v1/organizations/:orgId/todos
@@ -172,6 +178,15 @@ export const createTodo = async (req, res) => {
 
     // NEW APPROACH: Create separate To-Do records for multi-assignee
     const isMultiAssignee = assignedToIds && assignedToIds.length > 0;
+
+    if (teamId && isMultiAssignee) {
+      for (const assigneeId of assignedToIds) {
+        const transferCheck = await validateTeamTransfer(orgId, teamId, assigneeId, { requireAssignee: true });
+        if (!transferCheck.valid) {
+          return res.status(400).json({ success: false, error: transferCheck.error });
+        }
+      }
+    }
     
     if (isMultiAssignee) {
       // Create a group ID to link all related To-Dos
@@ -249,6 +264,13 @@ export const createTodo = async (req, res) => {
       // Single assignee - create one To-Do (original logic)
       const todoId = uuidv4();
       const singleAssignee = assignedToId || userId;
+
+      if (teamId) {
+        const transferCheck = await validateTeamTransfer(orgId, teamId, singleAssignee, { requireAssignee: true });
+        if (!transferCheck.valid) {
+          return res.status(400).json({ success: false, error: transferCheck.error });
+        }
+      }
       
       const result = await query(
         `INSERT INTO todos (
@@ -1103,11 +1125,81 @@ export const deleteTodoUpdate = async (req, res) => {
   }
 };
 
+// @desc    Move a todo to a different team and reassign
+// @route   POST /api/v1/organizations/:orgId/todos/:todoId/move-team
+// @access  Private
+export const moveTodoToTeam = async (req, res) => {
+  try {
+    const { orgId, todoId } = req.params;
+    const { newTeamId, newAssigneeId, reason } = req.body;
+    const userId = req.user.id;
+
+    const transferCheck = await validateTeamTransfer(orgId, newTeamId, newAssigneeId, { requireAssignee: true });
+    if (!transferCheck.valid) {
+      return res.status(400).json({ success: false, error: transferCheck.error });
+    }
+
+    const existingTodo = await query(
+      'SELECT * FROM todos WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+      [todoId, orgId]
+    );
+
+    if (existingTodo.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Todo not found' });
+    }
+
+    const todo = existingTodo.rows[0];
+    const oldTeamId = todo.team_id;
+    const oldTeam = oldTeamId ? await getTeamInOrg(oldTeamId, orgId) : null;
+    const userName = await getTransferActorName(userId);
+
+    const updateResult = await query(
+      `UPDATE todos
+       SET team_id = $1,
+           assigned_to_id = $2,
+           is_multi_assignee = FALSE,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3 AND organization_id = $4
+       RETURNING *`,
+      [newTeamId, newAssigneeId, todoId, orgId]
+    );
+
+    await query(
+      'DELETE FROM todo_assignees WHERE todo_id = $1',
+      [todoId]
+    );
+
+    const transferNote = buildTransferNote({
+      fromTeamName: oldTeam?.name,
+      toTeamName: transferCheck.team.name,
+      userName,
+      reason
+    });
+
+    await query(
+      `UPDATE todos
+       SET description = COALESCE(description, '') || $1
+       WHERE id = $2`,
+      [transferNote, todoId]
+    );
+
+    res.json({
+      success: true,
+      data: updateResult.rows[0],
+      message: `To-do sent to ${transferCheck.team.name}`
+    });
+  } catch (error) {
+    console.error('Error moving todo:', error);
+    res.status(500).json({ success: false, error: 'Failed to move to-do' });
+  }
+};
+
 export default {
   getTodos,
   createTodo,
   updateTodo,
   deleteTodo,
+  moveTodoToTeam,
   archiveDoneTodos,
   unarchiveTodo,
   uploadTodoAttachment,

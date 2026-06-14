@@ -14,9 +14,23 @@ import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
 import { getOrgTheme } from '../../utils/themeUtils';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
+import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
 import { useTeamMembers } from '../../hooks/useTeamMembers';
+import { validateTransfer } from '../../utils/transferUtils';
 
-const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, teamId, onSave, onCreateIssue }) => {
+const TodoDialog = ({
+  open,
+  onOpenChange,
+  todo,
+  todoFromIssue,
+  teamMembers,
+  teamId,
+  sourceTeamId,
+  allowTransferToTeam = false,
+  onSave,
+  onCreateIssue
+}) => {
+  const meetingTeamId = sourceTeamId || teamId;
   const { user } = useAuthStore();
   
   // Get filtered team members for department filtering
@@ -63,6 +77,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   const [createdTodoId, setCreatedTodoId] = useState(null); // Track ID of auto-created todo
   const autoSaveTimeoutRef = useRef(null);
   const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
+  const [transferToTeam, setTransferToTeam] = useState({ ...EMPTY_TRANSFER_STATE });
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -145,6 +160,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
     }
     setFiles([]);
     setCreatedTodoId(null); // Reset auto-created todo ID
+    setTransferToTeam({ ...EMPTY_TRANSFER_STATE });
   }, [todo]);
 
   // Clear form when dialog opens without a todo or set from issue
@@ -236,6 +252,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
     console.log('🔄 Auto-save effect triggered:', { todoId: todo?.id, createdTodoId, hasTitle: !!formData.title, isInitialized: isInitializedRef.current });
+    if (transferToTeam.enabled) return;
     // Don't auto-save for new to-dos - only for editing existing to-dos
     if (!todo?.id && !createdTodoId) return;
     
@@ -272,13 +289,26 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
     e.preventDefault();
     setSaving(true);
     setError(null);
+
+    const transferError = validateTransfer(transferToTeam, meetingTeamId, { requireAssignee: true });
+    if (transferError) {
+      setError(transferError);
+      setSaving(false);
+      return;
+    }
     
     try {
       // Pass the appropriate assignee data based on multi-assignee mode
       const submitData = {
         ...formData,
         // Include assignedToIds only if multi-assignee mode is enabled
-        ...(formData.isMultiAssignee && { assignedToIds: formData.assignedToIds })
+        ...(formData.isMultiAssignee && !transferToTeam.enabled && { assignedToIds: formData.assignedToIds }),
+        ...(allowTransferToTeam && transferToTeam.enabled ? {
+          transferToTeam,
+          assignedToId: transferToTeam.assigneeId,
+          isMultiAssignee: false,
+          assignedToIds: []
+        } : {})
       };
       const savedTodo = await onSave(submitData);
       
@@ -594,7 +624,18 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
               </div>
             )}
 
+            {allowTransferToTeam && (
+              <TransferToTeamSection
+                sourceTeamId={meetingTeamId}
+                transfer={transferToTeam}
+                onTransferChange={setTransferToTeam}
+                requireAssignee
+                assigneeLabel="Assign to on destination team"
+              />
+            )}
+
             <div className="grid grid-cols-1 gap-4">
+              {!transferToTeam.enabled && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -718,6 +759,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, team
                   )
                 )}
               </div>
+              )}
             </div>
 
             <div className="space-y-3">

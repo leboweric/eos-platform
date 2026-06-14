@@ -2192,11 +2192,37 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      const transfer = issueData.transferToTeam;
+      const isCrossTeamTransfer = transfer?.enabled && transfer.destinationTeamId && transfer.destinationTeamId !== effectiveTeamId;
       let savedIssue;
       
       // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
       const isEditing = editingIssue || issueData.id;
       const issueId = editingIssue?.id || issueData.id;
+
+      if (isCrossTeamTransfer && issueId) {
+        await issuesService.updateIssue(issueId, {
+          title: issueData.title,
+          description: issueData.description,
+          status: issueData.status
+        });
+        const moveResult = await issuesService.moveIssueToTeam(
+          issueId,
+          transfer.destinationTeamId,
+          transfer.reason || '',
+          transfer.assigneeId || null
+        );
+        setSuccess(moveResult.message || 'Issue sent to another team');
+        await fetchIssuesData();
+        if (meetingCode && broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({ action: 'refresh' });
+        }
+        if (!isAutoSave) {
+          setShowIssueDialog(false);
+          setEditingIssue(null);
+        }
+        return moveResult;
+      }
       
       if (isEditing && issueId) {
         savedIssue = await issuesService.updateIssue(issueId, {
@@ -2236,15 +2262,16 @@ const WeeklyAccountabilityMeetingPage = () => {
           console.warn('⚠️ Broadcast skipped - meetingCode:', meetingCode, 'broadcastIssueListUpdate:', !!broadcastIssueListUpdate);
         }
       } else {
+        const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : effectiveTeamId;
         savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: issueTimeline,
-          department_id: effectiveTeamId,
+          department_id: destinationTeamId,
           meeting_id: sessionId  // Link issue to current meeting session
         });
         
         // For auto-save, optimistically add to local state without full refresh
-        if (isAutoSave) {
+        if (isAutoSave && !isCrossTeamTransfer) {
           const newIssue = savedIssue.data || savedIssue;
           const timeline = newIssue.timeline || issueTimeline;
           
@@ -2253,16 +2280,17 @@ const WeeklyAccountabilityMeetingPage = () => {
           } else if (timeline === 'long_term') {
             setLongTermIssues(prev => [newIssue, ...prev]);
           }
-        } else {
-          setSuccess('Issue created successfully');
+        } else if (!isAutoSave) {
+          setSuccess(isCrossTeamTransfer ? 'Issue sent to another team' : 'Issue created successfully');
         }
         
         // Broadcast new issue to other participants
         if (meetingCode && broadcastIssueListUpdate) {
-          broadcastIssueListUpdate({
-            action: 'create',
-            issue: savedIssue.data || savedIssue
-          });
+          broadcastIssueListUpdate(
+            isCrossTeamTransfer
+              ? { action: 'refresh' }
+              : { action: 'create', issue: savedIssue.data || savedIssue }
+          );
         }
       }
       
@@ -2399,9 +2427,40 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      const transfer = todoData.transferToTeam;
+      const isCrossTeamTransfer = transfer?.enabled && transfer.destinationTeamId && transfer.destinationTeamId !== effectiveTeamId;
       
       let savedTodo;
       if (editingTodo) {
+        if (isCrossTeamTransfer) {
+          await todosService.updateTodo(editingTodo.id, {
+            title: todoData.title,
+            description: todoData.description,
+            dueDate: todoData.dueDate,
+            status: todoData.status
+          });
+          const moveResult = await todosService.moveTodoToTeam(
+            editingTodo.id,
+            transfer.destinationTeamId,
+            transfer.assigneeId,
+            transfer.reason || ''
+          );
+          if (!options.isAutoSave) {
+            setSuccess(moveResult.message || 'To-do sent to another team');
+          }
+          await fetchTodosData();
+          if (meetingStarted) await fetchTodaysTodos();
+          if (meetingCode && broadcastTodoUpdate) {
+            broadcastTodoUpdate({ action: 'refresh' });
+          }
+          if (!options.isAutoSave) {
+            setShowTodoDialog(false);
+            setEditingTodo(null);
+            setTodoFromIssue(null);
+          }
+          return moveResult;
+        }
+
         savedTodo = await todosService.updateTodo(editingTodo.id, {
           ...todoData,
           department_id: effectiveTeamId
@@ -2420,10 +2479,12 @@ const WeeklyAccountabilityMeetingPage = () => {
           });
         }
       } else {
+        const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : effectiveTeamId;
         const response = await todosService.createTodo({
           ...todoData,
           organization_id: orgId,
-          department_id: effectiveTeamId,
+          department_id: destinationTeamId,
+          assignedToId: isCrossTeamTransfer ? transfer.assigneeId : todoData.assignedToId,
           meeting_id: sessionId  // Link todo to current meeting session
         });
         
@@ -2445,15 +2506,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         } else {
           savedTodo = response;
           if (!options.isAutoSave) {
-            setSuccess('To-do created successfully');
+            setSuccess(isCrossTeamTransfer ? 'To-do sent to another team' : 'To-do created successfully');
           }
           
           // Broadcast new todo to other participants
           if (meetingCode && broadcastTodoUpdate) {
-            broadcastTodoUpdate({
-              action: 'create',
-              todo: savedTodo.data || savedTodo
-            });
+            broadcastTodoUpdate(
+              isCrossTeamTransfer
+                ? { action: 'refresh' }
+                : { action: 'create', todo: savedTodo.data || savedTodo }
+            );
           }
         }
       }
@@ -9189,8 +9251,11 @@ setAddingMilestoneFor(priority.id);
           issue={editingIssue}
           teamMembers={teamMembers || []}
           teamId={teamId}
+          sourceTeamId={teamId}
+          allowTransferToTeam
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}
+          onMoveToTeam={handleMoveIssueToAnotherTeam}
           onSave={handleSaveIssue}
           onRefresh={fetchIssuesData}
         />
@@ -9208,6 +9273,8 @@ setAddingMilestoneFor(priority.id);
           todoFromIssue={todoFromIssue}
           teamMembers={teamMembers || []}
           teamId={teamId}
+          sourceTeamId={teamId}
+          allowTransferToTeam
           onSave={handleSaveTodo}
           onCreateIssue={handleCreateIssueFromTodo}
         />
@@ -9373,6 +9440,7 @@ setAddingMilestoneFor(priority.id);
         
         {moveIssueDialogOpen && issueToMove && (
           <MoveIssueDialog
+            sourceTeamId={teamId}
             isOpen={moveIssueDialogOpen}
             onClose={() => {
               setMoveIssueDialogOpen(false);

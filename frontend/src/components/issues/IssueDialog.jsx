@@ -36,6 +36,8 @@ import { issuesService } from '../../services/issuesService';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
+import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
+import { validateTransfer } from '../../utils/transferUtils';
 
 const IssueDialog = ({ 
   open, 
@@ -44,6 +46,8 @@ const IssueDialog = ({
   issue, 
   teamMembers, 
   teamId,
+  sourceTeamId,
+  allowTransferToTeam = false,
   timeline,
   onMoveToTeam,
   onCreateTodo,
@@ -54,6 +58,8 @@ const IssueDialog = ({
   isQuarterlyMeeting = false
 }) => {
   const { user } = useAuthStore();
+  const meetingTeamId = sourceTeamId || teamId;
+  const [transferToTeam, setTransferToTeam] = useState({ ...EMPTY_TRANSFER_STATE });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -158,6 +164,7 @@ const IssueDialog = ({
     setShowAddUpdate(false);
     setCreatedIssueId(null); // Reset auto-created issue ID
     setAttachmentsChanged(false); // Reset attachment change tracking
+    setTransferToTeam({ ...EMPTY_TRANSFER_STATE });
   }, [open, issue]);
 
   // Clear form when dialog opens without an issue
@@ -291,6 +298,7 @@ const IssueDialog = ({
 
   // Auto-save effect - triggers 2 seconds after last change
   useEffect(() => {
+    if (transferToTeam.enabled) return;
     // Don't auto-save for new issues - only for editing existing issues
     if (!issue?.id && !createdIssueId) return;
     
@@ -328,6 +336,12 @@ const IssueDialog = ({
       setError('Issue title is required');
       return;
     }
+
+    const transferError = validateTransfer(transferToTeam, meetingTeamId, { requireAssignee: false });
+    if (transferError) {
+      setError(transferError);
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -345,9 +359,12 @@ const IssueDialog = ({
         ...(existingId ? { id: existingId } : {}), // Include ID if editing or auto-saved
         title: formData.title,
         description: formData.description,
-        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
+        ownerId: transferToTeam.enabled
+          ? (transferToTeam.assigneeId || null)
+          : (formData.ownerId === 'no-owner' ? null : (formData.ownerId || null)),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline,
+        ...(allowTransferToTeam && transferToTeam.enabled ? { transferToTeam } : {}),
         // Include headline ID if this issue is being created from a headline
         ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
       };
@@ -537,6 +554,7 @@ const IssueDialog = ({
                 />
               </div>
 
+              {!transferToTeam.enabled && (
               <div className="space-y-3">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Owner</Label>
                 {teamId ? (
@@ -602,7 +620,18 @@ const IssueDialog = ({
                   </Select>
                 )}
               </div>
+              )}
             </div>
+
+            {allowTransferToTeam && (
+              <TransferToTeamSection
+                sourceTeamId={meetingTeamId}
+                transfer={transferToTeam}
+                onTransferChange={setTransferToTeam}
+                requireAssignee={false}
+                assigneeLabel="Assign owner on destination team (optional)"
+              />
+            )}
 
             {/* Second row: Summary full width */}
             <div className="space-y-3">

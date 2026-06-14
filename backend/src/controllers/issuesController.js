@@ -4,6 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext, isZeroUUID, getUserTeamScope } from '../utils/teamUtils.js';
 import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 import meetingSocketService from '../services/meetingSocketService.js';
+import {
+  validateTeamTransfer,
+  buildTransferNote,
+  getTransferActorName,
+  getTeamInOrg
+} from '../utils/teamTransfer.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -180,6 +186,13 @@ export const createIssue = async (req, res) => {
     const { orgId } = req.params;
     const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id } = req.body;
     const createdById = req.user.id;
+
+    if (teamId && ownerId) {
+      const transferCheck = await validateTeamTransfer(orgId, teamId, ownerId);
+      if (!transferCheck.valid) {
+        return res.status(400).json({ success: false, message: transferCheck.error });
+      }
+    }
     
     // Check if timeline column exists
     const hasTimelineColumn = await checkTimelineColumn();
@@ -390,74 +403,63 @@ export const updateIssue = async (req, res) => {
   }
 };
 
-// Move an issue to a different team
+// Move an issue to a different team (optionally reassign owner)
 export const moveIssueToTeam = async (req, res) => {
   try {
     const { orgId, issueId } = req.params;
-    const { newTeamId, reason } = req.body;
+    const { newTeamId, newOwnerId, reason } = req.body;
     const userId = req.user.id;
-    
-    // Verify the issue exists and belongs to this organization
+
+    const transferCheck = await validateTeamTransfer(orgId, newTeamId, newOwnerId || null);
+    if (!transferCheck.valid) {
+      return res.status(400).json({ success: false, message: transferCheck.error });
+    }
+
     const issueCheck = await db.query(
       'SELECT * FROM issues WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
       [issueId, orgId]
     );
-    
+
     if (issueCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Issue not found'
       });
     }
-    
+
     const issue = issueCheck.rows[0];
     const oldTeamId = issue.team_id;
-    
-    // Get old and new team names for logging
-    const teamsResult = await db.query(
-      'SELECT id, name FROM teams WHERE id = ANY($1::uuid[]) AND organization_id = $2',
-      [[oldTeamId, newTeamId], orgId]
-    );
-    
-    const teams = teamsResult.rows.reduce((acc, team) => {
-      acc[team.id] = team.name;
-      return acc;
-    }, {});
-    
-    // Get the user's name for the transfer note
-    const userResult = await db.query(
-      'SELECT first_name, last_name FROM users WHERE id = $1',
-      [userId]
-    );
-    const userName = userResult.rows.length > 0 
-      ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`.trim()
-      : 'user';
-    
-    // Update the issue's team
+    const oldTeam = oldTeamId ? await getTeamInOrg(oldTeamId, orgId) : null;
+    const userName = await getTransferActorName(userId);
+
     const updateResult = await db.query(
-      `UPDATE issues 
-       SET team_id = $1, 
+      `UPDATE issues
+       SET team_id = $1,
+           owner_id = $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2 AND organization_id = $3
+       WHERE id = $3 AND organization_id = $4
        RETURNING *`,
-      [newTeamId, issueId, orgId]
+      [newTeamId, newOwnerId || null, issueId, orgId]
     );
-    
-    // Add a note to the issue's description about the transfer
-    const transferNote = `\n\n---\n[Transferred from ${teams[oldTeamId] || 'Unknown Team'} to ${teams[newTeamId] || 'Unknown Team'} by ${userName} on ${new Date().toLocaleDateString()}]`;
-    const transferReason = reason ? `\nReason: ${reason}` : '';
-    
+
+    const transferNote = buildTransferNote({
+      fromTeamName: oldTeam?.name,
+      toTeamName: transferCheck.team.name,
+      userName,
+      reason
+    });
+
     await db.query(
-      `UPDATE issues 
-       SET description = description || $1
+      `UPDATE issues
+       SET description = COALESCE(description, '') || $1
        WHERE id = $2`,
-      [transferNote + transferReason, issueId]
+      [transferNote, issueId]
     );
-    
+
     res.json({
       success: true,
       data: updateResult.rows[0],
-      message: `Issue moved to ${teams[newTeamId] || 'new team'}`
+      message: `Issue sent to ${transferCheck.team.name}`
     });
   } catch (error) {
     console.error('Error moving issue:', error);

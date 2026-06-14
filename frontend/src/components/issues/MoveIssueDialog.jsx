@@ -8,69 +8,33 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import { Alert, AlertDescription } from '../ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
-import { teamsService } from '../../services/teamsService';
+import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
 
-export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess }) {
-  const [teams, setTeams] = useState([]);
-  const [selectedTeamId, setSelectedTeamId] = useState('');
-  const [reason, setReason] = useState('');
+export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess, sourceTeamId }) {
+  const [transfer, setTransfer] = useState({ ...EMPTY_TRANSFER_STATE, enabled: true });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const currentTeamId = issue?.team_id || issue?.department_id || issue?.teamId || sourceTeamId;
+
   useEffect(() => {
     if (isOpen) {
-      fetchTeams();
-      // Reset form
-      setSelectedTeamId('');
-      setReason('');
+      setTransfer({ ...EMPTY_TRANSFER_STATE, enabled: true });
       setError(null);
     }
-  }, [isOpen]);
-
-  const fetchTeams = async () => {
-    try {
-      const response = await teamsService.getTeams();
-      console.log('Teams response:', response);
-      console.log('Current issue:', issue);
-      
-      // Check what the actual team field is called
-      const currentTeamId = issue?.team_id || issue?.department_id || issue?.teamId;
-      
-      // Handle different response structures
-      const teamsList = response?.data?.teams || response?.data || response || [];
-      
-      // Filter out the current team
-      const availableTeams = Array.isArray(teamsList) 
-        ? teamsList.filter(team => team.id !== currentTeamId)
-        : [];
-      
-      console.log('Available teams:', availableTeams);
-      setTeams(availableTeams);
-      
-      if (availableTeams.length === 0) {
-        setError('No other teams available to move this issue to');
-      }
-    } catch (error) {
-      console.error('Error fetching teams:', error);
-      setError('Failed to load teams');
-    }
-  };
+  }, [isOpen, issue?.id]);
 
   const handleSubmit = async () => {
-    if (!selectedTeamId) {
+    if (!transfer.destinationTeamId) {
       setError('Please select a destination team');
+      return;
+    }
+
+    if (transfer.destinationTeamId === currentTeamId) {
+      setError('Please select a different team');
       return;
     }
 
@@ -78,17 +42,22 @@ export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess }) {
     setError(null);
 
     try {
-      const response = await issuesService.moveIssueToTeam(issue.id, selectedTeamId, reason);
-      
+      const response = await issuesService.moveIssueToTeam(
+        issue.id,
+        transfer.destinationTeamId,
+        transfer.reason,
+        transfer.assigneeId || null
+      );
+
       if (response.success) {
-        onSuccess(response.message || 'Issue moved successfully');
+        onSuccess(response.message || 'Issue sent successfully');
         onClose();
       } else {
-        setError(response.message || 'Failed to move issue');
+        setError(response.message || 'Failed to send issue');
       }
-    } catch (error) {
-      console.error('Error moving issue:', error);
-      setError('Failed to move issue. Please try again.');
+    } catch (err) {
+      console.error('Error moving issue:', err);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to send issue. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -98,15 +67,15 @@ export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Move Issue to Another Team</DialogTitle>
+          <DialogTitle>Send Issue to Another Team</DialogTitle>
           <DialogDescription>
-            Transfer "{issue.title}" from {issue.team_name || 'current team'} to another team.
+            Send &quot;{issue.title}&quot; from {issue.team_name || 'this team'} to another team&apos;s issues list.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -114,41 +83,22 @@ export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess }) {
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="team">Destination Team</Label>
-            <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-              <SelectTrigger id="team">
-                <SelectValue placeholder="Select a team" />
-              </SelectTrigger>
-              <SelectContent>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                    {team.is_leadership_team && ' (Leadership)'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for Transfer (Optional)</Label>
-            <Textarea
-              id="reason"
-              placeholder="Explain why this issue is being transferred..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-            />
-          </div>
+          <TransferToTeamSection
+            sourceTeamId={currentTeamId}
+            transfer={transfer}
+            onTransferChange={setTransfer}
+            requireAssignee={false}
+            assigneeLabel="Assign owner on destination team (optional)"
+            showToggle={false}
+          />
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !selectedTeamId}>
-            {isLoading ? 'Moving...' : 'Move Issue'}
+          <Button onClick={handleSubmit} disabled={isLoading || !transfer.destinationTeamId}>
+            {isLoading ? 'Sending...' : 'Send Issue'}
           </Button>
         </DialogFooter>
       </DialogContent>

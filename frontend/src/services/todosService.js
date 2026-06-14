@@ -98,6 +98,17 @@ export const todosService = {
     await axios.delete(`/organizations/${orgId}/todos/${todoId}`);
   },
 
+  // Move todo to another team and reassign
+  moveTodoToTeam: async (todoId, newTeamId, newAssigneeId, reason = '') => {
+    const orgId = getOrgId();
+
+    const response = await axios.post(
+      `/organizations/${orgId}/todos/${todoId}/move-team`,
+      { newTeamId, newAssigneeId, reason }
+    );
+    return response.data;
+  },
+
   // Archive done todos
   archiveDoneTodos: async () => {
     const orgId = getOrgId();

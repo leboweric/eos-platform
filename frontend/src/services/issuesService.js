@@ -219,13 +219,13 @@ export const issuesService = {
     return response.data.data.votedIssueIds;
   },
 
-  // Move issue to another team
-  moveIssueToTeam: async (issueId, newTeamId, reason = '') => {
+  // Move issue to another team (optionally reassign owner)
+  moveIssueToTeam: async (issueId, newTeamId, reason = '', newOwnerId = null) => {
     const orgId = getOrgId();
     
     const response = await axios.post(
       `/organizations/${orgId}/issues/${issueId}/move-team`,
-      { newTeamId, reason }
+      { newTeamId, reason, newOwnerId }
     );
     return response.data;
   },

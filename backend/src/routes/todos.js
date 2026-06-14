@@ -7,6 +7,7 @@ import {
   createTodo,
   updateTodo,
   deleteTodo,
+  moveTodoToTeam,
   archiveDoneTodos,
   unarchiveTodo,
   uploadTodoAttachment,
@@ -45,6 +46,14 @@ router.post('/', [
   body('dueDate').optional().isISO8601(),
   body('teamId').optional().isUUID()
 ], createTodo);
+
+// Move todo to another team - MUST come before generic /:todoId routes
+router.post('/:todoId/move-team', [
+  param('todoId').isUUID(),
+  body('newTeamId').isUUID(),
+  body('newAssigneeId').isUUID(),
+  body('reason').optional().isString()
+], moveTodoToTeam);
 
 // Archive done todos - MUST come before /:todoId routes
 router.put('/archive-done', archiveDoneTodos);
