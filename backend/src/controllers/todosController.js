@@ -7,7 +7,8 @@ import { getDateDaysFromNow } from '../utils/dateUtils.js';
 import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
-  buildTransferNoteForTeams
+  buildTransferNoteForTeams,
+  resolveTodoTeamId
 } from '../utils/teamTransfer.js';
 
 // @desc    Get all todos for an organization
@@ -177,15 +178,6 @@ export const createTodo = async (req, res) => {
     // NEW APPROACH: Create separate To-Do records for multi-assignee
     const isMultiAssignee = assignedToIds && assignedToIds.length > 0;
 
-    if (teamId && isMultiAssignee) {
-      for (const assigneeId of assignedToIds) {
-        const transferCheck = await validateTeamTransfer(orgId, teamId, assigneeId, { requireAssignee: true });
-        if (!transferCheck.valid) {
-          return res.status(400).json({ success: false, error: transferCheck.error });
-        }
-      }
-    }
-    
     if (isMultiAssignee) {
       // Create a group ID to link all related To-Dos
       const todoGroupId = uuidv4();
@@ -193,6 +185,15 @@ export const createTodo = async (req, res) => {
       
       // Create one To-Do for each assignee
       for (const assigneeId of assignedToIds) {
+        const resolvedTeamId = teamId
+          ? await resolveTodoTeamId(orgId, teamId, assigneeId)
+          : null;
+
+        const transferCheck = await validateTeamTransfer(orgId, resolvedTeamId, assigneeId, { requireAssignee: true });
+        if (!transferCheck.valid) {
+          return res.status(400).json({ success: false, error: transferCheck.error });
+        }
+
         const todoId = uuidv4();
         
         const result = await query(
@@ -202,7 +203,7 @@ export const createTodo = async (req, res) => {
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
           RETURNING *`,
           [
-            todoId, orgId, teamId || null, userId, assigneeId,
+            todoId, orgId, resolvedTeamId, userId, assigneeId,
             title, description, finalDueDate, priority || 'medium', 'incomplete', todoGroupId, relatedPriorityId || null, meeting_id || null
           ]
         );
@@ -262,9 +263,12 @@ export const createTodo = async (req, res) => {
       // Single assignee - create one To-Do (original logic)
       const todoId = uuidv4();
       const singleAssignee = assignedToId || userId;
+      const resolvedTeamId = teamId
+        ? await resolveTodoTeamId(orgId, teamId, singleAssignee)
+        : null;
 
-      if (teamId) {
-        const transferCheck = await validateTeamTransfer(orgId, teamId, singleAssignee, { requireAssignee: true });
+      if (resolvedTeamId) {
+        const transferCheck = await validateTeamTransfer(orgId, resolvedTeamId, singleAssignee, { requireAssignee: true });
         if (!transferCheck.valid) {
           return res.status(400).json({ success: false, error: transferCheck.error });
         }
@@ -277,7 +281,7 @@ export const createTodo = async (req, res) => {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *`,
         [
-          todoId, orgId, teamId || null, userId, singleAssignee,
+          todoId, orgId, resolvedTeamId, userId, singleAssignee,
           title, description, finalDueDate, priority || 'medium', 'incomplete', null, relatedPriorityId || null, meeting_id || null
         ]
       );
@@ -303,11 +307,11 @@ export const createTodo = async (req, res) => {
 
       let todo = todoResult.rows[0];
 
-      if (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) {
+      if (transferSourceTeamId && resolvedTeamId && transferSourceTeamId !== resolvedTeamId) {
         const transferNote = await buildTransferNoteForTeams(
           orgId,
           transferSourceTeamId,
-          teamId,
+          resolvedTeamId,
           userId,
           transferReason
         );
@@ -384,6 +388,8 @@ export const updateTodo = async (req, res) => {
       });
     }
 
+    const existingRecord = existingTodo.rows[0];
+
     // Build update query dynamically
     const updates = [];
     const values = [];
@@ -416,6 +422,15 @@ export const updateTodo = async (req, res) => {
       values.push(assignedToId);
       paramIndex++;
       updates.push(`is_multi_assignee = FALSE`);
+
+      if (existingRecord.team_id) {
+        const resolvedTeamId = await resolveTodoTeamId(orgId, existingRecord.team_id, assignedToId);
+        if (resolvedTeamId && resolvedTeamId !== existingRecord.team_id) {
+          updates.push(`team_id = $${paramIndex}`);
+          values.push(resolvedTeamId);
+          paramIndex++;
+        }
+      }
     }
 
     if (dueDate !== undefined) {

@@ -61,6 +61,33 @@ export async function getTransferActorName(userId) {
   return `${first_name || ''} ${last_name || ''}`.trim() || 'user';
 }
 
+/**
+ * When a todo is created/assigned on team A but the assignee belongs to team B,
+ * place the todo on the assignee's team so it appears on the correct list.
+ */
+export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId) {
+  if (!requestedTeamId || !assigneeId) {
+    return requestedTeamId || null;
+  }
+
+  const onRequestedTeam = await isUserOnTeam(assigneeId, requestedTeamId, orgId);
+  if (onRequestedTeam) {
+    return requestedTeamId;
+  }
+
+  const teamsResult = await query(
+    `SELECT tm.team_id
+     FROM team_members tm
+     INNER JOIN teams t ON t.id = tm.team_id
+     WHERE tm.user_id = $1 AND t.organization_id = $2
+     ORDER BY t.is_leadership_team ASC NULLS LAST, t.name ASC
+     LIMIT 1`,
+    [assigneeId, orgId]
+  );
+
+  return teamsResult.rows[0]?.team_id || requestedTeamId;
+}
+
 export async function buildTransferNoteForTeams(orgId, sourceTeamId, destinationTeamId, userId, reason) {
   const fromTeam = sourceTeamId ? await getTeamInOrg(sourceTeamId, orgId) : null;
   const toTeam = destinationTeamId ? await getTeamInOrg(destinationTeamId, orgId) : null;
