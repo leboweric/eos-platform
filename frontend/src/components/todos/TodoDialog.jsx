@@ -298,6 +298,14 @@ const TodoDialog = ({
     }
     
     try {
+      const existingTodoId = todo?.id || createdTodoId;
+      if (updateText.trim() && existingTodoId) {
+        const response = await todosService.addTodoUpdate(existingTodoId, updateText);
+        setUpdates((prev) => [response.data, ...prev]);
+        setUpdateText('');
+        setShowAddUpdate(false);
+      }
+
       // Pass the appropriate assignee data based on multi-assignee mode
       const submitData = {
         ...formData,
@@ -311,15 +319,16 @@ const TodoDialog = ({
         } : {})
       };
       const savedTodo = await onSave(submitData);
+      const savedTodoId = existingTodoId || savedTodo?.id || savedTodo?.data?.id;
       
       // Upload any new files
-      if (savedTodo && savedTodo.id && files.length > 0) {
+      if (savedTodoId && files.length > 0) {
         const uploadErrors = [];
         let successfulUploads = 0;
         
         for (const file of files) {
           try {
-            await todosService.uploadAttachment(savedTodo.id, file);
+            await todosService.uploadAttachment(savedTodoId, file);
             successfulUploads++;
           } catch (uploadError) {
             console.error('Failed to upload file:', file.name, uploadError);
@@ -411,11 +420,12 @@ const TodoDialog = ({
   };
 
   const handleAddUpdate = async () => {
-    if (!updateText.trim() || !todo?.id) return;
+    const todoId = todo?.id || createdTodoId;
+    if (!updateText.trim() || !todoId) return;
     
     try {
       setSavingUpdate(true);
-      const response = await todosService.addTodoUpdate(todo.id, updateText);
+      const response = await todosService.addTodoUpdate(todoId, updateText);
       setUpdates([response.data, ...updates]);
       setUpdateText('');
       setShowAddUpdate(false);

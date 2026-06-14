@@ -54,14 +54,21 @@ export const issuesService = {
     // Use department_id if provided, otherwise use teamId from issueData, otherwise use user's teamId
     const finalTeamId = issueData.department_id || issueData.teamId || issueData.team_id || teamId || null;
     
-    // Remove the department_id and team_id fields as we'll use teamId
-    const { department_id, team_id, ...cleanedData } = issueData;
+    const {
+      department_id,
+      team_id,
+      transferToTeam,
+      transferSourceTeamId,
+      transferReason,
+      ...cleanedData
+    } = issueData;
     
     const response = await axios.post(
       `/organizations/${orgId}/issues`,
       {
         ...cleanedData,
-        teamId: finalTeamId
+        teamId: finalTeamId,
+        ...(transferSourceTeamId ? { transferSourceTeamId, transferReason: transferReason || '' } : {})
       }
     );
     return response.data.data;
@@ -220,12 +227,15 @@ export const issuesService = {
   },
 
   // Move issue to another team (optionally reassign owner)
-  moveIssueToTeam: async (issueId, newTeamId, reason = '', newOwnerId = null) => {
+  moveIssueToTeam: async (issueId, moveData, reason = '', newOwnerId = null) => {
     const orgId = getOrgId();
-    
+    const payload = typeof moveData === 'object' && moveData !== null && 'newTeamId' in moveData
+      ? moveData
+      : { newTeamId: moveData, reason, newOwnerId };
+
     const response = await axios.post(
       `/organizations/${orgId}/issues/${issueId}/move-team`,
-      { newTeamId, reason, newOwnerId }
+      payload
     );
     return response.data;
   },

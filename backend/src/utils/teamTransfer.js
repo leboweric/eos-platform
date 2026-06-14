@@ -60,3 +60,15 @@ export async function getTransferActorName(userId) {
   const { first_name, last_name } = result.rows[0];
   return `${first_name || ''} ${last_name || ''}`.trim() || 'user';
 }
+
+export async function buildTransferNoteForTeams(orgId, sourceTeamId, destinationTeamId, userId, reason) {
+  const fromTeam = sourceTeamId ? await getTeamInOrg(sourceTeamId, orgId) : null;
+  const toTeam = destinationTeamId ? await getTeamInOrg(destinationTeamId, orgId) : null;
+  const userName = await getTransferActorName(userId);
+  return buildTransferNote({
+    fromTeamName: fromTeam?.name,
+    toTeamName: toTeam?.name,
+    userName,
+    reason
+  });
+}

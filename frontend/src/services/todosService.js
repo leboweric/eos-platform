@@ -51,7 +51,11 @@ export const todosService = {
       dueDate: todoData.due_date || todoData.dueDate,
       priority: todoData.priority,
       teamId: todoData.team_id || todoData.department_id || todoData.teamId || null,
-      relatedPriorityId: todoData.related_priority_id
+      relatedPriorityId: todoData.related_priority_id,
+      meeting_id: todoData.meeting_id || null,
+      ...(todoData.transferSourceTeamId
+        ? { transferSourceTeamId: todoData.transferSourceTeamId, transferReason: todoData.transferReason || '' }
+        : {})
     };
     
     // Convert empty string dates to null to avoid database errors
@@ -99,12 +103,15 @@ export const todosService = {
   },
 
   // Move todo to another team and reassign
-  moveTodoToTeam: async (todoId, newTeamId, newAssigneeId, reason = '') => {
+  moveTodoToTeam: async (todoId, moveData, newAssigneeId, reason = '') => {
     const orgId = getOrgId();
+    const payload = typeof moveData === 'object' && moveData !== null && 'newTeamId' in moveData
+      ? moveData
+      : { newTeamId: moveData, newAssigneeId, reason };
 
     const response = await axios.post(
       `/organizations/${orgId}/todos/${todoId}/move-team`,
-      { newTeamId, newAssigneeId, reason }
+      payload
     );
     return response.data;
   },

@@ -6,9 +6,7 @@ import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
-  buildTransferNote,
-  getTransferActorName,
-  getTeamInOrg
+  buildTransferNoteForTeams
 } from '../utils/teamTransfer.js';
 
 // Configure multer for memory storage
@@ -184,7 +182,7 @@ async function checkTimelineColumn() {
 export const createIssue = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id } = req.body;
+    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id, transferSourceTeamId, transferReason } = req.body;
     const createdById = req.user.id;
 
     if (teamId && ownerId) {
@@ -282,6 +280,20 @@ export const createIssue = async (req, res) => {
     );
     
     const newIssue = result.rows[0];
+
+    if (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) {
+      const transferNote = await buildTransferNoteForTeams(
+        orgId,
+        transferSourceTeamId,
+        teamId,
+        createdById,
+        transferReason
+      );
+      await db.query(
+        `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
+        [transferNote, newIssue.id]
+      );
+    }
     
     // Fetch the full issue with owner details populated
     const enrichedResult = await db.query(
@@ -407,7 +419,7 @@ export const updateIssue = async (req, res) => {
 export const moveIssueToTeam = async (req, res) => {
   try {
     const { orgId, issueId } = req.params;
-    const { newTeamId, newOwnerId, reason } = req.body;
+    const { newTeamId, newOwnerId, reason, title, description, status } = req.body;
     const userId = req.user.id;
 
     const transferCheck = await validateTeamTransfer(orgId, newTeamId, newOwnerId || null);
@@ -429,31 +441,30 @@ export const moveIssueToTeam = async (req, res) => {
 
     const issue = issueCheck.rows[0];
     const oldTeamId = issue.team_id;
-    const oldTeam = oldTeamId ? await getTeamInOrg(oldTeamId, orgId) : null;
-    const userName = await getTransferActorName(userId);
+
+    const transferNote = await buildTransferNoteForTeams(
+      orgId,
+      oldTeamId,
+      newTeamId,
+      userId,
+      reason
+    );
+
+    const finalTitle = title !== undefined ? title : issue.title;
+    const finalDescription = (description !== undefined ? description : issue.description || '') + transferNote;
+    const finalStatus = status !== undefined ? status : issue.status;
 
     const updateResult = await db.query(
       `UPDATE issues
        SET team_id = $1,
            owner_id = $2,
+           title = $3,
+           description = $4,
+           status = $5,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 AND organization_id = $4
+       WHERE id = $6 AND organization_id = $7
        RETURNING *`,
-      [newTeamId, newOwnerId || null, issueId, orgId]
-    );
-
-    const transferNote = buildTransferNote({
-      fromTeamName: oldTeam?.name,
-      toTeamName: transferCheck.team.name,
-      userName,
-      reason
-    });
-
-    await db.query(
-      `UPDATE issues
-       SET description = COALESCE(description, '') || $1
-       WHERE id = $2`,
-      [transferNote, issueId]
+      [newTeamId, newOwnerId || null, finalTitle, finalDescription, finalStatus, issueId, orgId]
     );
 
     res.json({

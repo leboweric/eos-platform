@@ -7,9 +7,7 @@ import { getDateDaysFromNow } from '../utils/dateUtils.js';
 import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
-  buildTransferNote,
-  getTransferActorName,
-  getTeamInOrg
+  buildTransferNoteForTeams
 } from '../utils/teamTransfer.js';
 
 // @desc    Get all todos for an organization
@@ -170,7 +168,7 @@ export const getTodos = async (req, res) => {
 export const createTodo = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, assignedToId, assignedToIds, dueDate, teamId, priority, relatedPriorityId, meeting_id } = req.body;
+    const { title, description, assignedToId, assignedToIds, dueDate, teamId, priority, relatedPriorityId, meeting_id, transferSourceTeamId, transferReason } = req.body;
     const userId = req.user.id;
 
     // Calculate default due date (7 days from now) if not provided
@@ -303,7 +301,25 @@ export const createTodo = async (req, res) => {
         [todoId]
       );
 
-      const todo = todoResult.rows[0];
+      let todo = todoResult.rows[0];
+
+      if (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) {
+        const transferNote = await buildTransferNoteForTeams(
+          orgId,
+          transferSourceTeamId,
+          teamId,
+          userId,
+          transferReason
+        );
+        await query(
+          `UPDATE todos SET description = COALESCE(description, '') || $1 WHERE id = $2`,
+          [transferNote, todoId]
+        );
+        const refreshed = await query('SELECT description FROM todos WHERE id = $1', [todoId]);
+        if (refreshed.rows[0]) {
+          todo = { ...todo, description: refreshed.rows[0].description };
+        }
+      }
 
       // Broadcast to meeting participants if created during a meeting
       try {
@@ -1131,7 +1147,7 @@ export const deleteTodoUpdate = async (req, res) => {
 export const moveTodoToTeam = async (req, res) => {
   try {
     const { orgId, todoId } = req.params;
-    const { newTeamId, newAssigneeId, reason } = req.body;
+    const { newTeamId, newAssigneeId, reason, title, description, dueDate, status } = req.body;
     const userId = req.user.id;
 
     const transferCheck = await validateTeamTransfer(orgId, newTeamId, newAssigneeId, { requireAssignee: true });
@@ -1150,37 +1166,38 @@ export const moveTodoToTeam = async (req, res) => {
 
     const todo = existingTodo.rows[0];
     const oldTeamId = todo.team_id;
-    const oldTeam = oldTeamId ? await getTeamInOrg(oldTeamId, orgId) : null;
-    const userName = await getTransferActorName(userId);
+
+    const transferNote = await buildTransferNoteForTeams(
+      orgId,
+      oldTeamId,
+      newTeamId,
+      userId,
+      reason
+    );
+
+    const finalTitle = title !== undefined ? title : todo.title;
+    const finalDescription = (description !== undefined ? description : todo.description || '') + transferNote;
+    const finalDueDate = dueDate !== undefined ? dueDate : todo.due_date;
+    const finalStatus = status !== undefined ? status : todo.status;
 
     const updateResult = await query(
       `UPDATE todos
        SET team_id = $1,
            assigned_to_id = $2,
+           title = $3,
+           description = $4,
+           due_date = $5,
+           status = $6,
            is_multi_assignee = FALSE,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 AND organization_id = $4
+       WHERE id = $7 AND organization_id = $8
        RETURNING *`,
-      [newTeamId, newAssigneeId, todoId, orgId]
+      [newTeamId, newAssigneeId, finalTitle, finalDescription, finalDueDate, finalStatus, todoId, orgId]
     );
 
     await query(
       'DELETE FROM todo_assignees WHERE todo_id = $1',
       [todoId]
-    );
-
-    const transferNote = buildTransferNote({
-      fromTeamName: oldTeam?.name,
-      toTeamName: transferCheck.team.name,
-      userName,
-      reason
-    });
-
-    await query(
-      `UPDATE todos
-       SET description = COALESCE(description, '') || $1
-       WHERE id = $2`,
-      [transferNote, todoId]
     );
 
     res.json({

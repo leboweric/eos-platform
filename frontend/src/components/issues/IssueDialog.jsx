@@ -210,11 +210,12 @@ const IssueDialog = ({
   };
 
   const handleAddUpdate = async () => {
-    if (!updateText.trim() || !issue?.id) return;
+    const issueId = issue?.id || createdIssueId;
+    if (!updateText.trim() || !issueId) return;
     
     try {
       setSavingUpdate(true);
-      const response = await issuesService.addIssueUpdate(issue.id, updateText);
+      const response = await issuesService.addIssueUpdate(issueId, updateText);
       setUpdates([response.data, ...updates]);
       setUpdateText('');
       setShowAddUpdate(false);
@@ -369,13 +370,20 @@ const IssueDialog = ({
         ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
       };
       
+      if (updateText.trim() && existingId) {
+        const response = await issuesService.addIssueUpdate(existingId, updateText);
+        setUpdates((prev) => [response.data, ...prev]);
+        setUpdateText('');
+        setShowAddUpdate(false);
+      }
+
       console.log('Sending to onSave:', issueData);
       const savedIssue = await onSave(issueData);
       
       // Upload new attachments if any
       if (newAttachments.length > 0 && (issue || savedIssue)) {
         setUploadingFiles(true);
-        const issueId = issue?.id || savedIssue?.id;
+        const issueId = existingId || savedIssue?.id || savedIssue?.data?.id;
         const failedFiles = [];
         
         for (const file of newAttachments) {

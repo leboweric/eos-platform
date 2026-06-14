@@ -2100,17 +2100,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       const issueId = editingIssue?.id || issueData.id;
 
       if (isCrossTeamTransfer && issueId) {
-        await issuesService.updateIssue(issueId, {
+        const moveResult = await issuesService.moveIssueToTeam(issueId, {
+          newTeamId: transfer.destinationTeamId,
+          reason: transfer.reason || '',
+          newOwnerId: transfer.assigneeId || null,
           title: issueData.title,
           description: issueData.description,
           status: issueData.status
         });
-        const moveResult = await issuesService.moveIssueToTeam(
-          issueId,
-          transfer.destinationTeamId,
-          transfer.reason || '',
-          transfer.assigneeId || null
-        );
         setSuccess(moveResult.message || 'Issue sent to another team');
         await fetchIssuesData();
         if (meetingCode && broadcastIssueListUpdate) {
@@ -2120,7 +2117,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           setShowIssueDialog(false);
           setEditingIssue(null);
         }
-        return moveResult;
+        return moveResult.data || moveResult;
       }
       
       if (isEditing && issueId) {
@@ -2162,11 +2159,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else {
         const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : effectiveTeamId;
+        const { transferToTeam: _transfer, ...issuePayload } = issueData;
         savedIssue = await issuesService.createIssue({
-          ...issueData,
+          ...issuePayload,
           timeline: issueTimeline,
           department_id: destinationTeamId,
-          meeting_id: sessionId  // Link issue to current meeting session
+          meeting_id: sessionId,
+          ...(isCrossTeamTransfer ? {
+            transferSourceTeamId: effectiveTeamId,
+            transferReason: transfer.reason || ''
+          } : {})
         });
         
         // For auto-save, optimistically add to local state without full refresh
@@ -2332,18 +2334,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       let savedTodo;
       if (editingTodo) {
         if (isCrossTeamTransfer) {
-          await todosService.updateTodo(editingTodo.id, {
+          const moveResult = await todosService.moveTodoToTeam(editingTodo.id, {
+            newTeamId: transfer.destinationTeamId,
+            newAssigneeId: transfer.assigneeId,
+            reason: transfer.reason || '',
             title: todoData.title,
             description: todoData.description,
             dueDate: todoData.dueDate,
             status: todoData.status
           });
-          const moveResult = await todosService.moveTodoToTeam(
-            editingTodo.id,
-            transfer.destinationTeamId,
-            transfer.assigneeId,
-            transfer.reason || ''
-          );
           if (!options.isAutoSave) {
             setSuccess(moveResult.message || 'To-do sent to another team');
           }
@@ -2357,7 +2356,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             setEditingTodo(null);
             setTodoFromIssue(null);
           }
-          return moveResult;
+          return moveResult.data || moveResult;
         }
 
         savedTodo = await todosService.updateTodo(editingTodo.id, {
@@ -2379,12 +2378,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       } else {
         const destinationTeamId = isCrossTeamTransfer ? transfer.destinationTeamId : effectiveTeamId;
+        const { transferToTeam: _transfer, ...todoPayload } = todoData;
         const response = await todosService.createTodo({
-          ...todoData,
+          ...todoPayload,
           organization_id: orgId,
           department_id: destinationTeamId,
           assignedToId: isCrossTeamTransfer ? transfer.assigneeId : todoData.assignedToId,
-          meeting_id: sessionId  // Link todo to current meeting session
+          meeting_id: sessionId,
+          ...(isCrossTeamTransfer ? {
+            transferSourceTeamId: effectiveTeamId,
+            transferReason: transfer.reason || ''
+          } : {})
         });
         
         // Handle multi-assignee response (array of To-Dos)

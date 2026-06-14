@@ -2,6 +2,15 @@ export function isTransferActive(transfer) {
   return Boolean(transfer?.enabled && transfer?.destinationTeamId);
 }
 
+export function getSavedEntityId(saved) {
+  return saved?.id || saved?.data?.id || null;
+}
+
+export function stripTransferPayload(data = {}) {
+  const { transferToTeam: _transferToTeam, ...rest } = data;
+  return rest;
+}
+
 export function validateTransfer(transfer, sourceTeamId, { requireAssignee = false } = {}) {
   if (!transfer?.enabled) return null;
 
