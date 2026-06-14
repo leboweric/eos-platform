@@ -35,6 +35,29 @@ export function hasMeaningfulRichText(content) {
   return stripHtmlToText(content).length > 0;
 }
 
+/**
+ * Rich-text flush() can return '' while form state still has content (?? does not
+ * fall back on empty string). Prefer whichever source has more meaningful text.
+ */
+export function resolveRichTextDescription(editorRef, formDescription = '') {
+  let editorContent = '';
+  try {
+    editorContent = editorRef?.current?.getContent?.()
+      ?? editorRef?.current?.flush?.()
+      ?? '';
+  } catch {
+    editorContent = '';
+  }
+
+  const editorChars = stripHtmlToText(editorContent).length;
+  const stateChars = stripHtmlToText(formDescription).length;
+
+  if (editorChars >= stateChars) {
+    return editorContent || formDescription || '';
+  }
+  return formDescription || editorContent || '';
+}
+
 export function appendTextToDescription(description, text) {
   const note = (text || '').trim();
   if (!note) return description || '';

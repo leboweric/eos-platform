@@ -37,7 +37,7 @@ import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
 import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
-import { validateTransfer, getSavedEntityId, hasMeaningfulRichText } from '../../utils/transferUtils';
+import { validateTransfer, getSavedEntityId, hasMeaningfulRichText, resolveRichTextDescription } from '../../utils/transferUtils';
 import { logTransfer, summarizeText, isTransferDebugEnabled, buildTransferToastMessage } from '../../utils/transferDebug';
 import toast from 'react-hot-toast';
 
@@ -99,15 +99,18 @@ const IssueDialog = ({
   const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
 
   const transferSavePreview = useMemo(() => {
-    const summary = summarizeText(formData.description);
+    const resolved = resolveRichTextDescription(summaryEditorRef, formData.description);
+    const summary = summarizeText(resolved);
+    const formSummary = summarizeText(formData.description);
     const pendingChars = updateText.trim().length;
     return {
       summaryChars: summary.chars,
       summaryPreview: summary.preview,
+      formStateChars: formSummary.chars,
       pendingChars,
       willSendContext: summary.chars > 0 || pendingChars > 0
     };
-  }, [formData.description, updateText]);
+  }, [formData.description, updateText, transferToTeam.enabled]);
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -251,7 +254,8 @@ const IssueDialog = ({
     
     try {
       setAutoSaving(true);
-      const description = summaryEditorRef.current?.flush?.() ?? formData.description;
+      const description = resolveRichTextDescription(summaryEditorRef, formData.description);
+      summaryEditorRef.current?.flush?.();
 
       const savedIssue = await onSave({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
@@ -351,7 +355,8 @@ const IssueDialog = ({
       // Save the issue first - include the ID if editing an existing issue
       // Also check createdIssueId in case auto-save already created this issue
       const existingId = issue?.id || createdIssueId;
-      const description = summaryEditorRef.current?.flush?.() ?? formData.description;
+      const description = resolveRichTextDescription(summaryEditorRef, formData.description);
+      summaryEditorRef.current?.flush?.();
       const isTransferSave = allowTransferToTeam && transferToTeam.enabled;
       const issueData = {
         ...(existingId ? { id: existingId } : {}),
@@ -715,6 +720,7 @@ const IssueDialog = ({
                 </div>
                 <div className="mt-1 space-y-0.5">
                   <div>Summary to send: {transferSavePreview.summaryChars} chars — “{transferSavePreview.summaryPreview}”</div>
+                  <div>Form state: {transferSavePreview.formStateChars} chars (if these differ, editor sync was the problem)</div>
                   <div>Pending update to send: {transferSavePreview.pendingChars} chars</div>
                   <div>From team: {meetingTeamId?.slice(0, 8) || '?'}… → {transferToTeam.destinationTeamId?.slice(0, 8) || 'pick team'}…</div>
                   {!transferSavePreview.willSendContext && (

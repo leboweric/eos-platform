@@ -60,9 +60,15 @@ export async function saveIssueWithCrossTeamTransfer({
     isTransferRequested,
     isCrossTeamTransfer,
     destinationTeamId: transfer?.destinationTeamId,
-    ...summarizeText(description),
+    transferReasonLen: (transfer?.reason || '').length,
+    payloadDescriptionLen: (payload.description || '').length,
+    builtDescriptionLen: summarizeText(description).chars,
     pendingUpdateChars: pendingUpdateText?.trim()?.length || 0
   });
+
+  if (isTransferRequested && !hasMeaningfulRichText(description) && !pendingUpdateText?.trim() && !transfer?.reason?.trim()) {
+    throw new Error('Add a summary, update, or transfer note before sending to another team.');
+  }
 
   if (isTransferRequested && issueId) {
     if (pendingUpdateText) {

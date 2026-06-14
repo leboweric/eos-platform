@@ -185,6 +185,16 @@ export const createIssue = async (req, res) => {
     const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id, transferSourceTeamId, transferReason } = req.body;
     const createdById = req.user.id;
 
+    console.log('[ISSUE CREATE]', {
+      orgId,
+      title: title?.substring?.(0, 80),
+      descriptionLen: (description || '').length,
+      teamId,
+      transferSourceTeamId: transferSourceTeamId || null,
+      transferReasonLen: (transferReason || '').length,
+      meeting_id: meeting_id || null
+    });
+
     if (teamId && ownerId) {
       const transferCheck = await validateTeamTransfer(orgId, teamId, ownerId);
       if (!transferCheck.valid) {
@@ -364,6 +374,10 @@ export const updateIssue = async (req, res) => {
   try {
     const { orgId, issueId } = req.params;
     const { title, description, ownerId, status, timeline, resolutionNotes } = req.body;
+
+    if (description !== undefined) {
+      console.log('[ISSUE UPDATE]', { orgId, issueId, descriptionLen: (description || '').length });
+    }
     
     let updateFields = [];
     let values = [];
@@ -434,6 +448,14 @@ export const moveIssueToTeam = async (req, res) => {
     const { orgId, issueId } = req.params;
     const { newTeamId, newOwnerId, reason, title, description, status } = req.body;
     const userId = req.user.id;
+
+    console.log('[ISSUE MOVE-TEAM]', {
+      orgId,
+      issueId,
+      newTeamId,
+      descriptionLen: description !== undefined ? (description || '').length : 'not-sent',
+      reasonLen: (reason || '').length
+    });
 
     const transferCheck = await validateTeamTransfer(orgId, newTeamId, newOwnerId || null);
     if (!transferCheck.valid) {
