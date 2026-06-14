@@ -23,7 +23,7 @@ export async function saveIssueWithCrossTeamTransfer({
   meetingId = null
 }) {
   const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(issueData, sourceTeamId);
-  const { pendingUpdateText, ...payload } = stripTransferPayload(issueData);
+  const { payload, pendingUpdateText } = stripTransferPayload(issueData);
 
   if (isCrossTeamTransfer && issueId) {
     if (pendingUpdateText) {
@@ -35,7 +35,7 @@ export async function saveIssueWithCrossTeamTransfer({
       reason: transfer.reason || '',
       newOwnerId: transfer.assigneeId || payload.ownerId || null,
       title: issueData.title,
-      description: issueData.description,
+      description: payload.description,
       status: issueData.status
     });
     return {
@@ -89,7 +89,7 @@ export async function saveTodoWithCrossTeamTransfer({
   meetingId = null
 }) {
   const { transfer, isCrossTeamTransfer } = parseCrossTeamTransfer(todoData, sourceTeamId);
-  const { pendingUpdateText, ...payload } = stripTransferPayload(todoData);
+  const { payload, pendingUpdateText } = stripTransferPayload(todoData);
 
   if (isCrossTeamTransfer && todoId) {
     if (pendingUpdateText) {
@@ -101,7 +101,7 @@ export async function saveTodoWithCrossTeamTransfer({
       newAssigneeId: transfer.assigneeId,
       reason: transfer.reason || '',
       title: todoData.title,
-      description: todoData.description,
+      description: payload.description,
       dueDate: todoData.dueDate,
       status: todoData.status
     });

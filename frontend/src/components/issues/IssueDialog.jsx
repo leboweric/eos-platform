@@ -651,7 +651,7 @@ const IssueDialog = ({
               <div className="h-[200px] max-h-[400px] overflow-hidden border rounded-xl shadow-sm resize-y">
                 <RichTextEditor
                   value={formData.description}
-                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
                   placeholder="Provide a brief summary of the issue..."
                   className="border-0 shadow-none h-full"
                 />

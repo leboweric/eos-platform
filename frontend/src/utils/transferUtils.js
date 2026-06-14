@@ -7,8 +7,8 @@ export function getSavedEntityId(saved) {
 }
 
 export function stripTransferPayload(data = {}) {
-  const { transferToTeam: _transferToTeam, pendingUpdateText: _pendingUpdateText, ...rest } = data;
-  return rest;
+  const { transferToTeam: _transferToTeam, pendingUpdateText, ...payload } = data;
+  return { payload, pendingUpdateText: pendingUpdateText || '' };
 }
 
 export function appendTextToDescription(description, text) {

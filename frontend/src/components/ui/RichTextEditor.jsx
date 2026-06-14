@@ -186,13 +186,11 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
         onInput={handleChange}
         onFocus={() => { isFocusedRef.current = true; }}
         onBlur={() => {
+          handleChange();
           isFocusedRef.current = false;
-          if (!editorRef.current || value === undefined) return;
-          const htmlContent = valueToHtml(value);
-          if (editorRef.current.innerHTML !== htmlContent) {
-            editorRef.current.innerHTML = htmlContent;
+          if (editorRef.current) {
+            lastSyncedValueRef.current = editorRef.current.innerHTML;
           }
-          lastSyncedValueRef.current = value;
         }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
