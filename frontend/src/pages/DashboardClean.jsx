@@ -545,6 +545,11 @@ const DashboardClean = () => {
     } catch (error) {
       if (fetchGeneration === fetchGenerationRef.current) {
         console.error('Failed to fetch dashboard data:', error);
+        const message = error.response?.data?.error
+          || error.response?.data?.message
+          || error.message
+          || 'Failed to load dashboard data';
+        toast.error(message);
       }
     } finally {
       if (fetchGeneration === fetchGenerationRef.current) {

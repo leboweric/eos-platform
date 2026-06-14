@@ -38,6 +38,18 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
+const buildEditFormFromPriority = (priority) => ({
+  title: priority.title || '',
+  description: priority.description || '',
+  status: priority.status || 'on-track',
+  progress: priority.progress || 0,
+  dueDate: priority.dueDate
+    ? (priority.dueDate.includes('T') ? priority.dueDate.split('T')[0] : priority.dueDate)
+    : '',
+  ownerId: priority.owner?.id || priority.owner_id || '',
+  isCompanyPriority: priority.isCompanyPriority || priority.is_company_priority || false
+});
+
 const PriorityCardClean = ({ 
   priority, 
   isCompany = false,
@@ -70,19 +82,7 @@ const PriorityCardClean = ({
   });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    title: priority.title || '',
-    description: priority.description || '',
-    status: priority.status || 'on-track',
-    progress: priority.progress || 0,
-    dueDate: priority.dueDate ? (
-      priority.dueDate.includes('T') 
-        ? priority.dueDate.split('T')[0]
-        : priority.dueDate
-    ) : '',
-    ownerId: priority.owner?.id || '',
-    isCompanyPriority: priority.isCompanyPriority || false
-  });
+  const [editForm, setEditForm] = useState(() => buildEditFormFromPriority(priority));
   const [showAddMilestone, setShowAddMilestone] = useState(false);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   const [showAddUpdate, setShowAddUpdate] = useState(false);
@@ -109,6 +109,24 @@ const PriorityCardClean = ({
     window.addEventListener('themeChanged', handleThemeChange);
     return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
+
+  // Keep card data fresh when priority updates externally (meeting sync, other users)
+  useEffect(() => {
+    if (isEditing) return;
+    setEditForm(buildEditFormFromPriority(priority));
+  }, [
+    priority.id,
+    priority.title,
+    priority.description,
+    priority.status,
+    priority.progress,
+    priority.dueDate,
+    priority.owner?.id,
+    priority.owner_id,
+    priority.isCompanyPriority,
+    priority.is_company_priority,
+    isEditing
+  ]);
 
   const fetchOrganizationTheme = async () => {
     try {
@@ -492,19 +510,7 @@ const PriorityCardClean = ({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => {
-                      setEditForm({
-                        title: priority.title || '',
-                        description: priority.description || '',
-                        status: priority.status || 'on-track',
-                        progress: priority.progress || 0,
-                        dueDate: priority.dueDate ? (
-                          priority.dueDate.includes('T') 
-                            ? priority.dueDate.split('T')[0]
-                            : priority.dueDate
-                        ) : '',
-                        ownerId: priority.owner?.id || '',
-                        isCompanyPriority: priority.isCompanyPriority || false
-                      });
+                      setEditForm(buildEditFormFromPriority(priority));
                       setIsEditing(true);
                     }}
                     className="h-8 w-8 p-0 rounded-lg transition-all duration-200"

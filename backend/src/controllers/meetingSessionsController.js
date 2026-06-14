@@ -1,6 +1,28 @@
 import { pool } from '../config/database.js';
 import { logMeetingError } from '../services/meetingAlertService.js';
 
+async function userCanStartTeamMeeting(client, user, teamId) {
+  const userId = user.id || user.userId;
+
+  const memberCheck = await client.query(
+    `SELECT user_id FROM team_members WHERE user_id = $1 AND team_id = $2`,
+    [userId, teamId]
+  );
+  if (memberCheck.rows.length > 0) return true;
+
+  const userRole = user.role;
+  if (userRole !== 'admin' && userRole !== 'super_admin') return false;
+
+  const userOrgId = user.organization_id || user.organizationId;
+  if (!userOrgId) return false;
+
+  const teamOrgCheck = await client.query(
+    `SELECT id FROM teams WHERE id = $1 AND organization_id = $2`,
+    [teamId, userOrgId]
+  );
+  return teamOrgCheck.rows.length > 0;
+}
+
 // Start a new meeting session
 export const startSession = async (req, res) => {
   const { team_id: teamId, organization_id: orgId, meeting_type } = req.body;
@@ -8,16 +30,10 @@ export const startSession = async (req, res) => {
   
   const client = await pool.connect();
   try {
-    // Check team membership
-    const memberCheck = await client.query(
-      `SELECT user_id, team_id, role
-       FROM team_members 
-       WHERE user_id = $1 AND team_id = $2`,
-      [userId, teamId]
-    );
-    
-    if (memberCheck.rows.length === 0) {
-      console.log(`Access denied: User ${userId} not member of team ${teamId}`);
+    const canStart = await userCanStartTeamMeeting(client, req.user, teamId);
+
+    if (!canStart) {
+      console.log(`Access denied: User ${userId} cannot start meeting for team ${teamId}`);
       return res.status(403).json({
         success: false,
         error: 'TEAM_MEMBERSHIP_REQUIRED',
@@ -399,22 +415,19 @@ export const canStartMeetingForTeam = async (req, res) => {
     const { teamId } = req.params;
     const userId = req.user.id || req.user.userId;
 
-    // Check if user is explicit member of this specific team
     const membershipQuery = `
       SELECT tm.id, tm.role
       FROM team_members tm
-      WHERE tm.user_id = $1 
-      AND tm.team_id = $2
+      WHERE tm.user_id = $1 AND tm.team_id = $2
     `;
-
     const result = await client.query(membershipQuery, [userId, teamId]);
-    
-    const canStart = result.rows.length > 0;
+    const canStart = await userCanStartTeamMeeting(client, req.user, teamId);
 
-    res.json({ 
+    res.json({
       canStart,
       teamId,
-      membership: result.rows[0] || null
+      membership: result.rows[0] || null,
+      isOrgAdmin: canStart && result.rows.length === 0
     });
 
   } catch (error) {

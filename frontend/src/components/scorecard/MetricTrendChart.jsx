@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
+import { parseDateLocal } from '../../utils/dateUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
@@ -114,7 +115,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
     if (!rawData || rawData.length === 0) return [];
     
     // Sort by date
-    const sorted = rawData.sort((a, b) => new Date(a.week_date) - new Date(b.week_date));
+    const sorted = rawData.sort((a, b) => parseDateLocal(a.week_date) - parseDateLocal(b.week_date));
     
     // Calculate 4-week moving totals
     const dataWithMovingTotal = sorted.map((item, index) => {
@@ -141,7 +142,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       
       return {
         date: item.week_date,
-        weekLabel: format(new Date(item.week_date), 'MMM d'),
+        weekLabel: format(parseDateLocal(item.week_date), 'MMM d'),
         value: item.value ? parseFloat(item.value) : null,
         movingTotal: movingTotal,
         goal: metric?.goal ? parseFloat(metric.goal) : null
