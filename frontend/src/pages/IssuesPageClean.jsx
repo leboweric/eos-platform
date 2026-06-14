@@ -8,6 +8,7 @@ import { exportIssuesToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { saveIssueWithCrossTeamTransfer, saveTodoWithCrossTeamTransfer } from '../utils/crossTeamSave';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -240,65 +241,43 @@ const IssuesPageClean = () => {
     const { isAutoSave = false } = options;
     
     try {
-      let savedIssue;
-      
-      // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
-      const isEditing = editingIssue || issueData.id;
-      const issueId = editingIssue?.id || issueData.id;
-      
-      if (isEditing && issueId) {
-        savedIssue = await issuesService.updateIssue(issueId, issueData);
-        
-        // For auto-save, optimistically update the local state without full refresh
-        if (isAutoSave) {
-          const updateIssueInList = (issues) => 
-            issues.map(issue => 
-              issue.id === issueId 
-                ? { ...issue, ...savedIssue.data || savedIssue }
-                : issue
-            );
-          
-          setShortTermIssues(prev => updateIssueInList(prev));
-          setLongTermIssues(prev => updateIssueInList(prev));
-          setArchivedIssues(prev => updateIssueInList(prev));
-          
-          // Don't update editingIssue - it causes dialog to re-render and flash
-          // The dialog maintains its own internal state (formData)
-        } else {
-          setSuccess('Issue updated successfully');
-        }
-      } else {
-        // Get effective team ID for creating the issue
-        const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
-        
-        savedIssue = await issuesService.createIssue({
-          ...issueData,
-          timeline: activeTab,
-          department_id: effectiveTeamId  // This will be handled by issuesService
-        });
-        
-        // For auto-save, optimistically add to local state without full refresh
-        if (isAutoSave) {
-          const newIssue = savedIssue.data || savedIssue;
-          const timeline = newIssue.timeline || activeTab;
-          
-          if (timeline === 'short_term') {
-            setShortTermIssues(prev => [newIssue, ...prev]);
-          } else if (timeline === 'long_term') {
-            setLongTermIssues(prev => [newIssue, ...prev]);
-          }
-        } else {
-          setSuccess('Issue created successfully');
-        }
+      const sourceTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+      const issueId = editingIssue?.id || issueData.id || null;
+      const timeline = issueData.timeline || editingIssue?.timeline || activeTab;
+
+      const { saved, message, transferred } = await saveIssueWithCrossTeamTransfer({
+        issueData,
+        sourceTeamId,
+        issueId,
+        timeline
+      });
+
+      if (!isAutoSave) {
+        setSuccess(message);
+      } else if (!transferred && issueId) {
+        const updateIssueInList = (issues) =>
+          issues.map((issue) =>
+            issue.id === issueId ? { ...issue, ...(saved?.data || saved) } : issue
+          );
+        setShortTermIssues((prev) => updateIssueInList(prev));
+        setLongTermIssues((prev) => updateIssueInList(prev));
+        setArchivedIssues((prev) => updateIssueInList(prev));
       }
-      
-      // Only refresh and close dialog for manual saves
+
       if (!isAutoSave) {
         await fetchIssues();
         setShowIssueDialog(false);
+        if (transferred) {
+          setEditingIssue(null);
+        }
       }
-      
-      return savedIssue; // Return the saved issue for attachment uploads
+
+      const savedEntity = saved?.data || saved;
+      return {
+        ...savedEntity,
+        id: savedEntity?.id,
+        transferred
+      };
     } catch (error) {
       console.error('Failed to save issue:', error);
       throw error;
@@ -609,18 +588,17 @@ const IssuesPageClean = () => {
 
   const handleSaveTodo = async (todoData) => {
     try {
-      // Add reference to the issue in the description
-      const enhancedDescription = todoFromIssue 
+      const enhancedDescription = todoFromIssue
         ? `${todoData.description}\n\n[Related Issue: ${todoFromIssue.title}]`
         : todoData.description;
-      
-      await todosService.createTodo({
-        ...todoData,
-        description: enhancedDescription,
-        department_id: selectedDepartment?.id
+
+      const { message } = await saveTodoWithCrossTeamTransfer({
+        todoData: { ...todoData, description: enhancedDescription },
+        sourceTeamId: getEffectiveTeamId(selectedDepartment?.id, user),
+        orgId: user?.organizationId || user?.organization_id
       });
-      
-      setSuccess('To-Do created successfully from issue');
+
+      setSuccess(message);
       setShowTodoDialog(false);
       setTodoFromIssue(null);
     } catch (error) {
@@ -855,7 +833,10 @@ const IssuesPageClean = () => {
                     onArchive={handleArchive}
                     onUnarchive={handleUnarchive}
                     onVote={handleVote}
-                    onMoveToTeam={handleMoveToTeam}
+                    teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
+                    sourceTeamId={selectedDepartment?.id}
+                    allowTransferToTeam
+                    onRefresh={fetchIssues}
                     onCreateTodo={handleCreateTodoFromIssue}
                     onCreateHeadline={handleCreateHeadlineFromIssue}
                     onSendCascadingMessage={handleSendCascadingMessage}
@@ -898,6 +879,8 @@ const IssuesPageClean = () => {
           onSave={handleSaveTodo}
           teamMembers={teamMembers}
           teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
+          sourceTeamId={selectedDepartment?.id}
+          allowTransferToTeam
           todo={todoFromIssue ? {
             title: `Follow up: ${todoFromIssue.title}`,
             description: `Related to issue: ${todoFromIssue.title}`,
@@ -1030,6 +1013,8 @@ const IssuesPageClean = () => {
           issue={editingIssue}
           teamMembers={teamMembers}
           teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
+          sourceTeamId={selectedDepartment?.id}
+          allowTransferToTeam
           timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
           onCreateTodo={handleCreateTodoFromIssue}

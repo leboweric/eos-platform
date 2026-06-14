@@ -64,7 +64,11 @@ const IssuesListClean = ({
   maxColumns = 3,  // Maximum number of columns for list view
   columnBreakpoint = 20,  // Number of items before adding another column
   onConvertToRock,  // Function to convert issue to Rock (for Quarterly Planning Meeting)
-  isQuarterlyMeeting = false  // Flag to indicate if this is being used in Quarterly Planning Meeting
+  isQuarterlyMeeting = false,  // Flag to indicate if this is being used in Quarterly Planning Meeting
+  teamId = null,
+  sourceTeamId = null,
+  allowTransferToTeam = false,
+  onRefresh = null
 }) => {
   const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -1338,22 +1342,33 @@ const IssuesListClean = ({
         onClose={() => setSelectedIssue(null)}
         issue={selectedIssue}
         teamMembers={teamMembers}
+        teamId={teamId}
+        sourceTeamId={sourceTeamId}
+        allowTransferToTeam={allowTransferToTeam}
         timeline={selectedIssue?.timeline}
-        onSave={(updatedIssue) => {
+        onSave={async (updatedIssue, options) => {
+          let result;
           if (onSave) {
-            onSave(updatedIssue);
+            result = await onSave(updatedIssue, options);
+            if (result?.transferred) {
+              setSelectedIssue(null);
+              return result?.saved || result;
+            }
           } else if (onEdit) {
-            // Fallback to onEdit if onSave not provided
             onEdit(updatedIssue);
           }
-          setSelectedIssue(null);
+          if (!options?.isAutoSave) {
+            setSelectedIssue(null);
+          }
+          return result?.saved;
         }}
         onTimelineChange={onTimelineChange}
-        onMoveToTeam={onMoveToTeam}
+        onMoveToTeam={allowTransferToTeam ? undefined : onMoveToTeam}
         onCreateTodo={onCreateTodo}
         onSendCascadingMessage={onSendCascadingMessage}
         onConvertToRock={onConvertToRock}
         isQuarterlyMeeting={isQuarterlyMeeting}
+        onRefresh={onRefresh}
       />
     </>
   );

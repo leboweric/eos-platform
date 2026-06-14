@@ -33,6 +33,7 @@ import TodosListClean from '../components/todos/TodosListClean';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { saveTodoWithCrossTeamTransfer } from '../utils/crossTeamSave';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
@@ -151,39 +152,31 @@ const TodosPage = () => {
 
   const handleSaveTodo = async (todoData, options = {}) => {
     try {
-      let savedTodo;
-      if (editingTodo) {
-        savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
-        // Only show success message for manual saves, not auto-saves
-        if (!options.isAutoSave) {
-          setSuccess(`${labels.todos_label.slice(0, -1)} updated successfully`);
-        }
-      } else {
-        const response = await todosService.createTodo({
-          ...todoData,
-          department_id: selectedDepartment?.id
-        });
-        
-        // Handle multi-assignee response (array of To-Dos)
-        if (response.isGroup && Array.isArray(response.data)) {
-          savedTodo = response; // Keep the full response for now
-          if (!options.isAutoSave) {
-            setSuccess(`${response.data.length} To-Dos created successfully`);
-          }
-        } else {
-          savedTodo = response;
-          if (!options.isAutoSave) {
-            setSuccess('To-do created successfully');
-          }
-        }
+      const sourceTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+      const orgId = user?.organizationId || user?.organization_id;
+      const todoId = editingTodo?.id || todoData.id || null;
+
+      const { saved, message, transferred } = await saveTodoWithCrossTeamTransfer({
+        todoData,
+        sourceTeamId,
+        todoId,
+        orgId
+      });
+
+      if (!options.isAutoSave) {
+        setSuccess(message);
       }
-      
+
       await fetchTodos();
-      // Only close dialog for manual saves, not auto-saves
+
       if (!options.isAutoSave) {
         setShowTodoDialog(false);
+        if (transferred) {
+          setEditingTodo(null);
+        }
       }
-      return savedTodo;
+
+      return saved;
     } catch (error) {
       console.error('Failed to save todo:', error);
       throw error;
@@ -691,6 +684,8 @@ const TodosPage = () => {
           todo={editingTodo}
           teamMembers={teamMembers}
           teamId={getEffectiveTeamId(selectedDepartment?.id, user)}
+          sourceTeamId={selectedDepartment?.id}
+          allowTransferToTeam
           onSave={handleSaveTodo}
           onCreateIssue={handleCreateIssueFromTodo}
         />
