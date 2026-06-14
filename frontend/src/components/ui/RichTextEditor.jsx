@@ -12,20 +12,35 @@ import {
   Code
 } from 'lucide-react';
 
+const valueToHtml = (val) => {
+  if (val == null || val === '') return '';
+  const text = String(val);
+  return text.includes('<') ? text : text.replace(/\n/g, '<br>');
+};
+
 const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
   const editorRef = useRef(null);
+  const isFocusedRef = useRef(false);
+  const lastSyncedValueRef = useRef(value);
   const [selectedText, setSelectedText] = useState('');
-  
+
   useEffect(() => {
-    // Set initial content
-    if (editorRef.current && value !== undefined) {
-      // Convert plain text to HTML if needed
-      const htmlContent = value.includes('<') ? value : value.replace(/\n/g, '<br>');
-      if (editorRef.current.innerHTML !== htmlContent) {
-        editorRef.current.innerHTML = htmlContent;
-      }
+    if (!editorRef.current || value === undefined) return;
+
+    // Don't overwrite while the user is actively editing
+    if (isFocusedRef.current) {
+      lastSyncedValueRef.current = value;
+      return;
     }
-  }, []);
+
+    if (value === lastSyncedValueRef.current) return;
+
+    const htmlContent = valueToHtml(value);
+    if (editorRef.current.innerHTML !== htmlContent) {
+      editorRef.current.innerHTML = htmlContent;
+    }
+    lastSyncedValueRef.current = value;
+  }, [value]);
 
   const handleFormat = (command, value = null) => {
     document.execCommand(command, false, value);
@@ -169,6 +184,16 @@ const RichTextEditor = ({ value, onChange, placeholder, className = '' }) => {
         contentEditable
         className="flex-1 p-3 focus:outline-none rich-text-content overflow-y-auto"
         onInput={handleChange}
+        onFocus={() => { isFocusedRef.current = true; }}
+        onBlur={() => {
+          isFocusedRef.current = false;
+          if (!editorRef.current || value === undefined) return;
+          const htmlContent = valueToHtml(value);
+          if (editorRef.current.innerHTML !== htmlContent) {
+            editorRef.current.innerHTML = htmlContent;
+          }
+          lastSyncedValueRef.current = value;
+        }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         data-placeholder={placeholder}
