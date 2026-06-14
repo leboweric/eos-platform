@@ -281,6 +281,14 @@ export const createIssue = async (req, res) => {
     
     const newIssue = result.rows[0];
 
+    console.log('[AXP Transfer] createIssue', {
+      issueId: newIssue.id,
+      teamId,
+      transferSourceTeamId: transferSourceTeamId || null,
+      descriptionChars: (description || '').length,
+      hasTransferReason: Boolean(transferReason?.trim())
+    });
+
     if (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) {
       const transferNote = await buildTransferNoteForTeams(
         orgId,
@@ -316,6 +324,12 @@ export const createIssue = async (req, res) => {
     );
     
     const enrichedIssue = enrichedResult.rows[0];
+
+    console.log('[AXP Transfer] createIssue:result', {
+      issueId: enrichedIssue.id,
+      teamId: enrichedIssue.team_id,
+      savedDescriptionChars: (enrichedIssue.description || '').length
+    });
 
     // Broadcast to meeting participants if created during a meeting
     try {
@@ -459,6 +473,16 @@ export const moveIssueToTeam = async (req, res) => {
     const finalDescription = (description !== undefined ? description : issue.description || '') + transferNote;
     const finalStatus = status !== undefined ? status : issue.status;
 
+    console.log('[AXP Transfer] moveIssueToTeam', {
+      issueId,
+      oldTeamId,
+      newTeamId,
+      incomingDescriptionChars: description !== undefined ? (description || '').length : null,
+      previousDescriptionChars: (issue.description || '').length,
+      finalDescriptionChars: finalDescription.length,
+      transferNoteChars: transferNote.length
+    });
+
     const updateResult = await db.query(
       `UPDATE issues
        SET team_id = $1,
@@ -472,10 +496,21 @@ export const moveIssueToTeam = async (req, res) => {
       [newTeamId, newOwnerId || null, finalTitle, finalDescription, finalStatus, issueId, orgId]
     );
 
+    const movedIssue = updateResult.rows[0];
+    console.log('[AXP Transfer] moveIssueToTeam:result', {
+      issueId: movedIssue.id,
+      teamId: movedIssue.team_id,
+      savedDescriptionChars: (movedIssue.description || '').length
+    });
+
     res.json({
       success: true,
-      data: updateResult.rows[0],
-      message: `Issue sent to ${transferCheck.team.name}`
+      data: movedIssue,
+      message: `Issue sent to ${transferCheck.team.name}`,
+      _transferDebug: {
+        savedDescriptionChars: (movedIssue.description || '').length,
+        teamId: movedIssue.team_id
+      }
     });
   } catch (error) {
     console.error('Error moving issue:', error);

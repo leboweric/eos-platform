@@ -106,6 +106,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { FormattedText } from '@/components/ui/FormattedText';
 import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer } from '../utils/crossTeamSave';
+import { buildTransferToastMessage, logTransfer } from '../utils/transferDebug';
 import { buildMeetingAttendees } from '../utils/meetingParticipants';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
@@ -2195,7 +2196,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const sourceTeamId = getContextTeamId(teamId) || getEffectiveTeamId(teamId, user, false);
       const issueId = editingIssue?.id || issueData.id || null;
 
-      const { saved, message, transferred } = await saveIssueWithCrossTeamTransfer({
+      const { saved, message, transferred, debug } = await saveIssueWithCrossTeamTransfer({
         issueData,
         sourceTeamId,
         issueId,
@@ -2204,7 +2205,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
 
       if (!isAutoSave) {
+        const toastMessage = buildTransferToastMessage({ action: 'issue-save', message, debug });
+        if (transferred || debug) {
+          toast.success(toastMessage, { duration: 8000 });
+        }
         setSuccess(message);
+        logTransfer('meeting:issue-save-complete', { transferred, debug, sourceTeamId });
       } else if (!transferred && issueId) {
         const updateIssueInList = (issues) =>
           issues.map((issue) =>
@@ -2239,7 +2245,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       return saved;
     } catch (error) {
       console.error('Failed to save issue:', error);
-      setError('Failed to save issue');
+      const errMsg = error.response?.data?.message || error.message || 'Failed to save issue';
+      logTransfer('meeting:issue-save-error', { message: errMsg, status: error.response?.status });
+      toast.error(errMsg, { duration: 10000 });
+      setError(errMsg);
       throw error;
     }
   }, [user, teamId, editingIssue, issueTimeline, meetingCode, broadcastIssueListUpdate, setShortTermIssues, setLongTermIssues, setSuccess, setError, fetchIssuesData, setShowIssueDialog, setEditingIssue, sessionId]);

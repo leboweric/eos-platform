@@ -7,6 +7,7 @@ import {
   buildIssueDescription,
   hasMeaningfulRichText
 } from './transferUtils';
+import { logTransfer, summarizeText } from './transferDebug';
 
 export function parseCrossTeamTransfer(data, sourceTeamId) {
   const transfer = data?.transferToTeam;
@@ -21,6 +22,21 @@ export function parseCrossTeamTransfer(data, sourceTeamId) {
 async function persistPendingIssueUpdate(issueId, pendingUpdateText) {
   if (!issueId || !pendingUpdateText?.trim()) return;
   await issuesService.addIssueUpdate(issueId, pendingUpdateText.trim());
+}
+
+function buildIssueSaveDebug({ issueId, sourceTeamId, transfer, description, pendingUpdateText, saved }) {
+  const summary = summarizeText(description);
+  const savedSummary = summarizeText(saved?.description);
+  return {
+    issueId: issueId || getSavedEntityId(saved),
+    sourceTeamId,
+    destinationTeamId: transfer?.destinationTeamId || null,
+    summaryChars: summary.chars,
+    summaryPreview: summary.preview,
+    pendingUpdateChars: pendingUpdateText?.trim()?.length || 0,
+    savedDescriptionChars: savedSummary.chars,
+    savedDescriptionPreview: savedSummary.preview
+  };
 }
 
 export async function saveIssueWithCrossTeamTransfer({
@@ -38,6 +54,16 @@ export async function saveIssueWithCrossTeamTransfer({
     transferReason: isCrossTeamTransfer ? '' : (transfer?.reason || '')
   });
 
+  logTransfer('issue:prepare', {
+    issueId,
+    sourceTeamId,
+    isTransferRequested,
+    isCrossTeamTransfer,
+    destinationTeamId: transfer?.destinationTeamId,
+    ...summarizeText(description),
+    pendingUpdateChars: pendingUpdateText?.trim()?.length || 0
+  });
+
   if (isTransferRequested && issueId) {
     if (pendingUpdateText) {
       await persistPendingIssueUpdate(issueId, pendingUpdateText);
@@ -51,10 +77,25 @@ export async function saveIssueWithCrossTeamTransfer({
       description,
       status: issueData.status
     });
+    const saved = moveResult.data || moveResult;
+
+    if (hasMeaningfulRichText(description) && !hasMeaningfulRichText(saved?.description)) {
+      logTransfer('issue:move-failed-validation', buildIssueSaveDebug({
+        issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
+      }));
+      throw new Error('Issue was moved but your notes did not persist. Check console for [AXP Transfer] logs.');
+    }
+
+    const debug = buildIssueSaveDebug({
+      issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
+    });
+    logTransfer('issue:move-complete', debug);
+
     return {
-      saved: moveResult.data || moveResult,
+      saved,
       message: moveResult.message || 'Issue sent to another team',
-      transferred: true
+      transferred: true,
+      debug
     };
   }
 
@@ -95,7 +136,10 @@ export async function saveIssueWithCrossTeamTransfer({
   });
 
   if (hasMeaningfulRichText(description) && !hasMeaningfulRichText(saved?.description)) {
-    throw new Error('Issue was saved but your notes did not persist. Please try again.');
+    logTransfer('issue:create-failed-validation', buildIssueSaveDebug({
+      issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
+    }));
+    throw new Error('Issue was saved but your notes did not persist. Check console for [AXP Transfer] logs.');
   }
 
   const savedId = getSavedEntityId(saved);
@@ -103,10 +147,16 @@ export async function saveIssueWithCrossTeamTransfer({
     await persistPendingIssueUpdate(savedId, pendingUpdateText);
   }
 
+  const debug = buildIssueSaveDebug({
+    issueId: savedId, sourceTeamId, transfer, description, pendingUpdateText, saved
+  });
+  logTransfer(isTransferRequested ? 'issue:create-transfer-complete' : 'issue:create-complete', debug);
+
   return {
     saved,
     message: isTransferRequested ? 'Issue sent to another team' : 'Issue created successfully',
-    transferred: isTransferRequested
+    transferred: isTransferRequested,
+    debug
   };
 }
 

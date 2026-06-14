@@ -9,6 +9,7 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId, getContextTeamId } from '../utils/teamUtils';
 import { saveIssueWithCrossTeamTransfer, saveTodoWithCrossTeamTransfer } from '../utils/crossTeamSave';
+import { buildTransferToastMessage, logTransfer } from '../utils/transferDebug';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -245,7 +246,7 @@ const IssuesPageClean = () => {
       const issueId = editingIssue?.id || issueData.id || null;
       const timeline = issueData.timeline || editingIssue?.timeline || activeTab;
 
-      const { saved, message, transferred } = await saveIssueWithCrossTeamTransfer({
+      const { saved, message, transferred, debug } = await saveIssueWithCrossTeamTransfer({
         issueData,
         sourceTeamId,
         issueId,
@@ -253,7 +254,12 @@ const IssuesPageClean = () => {
       });
 
       if (!isAutoSave) {
+        const toastMessage = buildTransferToastMessage({ action: 'issue-save', message, debug });
+        if (transferred || debug) {
+          toast.success(toastMessage, { duration: 8000 });
+        }
         setSuccess(message);
+        logTransfer('issues-page:issue-save-complete', { transferred, debug, sourceTeamId });
       } else if (!transferred && issueId) {
         const updateIssueInList = (issues) =>
           issues.map((issue) =>
@@ -280,6 +286,9 @@ const IssuesPageClean = () => {
       };
     } catch (error) {
       console.error('Failed to save issue:', error);
+      const errMsg = error.response?.data?.message || error.message || 'Failed to save issue';
+      logTransfer('issues-page:issue-save-error', { message: errMsg });
+      toast.error(errMsg, { duration: 10000 });
       throw error;
     }
   };

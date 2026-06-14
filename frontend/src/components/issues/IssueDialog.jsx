@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,8 @@ import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
 import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
-import { validateTransfer, getSavedEntityId } from '../../utils/transferUtils';
+import { validateTransfer, getSavedEntityId, hasMeaningfulRichText } from '../../utils/transferUtils';
+import { logTransfer, summarizeText, isTransferDebugEnabled } from '../../utils/transferDebug';
 
 const IssueDialog = ({ 
   open, 
@@ -95,6 +96,17 @@ const IssueDialog = ({
   const autoSaveTimeoutRef = useRef(null);
   const summaryEditorRef = useRef(null);
   const isInitializedRef = useRef(false); // Track if form has been initialized to prevent auto-save on open
+
+  const transferSavePreview = useMemo(() => {
+    const summary = summarizeText(formData.description);
+    const pendingChars = updateText.trim().length;
+    return {
+      summaryChars: summary.chars,
+      summaryPreview: summary.preview,
+      pendingChars,
+      willSendContext: summary.chars > 0 || pendingChars > 0
+    };
+  }, [formData.description, updateText]);
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -166,7 +178,7 @@ const IssueDialog = ({
     setCreatedIssueId(null); // Reset auto-created issue ID
     setAttachmentsChanged(false); // Reset attachment change tracking
     setTransferToTeam({ ...EMPTY_TRANSFER_STATE });
-  }, [open, issue, user?.id]);
+  }, [open, issue?.id, user?.id]);
 
   const fetchAttachments = async (issueId) => {
     try {
@@ -339,6 +351,7 @@ const IssueDialog = ({
       // Also check createdIssueId in case auto-save already created this issue
       const existingId = issue?.id || createdIssueId;
       const description = summaryEditorRef.current?.flush?.() ?? formData.description;
+      const isTransferSave = allowTransferToTeam && transferToTeam.enabled;
       const issueData = {
         ...(existingId ? { id: existingId } : {}),
         ...formData,
@@ -347,15 +360,25 @@ const IssueDialog = ({
           ? (transferToTeam.assigneeId || null)
           : (formData.ownerId === 'no-owner' ? null : (formData.ownerId || null)),
         timeline: issue ? issue.timeline : timeline,
-        ...(allowTransferToTeam && transferToTeam.enabled ? {
+        ...(isTransferSave ? {
           transferToTeam,
           sourceContextTeamId: meetingTeamId
         } : {}),
-        ...(updateText.trim() && !existingId ? { pendingUpdateText: updateText } : {}),
+        ...(updateText.trim() ? { pendingUpdateText: updateText } : {}),
         ...(issue?.headlineId ? { related_headline_id: issue.headlineId } : {})
       };
+
+      logTransfer('issue-dialog:submit', {
+        existingId,
+        isTransferSave,
+        meetingTeamId,
+        destinationTeamId: transferToTeam.destinationTeamId,
+        summary: summarizeText(description),
+        pendingUpdateChars: updateText.trim().length,
+        hasMeaningfulSummary: hasMeaningfulRichText(description)
+      });
       
-      if (updateText.trim() && existingId) {
+      if (updateText.trim() && existingId && !isTransferSave) {
         const response = await issuesService.addIssueUpdate(existingId, updateText);
         const newUpdate = response.data?.data || response.data;
         setUpdates((prev) => [newUpdate, ...prev]);
@@ -397,7 +420,9 @@ const IssueDialog = ({
       
       handleClose();
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to save issue');
+      const errMsg = error.response?.data?.message || error.message || 'Failed to save issue';
+      logTransfer('issue-dialog:error', { message: errMsg, status: error.response?.status });
+      setError(errMsg);
     } finally {
       setLoading(false);
       setUploadingFiles(false);
@@ -640,6 +665,27 @@ const IssueDialog = ({
                 requireAssignee={false}
                 assigneeLabel="Assign owner on destination team (optional)"
               />
+            )}
+
+            {allowTransferToTeam && transferToTeam.enabled && (
+              <div className={`rounded-lg border px-3 py-2 text-xs ${
+                transferSavePreview.willSendContext
+                  ? 'border-amber-200 bg-amber-50 text-amber-900'
+                  : 'border-red-200 bg-red-50 text-red-800'
+              }`}>
+                <div className="font-semibold flex items-center gap-1">
+                  <Bug className="h-3.5 w-3.5" />
+                  Transfer debug {isTransferDebugEnabled() ? '(on)' : '(off — run localStorage.setItem("axp_transfer_debug","1"))'}
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  <div>Summary to send: {transferSavePreview.summaryChars} chars — “{transferSavePreview.summaryPreview}”</div>
+                  <div>Pending update to send: {transferSavePreview.pendingChars} chars</div>
+                  <div>From team: {meetingTeamId?.slice(0, 8) || '?'}… → {transferToTeam.destinationTeamId?.slice(0, 8) || 'pick team'}…</div>
+                  {!transferSavePreview.willSendContext && (
+                    <div className="font-medium">Nothing will be sent — add a Summary or Update before saving.</div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Third row: Updates - always available; new-issue notes are saved on create/send */}
