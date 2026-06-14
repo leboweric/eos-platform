@@ -185,10 +185,28 @@ export const createIssue = async (req, res) => {
     const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id, transferSourceTeamId, transferReason } = req.body;
     const createdById = req.user.id;
 
+    let issueDescription = typeof description === 'string' ? description : (description ?? '');
+    if (!issueDescription.trim() && transferReason?.trim()) {
+      issueDescription = transferReason.trim();
+    }
+
+    const needsTransferNote = Boolean(
+      (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) || transferReason?.trim()
+    );
+    let transferNote = '';
+    if (needsTransferNote) {
+      transferNote = transferSourceTeamId && teamId && transferSourceTeamId !== teamId
+        ? await buildTransferNoteForTeams(orgId, transferSourceTeamId, teamId, createdById, transferReason)
+        : `\n\n---\nNote: ${(transferReason || '').trim()}`;
+    }
+    const finalDescription = `${issueDescription || ''}${transferNote || ''}`;
+
     console.log('[ISSUE CREATE]', {
       orgId,
       title: title?.substring?.(0, 80),
-      descriptionLen: (description || '').length,
+      incomingDescriptionLen: (description || '').length,
+      issueDescriptionLen: issueDescription.length,
+      finalDescriptionLen: finalDescription.length,
       teamId,
       transferSourceTeamId: transferSourceTeamId || null,
       transferReasonLen: (transferReason || '').length,
@@ -227,7 +245,7 @@ export const createIssue = async (req, res) => {
       createdById,
       ownerId,
       title,
-      description,
+      finalDescription,
       nextRank,
       false,  // New issues are not manually sorted
       false,  // Ensure new issues are not archived
@@ -295,23 +313,11 @@ export const createIssue = async (req, res) => {
       issueId: newIssue.id,
       teamId,
       transferSourceTeamId: transferSourceTeamId || null,
-      descriptionChars: (description || '').length,
+      incomingDescriptionChars: (description || '').length,
+      insertedDescriptionChars: (newIssue.description || '').length,
       hasTransferReason: Boolean(transferReason?.trim())
     });
 
-    const needsTransferNote = Boolean(
-      (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) || transferReason?.trim()
-    );
-    if (needsTransferNote) {
-      const transferNote = transferSourceTeamId && teamId && transferSourceTeamId !== teamId
-        ? await buildTransferNoteForTeams(orgId, transferSourceTeamId, teamId, createdById, transferReason)
-        : `\n\n---\nNote: ${(transferReason || '').trim()}`;
-      await db.query(
-        `UPDATE issues SET description = COALESCE(description, '') || $1 WHERE id = $2`,
-        [transferNote, newIssue.id]
-      );
-    }
-    
     // Fetch the full issue with owner details populated
     const enrichedResult = await db.query(
       `SELECT 

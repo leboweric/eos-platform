@@ -37,7 +37,7 @@ import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 import TeamMemberSelect from '../shared/TeamMemberSelect';
 import TransferToTeamSection, { EMPTY_TRANSFER_STATE } from '../shared/TransferToTeamSection';
-import { validateTransfer, getSavedEntityId, hasMeaningfulRichText, resolveRichTextDescription } from '../../utils/transferUtils';
+import { validateTransfer, getSavedEntityId, hasMeaningfulRichText, resolveRichTextDescription, userContentPersisted } from '../../utils/transferUtils';
 import { logTransfer, summarizeText, isTransferDebugEnabled, buildTransferToastMessage } from '../../utils/transferDebug';
 import toast from 'react-hot-toast';
 
@@ -399,15 +399,22 @@ const IssueDialog = ({
       if (isTransferSave) {
         const sentSummary = summarizeText(description);
         const savedSummary = summarizeText(savedIssue?.description);
-        const contextWasSent = sentSummary.chars > 0 || updateText.trim().length > 0;
+        const userSummary = summarizeText(formData.description);
+        const pendingUpdate = updateText.trim();
+        const summaryLost = userSummary.chars > 0 && !userContentPersisted(formData.description, savedIssue?.description);
+        const updateLost = pendingUpdate.length > 0 && !userContentPersisted(pendingUpdate, savedIssue?.description);
 
-        if (contextWasSent && savedSummary.chars === 0) {
+        if (summaryLost || updateLost) {
           const failMsg = 'Issue was sent but your notes did not persist. Please add them again and save.';
           toast.error(failMsg, { duration: 12000, position: 'top-center' });
           logTransfer('issue-dialog:transfer-persist-failed', {
             savedId,
             sentSummaryChars: sentSummary.chars,
-            savedDescriptionChars: savedSummary.chars
+            userSummaryChars: userSummary.chars,
+            pendingUpdateChars: pendingUpdate.length,
+            savedDescriptionChars: savedSummary.chars,
+            summaryLost,
+            updateLost
           });
           setError(failMsg);
           return;

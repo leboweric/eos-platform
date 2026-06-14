@@ -126,7 +126,7 @@ const isOverdue = (todo) => {
 };
 
 const WeeklyAccountabilityMeetingPage = () => {
-  console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED - DEPLOYMENT TEST 123 🔥🔥🔥');
+
   const { user, currentOrganization } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();

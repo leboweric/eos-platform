@@ -5,7 +5,9 @@ import {
   getSavedEntityId,
   resolveTransferSourceTeamId,
   buildIssueDescription,
-  hasMeaningfulRichText
+  hasMeaningfulRichText,
+  userContentPersisted,
+  previewText
 } from './transferUtils';
 import { logTransfer, summarizeText } from './transferDebug';
 
@@ -24,8 +26,9 @@ async function persistPendingIssueUpdate(issueId, pendingUpdateText) {
   await issuesService.addIssueUpdate(issueId, pendingUpdateText.trim());
 }
 
-function buildIssueSaveDebug({ issueId, sourceTeamId, transfer, description, pendingUpdateText, saved }) {
+function buildIssueSaveDebug({ issueId, sourceTeamId, transfer, description, userSummary, pendingUpdateText, saved }) {
   const summary = summarizeText(description);
+  const userSummaryStats = summarizeText(userSummary);
   const savedSummary = summarizeText(saved?.description);
   return {
     issueId: issueId || getSavedEntityId(saved),
@@ -33,10 +36,39 @@ function buildIssueSaveDebug({ issueId, sourceTeamId, transfer, description, pen
     destinationTeamId: transfer?.destinationTeamId || null,
     summaryChars: summary.chars,
     summaryPreview: summary.preview,
+    userSummaryChars: userSummaryStats.chars,
+    userSummaryPreview: userSummaryStats.preview,
     pendingUpdateChars: pendingUpdateText?.trim()?.length || 0,
     savedDescriptionChars: savedSummary.chars,
-    savedDescriptionPreview: savedSummary.preview
+    savedDescriptionPreview: savedSummary.preview,
+    userContentPersisted: userContentPersisted(userSummary, saved?.description)
   };
+}
+
+function assertUserContentPersisted({ userSummary, pendingUpdateText, saved, debugContext }) {
+  const summaryText = userSummary || '';
+  const pendingText = pendingUpdateText?.trim() || '';
+
+  if (hasMeaningfulRichText(summaryText) && !userContentPersisted(summaryText, saved?.description)) {
+    logTransfer('issue:content-persist-failed', debugContext);
+    throw new Error('Issue was saved but your summary did not persist. Check console for [AXP Transfer] logs.');
+  }
+
+  if (pendingText && !userContentPersisted(pendingText, saved?.description)) {
+    logTransfer('issue:update-persist-failed', debugContext);
+    throw new Error('Issue was saved but your update note did not persist. Check console for [AXP Transfer] logs.');
+  }
+}
+
+function logFinalIssuePayload(stage, payload) {
+  logTransfer(stage, {
+    descriptionLen: (payload.description || '').length,
+    descriptionPreview: previewText(payload.description),
+    transferSourceTeamId: payload.transferSourceTeamId || null,
+    transferReasonLen: (payload.transferReason || '').length,
+    department_id: payload.department_id || payload.teamId || null,
+    isCrossTeamTransfer: payload.isCrossTeamTransfer ?? null
+  });
 }
 
 export async function saveIssueWithCrossTeamTransfer({
@@ -48,8 +80,9 @@ export async function saveIssueWithCrossTeamTransfer({
 }) {
   const { transfer, isTransferRequested, isCrossTeamTransfer, transferSourceTeamId } = parseCrossTeamTransfer(issueData, sourceTeamId);
   const { payload, pendingUpdateText } = stripTransferPayload(issueData);
+  const userSummary = payload.description || '';
   const description = buildIssueDescription({
-    description: payload.description,
+    description: userSummary,
     pendingUpdateText,
     transferReason: transfer?.reason || ''
   });
@@ -78,34 +111,48 @@ export async function saveIssueWithCrossTeamTransfer({
     // Auto-save may have created a title-only issue before transfer was enabled.
     // Persist summary/notes explicitly before moving teams.
     if (hasMeaningfulRichText(description) || payload.title) {
-      await issuesService.updateIssue(issueId, {
+      const updatePayload = {
         title: payload.title || issueData.title,
         description,
         ownerId: payload.ownerId,
         status: payload.status || issueData.status,
         timeline: payload.timeline || timeline
+      };
+      logFinalIssuePayload('issue:final-payload-update-before-move', {
+        ...updatePayload,
+        transferSourceTeamId,
+        transferReason: transfer?.reason || '',
+        isCrossTeamTransfer
       });
+      await issuesService.updateIssue(issueId, updatePayload);
     }
 
-    const moveResult = await issuesService.moveIssueToTeam(issueId, {
+    const movePayload = {
       newTeamId: transfer.destinationTeamId,
       reason: transfer.reason || '',
       newOwnerId: transfer.assigneeId || payload.ownerId || null,
       title: issueData.title,
       description,
       status: issueData.status
+    };
+    logFinalIssuePayload('issue:final-payload-move', {
+      ...movePayload,
+      department_id: transfer.destinationTeamId,
+      transferSourceTeamId,
+      transferReason: transfer?.reason || '',
+      isCrossTeamTransfer
     });
+    const moveResult = await issuesService.moveIssueToTeam(issueId, movePayload);
     const saved = moveResult.data || moveResult;
 
-    if (hasMeaningfulRichText(description) && !hasMeaningfulRichText(saved?.description)) {
-      logTransfer('issue:move-failed-validation', buildIssueSaveDebug({
-        issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
-      }));
-      throw new Error('Issue was moved but your notes did not persist. Check console for [AXP Transfer] logs.');
-    }
-
     const debug = buildIssueSaveDebug({
-      issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
+      issueId, sourceTeamId, transfer, description, userSummary, pendingUpdateText, saved
+    });
+    assertUserContentPersisted({
+      userSummary,
+      pendingUpdateText,
+      saved,
+      debugContext: { ...debug, stage: 'move' }
     });
     logTransfer('issue:move-complete', debug);
 
@@ -133,9 +180,10 @@ export async function saveIssueWithCrossTeamTransfer({
   }
 
   const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
-  const saved = await issuesService.createIssue({
+  const resolvedDescription = description || userSummary || '';
+  const createPayload = {
     title: payload.title,
-    description,
+    description: resolvedDescription,
     ownerId: isTransferRequested
       ? (transfer.assigneeId || payload.ownerId || null)
       : payload.ownerId,
@@ -151,14 +199,12 @@ export async function saveIssueWithCrossTeamTransfer({
       transferSourceTeamId: transferSourceTeamId || sourceTeamId || undefined,
       transferReason: transfer.reason || ''
     } : {})
+  };
+  logFinalIssuePayload('issue:final-payload-create', {
+    ...createPayload,
+    isCrossTeamTransfer
   });
-
-  if (hasMeaningfulRichText(description) && !hasMeaningfulRichText(saved?.description)) {
-    logTransfer('issue:create-failed-validation', buildIssueSaveDebug({
-      issueId, sourceTeamId, transfer, description, pendingUpdateText, saved
-    }));
-    throw new Error('Issue was saved but your notes did not persist. Check console for [AXP Transfer] logs.');
-  }
+  const saved = await issuesService.createIssue(createPayload);
 
   const savedId = getSavedEntityId(saved);
   if (pendingUpdateText) {
@@ -166,7 +212,13 @@ export async function saveIssueWithCrossTeamTransfer({
   }
 
   const debug = buildIssueSaveDebug({
-    issueId: savedId, sourceTeamId, transfer, description, pendingUpdateText, saved
+    issueId: savedId, sourceTeamId, transfer, description, userSummary, pendingUpdateText, saved
+  });
+  assertUserContentPersisted({
+    userSummary,
+    pendingUpdateText,
+    saved,
+    debugContext: { ...debug, stage: 'create' }
   });
   logTransfer(isTransferRequested ? 'issue:create-transfer-complete' : 'issue:create-complete', debug);
 

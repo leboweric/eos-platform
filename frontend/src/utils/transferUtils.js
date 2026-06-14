@@ -35,6 +35,24 @@ export function hasMeaningfulRichText(content) {
   return stripHtmlToText(content).length > 0;
 }
 
+export function previewText(content, maxLen = 150) {
+  const text = stripHtmlToText(content);
+  if (!text) return '(empty)';
+  return text.length > maxLen ? `${text.slice(0, maxLen)}…` : text;
+}
+
+/**
+ * True when the user's summary text appears in the saved description.
+ * Transfer footers alone must not count as a successful persist.
+ */
+export function userContentPersisted(sentDescription, savedDescription) {
+  const sentText = stripHtmlToText(sentDescription);
+  if (!sentText) return true;
+  const savedText = stripHtmlToText(savedDescription);
+  if (!savedText) return false;
+  return savedText.includes(sentText);
+}
+
 /**
  * Rich-text flush() can return '' while form state still has content (?? does not
  * fall back on empty string). Prefer whichever source has more meaningful text.

@@ -1,5 +1,6 @@
 import axios from './axiosConfig';
 import { useAuthStore } from '../stores/authStore';
+import { logTransfer, summarizeText } from '../utils/transferDebug';
 
 const getOrgId = () => {
   // Get user from Zustand store
@@ -54,25 +55,36 @@ export const issuesService = {
     // Use department_id if provided, otherwise use teamId from issueData, otherwise use user's teamId
     const finalTeamId = issueData.department_id || issueData.teamId || issueData.team_id || teamId || null;
 
+    const requestBody = {
+      title: issueData.title,
+      description: typeof issueData.description === 'string' ? issueData.description : (issueData.description ?? ''),
+      ownerId: issueData.ownerId ?? null,
+      timeline: issueData.timeline || 'short_term',
+      status: issueData.status || 'open',
+      teamId: finalTeamId,
+      related_todo_id: issueData.related_todo_id || null,
+      related_headline_id: issueData.related_headline_id || null,
+      related_priority_id: issueData.related_priority_id || null,
+      priority_level: issueData.priority_level || null,
+      meeting_id: issueData.meeting_id || null,
+      ...(issueData.transferSourceTeamId || issueData.transferReason ? {
+        transferSourceTeamId: issueData.transferSourceTeamId || null,
+        transferReason: issueData.transferReason || ''
+      } : {})
+    };
+
+    if (issueData.transferSourceTeamId || issueData.transferReason) {
+      logTransfer('issue:api-create-request', {
+        teamId: requestBody.teamId,
+        descriptionLen: summarizeText(requestBody.description).chars,
+        transferSourceTeamId: requestBody.transferSourceTeamId || null,
+        transferReasonLen: (requestBody.transferReason || '').length
+      });
+    }
+
     const response = await axios.post(
       `/organizations/${orgId}/issues`,
-      {
-        title: issueData.title,
-        description: issueData.description ?? '',
-        ownerId: issueData.ownerId ?? null,
-        timeline: issueData.timeline || 'short_term',
-        status: issueData.status || 'open',
-        teamId: finalTeamId,
-        related_todo_id: issueData.related_todo_id || null,
-        related_headline_id: issueData.related_headline_id || null,
-        related_priority_id: issueData.related_priority_id || null,
-        priority_level: issueData.priority_level || null,
-        meeting_id: issueData.meeting_id || null,
-        ...(issueData.transferSourceTeamId || issueData.transferReason ? {
-          transferSourceTeamId: issueData.transferSourceTeamId || null,
-          transferReason: issueData.transferReason || ''
-        } : {})
-      }
+      requestBody
     );
     return response.data.data;
   },
