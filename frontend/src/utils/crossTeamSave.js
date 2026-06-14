@@ -4,7 +4,8 @@ import {
   stripTransferPayload,
   getSavedEntityId,
   resolveTransferSourceTeamId,
-  buildIssueDescription
+  buildIssueDescription,
+  hasMeaningfulRichText
 } from './transferUtils';
 
 export function parseCrossTeamTransfer(data, sourceTeamId) {
@@ -92,6 +93,10 @@ export async function saveIssueWithCrossTeamTransfer({
       transferReason: transfer.reason || ''
     } : {})
   });
+
+  if (hasMeaningfulRichText(description) && !hasMeaningfulRichText(saved?.description)) {
+    throw new Error('Issue was saved but your notes did not persist. Please try again.');
+  }
 
   const savedId = getSavedEntityId(saved);
   if (pendingUpdateText) {

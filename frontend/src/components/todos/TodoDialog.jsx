@@ -198,7 +198,7 @@ const TodoDialog = ({
       setShowAddUpdate(false);
       setError(null);
     }
-  }, [open, todo, todoFromIssue, user]);
+  }, [open, todo, todoFromIssue, user?.id]);
 
   const loadAttachments = async (todoId) => {
     try {

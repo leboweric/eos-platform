@@ -166,27 +166,7 @@ const IssueDialog = ({
     setCreatedIssueId(null); // Reset auto-created issue ID
     setAttachmentsChanged(false); // Reset attachment change tracking
     setTransferToTeam({ ...EMPTY_TRANSFER_STATE });
-  }, [open, issue]);
-
-  // Clear form when dialog opens without an issue
-  useEffect(() => {
-    if (open && !issue) {
-      // Default to current user for new issues
-      setFormData({
-        title: '',
-        description: '',
-        ownerId: user?.id || '',
-        ownerName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
-        status: 'open'
-      });
-      setNewAttachments([]);
-      setExistingAttachments([]);
-      setUpdates([]);
-      setUpdateText('');
-      setShowAddUpdate(false);
-      setError(null);
-    }
-  }, [open, issue, user]);
+  }, [open, issue, user?.id]);
 
   const fetchAttachments = async (issueId) => {
     try {
@@ -258,13 +238,13 @@ const IssueDialog = ({
     
     try {
       setAutoSaving(true);
-      
+      const description = summaryEditorRef.current?.flush?.() ?? formData.description;
+
       const savedIssue = await onSave({
         ...(issueId ? { id: issueId } : {}), // Include ID if editing existing or previously auto-created
-        title: formData.title,
-        description: formData.description,
+        ...formData,
+        description,
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
-        status: formData.status,
         timeline: issue ? issue.timeline : timeline
       }, { isAutoSave: true }); // Pass flag to indicate this is an auto-save
       
@@ -360,21 +340,19 @@ const IssueDialog = ({
       const existingId = issue?.id || createdIssueId;
       const description = summaryEditorRef.current?.flush?.() ?? formData.description;
       const issueData = {
-        ...(existingId ? { id: existingId } : {}), // Include ID if editing or auto-saved
-        title: formData.title,
+        ...(existingId ? { id: existingId } : {}),
+        ...formData,
         description,
         ownerId: transferToTeam.enabled
           ? (transferToTeam.assigneeId || null)
           : (formData.ownerId === 'no-owner' ? null : (formData.ownerId || null)),
-        status: formData.status,
         timeline: issue ? issue.timeline : timeline,
         ...(allowTransferToTeam && transferToTeam.enabled ? {
           transferToTeam,
           sourceContextTeamId: meetingTeamId
         } : {}),
         ...(updateText.trim() && !existingId ? { pendingUpdateText: updateText } : {}),
-        // Include headline ID if this issue is being created from a headline
-        ...(issue?.headlineId ? { related_headline_id : issue.headlineId } : {})
+        ...(issue?.headlineId ? { related_headline_id: issue.headlineId } : {})
       };
       
       if (updateText.trim() && existingId) {
