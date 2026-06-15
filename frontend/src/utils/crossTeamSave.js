@@ -71,6 +71,53 @@ function logFinalIssuePayload(stage, payload) {
   });
 }
 
+async function fetchIssueFromDestinationList(issueId, destTeamId, timeline = 'short_term') {
+  const response = await issuesService.getIssues(timeline, false, destTeamId);
+  const issues = response?.data?.issues || [];
+  return issues.find((item) => item.id === issueId) || null;
+}
+
+async function fetchTodoFromDestinationList(todoId, destTeamId) {
+  const response = await todosService.getTodos(null, null, false, destTeamId);
+  const todos = response?.data?.todos || response?.data || [];
+  const list = Array.isArray(todos) ? todos : [];
+  return list.find((item) => item.id === todoId) || null;
+}
+
+async function verifyIssueOnDestinationTeam({
+  issueId,
+  destTeamId,
+  userSummary,
+  pendingUpdateText,
+  timeline,
+  stage
+}) {
+  const listed = await fetchIssueFromDestinationList(issueId, destTeamId, timeline);
+  if (!listed) {
+    logTransfer('issue:destination-list-missing', { issueId, destTeamId, stage });
+    throw new Error('Issue was saved but is not visible on the destination team. Check console for [AXP Transfer] logs.');
+  }
+
+  const debug = {
+    issueId,
+    destTeamId,
+    stage,
+    listDescriptionChars: summarizeText(listed.description).chars,
+    listDescriptionPreview: summarizeText(listed.description).preview,
+    userSummaryChars: summarizeText(userSummary).chars
+  };
+
+  assertUserContentPersisted({
+    userSummary,
+    pendingUpdateText,
+    saved: listed,
+    debugContext: { ...debug, verifySource: 'destination-list' }
+  });
+
+  logTransfer('issue:destination-list-verified', debug);
+  return listed;
+}
+
 export async function saveIssueWithCrossTeamTransfer({
   issueData,
   sourceTeamId,
@@ -152,12 +199,20 @@ export async function saveIssueWithCrossTeamTransfer({
       userSummary,
       pendingUpdateText,
       saved,
-      debugContext: { ...debug, stage: 'move' }
+      debugContext: { ...debug, stage: 'move-response' }
+    });
+    const listed = await verifyIssueOnDestinationTeam({
+      issueId,
+      destTeamId: transfer.destinationTeamId,
+      userSummary,
+      pendingUpdateText,
+      timeline: payload.timeline || timeline,
+      stage: 'move'
     });
     logTransfer('issue:move-complete', debug);
 
     return {
-      saved,
+      saved: listed || saved,
       message: moveResult.message || 'Issue sent to another team',
       transferred: true,
       debug
@@ -218,16 +273,52 @@ export async function saveIssueWithCrossTeamTransfer({
     userSummary,
     pendingUpdateText,
     saved,
-    debugContext: { ...debug, stage: 'create' }
+    debugContext: { ...debug, stage: 'create-response' }
   });
+
+  let verifiedSaved = saved;
+  if (isTransferRequested && savedId) {
+    verifiedSaved = await verifyIssueOnDestinationTeam({
+      issueId: savedId,
+      destTeamId: destinationTeamId,
+      userSummary,
+      pendingUpdateText,
+      timeline: timeline || payload.timeline || 'short_term',
+      stage: 'create-transfer'
+    });
+  }
+
   logTransfer(isTransferRequested ? 'issue:create-transfer-complete' : 'issue:create-complete', debug);
 
   return {
-    saved,
+    saved: verifiedSaved,
     message: isTransferRequested ? 'Issue sent to another team' : 'Issue created successfully',
     transferred: isTransferRequested,
     debug
   };
+}
+
+function assertTodoContentPersisted({ userSummary, saved, stage }) {
+  if (hasMeaningfulRichText(userSummary) && !userContentPersisted(userSummary, saved?.description)) {
+    logTransfer('todo:content-persist-failed', { stage, userSummaryChars: summarizeText(userSummary).chars });
+    throw new Error('To-do was saved but your notes did not persist. Check console for [AXP Transfer] logs.');
+  }
+}
+
+async function verifyTodoOnDestinationTeam({ todoId, destTeamId, userSummary, stage }) {
+  const listed = await fetchTodoFromDestinationList(todoId, destTeamId);
+  if (!listed) {
+    logTransfer('todo:destination-list-missing', { todoId, destTeamId, stage });
+    throw new Error('To-do was saved but is not visible on the destination team.');
+  }
+  assertTodoContentPersisted({ userSummary, saved: listed, stage: `${stage}-list` });
+  logTransfer('todo:destination-list-verified', {
+    todoId,
+    destTeamId,
+    stage,
+    listDescriptionChars: summarizeText(listed.description).chars
+  });
+  return listed;
 }
 
 export async function saveTodoWithCrossTeamTransfer({
@@ -239,6 +330,7 @@ export async function saveTodoWithCrossTeamTransfer({
 }) {
   const { transfer, isTransferRequested, isCrossTeamTransfer } = parseCrossTeamTransfer(todoData, sourceTeamId);
   const { payload, pendingUpdateText } = stripTransferPayload(todoData);
+  const userSummary = payload.description || '';
 
   if (isTransferRequested && todoId) {
     if (pendingUpdateText) {
@@ -254,8 +346,16 @@ export async function saveTodoWithCrossTeamTransfer({
       dueDate: todoData.dueDate,
       status: todoData.status
     });
+    const saved = moveResult.data || moveResult;
+    assertTodoContentPersisted({ userSummary, saved, stage: 'move-response' });
+    const listed = await verifyTodoOnDestinationTeam({
+      todoId,
+      destTeamId: transfer.destinationTeamId,
+      userSummary,
+      stage: 'move'
+    });
     return {
-      saved: moveResult.data || moveResult,
+      saved: listed || saved,
       message: moveResult.message || 'To-do sent to another team',
       transferred: true,
       isGroup: false
@@ -295,8 +395,19 @@ export async function saveTodoWithCrossTeamTransfer({
     await todosService.addTodoUpdate(savedId, pendingUpdateText);
   }
 
+  let verifiedSaved = response;
+  if (isTransferRequested && savedId) {
+    assertTodoContentPersisted({ userSummary, saved: response, stage: 'create-response' });
+    verifiedSaved = await verifyTodoOnDestinationTeam({
+      todoId: savedId,
+      destTeamId: destinationTeamId,
+      userSummary,
+      stage: 'create-transfer'
+    });
+  }
+
   return {
-    saved: response,
+    saved: verifiedSaved,
     message: isTransferRequested
       ? 'To-do sent to another team'
       : isGroup

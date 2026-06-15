@@ -101,6 +101,7 @@ export const issuesService = {
       team_id: _team_id,
       teamId: _teamId,
       id: _id,
+      ownerName: _ownerName,
       ...updatePayload
     } = issueData;
     

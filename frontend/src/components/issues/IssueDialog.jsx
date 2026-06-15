@@ -399,9 +399,8 @@ const IssueDialog = ({
       if (isTransferSave) {
         const sentSummary = summarizeText(description);
         const savedSummary = summarizeText(savedIssue?.description);
-        const userSummary = summarizeText(formData.description);
         const pendingUpdate = updateText.trim();
-        const summaryLost = userSummary.chars > 0 && !userContentPersisted(formData.description, savedIssue?.description);
+        const summaryLost = sentSummary.chars > 0 && !userContentPersisted(description, savedIssue?.description);
         const updateLost = pendingUpdate.length > 0 && !userContentPersisted(pendingUpdate, savedIssue?.description);
 
         if (summaryLost || updateLost) {
@@ -410,7 +409,6 @@ const IssueDialog = ({
           logTransfer('issue-dialog:transfer-persist-failed', {
             savedId,
             sentSummaryChars: sentSummary.chars,
-            userSummaryChars: userSummary.chars,
             pendingUpdateChars: pendingUpdate.length,
             savedDescriptionChars: savedSummary.chars,
             summaryLost,

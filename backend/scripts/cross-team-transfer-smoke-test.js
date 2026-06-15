@@ -15,6 +15,11 @@
  */
 
 import { randomUUID } from 'crypto';
+import {
+  stripTransferPayload,
+  buildIssueDescription,
+  userContentPersisted
+} from '../../frontend/src/utils/transferUtils.js';
 
 const args = process.argv.slice(2);
 const getArg = (name) => {
@@ -48,6 +53,65 @@ function includesUserContent(savedDescription, marker) {
 
 function marker(scenario) {
   return `SMOKE_${RUN_ID}_${scenario}`;
+}
+
+/** Mirrors parseCrossTeamTransfer + saveIssueWithCrossTeamTransfer create branch */
+function buildFrontendIssueCreatePayload(issueData, sourceTeamId, meetingId = null) {
+  const transfer = issueData?.transferToTeam;
+  const transferSourceTeamId = issueData.sourceContextTeamId || sourceTeamId || null;
+  const isTransferRequested = Boolean(transfer?.enabled && transfer?.destinationTeamId);
+  const { payload, pendingUpdateText } = stripTransferPayload(issueData);
+  const userSummary = payload.description || '';
+  const description = buildIssueDescription({
+    description: userSummary,
+    pendingUpdateText,
+    transferReason: transfer?.reason || ''
+  });
+  const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
+  return {
+    apiPayload: {
+      title: payload.title,
+      description: description || userSummary || '',
+      ownerId: isTransferRequested
+        ? (transfer.assigneeId || payload.ownerId || null)
+        : payload.ownerId,
+      status: payload.status || 'open',
+      timeline: issueData.timeline || 'short_term',
+      teamId: destinationTeamId,
+      meeting_id: meetingId || null,
+      ...(isTransferRequested ? {
+        transferSourceTeamId: transferSourceTeamId || sourceTeamId,
+        transferReason: transfer.reason || ''
+      } : {})
+    },
+    userSummary,
+    pendingUpdateText,
+    destinationTeamId,
+    isTransferRequested
+  };
+}
+
+function buildFrontendTodoCreatePayload(todoData, sourceTeamId, meetingId = null) {
+  const transfer = todoData?.transferToTeam;
+  const isTransferRequested = Boolean(transfer?.enabled && transfer?.destinationTeamId);
+  const { payload } = stripTransferPayload(todoData);
+  const destinationTeamId = isTransferRequested ? transfer.destinationTeamId : sourceTeamId;
+  return {
+    apiPayload: {
+      title: payload.title,
+      description: payload.description || '',
+      assignedToId: isTransferRequested ? transfer.assigneeId : todoData.assignedToId,
+      teamId: destinationTeamId,
+      meeting_id: meetingId || null,
+      ...(isTransferRequested ? {
+        transferSourceTeamId: sourceTeamId,
+        transferReason: transfer.reason || ''
+      } : {})
+    },
+    userSummary: payload.description || '',
+    destinationTeamId,
+    isTransferRequested
+  };
 }
 
 class ApiClient {
@@ -713,6 +777,166 @@ function buildScenarios(ctx, api) {
         const errors = assertTodoPersisted({ saved: moved.data, destTeamId, userMarker: m, assigneeId });
         if (!stripHtmlToText(moved.data.description).includes('Handoff to finance')) {
           errors.push('todo move reason not appended');
+        }
+        return errors;
+      }
+    },
+
+    // ── FRONTEND PATH (IssueDialog / crossTeamSave payload shape) ──
+    {
+      id: 'frontend-path-issue-create-transfer',
+      group: 'frontend-path',
+      run: async () => {
+        const m = marker('fe-issue-create');
+        const issueData = {
+          title: `Frontend path issue ${m}`,
+          description: m,
+          ownerId: assigneeId,
+          ownerName: 'Smoke User',
+          status: 'open',
+          timeline: 'short_term',
+          transferToTeam: {
+            enabled: true,
+            destinationTeamId: destTeamId,
+            assigneeId,
+            reason: 'Frontend path routing'
+          },
+          sourceContextTeamId: leadershipTeamId
+        };
+        const { apiPayload, userSummary, destinationTeamId } = buildFrontendIssueCreatePayload(
+          issueData,
+          leadershipTeamId,
+          null
+        );
+        const saved = await api.createIssue(apiPayload);
+        trackIssue(saved.id);
+        const errors = assertIssuePersisted({ saved, destTeamId: destinationTeamId, userMarker: m, assigneeId });
+        if (!userContentPersisted(userSummary, saved.description)) {
+          errors.push('userContentPersisted failed on create response');
+        }
+        const list = await api.getIssues(destinationTeamId);
+        const listed = list.find((i) => i.id === saved.id);
+        if (!listed) errors.push('not on destination list');
+        else if (!includesUserContent(listed.description, m)) errors.push('destination list missing marker');
+        return errors;
+      }
+    },
+    {
+      id: 'frontend-path-issue-create-with-pending-update',
+      group: 'frontend-path',
+      run: async () => {
+        const m = marker('fe-issue-upd');
+        const updateM = `${m}_PENDING`;
+        const issueData = {
+          title: `Frontend path issue update ${m}`,
+          description: m,
+          ownerId: assigneeId,
+          status: 'open',
+          timeline: 'short_term',
+          pendingUpdateText: updateM,
+          transferToTeam: {
+            enabled: true,
+            destinationTeamId: destTeamId,
+            assigneeId,
+            reason: ''
+          },
+          sourceContextTeamId: leadershipTeamId
+        };
+        const { apiPayload, userSummary } = buildFrontendIssueCreatePayload(issueData, leadershipTeamId);
+        const saved = await api.createIssue(apiPayload);
+        trackIssue(saved.id);
+        const errors = assertIssuePersisted({ saved, destTeamId, userMarker: m, assigneeId });
+        if (!userContentPersisted(updateM, saved.description)) {
+          errors.push('pending update not merged into description');
+        }
+        if (!userContentPersisted(userSummary, saved.description)) {
+          errors.push('summary lost after pending update merge');
+        }
+        return errors;
+      }
+    },
+    {
+      id: 'frontend-path-issue-move-existing',
+      group: 'frontend-path',
+      run: async () => {
+        const m = marker('fe-issue-move');
+        const created = await api.createIssue({
+          title: `Frontend path move ${m}`,
+          description: 'placeholder',
+          ownerId: assigneeId,
+          teamId: leadershipTeamId,
+          timeline: 'short_term'
+        });
+        trackIssue(created.id);
+        const issueData = {
+          id: created.id,
+          title: created.title,
+          description: m,
+          ownerId: assigneeId,
+          status: 'open',
+          timeline: 'short_term',
+          transferToTeam: {
+            enabled: true,
+            destinationTeamId: destTeamId,
+            assigneeId,
+            reason: 'Frontend move path'
+          },
+          sourceContextTeamId: leadershipTeamId
+        };
+        const { apiPayload: _ignored, userSummary } = buildFrontendIssueCreatePayload(issueData, leadershipTeamId);
+        const description = buildIssueDescription({
+          description: userSummary,
+          pendingUpdateText: '',
+          transferReason: issueData.transferToTeam.reason
+        });
+        await api.updateIssue(created.id, {
+          title: issueData.title,
+          description,
+          ownerId: issueData.ownerId,
+          status: issueData.status,
+          timeline: issueData.timeline
+        });
+        const moved = await api.moveIssue(created.id, {
+          newTeamId: destTeamId,
+          newOwnerId: assigneeId,
+          reason: issueData.transferToTeam.reason,
+          title: issueData.title,
+          description,
+          status: 'open'
+        });
+        const errors = assertIssuePersisted({ saved: moved.data, destTeamId, userMarker: m, assigneeId });
+        const list = await api.getIssues(destTeamId);
+        const listed = list.find((i) => i.id === created.id);
+        if (!listed) errors.push('moved issue not on destination list');
+        else if (!includesUserContent(listed.description, m)) errors.push('list missing marker after move');
+        return errors;
+      }
+    },
+    {
+      id: 'frontend-path-todo-create-transfer',
+      group: 'frontend-path',
+      run: async () => {
+        const m = marker('fe-todo-create');
+        const todoData = {
+          title: `Frontend path todo ${m}`,
+          description: m,
+          assignedToId: assigneeId,
+          transferToTeam: {
+            enabled: true,
+            destinationTeamId: destTeamId,
+            assigneeId,
+            reason: 'Todo frontend path'
+          }
+        };
+        const { apiPayload, userSummary, destinationTeamId } = buildFrontendTodoCreatePayload(
+          todoData,
+          leadershipTeamId
+        );
+        const saved = await api.createTodo(apiPayload);
+        trackTodo(saved.id);
+        const errors = assertTodoPersisted({ saved, destTeamId: destinationTeamId, userMarker: m, assigneeId });
+        if (!userContentPersisted(userSummary, saved.description)) {
+          errors.push('todo userContentPersisted failed');
         }
         return errors;
       }
