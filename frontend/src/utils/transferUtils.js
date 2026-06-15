@@ -76,21 +76,34 @@ export function resolveRichTextDescription(editorRef, formDescription = '') {
   return formDescription || editorContent || '';
 }
 
+export function textAlreadyInDescription(description, text) {
+  const note = (text || '').trim();
+  if (!note) return true;
+  const base = stripHtmlToText(description);
+  if (!base) return false;
+  if (base === note || base.endsWith(note)) return true;
+  return base.split(/\n---\n/).some((section) => section.trim() === note);
+}
+
 export function appendTextToDescription(description, text) {
   const note = (text || '').trim();
   if (!note) return description || '';
+  if (textAlreadyInDescription(description, note)) {
+    return description || stripHtmlToText(description) || '';
+  }
   const base = stripHtmlToText(description);
   if (!base) return note;
   return `${base}\n\n---\n${note}`;
 }
 
-export function buildIssueDescription({ description, pendingUpdateText, transferReason }) {
+/**
+ * Build description body sent to the API. Transfer reason is NOT appended here —
+ * the backend adds a single structured footer (team names + "Reason:" line).
+ */
+export function buildIssueDescription({ description, pendingUpdateText, transferReason: _transferReason }) {
   let result = description || '';
   if (pendingUpdateText?.trim()) {
     result = appendTextToDescription(result, pendingUpdateText.trim());
-  }
-  if (transferReason?.trim()) {
-    result = appendTextToDescription(result, transferReason.trim());
   }
   return result;
 }

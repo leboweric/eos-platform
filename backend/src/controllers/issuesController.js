@@ -6,7 +6,8 @@ import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
-  buildTransferNoteForTeams
+  buildTransferNoteForTeams,
+  normalizeDescriptionBeforeTransferNote
 } from '../utils/teamTransfer.js';
 
 // Configure multer for memory storage
@@ -185,10 +186,7 @@ export const createIssue = async (req, res) => {
     const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, related_priority_id, priority_level, meeting_id, transferSourceTeamId, transferReason } = req.body;
     const createdById = req.user.id;
 
-    let issueDescription = typeof description === 'string' ? description : (description ?? '');
-    if (!issueDescription.trim() && transferReason?.trim()) {
-      issueDescription = transferReason.trim();
-    }
+    const issueDescription = typeof description === 'string' ? description : (description ?? '');
 
     const needsTransferNote = Boolean(
       (transferSourceTeamId && teamId && transferSourceTeamId !== teamId) || transferReason?.trim()
@@ -199,7 +197,8 @@ export const createIssue = async (req, res) => {
         ? await buildTransferNoteForTeams(orgId, transferSourceTeamId, teamId, createdById, transferReason)
         : `\n\n---\nNote: ${(transferReason || '').trim()}`;
     }
-    const finalDescription = `${issueDescription || ''}${transferNote || ''}`;
+    const cleanedDescription = normalizeDescriptionBeforeTransferNote(issueDescription, transferReason);
+    const finalDescription = `${cleanedDescription || ''}${transferNote || ''}`;
 
     console.log('[ISSUE CREATE]', {
       orgId,
@@ -497,7 +496,8 @@ export const moveIssueToTeam = async (req, res) => {
       : issue.description || '';
     const hasIncomingText = String(incomingDescription).replace(/<[^>]+>/g, '').trim().length > 0;
     const baseDescription = hasIncomingText ? incomingDescription : (issue.description || '');
-    const finalDescription = baseDescription + transferNote;
+    const cleanedDescription = normalizeDescriptionBeforeTransferNote(baseDescription, reason);
+    const finalDescription = cleanedDescription + transferNote;
     const finalStatus = status !== undefined ? status : issue.status;
 
     console.log('[AXP Transfer] moveIssueToTeam', {

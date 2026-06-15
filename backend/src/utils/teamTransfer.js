@@ -42,6 +42,51 @@ export async function validateTeamTransfer(orgId, destinationTeamId, assigneeId,
   return { valid: true, team };
 }
 
+function stripHtmlToText(content) {
+  if (!content) return '';
+  return String(content)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .trim();
+}
+
+/**
+ * Remove a transfer reason duplicated in the body (legacy clients appended it
+ * before the backend footer). Keeps summary + pending updates intact.
+ */
+export function normalizeDescriptionBeforeTransferNote(description, reason) {
+  const r = (reason || '').trim();
+  if (!r) return description || '';
+
+  const text = stripHtmlToText(description);
+  if (!text) return '';
+
+  const sections = text.split(/\n---\n/).map((s) => s.trim()).filter(Boolean);
+  if (sections.length === 0) return description || '';
+
+  const filtered = sections.filter((section) => {
+    if (section === r) return false;
+    if (section.startsWith('[Sent from ') && section.includes('Reason:')) return true;
+    return true;
+  });
+
+  if (filtered.length === sections.length) {
+    return description || '';
+  }
+
+  return filtered.join('\n\n---\n');
+}
+
+export function countReasonOccurrences(description, reason) {
+  const r = (reason || '').trim();
+  if (!r) return 0;
+  const text = stripHtmlToText(description);
+  const escaped = r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return (text.match(new RegExp(escaped, 'g')) || []).length;
+}
+
 export function buildTransferNote({ fromTeamName, toTeamName, userName, reason }) {
   const date = new Date().toLocaleDateString();
   let note = `\n\n---\n[Sent from ${fromTeamName || 'Unknown Team'} to ${toTeamName || 'Unknown Team'} by ${userName} on ${date}]`;

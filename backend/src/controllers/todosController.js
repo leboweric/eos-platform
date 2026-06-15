@@ -8,6 +8,7 @@ import meetingSocketService from '../services/meetingSocketService.js';
 import {
   validateTeamTransfer,
   buildTransferNoteForTeams,
+  normalizeDescriptionBeforeTransferNote,
   resolveTodoTeamId,
   repairLeadershipMisassignedTodos
 } from '../utils/teamTransfer.js';
@@ -323,9 +324,13 @@ export const createTodo = async (req, res) => {
           userId,
           transferReason
         );
+        const cleanedDescription = normalizeDescriptionBeforeTransferNote(
+          todo.description || description || '',
+          transferReason
+        );
         await query(
-          `UPDATE todos SET description = COALESCE(description, '') || $1 WHERE id = $2`,
-          [transferNote, todoId]
+          `UPDATE todos SET description = $1 || $2 WHERE id = $3`,
+          [cleanedDescription, transferNote, todoId]
         );
         const refreshed = await query('SELECT description FROM todos WHERE id = $1', [todoId]);
         if (refreshed.rows[0]) {
@@ -1199,7 +1204,9 @@ export const moveTodoToTeam = async (req, res) => {
     );
 
     const finalTitle = title !== undefined ? title : todo.title;
-    const finalDescription = (description !== undefined ? description : todo.description || '') + transferNote;
+    const baseDescription = description !== undefined ? description : todo.description || '';
+    const cleanedDescription = normalizeDescriptionBeforeTransferNote(baseDescription, reason);
+    const finalDescription = cleanedDescription + transferNote;
     const finalDueDate = dueDate !== undefined ? dueDate : todo.due_date;
     const finalStatus = status !== undefined ? status : todo.status;
 

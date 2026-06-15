@@ -408,6 +408,42 @@ function buildScenarios(ctx, api) {
       }
     },
     {
+      id: 'issue-transfer-reason-not-duplicated',
+      group: 'issue-new-transfer',
+      run: async () => {
+        const m = marker('dedup');
+        const reason = `Dedup reason ${m}`;
+        const issueData = {
+          title: `Smoke dedup ${m}`,
+          description: `Summary ${m}`,
+          ownerId: assigneeId,
+          status: 'open',
+          timeline: 'short_term',
+          transferToTeam: {
+            enabled: true,
+            destinationTeamId: destTeamId,
+            assigneeId,
+            reason
+          },
+          sourceContextTeamId: leadershipTeamId
+        };
+        const { apiPayload, userSummary } = buildFrontendIssueCreatePayload(issueData, leadershipTeamId);
+        const saved = await api.createIssue(apiPayload);
+        trackIssue(saved.id);
+        const errors = assertIssuePersisted({ saved, destTeamId, userMarker: userSummary, assigneeId });
+        const text = stripHtmlToText(saved.description);
+        const escaped = reason.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const occurrences = (text.match(new RegExp(escaped, 'g')) || []).length;
+        if (occurrences !== 1) {
+          errors.push(`transfer reason appears ${occurrences} times (expected 1 in footer)`);
+        }
+        if (new RegExp(`\\n---\\n${escaped}(\\n|$)`).test(text)) {
+          errors.push('transfer reason duplicated as standalone body section');
+        }
+        return errors;
+      }
+    },
+    {
       id: 'issue-create-transfer-reason-only',
       group: 'issue-new-transfer',
       run: async () => {
