@@ -58,9 +58,14 @@ const RichTextEditor = forwardRef(({ value, onChange, placeholder, className = '
       return;
     }
 
-    if (value === lastSyncedValueRef.current) return;
-
     const htmlContent = valueToHtml(value);
+    const currentHtml = normalizeEditorHtml(editorRef.current.innerHTML);
+    const valueUnchanged = value === lastSyncedValueRef.current;
+    const domInSync = currentHtml === htmlContent || (htmlContent === '' && currentHtml === '');
+
+    // Skip only when both the prop and DOM already match (handles hidden/cleared editors)
+    if (valueUnchanged && domInSync) return;
+
     if (editorRef.current.innerHTML !== htmlContent) {
       editorRef.current.innerHTML = htmlContent;
     }

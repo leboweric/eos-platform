@@ -154,6 +154,18 @@ const IssueDialog = ({
       // Always fetch fresh data when dialog opens
       fetchAttachments(issue.id);
       fetchUpdates(issue.id);
+
+      // Re-hydrate summary from API when in-memory issue lost description (e.g. socket partial update)
+      if (!(issue.description || '').trim() && teamId) {
+        issuesService.getIssues(issue.timeline || 'short_term', false, teamId)
+          .then((response) => {
+            const fresh = (response.data?.issues || []).find((i) => i.id === issue.id);
+            if (fresh?.description) {
+              setFormData((prev) => ({ ...prev, description: fresh.description }));
+            }
+          })
+          .catch((err) => console.error('Failed to hydrate issue description:', err));
+      }
       
       // Mark as initialized after form data is set (next tick)
       setTimeout(() => {
@@ -694,6 +706,7 @@ const IssueDialog = ({
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
               <div className="h-[200px] max-h-[400px] overflow-hidden border rounded-xl shadow-sm resize-y">
                 <RichTextEditor
+                  key={issue?.id ? `issue-summary-${issue.id}` : 'issue-summary-new'}
                   ref={summaryEditorRef}
                   value={formData.description}
                   onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
