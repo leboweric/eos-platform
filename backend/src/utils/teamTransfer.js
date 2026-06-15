@@ -130,10 +130,17 @@ async function isLeadershipTeamId(teamId) {
  * Route todos to the team where they should appear in the department list.
  * Leadership can assign to anyone, but departmental assignees should own the
  * to-do on their functional team — even if they are also on Leadership.
+ *
+ * Exception: todos created during a meeting (meetingId set) stay on the meeting
+ * team's list so they appear in that Level 10 session.
  */
-export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId) {
+export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId, options = {}) {
   if (!requestedTeamId || !assigneeId) {
     return requestedTeamId || null;
+  }
+
+  if (options.meetingId) {
+    return requestedTeamId;
   }
 
   const assigneeTeams = await getAssigneeTeams(orgId, assigneeId);
@@ -188,6 +195,7 @@ export async function repairLeadershipMisassignedTodos(orgId, leadershipTeamId) 
        WHERE t2.organization_id = $1
          AND t2.team_id = $2
          AND t2.deleted_at IS NULL
+         AND t2.meeting_id IS NULL
          AND t2.assigned_to_id IS NOT NULL
      ) resolved
      WHERE t.id = resolved.todo_id

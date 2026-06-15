@@ -195,7 +195,7 @@ export const createTodo = async (req, res) => {
       // Create one To-Do for each assignee
       for (const assigneeId of assignedToIds) {
         const resolvedTeamId = teamId
-          ? await resolveTodoTeamId(orgId, teamId, assigneeId)
+          ? await resolveTodoTeamId(orgId, teamId, assigneeId, { meetingId: meeting_id })
           : null;
 
         const transferCheck = await validateTeamTransfer(orgId, resolvedTeamId, assigneeId, { requireAssignee: true });
@@ -273,7 +273,7 @@ export const createTodo = async (req, res) => {
       const todoId = uuidv4();
       const singleAssignee = assignedToId || userId;
       const resolvedTeamId = teamId
-        ? await resolveTodoTeamId(orgId, teamId, singleAssignee)
+        ? await resolveTodoTeamId(orgId, teamId, singleAssignee, { meetingId: meeting_id })
         : null;
 
       if (resolvedTeamId) {
@@ -436,7 +436,7 @@ export const updateTodo = async (req, res) => {
       paramIndex++;
       updates.push(`is_multi_assignee = FALSE`);
 
-      if (existingRecord.team_id) {
+      if (existingRecord.team_id && !existingRecord.meeting_id) {
         const resolvedTeamId = await resolveTodoTeamId(orgId, existingRecord.team_id, assignedToId);
         if (resolvedTeamId && resolvedTeamId !== existingRecord.team_id) {
           updates.push(`team_id = $${paramIndex}`);

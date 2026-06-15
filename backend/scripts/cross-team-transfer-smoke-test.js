@@ -645,6 +645,35 @@ function buildScenarios(ctx, api) {
 
     // ── NEW TODO + TRANSFER ──
     {
+      id: 'todo-meeting-create-stays-on-leadership',
+      group: 'todo-meeting',
+      run: async () => {
+        const m = marker('todo-meeting');
+        const meetingId = randomUUID();
+        const saved = await api.createTodo({
+          title: `Smoke meeting todo ${m}`,
+          description: m,
+          assignedToId: assigneeId,
+          teamId: leadershipTeamId,
+          meeting_id: meetingId
+        });
+        trackTodo(saved.id);
+        const errors = [];
+        if (saved.team_id !== leadershipTeamId) {
+          errors.push(`team_id ${saved.team_id} !== leadership ${leadershipTeamId}`);
+        }
+        const leadershipList = await api.getTodos(leadershipTeamId);
+        if (!leadershipList.find((t) => t.id === saved.id)) {
+          errors.push('todo missing from leadership list');
+        }
+        const financeList = await api.getTodos(destTeamId);
+        if (financeList.find((t) => t.id === saved.id)) {
+          errors.push('todo incorrectly visible on finance list');
+        }
+        return errors;
+      }
+    },
+    {
       id: 'todo-create-transfer-plain-summary',
       group: 'todo-new-transfer',
       run: async () => {
