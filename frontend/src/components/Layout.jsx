@@ -260,19 +260,18 @@ const Layout = ({ children }) => {
         lg:sticky lg:top-0 lg:h-screen lg:transform-none lg:transition-none lg:flex lg:flex-col overflow-y-auto
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex items-center justify-between min-h-[6.5rem] py-3 px-6 border-b shrink-0">
-          <Link to="/dashboard" className="flex items-center min-w-0 max-w-full">
+        <div className="flex items-center justify-between h-20 px-6 border-b">
+          <Link to="/dashboard" className="flex items-center space-x-2">
             {logoUrl ? (
               <img 
                 key={logoKey}
                 src={`${logoUrl}?t=${logoKey}`} 
                 alt={user?.organizationName} 
-                className="object-contain object-left max-w-full"
+                className="object-contain"
                 style={{
-                  maxHeight: `${80 * (logoSize / 100)}px`,
-                  maxWidth: `${220 * (logoSize / 100)}px`,
-                  width: 'auto',
-                  height: 'auto'
+                  height: `${96 * (logoSize / 100)}px`,
+                  maxWidth: `${300 * (logoSize / 100)}px`,
+                  width: 'auto'
                 }}
                 onError={(e) => {
                   e.target.style.display = 'none';
