@@ -13,6 +13,7 @@ DECLARE
     v_org_id UUID;
     v_leadership_team_id UUID;
     v_karlie_user_id UUID;
+    v_mark_user_id UUID;
     v_blueprint_id UUID;
     -- Default password: abc123 (must change on first login)
     v_password_hash TEXT := '$2b$12$O7KlPI1nrqTwjFRNniHzQu/kt0fvci/GWVbU/51SA08tKNm270EgC';
@@ -74,6 +75,23 @@ BEGIN
     INSERT INTO team_members (team_id, user_id, role, joined_at)
     VALUES (v_leadership_team_id, v_karlie_user_id, 'admin', NOW());
 
+    INSERT INTO users (
+        id, organization_id, email, password_hash,
+        first_name, last_name, role,
+        created_at, updated_at, is_active, is_temporary_password
+    )
+    VALUES (
+        gen_random_uuid(), v_org_id,
+        'mark@kandeconsulting.com',
+        v_password_hash,
+        'Mark', 'Keating', 'admin',
+        NOW(), NOW(), true, true
+    )
+    RETURNING id INTO v_mark_user_id;
+
+    INSERT INTO team_members (team_id, user_id, role, joined_at)
+    VALUES (v_leadership_team_id, v_mark_user_id, 'admin', NOW());
+
     INSERT INTO business_blueprints (id, organization_id, team_id, created_at, updated_at)
     VALUES (gen_random_uuid(), v_org_id, NULL, NOW(), NOW())
     RETURNING id INTO v_blueprint_id;
@@ -99,7 +117,7 @@ BEGIN
         NOW(),
         NOW() + INTERVAL '90 days',
         'karli@kandeconsulting.com',
-        1,
+        2,
         0,
         NOW(),
         NOW()
@@ -110,8 +128,9 @@ BEGIN
     RAISE NOTICE 'Org ID: %', v_org_id;
     RAISE NOTICE 'Leadership Team ID: %', v_leadership_team_id;
     RAISE NOTICE 'Karlie Knox user ID: %', v_karlie_user_id;
+    RAISE NOTICE 'Mark Keating user ID: %', v_mark_user_id;
     RAISE NOTICE 'Blueprint ID: %', v_blueprint_id;
-    RAISE NOTICE 'Login: karli@kandeconsulting.com / abc123';
+    RAISE NOTICE 'Logins (temp password abc123): karli@kandeconsulting.com, mark@kandeconsulting.com';
 END $$;
 
 COMMIT;
