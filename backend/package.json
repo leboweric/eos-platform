@@ -15,6 +15,7 @@
     "test:setup": "node src/tests/setup-test-db.js",
     "migrate": "node src/migrate.js",
     "test-daily-report": "node test-daily-report.js",
+    "test:transfer-smoke": "node scripts/cross-team-transfer-smoke-test.js",
     "migrate-login-tracking": "psql $DATABASE_URL < database/migrations/010_user_login_tracking.sql"
   },
   "keywords": [
