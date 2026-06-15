@@ -1073,41 +1073,35 @@ const IssueDialog = ({
             <Button 
               type="button"
               onClick={async (e) => {
-                e.preventDefault(); // Prevent any form submission
-                
-                // Get the current issue ID - check both the prop and createdIssueId
+                e.preventDefault();
+
                 const currentIssueId = issue?.id || createdIssueId;
-                
-                // Debug logging
+                const isTransferSave = allowTransferToTeam && transferToTeam.enabled;
+
                 console.log('🔘 Save/Close button clicked:', {
                   currentIssueId,
-                  'issue?.id': issue?.id,
-                  createdIssueId,
+                  isTransferSave,
                   hasUnsavedChanges,
                   'formData.title': formData.title.substring(0, 30)
                 });
-                
-                // If this is an existing issue (editing), just close
+
+                // Cross-team transfer must use full submit for both new and existing issues
+                if (isTransferSave) {
+                  await handleSubmit(e);
+                  return;
+                }
+
                 if (currentIssueId) {
-                  // If there are new attachments, go through full save flow to upload them
                   if (newAttachments.length > 0) {
-                    console.log('📎 New attachments pending, triggering full save to upload files...');
                     await handleSubmit(e);
                     return;
                   }
-                  // If there are unsaved changes, save before closing
                   if (hasUnsavedChanges && formData.title.trim()) {
-                    console.log('💾 Triggering save before close...');
                     setError(null);
                     await performAutoSave();
-                  } else {
-                    console.log('✅ No unsaved changes, just closing');
                   }
                   handleClose();
                 } else {
-                  // This is a new issue - trigger form submission via handleSubmit
-                  console.log('📝 Creating new issue via handleSubmit...');
-                  // Call handleSubmit directly instead of form submission
                   await handleSubmit(e);
                 }
               }}
@@ -1125,7 +1119,9 @@ const IssueDialog = ({
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {(issue?.id || createdIssueId) ? 'Close' : 'Create'}
+                  {allowTransferToTeam && transferToTeam.enabled
+                    ? 'Send to Team'
+                    : (issue?.id || createdIssueId) ? 'Close' : 'Create'}
                 </>
               )}
             </Button>
