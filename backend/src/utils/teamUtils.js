@@ -272,15 +272,40 @@ export const getUserTeamIds = async (userId, organizationId) => {
   }
 };
 
+// Verify user can view a specific team's data (direct member, leadership, or admin)
+export const assertTeamViewAccess = async (userId, organizationId, teamId, userRole = 'user') => {
+  if (!teamId || isZeroUUID(teamId)) return;
+
+  const userTeamIds = await getUserTeamIds(userId, organizationId);
+  if (userTeamIds.includes(teamId)) return;
+
+  if (userRole === 'admin' || userRole === 'super_admin') return;
+
+  const onLeadership = await isUserOnLeadershipTeam(userId, organizationId);
+  if (onLeadership) return;
+
+  throw new Error('Access denied: You do not have permission to view this team');
+};
+
+/**
+ * SQL filter for quarterly priorities in a team meeting context.
+ * Company rocks belong to the team; individual rocks belong to team members.
+ */
+export const getTeamPrioritiesScope = (tableAlias, teamIdParamIndex) => {
+  return `(
+    (${tableAlias}.is_company_priority = true AND ${tableAlias}.team_id = $${teamIdParamIndex})
+    OR
+    (COALESCE(${tableAlias}.is_company_priority, false) = false AND ${tableAlias}.owner_id IN (
+      SELECT tm.user_id FROM team_members tm WHERE tm.team_id = $${teamIdParamIndex}
+    ))
+  )`;
+};
+
 // Get user's team scope for mandatory data isolation
-export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', explicitTeamId = null, paramIndex = 1) => {
+export const getUserTeamScope = async (userId, organizationId, tableAlias = 't', explicitTeamId = null, paramIndex = 1, userRole = 'user') => {
   // If an explicit team ID is provided, filter by that team
   if (explicitTeamId) {
-    // Security check: Verify user is actually a member of this team
-    const userTeamIds = await getUserTeamIds(userId, organizationId);
-    if (!userTeamIds.includes(explicitTeamId)) {
-      throw new Error('Access denied: You do not have permission to view this team');
-    }
+    await assertTeamViewAccess(userId, organizationId, explicitTeamId, userRole);
     
     // Filter by the requested team
     const query = `${tableAlias}.team_id = $${paramIndex}`;

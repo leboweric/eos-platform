@@ -65,7 +65,7 @@ export const getTodos = async (req, res) => {
     }
 
     console.log('🔍 Team scope debug:', { userId, orgId, department_id, paramIndex });
-    const teamScope = await getUserTeamScope(userId, orgId, 't', department_id, paramIndex); // Use 't' as the alias for the todos table
+    const teamScope = await getUserTeamScope(userId, orgId, 't', department_id, paramIndex, req.user.role);
     console.log('🔍 Team scope result:', { query: teamScope.query, params: teamScope.params });
     conditions.push(`(${teamScope.query})`);
     if (teamScope.params.length > 0) {

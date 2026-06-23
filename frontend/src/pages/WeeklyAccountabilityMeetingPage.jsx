@@ -1059,13 +1059,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       setShortTermIssues(shortTermList);
       setLongTermIssues(longTermList);
-      setTeamMembers(shortTermResponse.data?.teamMembers || []);
     } catch (error) {
       console.error('❌ Failed to fetch issues:', error);
       // Ensure empty state if fetch fails - prevents stale data
       setShortTermIssues([]);
       setLongTermIssues([]);
-      setTeamMembers([]);
     }
   }, [teamId, user]);
 
@@ -1251,8 +1249,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       }));
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
-      // Ensure empty state if fetch fails - prevents stale data
-      setQuarterlyPriorities([]);
+      setPriorities([]);
+      setSharedPriorities([]);
     }
   }, [teamId, user]);
 

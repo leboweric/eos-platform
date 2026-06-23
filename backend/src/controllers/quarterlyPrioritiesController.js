@@ -4,7 +4,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
-import { isZeroUUID, isLeadershipTeam, getUserTeamScope } from '../utils/teamUtils.js';
+import { isZeroUUID, isLeadershipTeam, getUserTeamScope, getTeamPrioritiesScope, assertTeamViewAccess } from '../utils/teamUtils.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -1397,9 +1397,18 @@ export const getCurrentPriorities = async (req, res) => {
     const hasDeletedAt = await checkDeletedAtColumn();
     console.log('deleted_at column exists:', hasDeletedAt);
     
-    // Get team scope for mandatory team isolation
-    // Pass the teamId from URL so Leadership members can filter by specific teams
-    const teamScope = await getUserTeamScope(req.user.id, orgId, 'p', teamId, 2); // 2 because orgId is $1
+    // Team-scoped priorities: company rocks for this team + individual rocks owned by team members
+    const departmentFilter = teamId || null;
+    let teamScope;
+    if (departmentFilter) {
+      await assertTeamViewAccess(req.user.id, orgId, departmentFilter, req.user.role);
+      teamScope = {
+        query: getTeamPrioritiesScope('p', 2),
+        params: [departmentFilter]
+      };
+    } else {
+      teamScope = await getUserTeamScope(req.user.id, orgId, 'p', null, 2, req.user.role);
+    }
     
     // Get current active priorities (non-deleted)
     // Always filter out deleted items - only use IS NULL for timestamp columns
@@ -1427,10 +1436,7 @@ export const getCurrentPriorities = async (req, res) => {
       ORDER BY p.created_at ASC
     `;
     
-    console.log('Executing query with params:', { orgId, teamId });
-    
-    // Use teamId from URL params as the department filter
-    const departmentFilter = teamId || null;
+    console.log('Executing query with params:', { orgId, teamId, departmentFilter });
     
     // Check if this is a Leadership Team view (will be used later for member filtering)
     let isLeadershipTeamView = false;
