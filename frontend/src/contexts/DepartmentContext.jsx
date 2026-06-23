@@ -1,8 +1,21 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const DepartmentContext = createContext();
+
+const getActiveOrganizationId = (user) => {
+  return (
+    localStorage.getItem('activeOrganizationId') ||
+    localStorage.getItem('organizationId') ||
+    user?.organizationId ||
+    user?.organization_id ||
+    null
+  );
+};
+
+const getDepartmentStorageKey = (organizationId) =>
+  organizationId ? `selectedDepartmentId_${organizationId}` : 'selectedDepartmentId';
 
 export const DepartmentProvider = ({ children }) => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -12,128 +25,118 @@ export const DepartmentProvider = ({ children }) => {
   const { user } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (user) {
-      fetchUserDepartments();
+
+  const resolveDefaultDepartment = useCallback((departments, organizationId) => {
+    if (!departments?.length) return null;
+
+    const urlParams = new URLSearchParams(location.search);
+    const departmentIdFromUrl = urlParams.get('department');
+    const savedDepartmentId = organizationId
+      ? localStorage.getItem(getDepartmentStorageKey(organizationId))
+      : null;
+
+    if (departmentIdFromUrl) {
+      const fromUrl = departments.find((d) => d.id === departmentIdFromUrl);
+      if (fromUrl) return fromUrl;
     }
-  }, [user]);
-  
-  const fetchUserDepartments = async () => {
+
+    if (savedDepartmentId) {
+      const fromStorage = departments.find((d) => d.id === savedDepartmentId);
+      if (fromStorage) return fromStorage;
+    }
+
+    return departments.find((d) => d.is_leadership_team) || departments[0];
+  }, [location.search]);
+
+  const fetchUserDepartments = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      console.log('[DepartmentContext] Fetching user departments...');
-      console.log('[DepartmentContext] User:', user);
-      
+
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       if (!token) {
-        console.error('[DepartmentContext] No token found in localStorage');
-        console.log('[DepartmentContext] Available keys:', Object.keys(localStorage));
         setLoading(false);
         return;
       }
-      
+
+      const organizationId = getActiveOrganizationId(user);
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
-      const fullUrl = `${apiUrl}/users/departments`;
-      console.log('[DepartmentContext] Making request to:', fullUrl);
-      
-      const response = await fetch(fullUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('[DepartmentContext] Response status:', response.status);
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('[DepartmentContext] API Response:', result);
-        
-        const data = result.data || result; // Handle different response formats
-        
-        console.log('[DepartmentContext] Departments:', data.departments);
-        console.log('[DepartmentContext] Is Leadership:', data.is_leadership_member);
-        
-        setAvailableDepartments(data.departments || []);
-        setIsLeadershipMember(data.is_leadership_member || false);
-        
-        // Set default department - prioritize URL param, then localStorage, then default
-        const urlParams = new URLSearchParams(location.search);
-        const departmentIdFromUrl = urlParams.get('department');
-        const savedDepartmentId = localStorage.getItem('selectedDepartmentId');
-        let defaultDepartment;
-        
-        // Priority 1: URL parameter (highest priority - survives refresh)
-        if (departmentIdFromUrl && data.departments) {
-          defaultDepartment = data.departments.find(d => d.id === departmentIdFromUrl);
-          if (defaultDepartment) {
-            console.log('[DepartmentContext] Using department from URL:', defaultDepartment.name);
-          }
-        }
-        
-        // Priority 2: localStorage (fallback if URL not present)
-        if (!defaultDepartment && savedDepartmentId && data.departments) {
-          defaultDepartment = data.departments.find(d => d.id === savedDepartmentId);
-          if (defaultDepartment) {
-            console.log('[DepartmentContext] Using department from localStorage:', defaultDepartment.name);
-          }
-        }
-        
-        // Priority 3: Default to Leadership Team or first department
-        if (!defaultDepartment && data.departments && data.departments.length > 0) {
-          defaultDepartment = data.departments.find(d => d.is_leadership_team) || data.departments[0];
-          console.log('[DepartmentContext] Using default department:', defaultDepartment.name);
-        }
-        
-        if (defaultDepartment) {
-          setSelectedDepartment(defaultDepartment);
-          localStorage.setItem('selectedDepartmentId', defaultDepartment.id);
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      if (organizationId) {
+        headers['X-Active-Organization-Id'] = organizationId;
+      }
+
+      const response = await fetch(`${apiUrl}/users/departments`, { headers });
+
+      if (!response.ok) {
+        console.error('[DepartmentContext] Failed to fetch user departments:', response.status);
+        return;
+      }
+
+      const result = await response.json();
+      const data = result.data || result;
+      const departments = data.departments || [];
+
+      setAvailableDepartments(departments);
+      setIsLeadershipMember(data.is_leadership_member || false);
+
+      const defaultDepartment = resolveDefaultDepartment(departments, organizationId);
+      if (defaultDepartment) {
+        setSelectedDepartment(defaultDepartment);
+        if (organizationId) {
+          localStorage.setItem(getDepartmentStorageKey(organizationId), defaultDepartment.id);
           localStorage.setItem('selectedDepartment', JSON.stringify(defaultDepartment));
-        } else {
-          console.warn('[DepartmentContext] No departments found for user');
         }
       } else {
-        console.error('[DepartmentContext] Failed to fetch user departments:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('[DepartmentContext] Error response:', errorText);
-        
-        // If 404, it might mean the endpoint doesn't exist yet
-        if (response.status === 404) {
-          console.error('[DepartmentContext] Departments endpoint not found. Backend may need updating.');
-        }
-        
+        setSelectedDepartment(null);
       }
     } catch (error) {
       console.error('[DepartmentContext] Error fetching user departments:', error);
-      console.error('[DepartmentContext] Error details:', error.message, error.stack);
-      
     } finally {
       setLoading(false);
-      console.log('[DepartmentContext] Loading complete. State:', {
-        selectedDepartment,
-        availableDepartments,
-        isLeadershipMember
-      });
     }
-  };
-  
+  }, [user, resolveDefaultDepartment]);
+
+  useEffect(() => {
+    fetchUserDepartments();
+  }, [fetchUserDepartments, user?.organizationId]);
+
+  useEffect(() => {
+    const handleOrganizationChanged = () => {
+      setSelectedDepartment(null);
+      setAvailableDepartments([]);
+      fetchUserDepartments();
+    };
+
+    window.addEventListener('organizationChanged', handleOrganizationChanged);
+    return () => window.removeEventListener('organizationChanged', handleOrganizationChanged);
+  }, [fetchUserDepartments]);
+
   const changeDepartment = (departmentId) => {
-    const department = availableDepartments.find(d => d.id === departmentId);
-    if (department) {
-      setSelectedDepartment(department);
-      localStorage.setItem('selectedDepartmentId', departmentId);
-      localStorage.setItem('selectedDepartment', JSON.stringify(department));
-      
-      // Update URL to persist department selection across refreshes
-      const newUrl = new URL(window.location);
-      newUrl.searchParams.set('department', departmentId);
-      navigate(`${newUrl.pathname}${newUrl.search}`, { replace: true });
-      
-      console.log('[DepartmentContext] Changed department to:', department.name, '- URL updated');
+    const department = availableDepartments.find((d) => d.id === departmentId);
+    if (!department) return;
+
+    const organizationId = getActiveOrganizationId(user);
+    setSelectedDepartment(department);
+
+    if (organizationId) {
+      localStorage.setItem(getDepartmentStorageKey(organizationId), departmentId);
     }
+    localStorage.setItem('selectedDepartment', JSON.stringify(department));
+
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('department', departmentId);
+    navigate(`${newUrl.pathname}${newUrl.search}`, { replace: true });
   };
-  
+
   return (
     <DepartmentContext.Provider value={{
       selectedDepartment,
