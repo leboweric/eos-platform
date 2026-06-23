@@ -810,21 +810,13 @@ const IssuesListClean = ({
         <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
           <CardContent className="p-0">
             {(enableDragDrop || enableBulkSelection) && (
-              <div className="px-3 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                  {enableDragDrop && (
-                    <p className="text-sm text-slate-600">
-                      <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
-                      Drag to reorder by priority
-                    </p>
-                  )}
-                  {enableBulkSelection && (
-                    <p className="text-sm text-slate-600">
-                      <CheckSquare className="h-4 w-4 inline mr-2 text-slate-400" />
-                      Use the far-left checkboxes to select issues (not the status circles)
-                    </p>
-                  )}
-                </div>
+              <div className={`px-3 pt-3 pb-2 flex flex-wrap items-center gap-2 ${enableDragDrop ? 'justify-between' : 'justify-end'}`}>
+                {enableDragDrop && (
+                  <p className="text-sm text-slate-600">
+                    <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
+                    Drag to reorder by priority
+                  </p>
+                )}
                 {enableBulkSelection && selectableIssueIds.length > 0 && (
                   <Button
                     variant="outline"
