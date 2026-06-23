@@ -125,6 +125,12 @@ const IssuesPageClean = () => {
   const [availableTeams, setAvailableTeams] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [cascadeToAll, setCascadeToAll] = useState(false);
+  const [selectedIssueIds, setSelectedIssueIds] = useState([]);
+  const [isBulkMoving, setIsBulkMoving] = useState(false);
+
+  useEffect(() => {
+    setSelectedIssueIds([]);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchIssues();
@@ -315,6 +321,29 @@ const IssuesPageClean = () => {
       setError('Failed to update issue status');
       // Revert on error by refetching
       await fetchIssues();
+    }
+  };
+
+  const handleBulkTimelineChange = async (newTimeline) => {
+    if (selectedIssueIds.length === 0) return;
+
+    setIsBulkMoving(true);
+    try {
+      await Promise.all(
+        selectedIssueIds.map(issueId => issuesService.updateIssue(issueId, { timeline: newTimeline }))
+      );
+
+      const count = selectedIssueIds.length;
+      setSuccess(`${count} issue${count !== 1 ? 's' : ''} moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+      setSelectedIssueIds([]);
+      await fetchIssues();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to bulk move issues:', error);
+      setError(`Failed to move issues: ${error.response?.data?.message || error.message}`);
+      await fetchIssues();
+    } finally {
+      setIsBulkMoving(false);
     }
   };
 
@@ -851,6 +880,12 @@ const IssuesPageClean = () => {
                     onMarkSolved={handleMarkIssueSolved}
                     onReorder={handleReorderIssues}
                     enableDragDrop={activeTab !== 'archived'}
+                    enableBulkSelection={activeTab !== 'archived'}
+                    selectedIssueIds={selectedIssueIds}
+                    onSelectionChange={setSelectedIssueIds}
+                    currentTimeline={activeTab}
+                    onBulkMoveTimeline={handleBulkTimelineChange}
+                    isBulkMoving={isBulkMoving}
                     getStatusColor={getStatusColor}
                     getStatusIcon={getStatusIcon}
                     showVoting={false}

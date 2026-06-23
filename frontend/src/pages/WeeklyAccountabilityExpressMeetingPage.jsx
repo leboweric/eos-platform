@@ -75,7 +75,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 // import { MovePriorityDialog } from '../components/priorities/MovePriorityDialog';
-import IssuesListClean from '../components/issues/IssuesListClean';
+import BulkIssueActionsBar from '../components/issues/BulkIssueActionsBar';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodosListClean from '../components/todos/TodosListClean';
@@ -231,6 +231,10 @@ const WeeklyAccountabilityMeetingPage = () => {
     console.log('📊 Is Leader:', isLeader);
     console.log('📊 Current Leader:', currentLeader);
   }, [participants, isLeader, currentLeader]);
+
+  useEffect(() => {
+    setSelectedIssueIds([]);
+  }, [issueTimeline]);
   
   // Listen for timer pause/resume events from other participants
   useEffect(() => {
@@ -295,6 +299,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [longTermIssues, setLongTermIssues] = useState([]);
   const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
+  const [isBulkMovingIssues, setIsBulkMovingIssues] = useState(false);
   const [moveIssueDialogOpen, setMoveIssueDialogOpen] = useState(false);
   const [issueToMove, setIssueToMove] = useState(null);
   // const [movePriorityDialogOpen, setMovePriorityDialogOpen] = useState(false);
@@ -2868,6 +2873,28 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleBulkMoveIssues = async (newTimeline) => {
+    if (selectedIssueIds.length === 0) return;
+
+    setIsBulkMovingIssues(true);
+    try {
+      await Promise.all(
+        selectedIssueIds.map(issueId => issuesService.updateIssue(issueId, { timeline: newTimeline }))
+      );
+
+      const count = selectedIssueIds.length;
+      setSelectedIssueIds([]);
+      await fetchIssuesData();
+      setSuccess(`${count} issue${count !== 1 ? 's' : ''} moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+    } catch (error) {
+      console.error('Failed to bulk move issues:', error);
+      setError('Failed to move selected issues');
+      await fetchIssuesData();
+    } finally {
+      setIsBulkMovingIssues(false);
+    }
+  };
+
   const handleArchiveIssue = async (issue) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -3810,11 +3837,18 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleIssueCheckboxChange = (issueId, checked) => {
     setSelectedIssueIds(prev => {
       if (checked) {
-        return [...prev, issueId];
-      } else {
-        return prev.filter(id => id !== issueId);
+        return prev.includes(issueId) ? prev : [...prev, issueId];
       }
+      return prev.filter(id => id !== issueId);
     });
+  };
+
+  const handleSelectAllIssues = (issueIds, checked) => {
+    if (checked) {
+      setSelectedIssueIds(prev => [...new Set([...prev, ...issueIds])]);
+    } else {
+      setSelectedIssueIds(prev => prev.filter(id => !issueIds.includes(id)));
+    }
   };
 
   const fetchAvailableTeams = async () => {
@@ -7377,6 +7411,9 @@ setAddingMilestoneFor(priority.id);
 
 {(() => {
                 const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
+                const selectableIssueIds = issues.map(issue => issue.id);
+                const allIssuesSelected = selectableIssueIds.length > 0 && selectableIssueIds.every(id => selectedIssueIds.includes(id));
+                const someIssuesSelected = selectableIssueIds.some(id => selectedIssueIds.includes(id));
 
                 if (issues.length === 0) {
                   return (
@@ -7440,6 +7477,13 @@ setAddingMilestoneFor(priority.id);
                         <div className="space-y-1">
                           {/* Header Row */}
                           <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+                            <div className="w-10 flex items-center justify-center">
+                              <Checkbox
+                                checked={allIssuesSelected ? true : someIssuesSelected ? 'indeterminate' : false}
+                                onCheckedChange={(checked) => handleSelectAllIssues(selectableIssueIds, !!checked)}
+                                aria-label="Select all issues"
+                              />
+                            </div>
                             <div className="w-8">Drag</div>
                             <div className="w-10 ml-2">Status</div>
                             <div className="w-8 ml-2">#</div>
@@ -7495,6 +7539,14 @@ setAddingMilestoneFor(priority.id);
                                     }}
                                     onDrop={(e) => handleDrop(e, index)}
                                   >
+                                    <div className="w-10 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                                      <Checkbox
+                                        checked={selectedIssueIds.includes(issue.id)}
+                                        onCheckedChange={(checked) => handleIssueCheckboxChange(issue.id, !!checked)}
+                                        aria-label="Select issue"
+                                      />
+                                    </div>
+
                                     {/* Drag Handle - Always visible with subtle opacity */}
                                     <div 
                                       className="w-8 flex items-center justify-center cursor-move text-slate-300 hover:text-slate-500 transition-colors"
@@ -7630,6 +7682,15 @@ setAddingMilestoneFor(priority.id);
                         </div>
                       </CardContent>
                     </Card>
+
+                    <BulkIssueActionsBar
+                      selectedCount={selectedIssueIds.length}
+                      currentTimeline={issueTimeline}
+                      onMove={handleBulkMoveIssues}
+                      onClear={() => setSelectedIssueIds([])}
+                      isLoading={isBulkMovingIssues}
+                      themeColors={themeColors}
+                    />
                   </div>
                 );
               })()}

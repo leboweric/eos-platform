@@ -7,6 +7,8 @@ import { debugTheme } from '../../utils/debugTheme';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import BulkIssueActionsBar from './BulkIssueActionsBar';
 import {
   Edit,
   User,
@@ -68,7 +70,13 @@ const IssuesListClean = ({
   teamId = null,
   sourceTeamId = null,
   allowTransferToTeam = false,
-  onRefresh = null
+  onRefresh = null,
+  enableBulkSelection = false,
+  selectedIssueIds = [],
+  onSelectionChange = null,
+  currentTimeline = 'short_term',
+  onBulkMoveTimeline = null,
+  isBulkMoving = false
 }) => {
   const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -100,6 +108,41 @@ const IssuesListClean = ({
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedGroups, setExpandedGroups] = useState({});  // Track which grouped issues are expanded
+
+  const selectableIssueIds = (issues || []).map(issue => issue.id);
+  const allSelected = enableBulkSelection && selectableIssueIds.length > 0 && selectableIssueIds.every(id => selectedIssueIds.includes(id));
+  const someSelected = enableBulkSelection && selectableIssueIds.some(id => selectedIssueIds.includes(id));
+
+  const handleIssueSelect = (issueId, checked) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange([...selectedIssueIds, issueId]);
+    } else {
+      onSelectionChange(selectedIssueIds.filter(id => id !== issueId));
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange([...new Set([...selectedIssueIds, ...selectableIssueIds])]);
+    } else {
+      onSelectionChange(selectedIssueIds.filter(id => !selectableIssueIds.includes(id)));
+    }
+  };
+
+  const renderSelectionCheckbox = (issueId) => {
+    if (!enableBulkSelection) return null;
+    return (
+      <div className="w-10 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={selectedIssueIds.includes(issueId)}
+          onCheckedChange={(checked) => handleIssueSelect(issueId, !!checked)}
+          aria-label="Select issue"
+        />
+      </div>
+    );
+  };
 
   // Helper function to calculate days overdue dynamically from the due date
   const getDaysOverdue = (issue) => {
@@ -739,8 +782,17 @@ const IssuesListClean = ({
               </div>
             )}
             <div className="space-y-1">
-            {/* Header Row - EXACT ORDER: Drag, Status, #, Issue, Owner, Created */}
+            {/* Header Row - EXACT ORDER: Select, Drag, Status, #, Issue, Owner, Created */}
             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+              {enableBulkSelection && (
+                <div className="w-10 flex items-center justify-center">
+                  <Checkbox
+                    checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all issues"
+                  />
+                </div>
+              )}
               {enableDragDrop && <div className="w-8 mr-2">Drag</div>}
               <div className="w-12">Status</div>
               <div className="w-8 ml-2">#</div>
@@ -770,6 +822,7 @@ const IssuesListClean = ({
                       }}
                       onClick={() => toggleGroupExpand(groupKey)}
                     >
+                      {renderSelectionCheckbox(primaryIssue.id)}
                       {/* Expand/Collapse Icon */}
                       <div className="w-8 mr-2 flex items-center justify-center">
                         {isGroupExpanded ? (
@@ -848,6 +901,7 @@ const IssuesListClean = ({
                               currentUserId={user?.id}
                             >
                               <div className="flex items-center px-3 py-2 group hover:bg-orange-100/50 transition-colors border-b border-orange-100 last:border-0">
+                                {renderSelectionCheckbox(issue.id)}
                                 {/* Indent spacer */}
                                 <div className="w-8 mr-2" />
 
@@ -960,6 +1014,7 @@ const IssuesListClean = ({
                         onDragLeave={enableDragDrop ? handleDragLeave : undefined}
                         onDrop={enableDragDrop ? (e) => handleDrop(e, index) : undefined}
                       >
+                        {renderSelectionCheckbox(issue.id)}
                         {/* Drag Handle */}
                         {enableDragDrop && (
                           <div
@@ -1370,6 +1425,17 @@ const IssuesListClean = ({
         isQuarterlyMeeting={isQuarterlyMeeting}
         onRefresh={onRefresh}
       />
+
+      {enableBulkSelection && onBulkMoveTimeline && (
+        <BulkIssueActionsBar
+          selectedCount={selectedIssueIds.length}
+          currentTimeline={currentTimeline}
+          onMove={onBulkMoveTimeline}
+          onClear={() => onSelectionChange?.([])}
+          isLoading={isBulkMoving}
+          themeColors={themeColors}
+        />
+      )}
     </>
   );
 };
