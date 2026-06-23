@@ -115,29 +115,41 @@ const IssuesListClean = ({
 
   const handleIssueSelect = (issueId, checked) => {
     if (!onSelectionChange) return;
-    if (checked) {
-      onSelectionChange([...selectedIssueIds, issueId]);
-    } else {
-      onSelectionChange(selectedIssueIds.filter(id => id !== issueId));
-    }
+    onSelectionChange((prev) => {
+      const current = Array.isArray(prev) ? prev : selectedIssueIds;
+      if (checked) {
+        return current.includes(issueId) ? current : [...current, issueId];
+      }
+      return current.filter((id) => id !== issueId);
+    });
   };
 
   const handleSelectAll = (checked) => {
     if (!onSelectionChange) return;
-    if (checked) {
-      onSelectionChange([...new Set([...selectedIssueIds, ...selectableIssueIds])]);
-    } else {
-      onSelectionChange(selectedIssueIds.filter(id => !selectableIssueIds.includes(id)));
-    }
+    onSelectionChange((prev) => {
+      const current = Array.isArray(prev) ? prev : selectedIssueIds;
+      if (checked) {
+        return [...new Set([...current, ...selectableIssueIds])];
+      }
+      return current.filter((id) => !selectableIssueIds.includes(id));
+    });
   };
 
   const renderSelectionCheckbox = (issueId) => {
     if (!enableBulkSelection) return null;
     return (
-      <div className="w-10 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <div
+        data-bulk-select
+        className="w-10 flex items-center justify-center shrink-0"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <Checkbox
           checked={selectedIssueIds.includes(issueId)}
-          onCheckedChange={(checked) => handleIssueSelect(issueId, !!checked)}
+          onCheckedChange={(checked) => handleIssueSelect(issueId, checked === true)}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           aria-label="Select issue"
         />
       </div>
@@ -832,7 +844,10 @@ const IssuesListClean = ({
                         borderLeftStyle: 'solid',
                         backgroundColor: isGroupExpanded ? 'rgb(255 247 237)' : undefined
                       }}
-                      onClick={() => toggleGroupExpand(groupKey)}
+                      onClick={(e) => {
+                        if (e.target.closest('[data-bulk-select]')) return;
+                        toggleGroupExpand(groupKey);
+                      }}
                     >
                       {renderSelectionCheckbox(primaryIssue.id)}
                       {/* Expand/Collapse Icon */}
@@ -900,20 +915,22 @@ const IssuesListClean = ({
                           const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
 
                           return (
-                            <IssueContextMenu
-                              key={issue.id}
-                              issue={issue}
-                              onEdit={onEdit}
-                              onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
-                              onCreateTodo={onCreateTodo}
-                              onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
-                              onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
-                              onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
-                              onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
-                              currentUserId={user?.id}
-                            >
-                              <div className="flex items-center px-3 py-2 group hover:bg-orange-100/50 transition-colors border-b border-orange-100 last:border-0">
+                            <div key={issue.id} className="flex items-stretch border-b border-orange-100 last:border-0">
+                              <div className="flex items-center pl-3">
                                 {renderSelectionCheckbox(issue.id)}
+                              </div>
+                              <IssueContextMenu
+                                issue={issue}
+                                onEdit={onEdit}
+                                onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
+                                onCreateTodo={onCreateTodo}
+                                onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+                                onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+                                onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+                                onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+                                currentUserId={user?.id}
+                              >
+                              <div className="flex flex-1 min-w-0 items-center px-3 py-2 group hover:bg-orange-100/50 transition-colors">
                                 {/* Indent spacer */}
                                 <div className="w-8 mr-2" />
 
@@ -981,7 +998,8 @@ const IssuesListClean = ({
                                   </button>
                                 </div>
                               </div>
-                            </IssueContextMenu>
+                              </IssueContextMenu>
+                            </div>
                           );
                         })}
                       </div>
@@ -996,20 +1014,23 @@ const IssuesListClean = ({
               const isTopThree = index < 3;  // Top 3 issues get blue border
 
               return (
-                <IssueContextMenu
-                  key={issue.id}
-                  issue={issue}
-                  onEdit={onEdit}
-                  onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
-                  onCreateTodo={onCreateTodo}
-                  onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
-                  onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
-                  onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
-                  onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
-                  currentUserId={user?.id}
-                >
+                <div key={issue.id} className="flex items-stretch border-b border-slate-100 last:border-0">
+                  <div className="flex items-center pl-3">
+                    {renderSelectionCheckbox(issue.id)}
+                  </div>
+                  <IssueContextMenu
+                    issue={issue}
+                    onEdit={onEdit}
+                    onMarkSolved={(issue) => onStatusChange && onStatusChange(issue.id, 'closed')}
+                    onCreateTodo={onCreateTodo}
+                    onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+                    onMoveToLongTerm={issue.timeline === 'short_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+                    onMoveToShortTerm={issue.timeline === 'long_term' && onTimelineChange ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+                    onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+                    currentUserId={user?.id}
+                  >
                   <div
-                    className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
+                    className="flex-1 min-w-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
                     style={{
                       borderLeftWidth: isTopThree ? '4px' : '0px',
                       borderLeftColor: isTopThree ? '#3B82F6' : 'transparent',
@@ -1026,7 +1047,6 @@ const IssuesListClean = ({
                         onDragLeave={enableDragDrop ? handleDragLeave : undefined}
                         onDrop={enableDragDrop ? (e) => handleDrop(e, index) : undefined}
                       >
-                        {renderSelectionCheckbox(issue.id)}
                         {/* Drag Handle */}
                         {enableDragDrop && (
                           <div
@@ -1130,7 +1150,8 @@ const IssuesListClean = ({
                         </div>
                       )}
                     </div>
-                </IssueContextMenu>
+                  </IssueContextMenu>
+                </div>
               );
             })}
             </div>

@@ -7825,21 +7825,36 @@ setAddingMilestoneFor(priority.id);
                             const isTopThree = index < 3;  // Top 3 issues get blue border
                             
                             return (
-                              <IssueContextMenu
-                                key={issue.id}
-                                issue={issue}
-                                onEdit={handleEditIssue}
-                                onMarkSolved={handleMarkIssueSolved}
-                                onCreateTodo={handleCreateTodoFromIssue}
-                                onVote={handleVoteOnIssue}
-                                onMoveToLongTerm={issueTimeline === 'short_term' ? handleMoveIssueToLongTerm : undefined}
-                                onMoveToShortTerm={issueTimeline === 'long_term' ? handleMoveIssueToShortTerm : undefined}
-                                onMoveToAnotherTeam={handleMoveIssueToAnotherTeam}
-                                onArchive={handleArchiveIssue}
-                                currentUserId={user?.id}
-                              >
+                              <div key={issue.id} className="flex items-stretch border-b border-slate-100 last:border-0">
+                                <div
+                                  data-bulk-select
+                                  className="flex items-center pl-3 shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                >
+                                  <Checkbox
+                                    checked={selectedIssueIds.includes(issue.id)}
+                                    onCheckedChange={(checked) => handleIssueCheckboxChange(issue.id, checked === true)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    aria-label="Select issue"
+                                  />
+                                </div>
+                                <IssueContextMenu
+                                  issue={issue}
+                                  onEdit={handleEditIssue}
+                                  onMarkSolved={handleMarkIssueSolved}
+                                  onCreateTodo={handleCreateTodoFromIssue}
+                                  onVote={handleVoteOnIssue}
+                                  onMoveToLongTerm={issueTimeline === 'short_term' ? handleMoveIssueToLongTerm : undefined}
+                                  onMoveToShortTerm={issueTimeline === 'long_term' ? handleMoveIssueToShortTerm : undefined}
+                                  onMoveToAnotherTeam={handleMoveIssueToAnotherTeam}
+                                  onArchive={handleArchiveIssue}
+                                  currentUserId={user?.id}
+                                >
                                 <div 
-                                  className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
+                                  className="flex-1 min-w-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded"
                                   style={{
                                     borderLeftWidth: isTopThree ? '4px' : '0px',
                                     borderLeftColor: isTopThree ? '#3B82F6' : 'transparent',
@@ -7861,15 +7876,6 @@ setAddingMilestoneFor(priority.id);
                                     }}
                                     onDrop={(e) => handleDrop(e, index)}
                                   >
-                                    {/* Selection Checkbox */}
-                                    <div className="w-10 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                                      <Checkbox
-                                        checked={selectedIssueIds.includes(issue.id)}
-                                        onCheckedChange={(checked) => handleIssueCheckboxChange(issue.id, !!checked)}
-                                        aria-label="Select issue"
-                                      />
-                                    </div>
-
                                     {/* Drag Handle - Always visible with subtle opacity */}
                                     <div 
                                       className="w-8 flex items-center justify-center cursor-move text-slate-300 hover:text-slate-500 transition-colors"
@@ -8051,7 +8057,8 @@ setAddingMilestoneFor(priority.id);
                                     </div>
                                   )}
                                 </div>
-                              </IssueContextMenu>
+                                </IssueContextMenu>
+                              </div>
                             );
                           })}
                         </div>
