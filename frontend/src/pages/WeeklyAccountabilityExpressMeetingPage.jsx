@@ -7444,11 +7444,23 @@ setAddingMilestoneFor(priority.id);
                       variant="inline"
                     />
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-wrap justify-between items-center gap-2">
                       <p className="text-sm text-slate-600">
                         <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
                         Drag to reorder by priority
                       </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                      {selectableIssueIds.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectAllIssues(selectableIssueIds, !allIssuesSelected)}
+                          className="h-8 text-xs font-medium"
+                        >
+                          <CheckSquare className="h-4 w-4 mr-1.5" />
+                          {allIssuesSelected ? 'Deselect All' : `Select All (${selectableIssueIds.length})`}
+                        </Button>
+                      )}
                       {closedCount > 0 && (
                         <Button 
                           variant="outline" 
@@ -7480,6 +7492,7 @@ setAddingMilestoneFor(priority.id);
                           Archive Solved ({closedCount})
                         </Button>
                       )}
+                      </div>
                     </div>
                     
                     <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
@@ -7487,13 +7500,20 @@ setAddingMilestoneFor(priority.id);
                         <div className="space-y-1">
                           {/* Header Row */}
                           <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-                            <div className="w-10 flex items-center justify-center">
+                            <button
+                              type="button"
+                              className="flex items-center gap-1.5 w-24 shrink-0 text-left hover:text-slate-700 transition-colors"
+                              onClick={() => handleSelectAllIssues(selectableIssueIds, !allIssuesSelected)}
+                              aria-label={allIssuesSelected ? 'Deselect all issues' : 'Select all issues'}
+                            >
                               <Checkbox
                                 checked={allIssuesSelected ? true : someIssuesSelected ? 'indeterminate' : false}
-                                onCheckedChange={(checked) => handleSelectAllIssues(selectableIssueIds, !!checked)}
-                                aria-label="Select all issues"
+                                onCheckedChange={(checked) => handleSelectAllIssues(selectableIssueIds, checked === true)}
+                                aria-hidden="true"
+                                tabIndex={-1}
                               />
-                            </div>
+                              <span>Select All</span>
+                            </button>
                             <div className="w-8">Drag</div>
                             <div className="w-10 ml-2">Status</div>
                             <div className="w-8 ml-2">#</div>

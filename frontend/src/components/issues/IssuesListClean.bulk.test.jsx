@@ -99,12 +99,12 @@ describe('IssuesListClean bulk selection smoke test', () => {
     });
   });
 
-  it('shows Move to Long-Term for all selected issues via select-all', async () => {
+  it('shows Move to Long-Term for all selected issues via select-all button', async () => {
     const user = userEvent.setup();
     render(<BulkSelectionHarness />);
 
-    const checkboxes = await screen.findAllByRole('checkbox');
-    await user.click(checkboxes[0]);
+    const selectAllButtons = await screen.findAllByRole('button', { name: /Select All \(2\)/i });
+    await user.click(selectAllButtons[0]);
 
     await waitFor(() => {
       expect(screen.getByText('2 issues selected')).toBeInTheDocument();

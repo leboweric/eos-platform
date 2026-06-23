@@ -33,7 +33,8 @@ import {
   Newspaper,
   ChevronRight,
   ChevronDown,
-  Check
+  Check,
+  CheckSquare
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
@@ -782,7 +783,18 @@ const IssuesListClean = ({
             </Button>
           )}
           </div>
-          
+
+          {enableBulkSelection && selectableIssueIds.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSelectAll(!allSelected)}
+              className="h-8 px-3 text-xs font-medium bg-white/90 shrink-0"
+            >
+              <CheckSquare className="h-4 w-4 mr-1.5" />
+              {allSelected ? 'Deselect All' : `Select All (${selectableIssueIds.length})`}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -797,25 +809,53 @@ const IssuesListClean = ({
         // Table view - EXACT COPY from Level 10 Meeting WeeklyAccountabilityMeetingPage.jsx lines 5883-5885
         <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
           <CardContent className="p-0">
-            {enableDragDrop && (
-              <div className="px-3 pt-3 pb-2">
-                <p className="text-sm text-slate-600">
-                  <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
-                  Drag to reorder by priority
-                </p>
+            {(enableDragDrop || enableBulkSelection) && (
+              <div className="px-3 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {enableDragDrop && (
+                    <p className="text-sm text-slate-600">
+                      <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
+                      Drag to reorder by priority
+                    </p>
+                  )}
+                  {enableBulkSelection && (
+                    <p className="text-sm text-slate-600">
+                      <CheckSquare className="h-4 w-4 inline mr-2 text-slate-400" />
+                      Use the far-left checkboxes to select issues (not the status circles)
+                    </p>
+                  )}
+                </div>
+                {enableBulkSelection && selectableIssueIds.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSelectAll(!allSelected)}
+                    className="h-8 px-3 text-xs font-medium shrink-0"
+                  >
+                    <CheckSquare className="h-4 w-4 mr-1.5" />
+                    {allSelected ? 'Deselect All' : `Select All (${selectableIssueIds.length})`}
+                  </Button>
+                )}
               </div>
             )}
             <div className="space-y-1">
             {/* Header Row - EXACT ORDER: Select, Drag, Status, #, Issue, Owner, Created */}
             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
               {enableBulkSelection && (
-                <div className="w-10 flex items-center justify-center">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 w-24 shrink-0 text-left hover:text-slate-700 transition-colors"
+                  onClick={() => handleSelectAll(!allSelected)}
+                  aria-label={allSelected ? 'Deselect all issues' : 'Select all issues'}
+                >
                   <Checkbox
                     checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                     onCheckedChange={handleSelectAll}
-                    aria-label="Select all issues"
+                    aria-hidden="true"
+                    tabIndex={-1}
                   />
-                </div>
+                  <span>Select All</span>
+                </button>
               )}
               {enableDragDrop && <div className="w-8 mr-2">Drag</div>}
               <div className="w-12">Status</div>

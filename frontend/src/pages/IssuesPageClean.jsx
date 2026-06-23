@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Sparkles,
   Clock,
-  X
+  X,
+  CheckSquare
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
@@ -820,7 +821,24 @@ const IssuesPageClean = () => {
                 </TabsList>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {activeTab !== 'archived' && currentIssues.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const allIds = currentIssues.map((issue) => issue.id);
+                      const allSelected = allIds.length > 0 && allIds.every((id) => selectedIssueIds.includes(id));
+                      setSelectedIssueIds(allSelected ? [] : allIds);
+                    }}
+                    disabled={isBulkMoving}
+                    className="bg-white/80 backdrop-blur-sm"
+                  >
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    {currentIssues.every((issue) => selectedIssueIds.includes(issue.id))
+                      ? 'Deselect All'
+                      : `Select All (${currentIssues.length})`}
+                  </Button>
+                )}
                 {activeTab !== 'archived' && selectedIssueIds.length > 0 && (
                   <>
                     <Button
