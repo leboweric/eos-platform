@@ -702,6 +702,18 @@ const IssuesListClean = ({
 
   return (
     <>
+      {enableBulkSelection && onBulkMoveTimeline && (
+        <BulkIssueActionsBar
+          selectedCount={selectedIssueIds.length}
+          currentTimeline={currentTimeline}
+          onMove={onBulkMoveTimeline}
+          onClear={() => onSelectionChange?.([])}
+          isLoading={isBulkMoving}
+          themeColors={themeColors}
+          variant="inline"
+        />
+      )}
+
       {/* Enhanced Sorting header with drag-and-drop indicator */}
       <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
@@ -1426,16 +1438,6 @@ const IssuesListClean = ({
         onRefresh={onRefresh}
       />
 
-      {enableBulkSelection && onBulkMoveTimeline && (
-        <BulkIssueActionsBar
-          selectedCount={selectedIssueIds.length}
-          currentTimeline={currentTimeline}
-          onMove={onBulkMoveTimeline}
-          onClear={() => onSelectionChange?.([])}
-          isLoading={isBulkMoving}
-          themeColors={themeColors}
-        />
-      )}
     </>
   );
 };

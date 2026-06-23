@@ -25,7 +25,9 @@ import {
   Target,
   Users,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Clock,
+  X
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
@@ -818,18 +820,48 @@ const IssuesPageClean = () => {
                 </TabsList>
               </div>
               
-              {activeTab !== 'archived' && closedIssuesCount > 0 && (
-                <Button 
-                  onClick={handleArchiveSelected} 
-                  className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
-                  }}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive Solved ({closedIssuesCount})
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {activeTab !== 'archived' && selectedIssueIds.length > 0 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedIssueIds([])}
+                      disabled={isBulkMoving}
+                      className="bg-white/80 backdrop-blur-sm"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear ({selectedIssueIds.length})
+                    </Button>
+                    <Button
+                      onClick={() => handleBulkTimelineChange(activeTab === 'short_term' ? 'long_term' : 'short_term')}
+                      disabled={isBulkMoving}
+                      className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
+                    >
+                      {isBulkMoving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Clock className="mr-2 h-4 w-4" />
+                      )}
+                      {activeTab === 'short_term' ? 'Move to Long-Term' : 'Move to Short-Term'} ({selectedIssueIds.length})
+                    </Button>
+                  </>
+                )}
+                {activeTab !== 'archived' && closedIssuesCount > 0 && (
+                  <Button 
+                    onClick={handleArchiveSelected} 
+                    className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
+                    }}
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive Solved ({closedIssuesCount})
+                  </Button>
+                )}
+              </div>
             </div>
 
             <TabsContent value={activeTab} className="mt-6">

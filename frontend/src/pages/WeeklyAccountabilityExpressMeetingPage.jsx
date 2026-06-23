@@ -7434,6 +7434,16 @@ setAddingMilestoneFor(priority.id);
                 
                 return (
                   <div className="space-y-4">
+                    <BulkIssueActionsBar
+                      selectedCount={selectedIssueIds.length}
+                      currentTimeline={issueTimeline}
+                      onMove={handleBulkMoveIssues}
+                      onClear={() => setSelectedIssueIds([])}
+                      isLoading={isBulkMovingIssues}
+                      themeColors={themeColors}
+                      variant="inline"
+                    />
+
                     <div className="flex justify-between items-center">
                       <p className="text-sm text-slate-600">
                         <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
@@ -7682,15 +7692,6 @@ setAddingMilestoneFor(priority.id);
                         </div>
                       </CardContent>
                     </Card>
-
-                    <BulkIssueActionsBar
-                      selectedCount={selectedIssueIds.length}
-                      currentTimeline={issueTimeline}
-                      onMove={handleBulkMoveIssues}
-                      onClear={() => setSelectedIssueIds([])}
-                      isLoading={isBulkMovingIssues}
-                      themeColors={themeColors}
-                    />
                   </div>
                 );
               })()}
