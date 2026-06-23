@@ -114,14 +114,21 @@ export const createUser = async (req, res) => {
     //   });
     // }
 
-    // Check if user already exists
+    // Check if user already exists (emails are globally unique across all tenants)
     const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1',
+      `SELECT u.id, o.name AS organization_name
+       FROM users u
+       JOIN organizations o ON o.id = u.organization_id
+       WHERE u.email = $1`,
       [email]
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User with this email already exists' });
+      const otherOrg = existingUser.rows[0].organization_name;
+      return res.status(400).json({
+        error: 'User with this email already exists',
+        message: `This email is already registered in "${otherOrg}". It cannot be added to your organization until it is removed or transferred from that account. Contact your platform administrator for help.`
+      });
     }
 
     // Generate secure temporary password
