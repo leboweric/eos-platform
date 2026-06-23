@@ -12,6 +12,7 @@ import DepartmentSelector from './DepartmentSelector';
 import DarkModeToggle from './DarkModeToggle';
 import HelpWidget from './help/HelpWidget';
 import { LogoText } from './Logo';
+import { toast } from 'sonner';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import {
   DropdownMenu,
@@ -246,8 +247,9 @@ const Layout = ({ children }) => {
     try {
       const result = await switchOrganization(organization);
       if (!result.success) {
-        console.error('Failed to switch organization:', result.error);
+        toast.error(result.error || 'Failed to switch organization');
       } else {
+        toast.success(`Switched to ${organization.name}`);
         navigate('/dashboard');
       }
     } finally {

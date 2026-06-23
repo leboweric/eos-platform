@@ -204,7 +204,20 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-impersonated-org-id', 'Cache-Control', 'Pragma', 'Expires'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-Active-Organization-Id',
+    'x-active-organization-id',
+    'X-Impersonated-Org-Id',
+    'x-impersonated-org-id',
+    'Cache-Control',
+    'Pragma',
+    'Expires'
+  ],
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
