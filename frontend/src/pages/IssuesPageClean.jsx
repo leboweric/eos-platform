@@ -27,8 +27,7 @@ import {
   TrendingUp,
   Sparkles,
   Clock,
-  X,
-  CheckSquare
+  X
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
