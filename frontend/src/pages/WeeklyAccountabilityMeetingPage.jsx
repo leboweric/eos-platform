@@ -233,10 +233,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     console.log('📊 Is Leader:', isLeader);
     console.log('📊 Current Leader:', currentLeader);
   }, [participants, isLeader, currentLeader]);
-
-  useEffect(() => {
-    setSelectedIssueIds([]);
-  }, [issueTimeline]);
   
   // Listen for timer pause/resume events from other participants
   useEffect(() => {
@@ -391,6 +387,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [inlineEditForm, setInlineEditForm] = useState({ title: '', dueDate: '', ownerId: null });
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [todoSortBy, setTodoSortBy] = useState('assignee'); // For Conclude section todo sorting - default to assignee/owner
+
+  useEffect(() => {
+    setSelectedIssueIds([]);
+  }, [issueTimeline]);
   
   // Helper function to show confirmation dialogs
   const showConfirmation = (type, title, message, onConfirm) => {
