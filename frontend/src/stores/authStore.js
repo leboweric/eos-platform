@@ -33,8 +33,18 @@ authAxios.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Removed impersonation header - feature no longer supported
+
+    const activeOrganizationId =
+      safeStorage.getItem('activeOrganizationId') ||
+      safeStorage.getItem('organizationId');
+    if (activeOrganizationId) {
+      config.headers['X-Active-Organization-Id'] = activeOrganizationId;
+    }
+
+    const legacyOrgId = safeStorage.getItem('impersonatedOrgId');
+    if (legacyOrgId) {
+      config.headers['X-Impersonated-Org-Id'] = legacyOrgId;
+    }
     
     return config;
   },
@@ -125,6 +135,9 @@ export const useAuthStore = create((set, get) => ({
       const orgId = userData?.organizationId || userData?.organization_id;
       if (orgId) {
         safeStorage.setItem('organizationId', orgId);
+        if (!safeStorage.getItem('activeOrganizationId')) {
+          safeStorage.setItem('activeOrganizationId', orgId);
+        }
       }
       
       // Set Sentry user context for session restoration
@@ -173,6 +186,7 @@ export const useAuthStore = create((set, get) => ({
       const orgId = user?.organizationId || user?.organization_id;
       if (orgId) {
         safeStorage.setItem('organizationId', orgId);
+        safeStorage.setItem('activeOrganizationId', orgId);
         console.log('Stored organizationId:', orgId);
       } else {
         console.error('No organizationId found in user object:', user);
@@ -255,6 +269,8 @@ export const useAuthStore = create((set, get) => ({
       safeStorage.removeItem('accessToken');
       safeStorage.removeItem('refreshToken');
       safeStorage.removeItem('organizationId');
+      safeStorage.removeItem('activeOrganizationId');
+      safeStorage.removeItem('impersonatedOrgId');
       // Clear all org-specific themes
       const keys = Object.keys(safeStorage);
       keys.forEach(key => {
@@ -293,6 +309,33 @@ export const useAuthStore = create((set, get) => ({
 
   // Clear error
   clearError: () => set({ error: null }),
+
+  switchOrganization: async (organization) => {
+    if (!organization?.id) return { success: false, error: 'Invalid organization' };
+
+    safeStorage.setItem('activeOrganizationId', organization.id);
+    safeStorage.setItem('organizationId', organization.id);
+
+    try {
+      const response = await authAxios.get('/auth/profile');
+      const userData = response.data.data;
+
+      if (userData?.organizationId && !userData.organization_id) {
+        userData.organization_id = userData.organizationId;
+      }
+
+      set({ user: userData, error: null });
+      window.dispatchEvent(new CustomEvent('organizationChanged', {
+        detail: { organizationId: organization.id }
+      }));
+
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Failed to switch organization';
+      set({ error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
 
   // Switch to client organization (for consultants)
   switchToClientOrganization: (organizationId, organizationName) => {

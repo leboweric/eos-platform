@@ -84,6 +84,13 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const activeOrganizationId =
+      localStorage.getItem('activeOrganizationId') ||
+      localStorage.getItem('organizationId');
+    if (activeOrganizationId) {
+      config.headers['X-Active-Organization-Id'] = activeOrganizationId;
+    }
     
     // Don't override Content-Type for FormData
     if (config.data instanceof FormData) {

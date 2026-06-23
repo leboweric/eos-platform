@@ -65,6 +65,8 @@ CREATE TABLE user_organizations (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     role VARCHAR(50) DEFAULT 'member',
+    membership_type VARCHAR(20) DEFAULT 'home' CHECK (membership_type IN ('home', 'guest')),
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, organization_id)

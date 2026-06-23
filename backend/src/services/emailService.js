@@ -760,6 +760,34 @@ You're receiving this email because ${data.createdByName} added you to ${data.or
     `
   }),
 
+  'org-membership-added': (data) => ({
+    subject: `${data.createdByName} added you to ${data.organizationName} on AXP`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+        <h2>You now have access to ${data.organizationName}</h2>
+        <p>Hi ${data.firstName},</p>
+        <p><strong>${data.createdByName}</strong> added you as a guest to <strong>${data.organizationName}</strong> on AXP.</p>
+        <p>Sign in with your existing account (<a href="mailto:${data.email}">${data.email}</a>), then use the organization switcher to open ${data.organizationName}.</p>
+        <p style="margin: 24px 0;">
+          <a href="${data.loginUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Log in to AXP
+          </a>
+        </p>
+      </div>
+    `,
+    text: `
+You now have access to ${data.organizationName}
+
+Hi ${data.firstName},
+
+${data.createdByName} added you as a guest to ${data.organizationName} on AXP.
+
+Sign in with your existing account (${data.email}), then use the organization switcher to open ${data.organizationName}.
+
+Log in: ${data.loginUrl}
+    `
+  }),
+
   todoReminder: (data) => ({
     subject: `To-Do Reminder - ${data.teamName} - ${data.organizationName}`,
     html: `

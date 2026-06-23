@@ -179,7 +179,7 @@ const UsersPage = () => {
       
       // If consultant has selected an org, always send it (even if it's their own)
       if (isConsultant && selectedOrgId) {
-        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+        headers['X-Active-Organization-Id'] = selectedOrgId;
         console.log('Fetching users with impersonated org:', selectedOrgId);
       }
       
@@ -211,7 +211,7 @@ const UsersPage = () => {
       
       // If consultant has selected an org, always send it (even if it's their own)
       if (isConsultant && selectedOrgId) {
-        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+        headers['X-Active-Organization-Id'] = selectedOrgId;
       }
       
       const response = await fetch(`${API_URL}/users/invitations`, {
@@ -239,7 +239,7 @@ const UsersPage = () => {
       
       // If consultant has selected an org, always send it (even if it's their own)
       if (isConsultant && selectedOrgId) {
-        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+        headers['X-Active-Organization-Id'] = selectedOrgId;
       }
       
       const response = await fetch(`${API_URL}/users/invite`, {
@@ -284,7 +284,7 @@ const UsersPage = () => {
       
       // If consultant has selected an org, always send it (even if it's their own)
       if (isConsultant && selectedOrgId) {
-        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+        headers['X-Active-Organization-Id'] = selectedOrgId;
       }
       
       const response = await fetch(`${API_URL}/users/create`, {
@@ -299,7 +299,11 @@ const UsersPage = () => {
         throw new Error(data.message || data.error || 'Failed to create user');
       }
 
-      setSuccessMessage(`User ${createForm.email} created successfully`);
+      if (data.data?.addedAsGuest) {
+        setSuccessMessage(data.message || `${createForm.email} was added as a guest with their existing login.`);
+      } else {
+        setSuccessMessage(`User ${createForm.email} created successfully`);
+      }
       
       // If email was not sent, show the temporary password
       if (!createForm.sendWelcomeEmail && data.data.temporaryPassword) {

@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 import logger from '../utils/logger.js';
+import {
+  resolveActiveOrganizationContext,
+  userBelongsToOrganization
+} from '../utils/membershipUtils.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -60,10 +64,15 @@ export const authenticate = async (req, res, next) => {
     }
 
     req.user = result.rows[0];
-    
-    // Set user's organization ID (impersonation feature removed)
-    req.user.organizationId = req.user.organization_id;
-    
+
+    const activeOrg = await resolveActiveOrganizationContext(req, req.user);
+    req.user.organizationId = activeOrg.organizationId;
+    req.user.organization_id = activeOrg.organizationId;
+    req.user.role = activeOrg.role;
+    req.user.membershipType = activeOrg.membershipType;
+    req.user.activeOrganizationName = activeOrg.organizationName;
+    req.user.activeOrganizationSlug = activeOrg.organizationSlug;
+
     next();
   } catch (error) {
     logger.error('Authentication error:', error);
@@ -105,22 +114,11 @@ export const checkOrganizationAccess = async (req, res, next) => {
       });
     }
 
-    // Check if user belongs to the organization
-    if (req.user.organization_id !== orgId) {
-      // Check if user is Consultant with access to this organization
-      if (req.user.is_consultant) {
-        const accessCheck = await query(
-          'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
-          [req.user.id, orgId]
-        );
-        
-        if (accessCheck.rows.length > 0) {
-          // Consultant has access, allow them through
-          next();
-          return;
-        }
-      }
-      
+    const hasAccess = await userBelongsToOrganization(req.user.id, orgId, {
+      isConsultant: req.user.is_consultant
+    });
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         error: 'Access denied. You do not have access to this organization.'
@@ -148,8 +146,11 @@ export const checkTeamAccess = async (req, res, next) => {
       });
     }
 
-    // Check if user belongs to the organization
-    if (req.user.organization_id !== orgId) {
+    const hasAccess = await userBelongsToOrganization(req.user.id, orgId, {
+      isConsultant: req.user.is_consultant
+    });
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         error: 'Access denied. You do not have access to this organization.'

@@ -8,6 +8,50 @@ import { sendEmail } from '../services/emailService.js';
 import { notifyNewTrial } from '../services/notificationService.js';
 import { getUserAccessibleTeams } from '../utils/teamUtils.js';
 import { storeRefreshTokenHash, isRefreshTokenValid, clearRefreshTokenHash } from '../utils/refreshTokenStore.js';
+import { addUserMembership, getUserMemberships } from '../utils/membershipUtils.js';
+
+const buildAuthUserPayload = async (user, activeOrganizationId) => {
+  const organizations = await getUserMemberships(user.id);
+  const activeOrg =
+    organizations.find((org) => org.id === activeOrganizationId) ||
+    organizations[0];
+
+  const activeOrgId = activeOrg?.id || user.organization_id;
+  const activeRole = activeOrg?.role || user.role;
+
+  let organizationName = activeOrg?.name;
+  let organizationSlug = activeOrg?.slug;
+
+  if (!organizationName || !organizationSlug) {
+    const orgResult = await query(
+      'SELECT name, slug FROM organizations WHERE id = $1',
+      [activeOrgId]
+    );
+    organizationName = orgResult.rows[0]?.name;
+    organizationSlug = orgResult.rows[0]?.slug;
+  }
+
+  const { teams: accessibleTeams } = await getUserAccessibleTeams(
+    user.id,
+    activeOrgId,
+    activeRole
+  );
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    role: activeRole,
+    organizationId: activeOrgId,
+    organizationName,
+    organizationSlug,
+    membershipType: activeOrg?.membershipType || 'home',
+    isConsultant: user.is_consultant,
+    organizations,
+    teams: accessibleTeams
+  };
+};
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId) => {
@@ -109,6 +153,13 @@ export const register = async (req, res) => {
         ]
       );
       const user = userResult.rows[0];
+
+      await client.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role, membership_type)
+         VALUES ($1, $2, $3, 'home')
+         ON CONFLICT (user_id, organization_id) DO NOTHING`,
+        [user.id, organizationId, user.role]
+      );
       
       // Log legal agreement acceptance
       if (legalAgreement?.termsAccepted) {
@@ -187,18 +238,17 @@ export const register = async (req, res) => {
       const { accessToken, refreshToken } = generateTokens(user.id);
       await storeRefreshTokenHash(user.id, refreshToken);
 
+      const authUser = await buildAuthUserPayload(
+        { ...user, organization_id: organizationId },
+        organizationId
+      );
+
       res.status(201).json({
         success: true,
         data: {
           user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            role: user.role,
-            organizationId,
-            organizationName,
-            isConsultant: user.is_consultant
+            ...authUser,
+            organizationName
           },
           accessToken,
           refreshToken
@@ -294,27 +344,14 @@ export const login = async (req, res) => {
       clientOrganizations = clientOrgsResult.rows;
     }
 
-    const { teams: accessibleTeams } = await getUserAccessibleTeams(
-      user.id,
-      user.organization_id,
-      user.role
-    );
+    const authUser = await buildAuthUserPayload(user, user.organization_id);
 
     res.json({
       success: true,
       data: {
         user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          role: user.role,
-          organizationId: user.organization_id,
-          organizationName: user.organization_name,
-          organizationSlug: user.organization_slug,
-          isConsultant: user.is_consultant,
-          clientOrganizations,
-          teams: accessibleTeams
+          ...authUser,
+          clientOrganizations
         },
         accessToken,
         refreshToken
@@ -426,9 +463,8 @@ export const getProfile = async (req, res) => {
   try {
     const result = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.avatar_url, u.settings,
-              u.organization_id, u.is_consultant, o.name as organization_name, o.slug as organization_slug
+              u.organization_id, u.is_consultant
        FROM users u
-       JOIN organizations o ON u.organization_id = o.id
        WHERE u.id = $1`,
       [req.user.id]
     );
@@ -441,28 +477,16 @@ export const getProfile = async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    const { teams: accessibleTeams } = await getUserAccessibleTeams(
-      req.user.id,
-      user.organization_id,
-      user.role
-    );
+    const activeOrganizationId = req.user.organizationId || req.user.organization_id;
+    const authUser = await buildAuthUserPayload(user, activeOrganizationId);
 
     res.json({
       success: true,
       data: {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
+        ...authUser,
         avatarUrl: user.avatar_url,
         settings: user.settings,
-        organizationId: user.organization_id,
-        organizationName: user.organization_name,
-        organizationSlug: user.organization_slug,
-        isConsultant: user.is_consultant,
-        teams: accessibleTeams
+        membershipType: req.user.membershipType || authUser.membershipType
       }
     });
 

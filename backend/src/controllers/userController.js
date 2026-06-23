@@ -6,6 +6,44 @@ import { sendEmail } from '../services/emailService.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext, getUserAccessibleTeams } from '../utils/teamUtils.js';
 import { checkUserLimit } from '../utils/planLimits.js';
+import {
+  addUserMembership,
+  getMembership,
+  removeUserMembership,
+  removeTeamMembershipsForOrg
+} from '../utils/membershipUtils.js';
+
+const addUserToTeams = async (userId, organizationId, { teamId, teamIds }) => {
+  const teamIdList = teamIds && Array.isArray(teamIds)
+    ? teamIds
+    : teamId && teamId !== '' && teamId !== 'none'
+      ? [teamId]
+      : [];
+
+  for (const tid of teamIdList) {
+    if (!tid || tid === '' || tid === 'none') continue;
+
+    const teamCheck = await query(
+      'SELECT id FROM teams WHERE id = $1 AND organization_id = $2',
+      [tid, organizationId]
+    );
+
+    if (teamCheck.rows.length === 0) continue;
+
+    const existingMembership = await query(
+      'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
+      [tid, userId]
+    );
+
+    if (existingMembership.rows.length === 0) {
+      await query(
+        `INSERT INTO team_members (id, team_id, user_id, role)
+         VALUES ($1, $2, $3, $4)`,
+        [uuidv4(), tid, userId, 'member']
+      );
+    }
+  }
+};
 
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
@@ -32,20 +70,22 @@ export const getOrganizationUsers = async (req, res) => {
           u.email, 
           u.first_name, 
           u.last_name, 
-          u.role, 
+          uo.role, 
+          uo.membership_type,
           u.created_at, 
           u.last_login_at,
           u.is_active,
           STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
-          -- Get all team_ids as an array for multi-select support
           ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
-          -- Keep single team_id for backward compatibility
-          (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
+          (SELECT tm2.team_id FROM team_members tm2
+           JOIN teams t2 ON t2.id = tm2.team_id
+           WHERE tm2.user_id = u.id AND t2.organization_id = $1 LIMIT 1) as team_id
          FROM users u
+         JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = $1
          LEFT JOIN team_members tm ON u.id = tm.user_id
-         LEFT JOIN teams t ON tm.team_id = t.id
-         WHERE u.organization_id = $1
-         GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at, u.is_active
+         LEFT JOIN teams t ON tm.team_id = t.id AND t.organization_id = $1
+         WHERE COALESCE(uo.is_active, true) = true
+         GROUP BY u.id, u.email, u.first_name, u.last_name, uo.role, uo.membership_type, u.created_at, u.last_login_at, u.is_active
          ORDER BY u.created_at DESC`,
         [organizationId]
       );
@@ -58,20 +98,22 @@ export const getOrganizationUsers = async (req, res) => {
           u.email, 
           u.first_name, 
           u.last_name, 
-          u.role, 
+          uo.role, 
+          uo.membership_type,
           u.created_at, 
           u.last_login_at,
           true as is_active,
           STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
-          -- Get all team_ids as an array for multi-select support
           ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
-          -- Keep single team_id for backward compatibility
-          (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
+          (SELECT tm2.team_id FROM team_members tm2
+           JOIN teams t2 ON t2.id = tm2.team_id
+           WHERE tm2.user_id = u.id AND t2.organization_id = $1 LIMIT 1) as team_id
          FROM users u
+         JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = $1
          LEFT JOIN team_members tm ON u.id = tm.user_id
-         LEFT JOIN teams t ON tm.team_id = t.id
-         WHERE u.organization_id = $1
-         GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at
+         LEFT JOIN teams t ON tm.team_id = t.id AND t.organization_id = $1
+         WHERE COALESCE(uo.is_active, true) = true
+         GROUP BY u.id, u.email, u.first_name, u.last_name, uo.role, uo.membership_type, u.created_at, u.last_login_at
          ORDER BY u.created_at DESC`,
         [organizationId]
       );
@@ -114,9 +156,8 @@ export const createUser = async (req, res) => {
     //   });
     // }
 
-    // Check if user already exists (emails are globally unique across all tenants)
     const existingUser = await query(
-      `SELECT u.id, o.name AS organization_name
+      `SELECT u.id, u.first_name, u.last_name, o.name AS organization_name
        FROM users u
        JOIN organizations o ON o.id = u.organization_id
        WHERE u.email = $1`,
@@ -124,10 +165,67 @@ export const createUser = async (req, res) => {
     );
 
     if (existingUser.rows.length > 0) {
-      const otherOrg = existingUser.rows[0].organization_name;
-      return res.status(400).json({
-        error: 'User with this email already exists',
-        message: `This email is already registered in "${otherOrg}". It cannot be added to your organization until it is removed or transferred from that account. Contact your platform administrator for help.`
+      const existing = existingUser.rows[0];
+      const existingMembership = await getMembership(existing.id, organizationId);
+
+      if (existingMembership) {
+        return res.status(400).json({
+          error: 'User already exists in this organization',
+          message: `${email} is already a member of your organization.`
+        });
+      }
+
+      await addUserMembership({
+        userId: existing.id,
+        organizationId,
+        role,
+        membershipType: 'guest'
+      });
+      await addUserToTeams(existing.id, organizationId, { teamId, teamIds });
+
+      const orgResult = await query(
+        `SELECT o.name as organization_name,
+                o.logo_url,
+                u.first_name || ' ' || u.last_name as created_by_name
+         FROM organizations o
+         JOIN users u ON u.id = $1
+         WHERE o.id = $2`,
+        [createdBy, organizationId]
+      );
+
+      const { organization_name, created_by_name, logo_url } = orgResult.rows[0];
+      const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+
+      if (sendWelcomeEmail) {
+        try {
+          await sendEmail(email, 'org-membership-added', {
+            firstName: existing.first_name || firstName,
+            organizationName: organization_name,
+            createdByName: created_by_name,
+            email,
+            loginUrl,
+            logoUrl: logo_url
+          });
+        } catch (emailError) {
+          console.error('Failed to send guest membership email:', emailError);
+        }
+      }
+
+      await updateSubscriptionUserCount(organizationId);
+
+      return res.json({
+        success: true,
+        data: {
+          id: existing.id,
+          email,
+          first_name: existing.first_name,
+          last_name: existing.last_name,
+          role,
+          membership_type: 'guest',
+          addedAsGuest: true,
+          homeOrganizationName: existing.organization_name
+        },
+        message: `${email} was added as a guest. They can sign in with their existing account and switch to ${organization_name}.`
       });
     }
 
@@ -146,26 +244,14 @@ export const createUser = async (req, res) => {
 
     const newUser = userResult.rows[0];
 
-    // Add user to teams - support both single teamId and multiple teamIds
-    if (teamIds && Array.isArray(teamIds)) {
-      // Handle multiple team assignments
-      for (const tid of teamIds) {
-        if (tid && tid !== '' && tid !== 'none') {
-          await query(
-            `INSERT INTO team_members (id, team_id, user_id, role)
-             VALUES ($1, $2, $3, $4)`,
-            [uuidv4(), tid, userId, 'member']
-          );
-        }
-      }
-    } else if (teamId && teamId !== '' && teamId !== 'none') {
-      // Handle single team assignment (backward compatibility)
-      await query(
-        `INSERT INTO team_members (id, team_id, user_id, role)
-         VALUES ($1, $2, $3, $4)`,
-        [uuidv4(), teamId, userId, 'member']
-      );
-    }
+    await addUserMembership({
+      userId,
+      organizationId,
+      role,
+      membershipType: 'home'
+    });
+
+    await addUserToTeams(userId, organizationId, { teamId, teamIds });
 
     // Get organization details for email
     const orgResult = await query(
@@ -242,14 +328,13 @@ export const inviteUser = async (req, res) => {
     //   });
     // }
 
-    // Check if user already exists in organization
-    const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1 AND organization_id = $2',
-      [email, organizationId]
-    );
+    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists in this organization' });
+      const existingMembership = await getMembership(existingUser.rows[0].id, organizationId);
+      if (existingMembership) {
+        return res.status(400).json({ error: 'User already exists in this organization' });
+      }
     }
 
     // Check for pending invitation
@@ -355,7 +440,35 @@ export const acceptInvitation = async (req, res) => {
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
+      const existingUserId = existingUser.rows[0].id;
+      const existingMembership = await getMembership(existingUserId, invitation.organization_id);
+
+      if (existingMembership) {
+        return res.status(400).json({ error: 'You already have access to this organization' });
+      }
+
+      await addUserMembership({
+        userId: existingUserId,
+        organizationId: invitation.organization_id,
+        role: invitation.role,
+        membershipType: 'guest'
+      });
+
+      await query(
+        'UPDATE invitations SET accepted_at = NOW() WHERE id = $1',
+        [invitation.id]
+      );
+
+      await updateSubscriptionUserCount(invitation.organization_id);
+
+      return res.json({
+        success: true,
+        data: {
+          user: existingUser.rows[0],
+          organization_name: invitation.organization_name,
+          addedAsGuest: true
+        }
+      });
     }
 
     // Check plan limits before accepting invitation - DISABLED per client request
@@ -386,6 +499,13 @@ export const acceptInvitation = async (req, res) => {
     );
 
     const user = userResult.rows[0];
+
+    await addUserMembership({
+      userId: user.id,
+      organizationId: invitation.organization_id,
+      role: invitation.role,
+      membershipType: 'home'
+    });
 
     // Mark invitation as accepted
     await query(
@@ -425,22 +545,17 @@ export const removeUser = async (req, res) => {
       return res.status(400).json({ error: 'You cannot remove yourself' });
     }
 
-    // Check if user exists in organization
-    const userResult = await query(
-      'SELECT id, role FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, organizationId]
-    );
+    const membership = await getMembership(userId, organizationId);
 
-    if (userResult.rows.length === 0) {
+    if (!membership) {
       return res.status(404).json({ error: 'User not found in organization' });
     }
 
-    const targetUser = userResult.rows[0];
-
-    // Prevent removing the last admin
-    if (targetUser.role === 'admin') {
+    if (membership.role === 'admin') {
       const adminCount = await query(
-        'SELECT COUNT(*) as count FROM users WHERE organization_id = $1 AND role = $2',
+        `SELECT COUNT(*) as count
+         FROM user_organizations
+         WHERE organization_id = $1 AND role = $2 AND COALESCE(is_active, true) = true`,
         [organizationId, 'admin']
       );
 
@@ -449,18 +564,35 @@ export const removeUser = async (req, res) => {
       }
     }
 
-    // Remove user
-    await query(
-      'DELETE FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, organizationId]
-    );
+    if (membership.membership_type === 'guest') {
+      await removeTeamMembershipsForOrg(userId, organizationId);
+      await removeUserMembership(userId, organizationId);
+    } else {
+      const otherMemberships = await query(
+        `SELECT organization_id FROM user_organizations
+         WHERE user_id = $1 AND organization_id != $2`,
+        [userId, organizationId]
+      );
 
-    // Update subscription user count
+      if (otherMemberships.rows.length > 0) {
+        return res.status(400).json({
+          error: 'Cannot remove home organization member',
+          message: 'This user belongs to multiple organizations. Remove their guest access from other organizations first, or contact support to transfer their home organization.'
+        });
+      }
+
+      await removeTeamMembershipsForOrg(userId, organizationId);
+      await removeUserMembership(userId, organizationId);
+      await query('DELETE FROM users WHERE id = $1', [userId]);
+    }
+
     await updateSubscriptionUserCount(organizationId);
 
     res.json({
       success: true,
-      message: 'User removed successfully'
+      message: membership.membership_type === 'guest'
+        ? 'Guest access removed successfully'
+        : 'User removed successfully'
     });
   } catch (error) {
     console.error('Remove user error:', error);
@@ -535,13 +667,9 @@ export const updateUser = async (req, res) => {
       return res.status(403).json({ error: 'Only administrators can update users' });
     }
 
-    // Check if user exists in organization
-    const userResult = await query(
-      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, organizationId]
-    );
+    const membership = await getMembership(userId, organizationId);
 
-    if (userResult.rows.length === 0) {
+    if (!membership) {
       return res.status(404).json({ error: 'User not found in organization' });
     }
 
@@ -579,74 +707,49 @@ export const updateUser = async (req, res) => {
       updateValues.push(lastName);
       paramCount++;
     }
-    if (role !== undefined) {
-      updateFields.push(`role = $${paramCount}`);
-      updateValues.push(role);
-      paramCount++;
-    }
+    const roleUpdate = role;
     if (is_active !== undefined) {
       updateFields.push(`is_active = $${paramCount}`);
       updateValues.push(is_active);
       paramCount++;
     }
     
-    // If no fields to update (except updated_at), at least update the timestamp
-    if (updateFields.length === 0 && is_active === undefined) {
+    const hasTeamUpdates = (teamIds && Array.isArray(teamIds)) || teamId !== undefined;
+    const hasMembershipUpdates = roleUpdate !== undefined || hasTeamUpdates;
+
+    if (updateFields.length === 0 && !hasMembershipUpdates) {
       return res.json({
         success: true,
         message: 'No changes to update'
       });
     }
-    
-    // Always update the updated_at timestamp
-    updateFields.push('updated_at = NOW()');
-    
-    // Add userId and organizationId as the last parameters
-    updateValues.push(userId, organizationId);
 
-    // Update user information
-    await query(
-      `UPDATE users 
-       SET ${updateFields.join(', ')}
-       WHERE id = $${paramCount} AND organization_id = $${paramCount + 1}`,
-      updateValues
-    );
+    if (updateFields.length > 0) {
+      updateFields.push('updated_at = NOW()');
+      updateValues.push(userId);
+      await query(
+        `UPDATE users
+         SET ${updateFields.join(', ')}
+         WHERE id = $${paramCount}`,
+        updateValues
+      );
+    }
 
-    // Handle team assignment - support both single teamId and multiple teamIds
+    if (roleUpdate !== undefined) {
+      await query(
+        `UPDATE user_organizations
+         SET role = $1, updated_at = NOW()
+         WHERE user_id = $2 AND organization_id = $3`,
+        [roleUpdate, userId, organizationId]
+      );
+    }
+
     if (teamIds && Array.isArray(teamIds)) {
-      // Handle multiple team assignments
-      // First, remove all existing team memberships for this user
-      await query(
-        'DELETE FROM team_members WHERE user_id = $1',
-        [userId]
-      );
-
-      // Then add new team memberships for each selected team
-      for (const teamId of teamIds) {
-        if (teamId && teamId !== '' && teamId !== 'none') {
-          await query(
-            `INSERT INTO team_members (id, team_id, user_id, role)
-             VALUES ($1, $2, $3, $4)`,
-            [uuidv4(), teamId, userId, 'member']
-          );
-        }
-      }
+      await removeTeamMembershipsForOrg(userId, organizationId);
+      await addUserToTeams(userId, organizationId, { teamIds });
     } else if (teamId !== undefined) {
-      // Handle single team assignment (backward compatibility)
-      // First, remove all existing team memberships for this user
-      await query(
-        'DELETE FROM team_members WHERE user_id = $1',
-        [userId]
-      );
-
-      // Then add new team membership if teamId is a valid UUID
-      if (teamId && teamId !== '' && teamId !== 'none') {
-        await query(
-          `INSERT INTO team_members (id, team_id, user_id, role)
-           VALUES ($1, $2, $3, $4)`,
-          [uuidv4(), teamId, userId, 'member']
-        );
-      }
+      await removeTeamMembershipsForOrg(userId, organizationId);
+      await addUserToTeams(userId, organizationId, { teamId });
     }
     // If teamId is undefined, null, or 'none', we don't touch the existing team assignments
 
@@ -657,16 +760,18 @@ export const updateUser = async (req, res) => {
         u.email, 
         u.first_name, 
         u.last_name, 
-        u.role,
+        uo.role,
+        uo.membership_type,
         u.updated_at,
         ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
         STRING_AGG(t.name, ', ' ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL) as departments
        FROM users u
+       JOIN user_organizations uo ON uo.user_id = u.id AND uo.organization_id = $2
        LEFT JOIN team_members tm ON u.id = tm.user_id
-       LEFT JOIN teams t ON tm.team_id = t.id
+       LEFT JOIN teams t ON tm.team_id = t.id AND t.organization_id = $2
        WHERE u.id = $1
-       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.updated_at`,
-      [userId]
+       GROUP BY u.id, u.email, u.first_name, u.last_name, uo.role, uo.membership_type, u.updated_at`,
+      [userId, organizationId]
     );
 
     res.json({
@@ -687,11 +792,8 @@ export const getUserDepartments = async (req, res) => {
     
     console.log('Getting departments for user:', { userId, organizationId });
 
-    const userRoleResult = await query(
-      'SELECT role FROM users WHERE id = $1',
-      [userId]
-    );
-    const userRole = userRoleResult.rows[0]?.role || 'user';
+    const membership = await getMembership(userId, organizationId);
+    const userRole = membership?.role || req.user.role || 'user';
 
     const { teams: availableDepartments, isLeadershipMember } = await getUserAccessibleTeams(
       userId,
@@ -742,14 +844,18 @@ export const resendWelcomeEmail = async (req, res) => {
       return res.status(403).json({ error: 'Only administrators and consultants can resend welcome emails' });
     }
 
-    // Get the target user
+    const membership = await getMembership(userId, organizationId);
+    if (!membership) {
+      return res.status(404).json({ error: 'User not found in organization' });
+    }
+
     const userResult = await query(
-      'SELECT id, email, first_name, last_name, organization_id, last_login_at FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, organizationId]
+      'SELECT id, email, first_name, last_name, organization_id, last_login_at FROM users WHERE id = $1',
+      [userId]
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found in organization' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const targetUser = userResult.rows[0];

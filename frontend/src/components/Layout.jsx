@@ -61,7 +61,8 @@ const Layout = ({ children }) => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isOnLeadershipTeam } = useAuthStore();
+  const { user, logout, isOnLeadershipTeam, switchOrganization } = useAuthStore();
+  const [switchingOrg, setSwitchingOrg] = useState(false);
   const { labels } = useTerminology();
 
   useEffect(() => {
@@ -236,6 +237,34 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const handleOrganizationSwitch = async (organization) => {
+    if (!organization?.id || organization.id === user?.organizationId || switchingOrg) {
+      return;
+    }
+
+    setSwitchingOrg(true);
+    try {
+      const result = await switchOrganization(organization);
+      if (!result.success) {
+        console.error('Failed to switch organization:', result.error);
+      } else {
+        navigate('/dashboard');
+      }
+    } finally {
+      setSwitchingOrg(false);
+    }
+  };
+
+  const availableOrganizations = user?.organizations?.length
+    ? user.organizations
+    : user?.organizationId
+      ? [{
+          id: user.organizationId,
+          name: user.organizationName,
+          membershipType: 'home'
+        }]
+      : [];
+
 
   const getUserInitials = () => {
     if (!user) return 'U';
@@ -320,16 +349,43 @@ const Layout = ({ children }) => {
           </div>
         </nav>
 
-        {/* Organization info */}
+        {/* Organization switcher */}
         <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 dark:text-gray-400">Organization</div>
-              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {user?.organizationName || 'Loading...'}
-              </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Organization</div>
+          {availableOrganizations.length > 1 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  disabled={switchingOrg}
+                  className="w-full flex items-center justify-between gap-2 text-left text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-2 py-1.5 transition-colors"
+                >
+                  <span className="truncate">{user?.organizationName || 'Select organization'}</span>
+                  <Building2 className="h-4 w-4 shrink-0 text-gray-500" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {availableOrganizations.map((org) => (
+                  <DropdownMenuItem
+                    key={org.id}
+                    onSelect={() => handleOrganizationSwitch(org)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{org.name}</span>
+                      {org.membershipType === 'guest' && (
+                        <span className="text-xs text-gray-500">Guest access</span>
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              {user?.organizationName || 'Loading...'}
             </div>
-          </div>
+          )}
         </div>
       </div>
       )}
