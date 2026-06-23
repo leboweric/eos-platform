@@ -7805,20 +7805,14 @@ setAddingMilestoneFor(priority.id);
                         <div className="space-y-1">
                           {/* Header Row */}
                           <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-                            <button
-                              type="button"
-                              className="flex items-center gap-1.5 w-24 shrink-0 text-left hover:text-slate-700 transition-colors"
-                              onClick={() => handleSelectAllIssues(selectableIssueIds, !allIssuesSelected)}
-                              aria-label={allIssuesSelected ? 'Deselect all issues' : 'Select all issues'}
-                            >
+                            <label className="flex items-center gap-1.5 w-28 shrink-0 cursor-pointer text-left hover:text-slate-700 transition-colors">
                               <Checkbox
                                 checked={allIssuesSelected ? true : someIssuesSelected ? 'indeterminate' : false}
                                 onCheckedChange={(checked) => handleSelectAllIssues(selectableIssueIds, checked === true)}
-                                aria-hidden="true"
-                                tabIndex={-1}
+                                aria-label={allIssuesSelected ? 'Deselect all issues' : 'Select all issues'}
                               />
                               <span>Select All</span>
-                            </button>
+                            </label>
                             <div className="w-8">Drag</div>
                             <div className="w-10 ml-2">Status</div>
                             <div className="w-8 ml-2">#</div>

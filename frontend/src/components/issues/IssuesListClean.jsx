@@ -729,8 +729,8 @@ const IssuesListClean = ({
 
       {/* Enhanced Sorting header with drag-and-drop indicator */}
       <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1">
           {enableDragDrop && !sortField && (
             <div className="flex items-center gap-2 mr-4">
               <GripVertical className="h-4 w-4 text-gray-400" />
@@ -842,20 +842,14 @@ const IssuesListClean = ({
             {/* Header Row - EXACT ORDER: Select, Drag, Status, #, Issue, Owner, Created */}
             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
               {enableBulkSelection && (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 w-24 shrink-0 text-left hover:text-slate-700 transition-colors"
-                  onClick={() => handleSelectAll(!allSelected)}
-                  aria-label={allSelected ? 'Deselect all issues' : 'Select all issues'}
-                >
+                <label className="flex items-center gap-1.5 w-28 shrink-0 cursor-pointer text-left hover:text-slate-700 transition-colors">
                   <Checkbox
                     checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                     onCheckedChange={handleSelectAll}
-                    aria-hidden="true"
-                    tabIndex={-1}
+                    aria-label={allSelected ? 'Deselect all issues' : 'Select all issues'}
                   />
                   <span>Select All</span>
-                </button>
+                </label>
               )}
               {enableDragDrop && <div className="w-8 mr-2">Drag</div>}
               <div className="w-12">Status</div>
