@@ -70,6 +70,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
+import ScorecardPeriodSelector from '../components/scorecard/ScorecardPeriodSelector';
+import { loadScorecardPeriodPreference, saveScorecardPeriodPreference } from '../utils/scorecardDateUtils';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -782,12 +784,24 @@ const WeeklyAccountabilityMeetingPage = () => {
     accent: '#60A5FA'
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
+  const [customDateRange, setCustomDateRange] = useState(null);
   const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
 
-  // Debug scorecard preference changes
-  useEffect(() => {
-    console.log('🔍 WeeklyMeeting - Scorecard preference state changed:', scorecardTimePeriodPreference);
-  }, [scorecardTimePeriodPreference]);
+  const handleScorecardPeriodChange = ({ preference, customDateRange: nextCustomRange }) => {
+    setScorecardTimePeriodPreference(preference);
+    setCustomDateRange(nextCustomRange || null);
+
+    const orgId = user?.organizationId || user?.organization_id;
+    saveScorecardPeriodPreference(orgId, preference, nextCustomRange || null);
+
+    if (meetingCode && broadcastIssueListUpdate) {
+      broadcastIssueListUpdate({
+        action: 'scorecard-period-change',
+        preference,
+        customDateRange: nextCustomRange || null,
+      });
+    }
+  };
 
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
@@ -1587,13 +1601,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
         
-        // Set scorecard time period preference
-        const preference = orgData.scorecard_time_period_preference || '13_week_rolling';
-        console.log('🔍 WeeklyMeeting - Setting scorecard preference:', {
-          fromDB: orgData.scorecard_time_period_preference,
-          final: preference
-        });
-        setScorecardTimePeriodPreference(preference);
+        const orgDefault = orgData.scorecard_time_period_preference || '13_week_rolling';
+        const storedPeriod = loadScorecardPeriodPreference(orgId, orgDefault);
+        setScorecardTimePeriodPreference(storedPeriod.preference);
+        setCustomDateRange(storedPeriod.customDateRange);
         
         // Set rock display preference
         setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
@@ -4467,6 +4478,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('➡️ RTL setting changed to:', newRTL);
         setIsRTL(newRTL);
         localStorage.setItem('scorecardRTL', newRTL.toString());
+      } else if (action === 'scorecard-period-change') {
+        const { preference, customDateRange: nextCustomRange } = event.detail;
+        console.log('📊 Scorecard period changed to:', preference, nextCustomRange);
+        setScorecardTimePeriodPreference(preference || '13_week_rolling');
+        setCustomDateRange(nextCustomRange || null);
       } else if (action === 'scroll-sync') {
         // Sync scroll position from leader using percentage
         const { scrollPercentage } = event.detail;
@@ -4840,7 +4856,14 @@ const WeeklyAccountabilityMeetingPage = () => {
             </Card>
             {/* Scorecard Options */}
             {scorecardMetrics.length > 0 && (
-              <div className="flex items-center gap-4 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-xl border border-white/30 shadow-sm">
+              <div className="flex flex-wrap items-center gap-4 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-xl border border-white/30 shadow-sm">
+                <ScorecardPeriodSelector
+                  preference={scorecardTimePeriodPreference}
+                  customDateRange={customDateRange}
+                  onChange={handleScorecardPeriodChange}
+                  disabled={isFollowing}
+                  compact
+                />
                 <span className="text-sm font-medium text-gray-700">Display Options:</span>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -4974,6 +4997,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   maxPeriods={5}
                   meetingMode={true}
                   scorecardTimePeriodPreference={scorecardTimePeriodPreference}
+                  customDateRange={customDateRange}
                   />
                 );
               })()}

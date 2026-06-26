@@ -17,74 +17,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
-import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
-
-// Helper function to get human-readable summary type label
-const getSummaryLabel = (summaryType) => {
-  switch (summaryType) {
-    case 'weekly_avg':
-    case 'monthly_avg':
-    case 'quarterly_avg':
-      return 'avg';
-    case 'quarterly_total':
-      return 'total';
-    case 'latest_value':
-      return 'latest';
-    default:
-      return 'avg';
-  }
-};
-
-// Helper function to calculate metric summary based on summary_type
-const calculateMetricSummary = (metric, scores, scorecardTimePeriodPreference) => {
-  const summaryType = metric.summary_type || 'weekly_avg';
-  const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
-  const metricScores = scores[metric.id] || {};
-  
-  // Get all scores in the date range
-  const scoresInRange = Object.entries(metricScores)
-    .filter(([date]) => {
-      const scoreDate = new Date(date);
-      return scoreDate >= startDate && scoreDate <= endDate;
-    })
-    .map(([_, scoreData]) => {
-      const value = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
-      return value !== undefined && value !== null && value !== '' ? parseFloat(value) : null;
-    })
-    .filter(val => val !== null);
-  
-  if (scoresInRange.length === 0) return null;
-  
-  switch (summaryType) {
-    case 'weekly_avg':
-    case 'monthly_avg':
-    case 'quarterly_avg':
-      // Calculate average
-      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
-    
-    case 'quarterly_total':
-      // Calculate sum
-      return scoresInRange.reduce((sum, val) => sum + val, 0);
-    
-    case 'latest_value':
-      // Return most recent value
-      const sortedDates = Object.keys(metricScores)
-        .filter(date => {
-          const scoreDate = new Date(date);
-          return scoreDate >= startDate && scoreDate <= endDate;
-        })
-        .sort((a, b) => new Date(b) - new Date(a));
-      
-      if (sortedDates.length === 0) return null;
-      const latestScore = metricScores[sortedDates[0]];
-      const latestValue = (typeof latestScore === 'object' && latestScore !== null) ? latestScore?.value : latestScore;
-      return latestValue !== undefined && latestValue !== null && latestValue !== '' ? parseFloat(latestValue) : null;
-    
-    default:
-      // Default to average
-      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
-  }
-};
+import { getSummaryColumnLabel, calculateMetricSummary, getSummaryTypeLabel } from '../../utils/scorecardDateUtils';
 
 const ScorecardTableClean = ({ 
   metrics = [], 
@@ -112,6 +45,7 @@ const ScorecardTableClean = ({
   maxPeriods = 10, // Control how many weeks/months to show
   meetingMode = false, // New prop for meeting display mode
   scorecardTimePeriodPreference = '13_week_rolling', // Organization's time period preference
+  customDateRange = null,
   showHistoricalData = true // Show historical imported data (default true)
 }) => {
   const { user } = useAuthStore();
@@ -554,21 +488,7 @@ const ScorecardTableClean = ({
                 
                 {showAverage ? (
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
-                    {(() => {
-                      const { label } = getDateRange(scorecardTimePeriodPreference);
-                      const finalLabel = label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Summary';
-                      
-                      // Debug logging for scorecard label (both meeting and main scorecard)
-                      console.log('🔍 ScorecardTableClean - Label calculation:', {
-                        preference: scorecardTimePeriodPreference,
-                        originalLabel: label,
-                        finalLabel: finalLabel,
-                        meetingMode: meetingMode,
-                        context: meetingMode ? 'MEETING' : 'MAIN'
-                      });
-                      
-                      return finalLabel;
-                    })()}
+                    {getSummaryColumnLabel(scorecardTimePeriodPreference, customDateRange)}
                   </th>
                 ) : null}
                 
@@ -624,7 +544,7 @@ const ScorecardTableClean = ({
             <tbody>
               {metrics.map((metric, metricIndex) => {
                 // Calculate summary based on metric's summary_type
-                const summary = calculateMetricSummary(metric, scores, scorecardTimePeriodPreference);
+                const summary = calculateMetricSummary(metric, scores, scorecardTimePeriodPreference, customDateRange);
                 
                 // For total, still use only visible periods
                 const visibleScores = periodDates
@@ -702,7 +622,7 @@ const ScorecardTableClean = ({
                                 {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
                               </div>
                               <div className="text-[10px] text-gray-400">
-                                ({getSummaryLabel(metric.summary_type || 'weekly_avg')})
+                                ({getSummaryTypeLabel(metric.summary_type || 'weekly_avg')})
                               </div>
                             </div>
                           ) : (
@@ -725,7 +645,7 @@ const ScorecardTableClean = ({
                               }>
                                 {metric.value_type === 'number' ? Math.round(summary) : formatValue(summary, metric.value_type)}
                               </div>
-                              <div className="text-[10px] text-gray-400">({getSummaryLabel(metric.summary_type || 'weekly_avg')})</div>
+                              <div className="text-[10px] text-gray-400">({getSummaryTypeLabel(metric.summary_type || 'weekly_avg')})</div>
                             </div>
                           ) : (
                             <span className={'text-[10px] px-0.5 rounded ' + 

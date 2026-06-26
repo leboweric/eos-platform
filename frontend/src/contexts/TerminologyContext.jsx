@@ -34,7 +34,11 @@ const defaultTerminology = {
   // Scorecard time period labels (Adaptive Framework Technology)
   scorecard_13_week_label: '13-Week Average',
   scorecard_quarter_label: 'Quarter Average',
-  scorecard_4_week_label: '4-Week Average'
+  scorecard_4_week_label: '4-Week Average',
+  scorecard_3_month_label: '3-Month Average',
+  scorecard_6_month_label: '6-Month Average',
+  scorecard_1_year_label: '1-Year Average',
+  scorecard_custom_label: 'Custom Range'
 };
 
 export const TerminologyProvider = ({ children }) => {
@@ -141,6 +145,14 @@ export const TerminologyProvider = ({ children }) => {
         return getTerm('scorecard_quarter_label');
       case 'last_4_weeks':
         return getTerm('scorecard_4_week_label');
+      case 'last_3_months':
+        return getTerm('scorecard_3_month_label');
+      case 'last_6_months':
+        return getTerm('scorecard_6_month_label');
+      case 'last_1_year':
+        return getTerm('scorecard_1_year_label');
+      case 'custom':
+        return getTerm('scorecard_custom_label');
       default:
         return getTerm('scorecard_13_week_label');
     }
@@ -185,6 +197,10 @@ export const TerminologyProvider = ({ children }) => {
       scorecard_13_week_label: getTerm('scorecard_13_week_label'),
       scorecard_quarter_label: getTerm('scorecard_quarter_label'),
       scorecard_4_week_label: getTerm('scorecard_4_week_label'),
+      scorecard_3_month_label: getTerm('scorecard_3_month_label'),
+      scorecard_6_month_label: getTerm('scorecard_6_month_label'),
+      scorecard_1_year_label: getTerm('scorecard_1_year_label'),
+      scorecard_custom_label: getTerm('scorecard_custom_label'),
       
       // Shortened aliases for backward compatibility
       priorities: getTerm('priorities_label'),

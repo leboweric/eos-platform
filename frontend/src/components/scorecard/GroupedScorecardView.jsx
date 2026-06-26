@@ -19,77 +19,10 @@ import { scorecardGroupsService } from '../../services/scorecardGroupsService';
 import { scorecardService } from '../../services/scorecardService';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
-import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
+import { getSummaryColumnLabel, calculateMetricSummary, getSummaryTypeLabel } from '../../utils/scorecardDateUtils';
 import { useAuthStore } from '../../stores/authStore';
 import CustomGoalModal from './CustomGoalModal';
 import { Target } from 'lucide-react';
-
-// Helper function to calculate metric summary based on summary_type
-const calculateMetricSummary = (metric, scores, scorecardTimePeriodPreference) => {
-  const summaryType = metric.summary_type || 'weekly_avg';
-  const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
-  const metricScores = scores || {};
-  
-  // Get all scores in the date range
-  const scoresInRange = Object.entries(metricScores)
-    .filter(([date]) => {
-      const scoreDate = new Date(date);
-      return scoreDate >= startDate && scoreDate <= endDate;
-    })
-    .map(([_, scoreData]) => {
-      const value = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
-      return value !== undefined && value !== null && value !== '' ? parseFloat(value) : null;
-    })
-    .filter(val => val !== null);
-  
-  if (scoresInRange.length === 0) return null;
-  
-  switch (summaryType) {
-    case 'weekly_avg':
-    case 'monthly_avg':
-    case 'quarterly_avg':
-      // Calculate average
-      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
-    
-    case 'quarterly_total':
-      // Calculate sum
-      return scoresInRange.reduce((sum, val) => sum + val, 0);
-    
-    case 'latest_value':
-      // Return most recent value
-      const sortedDates = Object.keys(metricScores)
-        .filter(date => {
-          const scoreDate = new Date(date);
-          return scoreDate >= startDate && scoreDate <= endDate;
-        })
-        .sort((a, b) => new Date(b) - new Date(a));
-      
-      if (sortedDates.length === 0) return null;
-      const latestScore = metricScores[sortedDates[0]];
-      const latestValue = (typeof latestScore === 'object' && latestScore !== null) ? latestScore?.value : latestScore;
-      return latestValue !== undefined && latestValue !== null && latestValue !== '' ? parseFloat(latestValue) : null;
-    
-    default:
-      // Default to average
-      return scoresInRange.reduce((sum, val) => sum + val, 0) / scoresInRange.length;
-  }
-};
-
-// Helper function to get human-readable summary type label
-const getSummaryLabel = (summaryType) => {
-  switch (summaryType) {
-    case 'weekly_avg':
-    case 'monthly_avg':
-    case 'quarterly_avg':
-      return 'avg';
-    case 'quarterly_total':
-      return 'total';
-    case 'latest_value':
-      return 'latest';
-    default:
-      return 'avg';
-  }
-};
 
 const GroupedScorecardView = ({ 
   metrics, 
@@ -118,7 +51,8 @@ const GroupedScorecardView = ({
   monthOptionsOriginal,
   selectedWeeks,
   selectedMonths,
-  scorecardTimePeriodPreference = '13_week_rolling'
+  scorecardTimePeriodPreference = '13_week_rolling',
+  customDateRange = null
 }) => {
 
   
@@ -596,11 +530,11 @@ const GroupedScorecardView = ({
         <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-28">
           {(() => {
             // Calculate summary based on metric's summary_type
-            const summary = calculateMetricSummary(metric, scores, scorecardTimePeriodPreference);
+            const summary = calculateMetricSummary(metric, scores, scorecardTimePeriodPreference, customDateRange);
             if (summary === null) return '-';
             const summaryGoalMet = isGoalMet(summary, metric.goal, metric.comparison_operator);
             const summaryType = metric.summary_type || 'weekly_avg';
-            const summaryLabel = getSummaryLabel(summaryType);
+            const summaryLabel = getSummaryTypeLabel(summaryType);
             
             return (
               <div className="flex flex-col items-center">
@@ -874,8 +808,7 @@ const GroupedScorecardView = ({
                 return 'Average';
               }
               // For weekly view, show the time period label
-              const { label } = getDateRange(scorecardTimePeriodPreference);
-              return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w') + ' Summary';
+              return getSummaryColumnLabel(scorecardTimePeriodPreference, customDateRange);
             })()}
           </th>
           {labels.map((label, index) => {

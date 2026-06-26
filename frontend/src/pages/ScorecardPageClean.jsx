@@ -6,7 +6,8 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
-import { getDateRange, calculateAverageInRange } from '../utils/scorecardDateUtils';
+import { getDateRange, loadScorecardPeriodPreference, saveScorecardPeriodPreference } from '../utils/scorecardDateUtils';
+import ScorecardPeriodSelector from '../components/scorecard/ScorecardPeriodSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,11 +58,15 @@ const ScorecardPageClean = () => {
     accent: '#60A5FA'
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
-  
-  // Debug scorecard preference changes
-  useEffect(() => {
-    console.log('🔍 MAIN Scorecard - Scorecard preference state changed:', scorecardTimePeriodPreference);
-  }, [scorecardTimePeriodPreference]);
+  const [customDateRange, setCustomDateRange] = useState(null);
+
+  const handleScorecardPeriodChange = ({ preference, customDateRange: nextCustomRange }) => {
+    setScorecardTimePeriodPreference(preference);
+    setCustomDateRange(nextCustomRange || null);
+
+    const orgId = user?.organizationId || user?.organization_id;
+    saveScorecardPeriodPreference(orgId, preference, nextCustomRange || null);
+  };
   
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
@@ -239,13 +244,10 @@ const ScorecardPageClean = () => {
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
         
-        // Set scorecard time period preference
-        const preference = orgData.scorecard_time_period_preference || '13_week_rolling';
-        console.log('🔍 MAIN Scorecard - Setting scorecard preference:', {
-          fromDB: orgData.scorecard_time_period_preference,
-          final: preference
-        });
-        setScorecardTimePeriodPreference(preference);
+        const orgDefault = orgData.scorecard_time_period_preference || '13_week_rolling';
+        const storedPeriod = loadScorecardPeriodPreference(orgId, orgDefault);
+        setScorecardTimePeriodPreference(storedPeriod.preference);
+        setCustomDateRange(storedPeriod.customDateRange);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
@@ -907,6 +909,11 @@ const ScorecardPageClean = () => {
               <p className="text-base sm:text-lg text-slate-600">Track your key metrics and measurables</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <ScorecardPeriodSelector
+                preference={scorecardTimePeriodPreference}
+                customDateRange={customDateRange}
+                onChange={handleScorecardPeriodChange}
+              />
               <div className="relative">
                 <Button 
                   onClick={() => setShowOptions(!showOptions)}
@@ -1051,6 +1058,7 @@ const ScorecardPageClean = () => {
                 selectedWeeks={weekDates.map(date => ({ value: date, label: date }))}
                 selectedMonths={[]}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
+                customDateRange={customDateRange}
               />
             ) : (
               <ScorecardTableClean
@@ -1079,6 +1087,7 @@ const ScorecardPageClean = () => {
                 maxPeriods={10}
                 meetingMode={false}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
+                customDateRange={customDateRange}
               />
             )}
             </div>
@@ -1115,6 +1124,7 @@ const ScorecardPageClean = () => {
                 selectedWeeks={[]}
                 selectedMonths={monthDates.map(date => ({ value: date, label: date }))}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
+                customDateRange={customDateRange}
               />
             ) : (
               <ScorecardTableClean
@@ -1139,6 +1149,7 @@ const ScorecardPageClean = () => {
                 maxPeriods={10}
                 meetingMode={false}
                 scorecardTimePeriodPreference={scorecardTimePeriodPreference}
+                customDateRange={customDateRange}
               />
             )}
             </div>
