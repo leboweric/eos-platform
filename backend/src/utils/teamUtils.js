@@ -289,14 +289,24 @@ export const assertTeamViewAccess = async (userId, organizationId, teamId, userR
 
 /**
  * SQL filter for quarterly priorities in a team meeting context.
- * Company rocks belong to the team; individual rocks belong to team members.
+ * Rocks are scoped to the team they were created for (team_id).
+ * Company rocks must belong to the team; individual rocks must also match
+ * team_id so leadership rocks don't bleed into department views when owners
+ * belong to multiple teams. Legacy rows with NULL team_id fall back to owner
+ * membership in the requested team.
  */
 export const getTeamPrioritiesScope = (tableAlias, teamIdParamIndex) => {
   return `(
     (${tableAlias}.is_company_priority = true AND ${tableAlias}.team_id = $${teamIdParamIndex})
     OR
-    (COALESCE(${tableAlias}.is_company_priority, false) = false AND ${tableAlias}.owner_id IN (
-      SELECT tm.user_id FROM team_members tm WHERE tm.team_id = $${teamIdParamIndex}
+    (COALESCE(${tableAlias}.is_company_priority, false) = false AND (
+      ${tableAlias}.team_id = $${teamIdParamIndex}
+      OR (
+        ${tableAlias}.team_id IS NULL
+        AND ${tableAlias}.owner_id IN (
+          SELECT tm.user_id FROM team_members tm WHERE tm.team_id = $${teamIdParamIndex}
+        )
+      )
     ))
   )`;
 };
