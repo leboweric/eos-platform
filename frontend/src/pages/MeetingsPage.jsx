@@ -32,6 +32,7 @@ import {
 import { teamsService } from '../services/teamsService';
 import meetingSessionsService from '../services/meetingSessionsService';
 import toast, { Toaster } from 'react-hot-toast';
+import { isRealMeetingMembership } from '../utils/meetingMembership';
 
 const MeetingsPage = () => {
   const navigate = useNavigate();
@@ -66,6 +67,9 @@ const MeetingsPage = () => {
   const [showFormatSelector, setShowFormatSelector] = useState(false);
   const [pendingMeetingTeamId, setPendingMeetingTeamId] = useState(null);
   const [checkingPermissions, setCheckingPermissions] = useState(false);
+
+  // Teams eligible for starting/joining L10 meetings
+  const meetingTeams = teams.filter(isRealMeetingMembership);
 
   const meetings = [
     {
@@ -209,51 +213,26 @@ const MeetingsPage = () => {
       
       // First, check if user has teams from their auth data
       if (user?.teams && user.teams.length > 0) {
-        let allTeams = [...user.teams];
-        
-        // If we have a selected department that's not in the teams list, add it
-        if (selectedDepartment?.id && !allTeams.find(t => t.id === selectedDepartment.id)) {
-          allTeams.push({
-            id: selectedDepartment.id,
-            name: selectedDepartment.name,
-            is_leadership_team: false,
-            is_department_team: true
-          });
-          console.log('🏢 Added department to teams list:', selectedDepartment);
-        }
-        
+        const allTeams = [...user.teams];
         setTeams(allTeams);
+
+        const memberTeams = allTeams.filter(isRealMeetingMembership);
         
-        // Try to select the appropriate team
+        // Prefer a real membership for meeting context (not synthetic admin viewers)
         let teamToSelect = null;
-        
-        // If there's a selected department, prioritize that
+
         if (selectedDepartment?.id) {
-          teamToSelect = user.teams.find(t => t.id === selectedDepartment.id);
-          console.log('🏢 Selected department team:', teamToSelect);
+          const selectedAsMember = memberTeams.find(t => t.id === selectedDepartment.id);
+          if (selectedAsMember) {
+            teamToSelect = selectedAsMember;
+          }
         }
-        
-        // If no department team found but we have a selected department,
-        // check if the department itself is a team (some orgs use departments as teams)
-        if (!teamToSelect && selectedDepartment?.id) {
-          // Try using the department ID directly as team ID
-          teamToSelect = { id: selectedDepartment.id, name: selectedDepartment.name };
-          console.log('🏢 Using department as team:', teamToSelect);
-        }
-        
-        // Otherwise, look for the leadership team
+
         if (!teamToSelect) {
-          teamToSelect = user.teams.find(t => t.is_leadership_team === true);
-          console.log('👑 Using leadership team:', teamToSelect);
+          teamToSelect = memberTeams.find(t => t.is_leadership_team) || memberTeams[0] || null;
         }
         
-        // Fall back to first team if no leadership team found
-        if (!teamToSelect) {
-          teamToSelect = user.teams[0];
-          console.log('📋 Using first available team:', teamToSelect);
-        }
-        
-        setSelectedTeamId(teamToSelect.id);
+        setSelectedTeamId(teamToSelect?.id || null);
         setLoadingTeams(false);
         return;
       }
@@ -281,8 +260,18 @@ const MeetingsPage = () => {
         return;
       }
 
+      if (!meetingTeams.length) {
+        toast.error('You must be a member of a team to start meetings.');
+        return;
+      }
+
+      // Prefer currently selected membership team; otherwise fall back to first membership
+      const effectiveTeamId = meetingTeams.some(t => t.id === selectedTeamId)
+        ? selectedTeamId
+        : meetingTeams[0].id;
+
       // PRE-FLIGHT PERMISSION CHECK - must be explicitly true
-      const canStart = meetingPermissions[selectedTeamId];
+      const canStart = meetingPermissions[effectiveTeamId];
       
       if (canStart !== true) {  // Changed from === false
         toast.error('You must be a member of this team to start meetings.');
@@ -290,38 +279,36 @@ const MeetingsPage = () => {
       }
     
     // CRITICAL VALIDATION: Never allow meeting start without valid team ID
-    if (!selectedTeamId || selectedTeamId === 'null' || selectedTeamId === 'undefined') {
-      console.error('❌ BLOCKED: Invalid team ID detected:', selectedTeamId);
+    if (!effectiveTeamId || effectiveTeamId === 'null' || effectiveTeamId === 'undefined') {
+      console.error('❌ BLOCKED: Invalid team ID detected:', effectiveTeamId);
       alert('Please select a valid team before starting a meeting. This prevents meeting summaries from being sent to the wrong recipients.');
       return;
     }
     
     // Additional UUID validation
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(selectedTeamId)) {
-      console.error('❌ BLOCKED: Team ID is not a valid UUID:', selectedTeamId);
+    if (!uuidRegex.test(effectiveTeamId)) {
+      console.error('❌ BLOCKED: Team ID is not a valid UUID:', effectiveTeamId);
       alert('Invalid team ID format. Please select a valid team.');
       return;
     }
     
-    // Check if user is on multiple teams
-    if (teams && teams.length > 1) {
-      console.log('🎭 Multiple teams detected, showing selection modal');
-      console.log('📋 Available teams:', teams);
-      console.log('📍 Currently selected team ID:', selectedTeamId);
+    // Check if user is on multiple teams they can actually meet with
+    if (meetingTeams.length > 1) {
+      console.log('🎭 Multiple membership teams detected, showing selection modal');
+      console.log('📋 Meeting teams:', meetingTeams);
+      console.log('📍 Currently selected team ID:', effectiveTeamId);
       
       // Show team selection dialog for multi-team users
       setPendingMeetingId(meetingId);
       
       // Pre-select a team for the modal
-      // Priority: 1) Currently selected team, 2) Leadership team, 3) First team
-      let initialTeamSelection = selectedTeamId;
+      // Priority: 1) Currently selected membership, 2) Leadership membership, 3) First membership
+      let initialTeamSelection = effectiveTeamId;
       
-      // Validate the selected team ID is valid
-      if (!initialTeamSelection || !teams.find(t => t.id === initialTeamSelection)) {
-        // Try to find leadership team
-        const leadershipTeam = teams.find(t => t.is_leadership_team);
-        initialTeamSelection = leadershipTeam ? leadershipTeam.id : teams[0]?.id;
+      if (!initialTeamSelection || !meetingTeams.find(t => t.id === initialTeamSelection)) {
+        const leadershipTeam = meetingTeams.find(t => t.is_leadership_team);
+        initialTeamSelection = leadershipTeam ? leadershipTeam.id : meetingTeams[0]?.id;
       }
       
       console.log('🎯 Initial team selection for modal:', initialTeamSelection);
@@ -335,7 +322,7 @@ const MeetingsPage = () => {
     }
     
       // If single team, proceed directly
-      proceedWithMeeting(meetingId, selectedTeamId);
+      proceedWithMeeting(meetingId, effectiveTeamId);
     } catch (error) {
       console.error('Error in handleStartMeeting:', error);
       toast.error('Failed to start meeting. Please try again.');
@@ -412,11 +399,15 @@ const MeetingsPage = () => {
   const handleConfirmTeamSelection = () => {
     console.log('🎯 Confirming team selection:', { 
       teamForMeeting, 
-      selectedTeam: teams.find(t => t.id === teamForMeeting),
+      selectedTeam: meetingTeams.find(t => t.id === teamForMeeting),
       pendingMeetingId,
       showDialog: showTeamSelectionDialog
     });
     
+    if (!meetingTeams.some(t => t.id === teamForMeeting)) {
+      toast.error('You must be a member of this team to start meetings.');
+      return;
+    }
     // Extra validation to ensure we have a valid team
     if (!teamForMeeting) {
       console.error('❌ No team selected in modal');
@@ -628,15 +619,22 @@ const MeetingsPage = () => {
                             }
                           } else {
                             // Starting a new meeting - check for multi-team users first
-                            if (teams && teams.length > 1) {
+                            const startTeamId = meetingTeams.some(t => t.id === selectedTeamId)
+                              ? selectedTeamId
+                              : meetingTeams[0]?.id;
+                            if (!startTeamId) {
+                              toast.error('You must be a member of a team to start meetings.');
+                              return;
+                            }
+                            if (meetingTeams.length > 1) {
                               // Show team selection dialog for multi-team users
-                              console.log('🎭 Multiple teams detected for weekly meeting, showing selection modal');
+                              console.log('🎭 Multiple membership teams detected for weekly meeting, showing selection modal');
                               setPendingMeetingId('weekly-accountability');
-                              setTeamForMeeting(selectedTeamId);
+                              setTeamForMeeting(startTeamId);
                               setShowTeamSelectionDialog(true);
                             } else {
                               // Single team user - show format selector directly
-                              setPendingMeetingTeamId(selectedTeamId);
+                              setPendingMeetingTeamId(startTeamId);
                               setShowFormatSelector(true);
                             }
                           }
@@ -647,6 +645,7 @@ const MeetingsPage = () => {
                       }}
                       disabled={
                         meeting.comingSoon || 
+                        meetingTeams.length === 0 ||
                         !selectedTeamId || 
                         loadingTeams ||
                         checkingPermissions || 
@@ -692,17 +691,17 @@ const MeetingsPage = () => {
           })}
         </div>
 
-        {!loadingTeams && teams.length === 0 && (
-          <Card className="mt-6 border-orange-200/50 bg-orange-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
+        {!loadingTeams && meetingTeams.length === 0 && (
+          <Card className="border-orange-200 bg-orange-50 mt-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-800">
+              <CardTitle className="text-orange-800 flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                No Team Selected
+                No Team Membership
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-orange-700">
-                You need to be part of a team to start meetings. A default team will be created for your organization.
+                You need to be a member of a team to start meetings. Admins can view all departments, but starting an L10 requires team membership.
               </p>
             </CardContent>
           </Card>
@@ -715,19 +714,19 @@ const MeetingsPage = () => {
           <DialogHeader>
             <DialogTitle>Join Team Meeting</DialogTitle>
             <DialogDescription>
-              {teams.length > 1 
+              {meetingTeams.length > 1 
                 ? 'Select which team and meeting type you want to join.'
                 : 'Select which meeting type you want to join.'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
-            {/* Team Selection (only if multiple teams) */}
-            {teams.length > 1 && (
+            {/* Team Selection (only if multiple membership teams) */}
+            {meetingTeams.length > 1 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Select Team</label>
-                <div className="space-y-2">
-                  {teams.map(team => (
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                  {meetingTeams.map(team => (
                     <div
                       key={team.id}
                       className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
@@ -860,7 +859,7 @@ const MeetingsPage = () => {
       
       {/* Team Selection Dialog for Multi-Team Users */}
       <Dialog open={showTeamSelectionDialog} onOpenChange={setShowTeamSelectionDialog}>
-        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-md">
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-md max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Which team meeting?</DialogTitle>
             <DialogDescription>
@@ -868,9 +867,9 @@ const MeetingsPage = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 mt-4">
-            <div className="space-y-3">
-              {teams.map((team) => (
+          <div className="space-y-4 mt-4 flex-1 min-h-0 flex flex-col">
+            <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-1 flex-1">
+              {meetingTeams.map((team) => (
                 <div 
                   key={team.id}
                   className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
@@ -925,7 +924,7 @@ const MeetingsPage = () => {
               ))}
             </div>
             
-            <div className="pt-2">
+            <div className="pt-2 shrink-0">
               <p className="text-sm text-gray-500">
                 {pendingMeetingId === 'weekly-accountability' 
                   ? `Starting ${labels.weekly_meeting_label || 'Weekly Accountability Meeting'}`
@@ -934,7 +933,7 @@ const MeetingsPage = () => {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -967,7 +966,7 @@ const MeetingsPage = () => {
                   }
                 }}
               >
-                Start {teams.find(t => t.id === teamForMeeting)?.name} Meeting
+                Start {meetingTeams.find(t => t.id === teamForMeeting)?.name} Meeting
               </Button>
             </div>
           </div>

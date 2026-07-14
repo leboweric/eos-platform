@@ -4,23 +4,12 @@ import { logMeetingError } from '../services/meetingAlertService.js';
 async function userCanStartTeamMeeting(client, user, teamId) {
   const userId = user.id || user.userId;
 
+  // Admins may view all departments, but starting an L10 still requires real membership.
   const memberCheck = await client.query(
     `SELECT user_id FROM team_members WHERE user_id = $1 AND team_id = $2`,
     [userId, teamId]
   );
-  if (memberCheck.rows.length > 0) return true;
-
-  const userRole = user.role;
-  if (userRole !== 'admin' && userRole !== 'super_admin') return false;
-
-  const userOrgId = user.organization_id || user.organizationId;
-  if (!userOrgId) return false;
-
-  const teamOrgCheck = await client.query(
-    `SELECT id FROM teams WHERE id = $1 AND organization_id = $2`,
-    [teamId, userOrgId]
-  );
-  return teamOrgCheck.rows.length > 0;
+  return memberCheck.rows.length > 0;
 }
 
 // Start a new meeting session

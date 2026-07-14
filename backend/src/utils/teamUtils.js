@@ -113,10 +113,12 @@ export const isUserOnLeadershipTeam = async (userId, organizationId) => {
 };
 
 // Get teams a user can access in the department/team selector.
-// Leadership members and admins see all active org teams; others see only their memberships.
+// Leadership members and admins can *view* all active org teams; others see only their memberships.
+// Each team includes is_member so meeting-start UIs can offer only real memberships.
 export const getUserAccessibleTeams = async (userId, organizationId, userRole = 'user') => {
   const membershipResult = await db.query(
-    `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+    `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role,
+            true AS is_member
      FROM teams t
      JOIN team_members tm ON tm.team_id = t.id
      WHERE tm.user_id = $1 AND t.organization_id = $2
@@ -130,13 +132,15 @@ export const getUserAccessibleTeams = async (userId, organizationId, userRole = 
   if (!canViewAllTeams) {
     return {
       teams: membershipResult.rows,
+      memberTeams: membershipResult.rows,
       isLeadershipMember
     };
   }
 
   const allTeamsResult = await db.query(
     `SELECT t.id, t.name, t.description, t.is_leadership_team,
-            COALESCE(tm.role, 'viewer') as member_role
+            COALESCE(tm.role, 'viewer') as member_role,
+            (tm.user_id IS NOT NULL) AS is_member
      FROM teams t
      LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $1
      WHERE t.organization_id = $2 AND t.is_active = true
@@ -144,8 +148,10 @@ export const getUserAccessibleTeams = async (userId, organizationId, userRole = 
     [userId, organizationId]
   );
 
+  const teams = allTeamsResult.rows;
   return {
-    teams: allTeamsResult.rows,
+    teams,
+    memberTeams: teams.filter((team) => team.is_member),
     isLeadershipMember: true
   };
 };
