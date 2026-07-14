@@ -42,13 +42,13 @@ export const getTeamId = (user, context = null) => {
 /**
  * Get the user's actual team ID for creating items (issues, todos, etc.)
  * This ensures items are created with a real team ID, not the placeholder
- * 
- * Priority:
- * 1. Non-leadership team (actual department)
- * 2. Leadership team (actual team, not placeholder)
+ *
+ * Priority (important for dual-team users):
+ * 1. Leadership team if the user is on it — avoids routing Leadership work to a department
+ * 2. First non-leadership team (actual department)
  * 3. First available team
  * 4. null (never the placeholder UUID)
- * 
+ *
  * @param {Object} user - The user object from auth store
  * @returns {string|null} The team ID or null
  */
@@ -57,31 +57,20 @@ export const getUserTeamId = (user) => {
     return null;
   }
 
-  // First try to find a non-leadership team (user's actual department)
-  const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
-  if (nonLeadershipTeam) {
-    return nonLeadershipTeam.id;
-  }
-
-  // Fall back to leadership team (actual team, not the placeholder)
+  // Prefer leadership when dual-membered so fallbacks never silently pick Delivery/Finance
   const leadershipTeam = user.teams.find(team => team.is_leadership_team);
   if (leadershipTeam) {
     return leadershipTeam.id;
   }
 
-  // Last resort: use first available team
+  const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+  if (nonLeadershipTeam) {
+    return nonLeadershipTeam.id;
+  }
+
   return user.teams[0].id;
 };
 
-/**
- * Get effective team ID for creating items, with proper fallbacks
- * Never returns the placeholder UUID '00000000-0000-0000-0000-000000000000'
- * 
- * @param {string} preferredTeamId - Preferred team ID (from URL or selection)
- * @param {Object} user - The user object from auth store
- * @param {boolean} allowFallback - Whether to fall back to user's default team if not a member (default: true)
- * @returns {string|null} The effective team ID
- */
 /**
  * Use the explicit team context (meeting URL, selected department) without
  * falling back to the user's default team. Critical for cross-team transfers.
@@ -96,50 +85,32 @@ export function getContextTeamId(preferredTeamId) {
   return preferredTeamId;
 }
 
+/**
+ * Get effective team ID for creating/fetching items, with proper fallbacks.
+ * Never returns the placeholder UUID '00000000-0000-0000-0000-000000000000'.
+ *
+ * Explicit preferred team IDs (meeting URL / department selector) always win.
+ * Do NOT remap to another team the user also belongs to — that caused Leadership
+ * L10 issues/todos to land on Delivery for dual-team users.
+ *
+ * @param {string} preferredTeamId - Preferred team ID (from URL or selection)
+ * @param {Object} user - The user object from auth store
+ * @param {boolean} allowFallback - Whether to fall back when no preferred ID (default: true)
+ * @returns {string|null} The effective team ID
+ */
 export const getEffectiveTeamId = (preferredTeamId, user, allowFallback = true) => {
-  console.log('🔍 getEffectiveTeamId called with:', {
-    preferredTeamId,
-    userTeams: user?.teams?.map(t => ({ id: t.id, name: t.name, is_leadership: t.is_leadership_team }))
-  });
-  
-  // Clean the preferred team ID
-  const cleanId = (preferredTeamId === 'null' || preferredTeamId === 'undefined' || preferredTeamId === null) 
-    ? null 
+  const cleanId = (preferredTeamId === 'null' || preferredTeamId === 'undefined' || preferredTeamId === null)
+    ? null
     : preferredTeamId;
-    
-  console.log('🧹 Cleaned ID:', cleanId);
-    
-  // If we have a valid preferred team ID (not null and not the placeholder), use it
-  // This includes Leadership Team IDs - we should trust the URL parameter
+
+  // Trust explicit team context (URL / department selector). Never rewrite to Delivery.
   if (cleanId && cleanId !== LEADERSHIP_TEAM_ID) {
-    console.log('📍 Have valid cleanId, checking if team exists for user');
-    // Verify the team exists for the user
-    const teamExists = user?.teams?.some(t => t.id === cleanId);
-    if (teamExists) {
-      const selectedTeam = user?.teams?.find(t => t.id === cleanId);
-      console.log('✅ Team verified for user:', selectedTeam);
-      return cleanId;
-    } else {
-      console.log('⚠️ Team ID not found in user teams, user teams are:', user?.teams);
-      // If allowFallback is false, use the requested team even if user isn't a member
-      // Let the backend validate and return 403 if unauthorized
-      if (!allowFallback) {
-        console.log('🚫 allowFallback=false, using requested team for backend validation:', cleanId);
-        return cleanId;
-      }
-    }
-  } else {
-    console.log('❌ No valid cleanId. cleanId:', cleanId, 'LEADERSHIP_TEAM_ID:', LEADERSHIP_TEAM_ID);
+    return cleanId;
   }
 
-  // Only fall back if allowFallback is true
   if (allowFallback) {
-    console.log('⚠️ Falling back to getUserTeamId');
-    const fallbackId = getUserTeamId(user);
-    console.log('📍 Fallback team ID:', fallbackId);
-    return fallbackId;
-  } else {
-    console.log('🚫 allowFallback=false, returning null instead of fallback');
-    return null;
+    return getUserTeamId(user);
   }
+
+  return null;
 };
