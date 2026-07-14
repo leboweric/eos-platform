@@ -14,8 +14,10 @@ const getOrgId = () => {
 
 const getTeamId = () => {
   const user = useAuthStore.getState().user;
-  // First check for teams array and get the first team's ID
+  // Prefer leadership when dual-membered so create fallbacks never pick Delivery
   if (user?.teams && user.teams.length > 0) {
+    const leadershipTeam = user.teams.find((team) => team.is_leadership_team);
+    if (leadershipTeam) return leadershipTeam.id;
     return user.teams[0].id;
   }
   // Fallback to teamId or team_id on user object
