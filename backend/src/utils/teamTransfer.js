@@ -1,4 +1,7 @@
 import { query } from '../config/database.js';
+import { decideTodoTeamId } from './todoTeamRouting.js';
+
+export { decideTodoTeamId } from './todoTeamRouting.js';
 
 export async function getTeamInOrg(teamId, orgId) {
   const result = await query(
@@ -128,11 +131,11 @@ async function isLeadershipTeamId(teamId) {
 
 /**
  * Route todos to the team where they should appear in the department list.
- * Leadership can assign to anyone, but departmental assignees should own the
- * to-do on their functional team — even if they are also on Leadership.
  *
- * Exception: todos created during a meeting (meetingId set) stay on the meeting
- * team's list so they appear in that Level 10 session.
+ * - Meeting creates stay on the meeting team.
+ * - If the assignee is a member of the requested team, keep that team
+ *   (dual Leadership members keep Leadership todos — do not siphon to Delivery).
+ * - If Leadership assigns to someone who is only on a department team, route there.
  */
 export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId, options = {}) {
   if (!requestedTeamId || !assigneeId) {
@@ -144,28 +147,16 @@ export async function resolveTodoTeamId(orgId, requestedTeamId, assigneeId, opti
   }
 
   const assigneeTeams = await getAssigneeTeams(orgId, assigneeId);
-  if (assigneeTeams.length === 0) {
-    return requestedTeamId;
-  }
-
-  const departmentalTeam = assigneeTeams.find((team) => !team.is_leadership_team);
   const requestedIsLeadership = await isLeadershipTeamId(requestedTeamId);
-
-  // Leadership assigning to someone with a departmental team → use that team
-  if (requestedIsLeadership && departmentalTeam) {
-    return departmentalTeam.team_id;
-  }
-
-  const onRequestedTeam = assigneeTeams.some((team) => team.team_id === requestedTeamId);
-  if (onRequestedTeam) {
-    return requestedTeamId;
-  }
-
-  return assigneeTeams[0].team_id;
+  return decideTodoTeamId(requestedTeamId, assigneeTeams, {
+    requestedIsLeadership,
+    meetingId: options.meetingId
+  });
 }
 
 /**
- * Move existing leadership-team to-dos to each assignee's departmental team.
+ * Move Leadership to-dos whose assignee is NOT on Leadership to their
+ * departmental team. Dual Leadership members are left alone.
  * Idempotent — safe to run on every leadership to-do list fetch.
  */
 export async function repairLeadershipMisassignedTodos(orgId, leadershipTeamId) {
@@ -197,6 +188,12 @@ export async function repairLeadershipMisassignedTodos(orgId, leadershipTeamId) 
          AND t2.deleted_at IS NULL
          AND t2.meeting_id IS NULL
          AND t2.assigned_to_id IS NOT NULL
+         -- Dual Leadership members keep Leadership todos
+         AND NOT EXISTS (
+           SELECT 1 FROM team_members tm_lt
+           WHERE tm_lt.user_id = t2.assigned_to_id
+             AND tm_lt.team_id = $2
+         )
      ) resolved
      WHERE t.id = resolved.todo_id
        AND resolved.new_team_id IS NOT NULL
